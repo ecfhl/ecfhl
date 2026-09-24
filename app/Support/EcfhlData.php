@@ -315,6 +315,7 @@ class EcfhlData
             ->leftJoin('franchises as f','f.franchise_id','=','a.franchise_id')
             ->leftJoin('players as p','p.player_id','=','a.player_id')
             ->where('s.season_name',$season)
+            ->whereIn('a.award_type_id',['president','leader','art_ross','norris','vezina','calder'])
             ->select('a.award_type_id','at.award_name','a.franchise_id','f.franchise_name','a.team_name_raw','p.player_name','a.points')
             ->orderByRaw("FIELD(a.award_type_id,'president','leader','art_ross','norris','vezina','calder')")
             ->get()->map(function($r){
