@@ -71,7 +71,7 @@ class EcfhlData
 
     public function teams(): array
     {
-        return $this->teamLedger('h2h', 'all');
+        return $this->teamLedger('all', 'all');
     }
 
     public function team(string $slug): ?array
@@ -110,6 +110,8 @@ class EcfhlData
 
             $history = ($seasonRows->get($f->franchise_id, collect()))->filter(fn($r)=>$matchesMode($r->format));
             $awards = ($awardRows->get($f->franchise_id, collect()))->filter(fn($r)=>$matchesMode($r->format));
+
+            if ($mode !== 'all' && $history->count() === 0) continue;
 
             $recordRows = $history->filter(fn($r)=>$r->w !== null || $r->l !== null || $r->t !== null);
             $w=(int)$recordRows->sum('w'); $l=(int)$recordRows->sum('l'); $t=(int)$recordRows->sum('t');
