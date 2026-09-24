@@ -2,8 +2,34 @@
 @section('title','Seasons · ECFHL')
 @section('content')
 <div class="shell">
-<div class="page-head"><div class="eyebrow">League archive</div><h1>Seasons</h1><p>Standings, champions and historical results from 2007–08 to the present.</p></div>
-<div class="season-list">@foreach($seasons as $season)
-<a class="season-row" href="/seasons/{{ rawurlencode($season['season']) }}"><strong>{{ $season['season'] }}</strong><div><div class="champ">{{ $season['champion'] ? '🏆 '.$season['champion'] : 'No champion awarded' }}</div><span class="subtle">{{ $season['status'] ?? '' }}</span></div><div><strong>{{ $season['format'] ?? '' }}</strong><br><span class="subtle">{{ $season['runner_up'] ? '2nd: '.$season['runner_up'] : '' }}</span></div><span>View →</span></a>
-@endforeach</div></div>
+  <div class="page-head"><div class="eyebrow">League archive</div><h1>Seasons</h1><p>Playoff finishes and regular-season leaders from 2007–08 to the present.</p></div>
+  <div class="season-cards">
+  @foreach($seasons as $season)
+    <a class="season-card" href="/seasons/{{ rawurlencode($season['season']) }}">
+      <div class="season-card-head"><div><strong>{{ $season['season'] }}</strong><span>{{ $season['format'] ?? '' }}</span></div><span>View →</span></div>
+      <div class="season-card-columns">
+        <div>
+          <h3>Playoffs</h3>
+          <div class="award-line"><span>🏆 Champion</span><strong>{{ $season['champion'] ?: '—' }}</strong></div>
+          <div class="award-line"><span>🥈 Second</span><strong>{{ $season['runner_up'] ?: '—' }}</strong></div>
+          <div class="award-line"><span>🥉 Third</span><strong>{{ $season['third_place'] ?: '—' }}</strong></div>
+        </div>
+        <div>
+          <h3>Regular Season</h3>
+          @forelse($season['regular_top3'] ?? [] as $i=>$row)
+            @php
+              $hasRecord = $row['w'] !== null || $row['l'] !== null || $row['t'] !== null;
+              $record = $hasRecord ? (($row['w']??0).'-'.($row['l']??0).'-'.($row['t']??0)) : (($row['fantasy_points_for']!==null) ? number_format($row['fantasy_points_for'],0).' Fpts' : '—');
+              $rankIcon = ['1️⃣','2️⃣','3️⃣'][$i] ?? ($i+1);
+            @endphp
+            <div class="award-line"><span>{{ $rankIcon }} {{ $row['team'] }}</span><strong>{{ $record }}</strong></div>
+          @empty
+            <div class="subtle">No regular-season data</div>
+          @endforelse
+        </div>
+      </div>
+    </a>
+  @endforeach
+  </div>
+</div>
 @endsection
