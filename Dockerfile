@@ -15,4 +15,4 @@ RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --no-interaction --pref
 COPY . .
 RUN COMPOSER_ALLOW_SUPERUSER=1 composer dump-autoload --optimize --no-dev
 
-CMD ["sh", "-c", "php artisan serve --host=0.0.0.0 --port=$PORT"]
+CMD ["sh", "-c", "php artisan migrate --force && php artisan ecfhl:sync && php artisan serve --host=0.0.0.0 --port=$PORT"]
