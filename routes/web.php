@@ -86,3 +86,12 @@ Route::get('/rules', function () {
     })->all();
     return view('rules', compact('sections'));
 });
+
+Route::get('/api/debug/db-status', function () {
+    $tables = ['seasons','franchises','team_seasons','players','drafts','draft_picks','trades','trade_assets','award_types','awards','prize_awards','season_prizes','rules'];
+    $counts = [];
+    foreach ($tables as $table) {
+        try { $counts[$table] = DB::table($table)->count(); } catch (\Throwable $e) { $counts[$table] = 'ERROR: '.$e->getMessage(); }
+    }
+    return response()->json($counts);
+});
