@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <title>@yield('title', 'ECFHL History')</title>
-    <link rel="stylesheet" href="/app.css?v=1">
+    <link rel="stylesheet" href="/app.css?v=2">
 </head>
 <body>
 <header class="site-header">
     <div class="shell nav-wrap">
         <a class="brand" href="/">
-            <span class="brand-mark">ECFHL</span>
-            <span class="brand-copy"><strong>ECFHL</strong><small>League History</small></span>
+            <img class="brand-logo" src="/ecfhl-logo.png" alt="ECFHL league logo">
+            <span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span>
         </a>
         <button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button>
         <nav class="main-nav">
@@ -32,9 +32,7 @@
     </div>
 </header>
 
-<main>
-    @yield('content')
-</main>
+<main>@yield('content')</main>
 
 <footer class="site-footer">
     <div class="shell footer-inner">
