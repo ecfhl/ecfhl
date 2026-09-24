@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 Artisan::command('ecfhl:sync', function () {
     $sources = [
@@ -24,6 +25,16 @@ Artisan::command('ecfhl:sync', function () {
                 'created_at' => now(),
             ]
         );
+
+        $decoded = $response->json();
+        $keys = is_array($decoded) ? array_slice(array_keys($decoded), 0, 30) : [];
+        $sample = is_array($decoded) ? array_slice($decoded, 0, 1, true) : null;
+
+        Log::info('ECFHL source shape', [
+            'source' => $key,
+            'keys' => $keys,
+            'sample' => $sample,
+        ]);
 
         $this->info("Synced {$key}");
     }
