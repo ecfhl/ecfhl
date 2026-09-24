@@ -118,4 +118,21 @@ class EcfhlData
         rsort($seasons);
         return $seasons;
     }
+
+    public function prizeTotals(): array
+    {
+        return DB::table('prize_awards as pa')
+            ->join('franchises as f','f.franchise_id','=','pa.franchise_id')
+            ->select(
+                'f.franchise_id',
+                'f.franchise_name',
+                DB::raw('SUM(pa.amount_cents) as total_cents'),
+                DB::raw('COUNT(*) as awards')
+            )
+            ->groupBy('f.franchise_id','f.franchise_name')
+            ->orderByDesc('total_cents')
+            ->get()
+            ->map(fn($r)=>(array)$r)
+            ->all();
+    }
 }
