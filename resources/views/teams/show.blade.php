@@ -17,18 +17,23 @@
     <tbody>
     @foreach($history as $r)
       @php
-        $finishIcon = match($r['playoff_finish'] ?? null) {
-          'champion' => '🏆',
-          'second' => '🥈',
-          'third' => '🥉',
-          default => ''
+        $finishText = match($r['playoff_finish'] ?? null) {
+          'champion' => '🏆 Champion',
+          'second' => '🥈 2nd',
+          'third' => '🥉 3rd',
+          default => match($r['rank'] ?? null) {
+            1 => '🏆 1st',
+            2 => '🥈 2nd',
+            3 => '🥉 3rd',
+            default => $r['rank'] ?? '—'
+          }
         };
       @endphp
       <tr>
         <td><a href="/seasons/{{ rawurlencode($r['season']) }}"><strong>{{ $r['season'] }}</strong></a></td>
         <td>{{ $r['original_name'] }}</td>
         <td>{{ $r['format'] }}</td>
-        <td class="num">{{ $finishIcon }} {{ $r['rank'] ?? '—' }}</td>
+        <td class="num nowrap">{{ $finishText }}</td>
         <td class="num">{{ isset($r['w']) && $r['w']!==null ? ($r['w'].'-'.($r['l']??0).'-'.($r['t']??0)) : '—' }}</td>
         <td class="num">{{ $r['standings_points']!==null ? number_format($r['standings_points'],0) : '—' }}</td>
         <td class="num">{{ $r['fantasy_points_for']!==null ? number_format($r['fantasy_points_for'],0) : '—' }}</td>
