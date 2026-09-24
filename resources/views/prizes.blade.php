@@ -26,13 +26,19 @@
           <td class="nowrap"><strong>{{ $row['season'] }}</strong></td>
           <td>
             @foreach($row['playoffs'] as $item)
-              @php($icon = str_starts_with($item,'Champion:') ? '🏆' : (str_starts_with($item,'Second place:') ? '🥈' : '🥉'))
+              @php
+                $icon = str_starts_with($item,'Champion:')
+                  ? '🏆'
+                  : (str_starts_with($item,'Second place:') ? '🥈' : '🥉');
+              @endphp
               <div>{{ $icon }} {{ preg_replace('/^[^:]+:\s*/','',$item) }}</div>
             @endforeach
           </td>
           <td>
             @forelse($row['regular'] as $item)
-              @php($icon = str_starts_with($item,'President Trophy:') ? '🏅' : '⭐')
+              @php
+                $icon = str_starts_with($item,'President Trophy:') ? '🏅' : '⭐';
+              @endphp
               <div>{{ $icon }} {{ preg_replace('/^[^:]+:\s*/','',$item) }}</div>
             @empty<span class="subtle">—</span>@endforelse
           </td>
