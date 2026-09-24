@@ -14,24 +14,19 @@ Route::get('/', function (EcfhlData $data) {
 
     $championships = count(array_filter($seasons, fn($s) => !empty($s['champion'])));
     $statsSeasons = count(array_unique(array_column($data->teamSeasons(), 'season')));
-
-    $byTitles = $teams;
-    usort($byTitles, fn($a,$b) => ($b['titles'] ?? 0) <=> ($a['titles'] ?? 0));
-    $byFirst = $teams;
-    usort($byFirst, fn($a,$b) => ($b['h2h_first'] ?? 0) <=> ($a['h2h_first'] ?? 0));
-    $byWins = $teams;
-    usort($byWins, fn($a,$b) => ($b['w'] ?? 0) <=> ($a['w'] ?? 0));
-
-    $leaders = [
-        'Championships' => ['value' => $byTitles[0]['titles'] ?? 0, 'team' => $byTitles[0]['team'] ?? '—'],
-        'H2H regular-season firsts' => ['value' => $byFirst[0]['h2h_first'] ?? 0, 'team' => $byFirst[0]['team'] ?? '—'],
-        'H2H wins' => ['value' => $byWins[0]['w'] ?? 0, 'team' => $byWins[0]['team'] ?? '—'],
-    ];
+    $leaders = $data->overviewLeaders();
 
     return view('home', compact('seasons','teams','trades','latest','latestLeader','championships','statsSeasons','leaders'));
 });
 
-Route::get('/seasons', fn(EcfhlData $data) => view('seasons.index', ['seasons' => $data->seasons()]));
+Route::get('/seasons', function (EcfhlData $data) {
+    $seasons = $data->seasons();
+    foreach ($seasons as &$season) {
+        $season['regular_top3'] = $data->seasonRegularTop3($season['season']);
+    }
+    unset($season);
+    return view('seasons.index', compact('seasons'));
+});
 
 Route::get('/seasons/{season}', function (string $season, EcfhlData $data) {
     $season = rawurldecode($season);
@@ -57,7 +52,15 @@ Route::get('/seasons/{season}', function (string $season, EcfhlData $data) {
     ]);
 })->where('season', '.*');
 
-Route::get('/teams', fn(EcfhlData $data) => view('teams.index', ['teams' => $data->teams()]));
+Route::get('/teams', function (EcfhlData $data) {
+    $type = request('type','h2h');
+    $status = request('status','all');
+    return view('teams.index', [
+        'teams'=>$data->teamLedger($type,$status),
+        'type'=>$type,
+        'status'=>$status,
+    ]);
+});
 
 Route::get('/teams/{slug}', function (string $slug, EcfhlData $data) {
     $team = $data->team($slug);
@@ -74,11 +77,23 @@ Route::get('/trades', function (EcfhlData $data) {
 
 Route::get('/draft', function (EcfhlData $data) {
     $seasons = $data->draftSeasons();
-    $selected = request('season', $seasons[0] ?? '');
-    return view('draft.index', ['seasons'=>$seasons, 'selected'=>$selected, 'picks'=>$data->draftSeason($selected)]);
+    $selected = request('season', $seasons[0] ?? 'all');
+    if ($selected !== 'all' && !in_array($selected,$seasons,true)) $selected = $seasons[0] ?? 'all';
+    $q = trim((string)request('q',''));
+    $picks = $data->draftSeason($selected);
+    if ($q !== '') {
+        $needle = mb_strtolower($q);
+        $picks = array_values(array_filter($picks, fn($p) =>
+            str_contains(mb_strtolower(($p['player']??'').' '.($p['team']??'')), $needle)
+        ));
+    }
+    return view('draft.index', compact('seasons','selected','picks','q'));
 });
 
-Route::get('/prizes', fn(EcfhlData $data) => view('prizes', ['seasons'=>$data->seasons(), 'totals'=>$data->prizeTotals()]));
+Route::get('/prizes', fn(EcfhlData $data) => view('prizes', [
+    'totals'=>$data->prizeTotals(),
+    'awardsBySeason'=>$data->awardsBySeason(),
+]));
 
 Route::get('/rules', function () {
     $sections = DB::table('rules')->orderBy('rule_id')->get()->groupBy('section')->map(function($items){
