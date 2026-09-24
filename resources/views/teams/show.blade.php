@@ -1,0 +1,9 @@
+@extends('layouts.app')
+@section('title',$team['team'].' · ECFHL')
+@section('content')
+<div class="shell"><div class="page-head"><div class="eyebrow">Franchise history</div><h1>{{ $team['team'] }}</h1><p>Complete recorded franchise history.</p></div>
+<div class="stats-grid" style="margin-bottom:26px"><div class="stat"><strong>{{ count($history) }}</strong><span>Seasons played</span></div><div class="stat"><strong>{{ $team['titles'] ?? 0 }}</strong><span>Championships</span></div><div class="stat"><strong>{{ $team['finals'] ?? 0 }}</strong><span>H2H finals</span></div><div class="stat"><strong>{{ ($team['w']??0).'-'.($team['l']??0).'-'.($team['t']??0) }}</strong><span>H2H record</span></div><div class="stat"><strong>{{ isset($team['win_pct']) ? number_format($team['win_pct']*100,1).'%' : '—' }}</strong><span>Win %</span></div></div>
+<div class="table-card"><div class="table-scroll"><table class="data-table"><thead><tr><th>Season</th><th>Team name</th><th>Format</th><th class="num">Finish</th><th class="num">Record</th><th class="num">Points</th><th class="num">Fpts</th></tr></thead><tbody>
+@foreach($history as $r)<tr><td><a href="/seasons/{{ rawurlencode($r['season']) }}"><strong>{{ $r['season'] }}</strong></a></td><td>{{ $r['original_name'] }}</td><td>{{ $r['format'] }}</td><td class="num">{{ $r['rank'] ?? '—' }}</td><td class="num">{{ isset($r['w']) ? ($r['w'].'-'.($r['l']??0).'-'.($r['t']??0)) : '—' }}</td><td class="num">{{ $r['standings_points'] ?? '—' }}</td><td class="num">{{ isset($r['fantasy_points_for']) ? number_format($r['fantasy_points_for']) : '—' }}</td></tr>@endforeach
+</tbody></table></div></div></div>
+@endsection
