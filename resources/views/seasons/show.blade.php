@@ -17,8 +17,10 @@
     <thead><tr><th class="num">Rank</th><th>Franchise</th><th>Season name</th><th class="num">W</th><th class="num">L</th><th class="num">T</th><th class="num">Pts</th><th class="num">Fpts</th><th class="num">Win %</th></tr></thead>
     <tbody>
     @foreach($standings as $r)
-      @php($gp=($r['w']??0)+($r['l']??0)+($r['t']??0))
-      @php($wp=$gp ? (($r['w']??0)+0.5*($r['t']??0))/$gp : null)
+      @php
+        $gp = ($r['w'] ?? 0) + ($r['l'] ?? 0) + ($r['t'] ?? 0);
+        $wp = $gp ? (($r['w'] ?? 0) + 0.5 * ($r['t'] ?? 0)) / $gp : null;
+      @endphp
       <tr>
         <td class="num">{{ $r['rank'] ?? '—' }}</td>
         <td><strong>{{ $r['team'] }}</strong></td>

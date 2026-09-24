@@ -17,17 +17,20 @@
     <tbody>
     @foreach($history as $r)
       @php
-        $finishText = match($r['playoff_finish'] ?? null) {
-          'champion' => '🏆 Champion',
-          'second' => '🥈 2nd',
-          'third' => '🥉 3rd',
-          default => match($r['rank'] ?? null) {
-            1 => '🏆 1st',
-            2 => '🥈 2nd',
-            3 => '🥉 3rd',
-            default => $r['rank'] ?? '—'
-          }
+        $rank = isset($r['rank']) ? (int) $r['rank'] : null;
+        $icon = match($r['playoff_finish'] ?? null) {
+          'champion' => '🏆',
+          'second' => '🥈',
+          'third' => '🥉',
+          default => '',
         };
+        $suffix = in_array(($rank ?? 0) % 100, [11, 12, 13]) ? 'th' : match(($rank ?? 0) % 10) {
+          1 => 'st',
+          2 => 'nd',
+          3 => 'rd',
+          default => 'th',
+        };
+        $finishText = trim($icon . ' ' . ($rank > 0 ? $rank . $suffix : '—'));
       @endphp
       <tr>
         <td><a href="/seasons/{{ rawurlencode($r['season']) }}"><strong>{{ $r['season'] }}</strong></a></td>
