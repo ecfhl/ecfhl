@@ -260,6 +260,43 @@ class EcfhlData
         return $seasons;
     }
 
+    public function teamTradeCount(string $franchiseId): int
+    {
+        return DB::table('trades')
+            ->where(function($q) use($franchiseId) {
+                $q->where('from_franchise_id',$franchiseId)->orWhere('to_franchise_id',$franchiseId);
+            })
+            ->where('is_reversed',false)
+            ->count();
+    }
+
+    public function seasonAwards(string $season): array
+    {
+        return DB::table('awards as a')
+            ->join('seasons as s','s.season_id','=','a.season_id')
+            ->join('award_types as at','at.award_type_id','=','a.award_type_id')
+            ->leftJoin('franchises as f','f.franchise_id','=','a.franchise_id')
+            ->leftJoin('players as p','p.player_id','=','a.player_id')
+            ->where('s.season_name',$season)
+            ->select('a.award_type_id','at.award_name','a.franchise_id','f.franchise_name','a.team_name_raw','p.player_name','a.points')
+            ->orderByRaw("FIELD(a.award_type_id,'president','leader','art_ross','norris','vezina','calder')")
+            ->get()->map(function($r){
+                $team=$this->displayTeamName($r->franchise_name ?: $r->team_name_raw,$r->franchise_id);
+                return [
+                    'id'=>$r->award_type_id,
+                    'label'=>$r->award_name,
+                    'player'=>$r->player_name,
+                    'team'=>$team,
+                    'points'=>$r->points,
+                ];
+            })->all();
+    }
+
+    public function seasonTradeCount(string $season): int
+    {
+        return count(array_filter($this->trades(), fn($t)=>($t['season']??'')===$season));
+    }
+
     public function prizeTotals(): array
     {
         return DB::table('prize_awards as pa')
