@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use RuntimeException;
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,66 +19,105 @@ class DatabaseSeeder extends Seeder
     {
         $path = database_path('data/ecfhl_database.txt');
         if (!is_file($path)) {
-            return;
+            throw new RuntimeException("ECFHL seed file not found: {$path}");
         }
 
         $text = file_get_contents($path);
-        preg_match_all('/<PARSED TEXT FOR SHEET:\s*\d+\s*\/\s*\d+\s*TABS\s*\nTAB NAME:\s*([^>]+)>\n(.*?)(?=<PARSED TEXT FOR SHEET:|\z)/s', $text, $matches, PREG_SET_ORDER);
+
+        preg_match_all(
+            '/<PARSED TEXT FOR SHEET:\s*\d+\s*\/\s*\d+\s*TABS\s*\R' .
+            'TAB NAME:\s*([^>]+)>\R(.*?)(?=<PARSED TEXT FOR SHEET:|\z)/su',
+            $text,
+            $matches,
+            PREG_SET_ORDER
+        );
+
+        if (!$matches) {
+            throw new RuntimeException('No ECFHL spreadsheet sections were detected in the seed file.');
+        }
 
         DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
-        foreach ($matches as $match) {
-            $table = trim($match[1]);
-            if (!in_array($table, $this->allowed, true) || !Schema::hasTable($table)) {
-                continue;
-            }
+        try {
+            foreach ($matches as $match) {
+                $table = trim($match[1]);
 
-            $lines = preg_split('/\r?\n/', trim($match[2]));
-            if (!$lines) {
-                continue;
-            }
-
-            $headers = str_getcsv(array_shift($lines));
-            if (($headers[0] ?? null) === 'index') {
-                array_shift($headers);
-            }
-
-            DB::table($table)->truncate();
-            $batch = [];
-
-            foreach ($lines as $line) {
-                if (trim($line) === '') {
+                if (!in_array($table, $this->allowed, true) || !Schema::hasTable($table)) {
                     continue;
                 }
 
-                $row = str_getcsv($line);
-                if (count($row) === count($headers) + 1) {
-                    array_shift($row);
-                }
+                $stream = fopen('php://temp', 'r+');
+                fwrite($stream, $match[2]);
+                rewind($stream);
 
-                if (count($row) !== count($headers)) {
+                $headers = fgetcsv($stream);
+                if (!$headers) {
+                    fclose($stream);
                     continue;
                 }
 
-                $record = [];
-                foreach ($headers as $i => $header) {
-                    $record[$header] = $this->value($row[$i] ?? null);
+                if (($headers[0] ?? null) === 'index') {
+                    array_shift($headers);
                 }
 
-                $batch[] = $record;
+                DB::table($table)->truncate();
+                $batch = [];
 
-                if (count($batch) >= 250) {
+                while (($row = fgetcsv($stream)) !== false) {
+                    if ($row === [null] || $row === []) {
+                        continue;
+                    }
+
+                    if (count($row) === count($headers) + 1) {
+                        array_shift($row);
+                    }
+
+                    if (count($row) !== count($headers)) {
+                        continue;
+                    }
+
+                    $record = [];
+                    foreach ($headers as $i => $header) {
+                        $record[$header] = $this->value($row[$i] ?? null);
+                    }
+
+                    $batch[] = $record;
+
+                    if (count($batch) >= 250) {
+                        DB::table($table)->insert($batch);
+                        $batch = [];
+                    }
+                }
+
+                fclose($stream);
+
+                if ($batch) {
                     DB::table($table)->insert($batch);
-                    $batch = [];
                 }
-            }
 
-            if ($batch) {
-                DB::table($table)->insert($batch);
+                $count = DB::table($table)->count();
+                $this->command?->info("Seeded {$table}: {$count} rows");
             }
+        } finally {
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
         }
 
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        $required = [
+            'seasons' => 19,
+            'franchises' => 21,
+            'team_seasons' => 218,
+            'players' => 975,
+            'draft_picks' => 2103,
+            'trades' => 482,
+            'trade_assets' => 1881,
+        ];
+
+        foreach ($required as $table => $minimum) {
+            $count = DB::table($table)->count();
+            if ($count < $minimum) {
+                throw new RuntimeException("Seed validation failed for {$table}: expected at least {$minimum}, got {$count}.");
+            }
+        }
     }
 
     private function value($value)
