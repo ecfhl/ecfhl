@@ -82,3 +82,36 @@ html[data-theme="dark"] .pill-vetoed{background:#431b1b!important;color:#ffb4ad!
   .latest-footer{align-items:flex-start;flex-direction:column}
   .season-card-columns,.prizes-grid{grid-template-columns:1fr}.season-card-columns>div+div{border-left:0;border-top:1px solid var(--line)}
 }
+
+
+/* 2026-09-24 detail page refinements */
+.prizes-grid{grid-template-columns:minmax(330px,1fr) minmax(0,2fr)}
+.prizes-grid .data-table td:first-child,.prizes-grid .data-table th:first-child{white-space:nowrap}
+
+.team-detail-stats{grid-template-columns:repeat(5,1fr)}
+.team-detail-stats .stat span a{text-decoration:none;color:var(--accent);font-weight:800}
+
+.season-links-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.season-action-card{display:block;text-decoration:none}
+.season-action-card>span:last-child{display:block;margin-top:14px;color:var(--accent);font-size:13px;font-weight:800}
+.season-action-value{display:block;font-size:42px;line-height:1;margin:10px 0}
+.top-picks-list{display:grid;gap:8px;margin:12px 0}
+.top-picks-list div{padding:8px 0;border-bottom:1px solid var(--line)}
+.top-picks-list div:last-child{border-bottom:0}
+.top-picks-list small{display:block;color:var(--muted);margin-left:20px}
+
+.rules-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.rule-card{padding:0;overflow:hidden}
+.rule-card-head{display:flex;align-items:center;gap:12px;padding:17px 20px;background:var(--panel-2);border-bottom:1px solid var(--line)}
+.rule-card-head>span{font-size:24px}
+.rule-card-head h2{margin:0;font-size:18px}
+.rule-list{margin:0;padding:18px 22px 18px 42px}
+.rule-list li{padding:8px 0;border-bottom:1px solid var(--line)}
+.rule-list li:last-child{border-bottom:0}
+
+@media(max-width:950px){
+  .team-detail-stats{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:850px){
+  .prizes-grid,.season-links-grid,.rules-grid{grid-template-columns:1fr}
+}
