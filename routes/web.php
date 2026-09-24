@@ -33,22 +33,12 @@ Route::get('/seasons/{season}', function (string $season, EcfhlData $data) {
     $row = $data->season($season);
     abort_unless($row, 404);
 
-    $awards = [];
-    foreach ([
-        ['art_ross','art_ross_team','art_ross_points','Art Ross'],
-        ['norris','norris_team','norris_points','Norris'],
-        ['vezina','vezina_team','vezina_points','Vezina'],
-        ['calder','calder_team','calder_points','Calder'],
-    ] as [$player,$team,$points,$label]) {
-        if (!empty($row[$player])) {
-            $awards[] = ['player'=>$row[$player], 'team'=>$row[$team] ?? '', 'points'=>$row[$points] ?? null, 'label'=>$label];
-        }
-    }
-
     return view('seasons.show', [
         'season' => $row,
         'standings' => $data->teamSeasons($season),
-        'awards' => $awards,
+        'awards' => $data->seasonAwards($season),
+        'tradeCount' => $data->seasonTradeCount($season),
+        'topPicks' => array_slice($data->draftSeason($season),0,3),
     ]);
 })->where('season', '.*');
 
@@ -65,14 +55,27 @@ Route::get('/teams', function (EcfhlData $data) {
 Route::get('/teams/{slug}', function (string $slug, EcfhlData $data) {
     $team = $data->team($slug);
     abort_unless($team, 404);
-    return view('teams.show', ['team'=>$team, 'history'=>$data->teamSeasons(null, $team['team'])]);
+    return view('teams.show', [
+        'team'=>$team,
+        'history'=>$data->teamSeasons(null, $team['team']),
+        'tradeCount'=>$data->teamTradeCount($team['id']),
+    ]);
 });
 
 Route::get('/trades', function (EcfhlData $data) {
     $trades = $data->trades();
     $seasons = array_values(array_unique(array_column($trades, 'season')));
     rsort($seasons);
-    return view('trades.index', compact('trades','seasons'));
+    $teams = [];
+    foreach ($trades as $t) {
+        if (!empty($t['from'])) $teams[$t['from']] = true;
+        if (!empty($t['to'])) $teams[$t['to']] = true;
+    }
+    $teams = array_keys($teams);
+    sort($teams,SORT_NATURAL|SORT_FLAG_CASE);
+    $selectedSeason = (string)request('season','');
+    $selectedTeam = (string)request('team','');
+    return view('trades.index', compact('trades','seasons','teams','selectedSeason','selectedTeam'));
 });
 
 Route::get('/draft', function (EcfhlData $data) {
