@@ -7,139 +7,143 @@ use Illuminate\Support\Str;
 
 class EcfhlData
 {
+    protected function source(string $key): array
+    {
+        $payload = DB::table('source_cache')->where('source_key', $key)->value('payload');
+        return $payload ? (json_decode($payload, true) ?: []) : [];
+    }
+
+    public function history(): array { return $this->source('history'); }
+    public function drafts(): array { return $this->source('drafts'); }
+
     public function seasons(): array
     {
-        $rows = DB::table('seasons')->orderByDesc('sequence')->get();
-        $awardRows = DB::table('awards as a')
-            ->leftJoin('franchises as f','f.franchise_id','=','a.franchise_id')
-            ->leftJoin('players as p','p.player_id','=','a.player_id')
-            ->select('a.*','f.franchise_name','p.player_name')->get()->groupBy('season_id');
-
-        return $rows->map(function($s) use($awardRows) {
-            $a = $awardRows->get($s->season_id, collect())->keyBy('award_type_id');
-            $winner = fn(string $id) => optional($a->get($id))->franchise_name ?: optional($a->get($id))->team_name_raw;
-            $player = fn(string $id) => optional($a->get($id))->player_name;
-            $team = fn(string $id) => optional($a->get($id))->franchise_name ?: optional($a->get($id))->team_name_raw;
-            $points = fn(string $id) => optional($a->get($id))->points;
-
-            return [
-                'id'=>$s->season_id,'season'=>$s->season_name,'sequence'=>$s->sequence,'league_id'=>$s->league_id,
-                'format'=>$s->format,'cancelled'=>(bool)$s->cancelled,'status'=>$s->status,'note'=>$s->note,
-                'champion'=>$winner('champion'),'runner_up'=>$winner('second'),'third_place'=>$winner('third'),
-                'art_ross'=>$player('art_ross'),'art_ross_team'=>$team('art_ross'),'art_ross_points'=>$points('art_ross'),
-                'norris'=>$player('norris'),'norris_team'=>$team('norris'),'norris_points'=>$points('norris'),
-                'vezina'=>$player('vezina'),'vezina_team'=>$team('vezina'),'vezina_points'=>$points('vezina'),
-                'calder'=>$player('calder'),'calder_team'=>$team('calder'),'calder_points'=>$points('calder'),
-            ];
-        })->all();
+        $rows = $this->history()['seasons'] ?? [];
+        usort($rows, fn($a,$b) => ($b['sequence'] ?? 0) <=> ($a['sequence'] ?? 0));
+        return $rows;
     }
 
     public function season(string $season): ?array
     {
-        foreach ($this->seasons() as $row) {
-            if ($row['season'] === $season || $row['id'] === $season) return $row;
+        foreach ($this->history()['seasons'] ?? [] as $row) {
+            if (($row['season'] ?? '') === $season) return $row;
         }
         return null;
     }
 
     public function teamSeasons(?string $season = null, ?string $team = null): array
     {
-        $q = DB::table('team_seasons as ts')
-            ->join('seasons as s','s.season_id','=','ts.season_id')
-            ->join('franchises as f','f.franchise_id','=','ts.franchise_id')
-            ->select('ts.*','s.season_name','s.sequence','s.format','f.franchise_name');
-
-        if ($season) $q->where(function($x) use($season){ $x->where('s.season_name',$season)->orWhere('s.season_id',$season); });
-        if ($team) $q->where('f.franchise_name',$team);
-
-        $rows = $q->orderByDesc('s.sequence')->orderBy('ts.rank')->get();
-
-        return $rows->map(fn($r)=>[
-            'season'=>$r->season_name,'season_id'=>$r->season_id,'team'=>$r->franchise_name,'franchise_id'=>$r->franchise_id,
-            'original_name'=>$r->original_name,'format'=>$r->format,'rank'=>$r->rank,
-            'w'=>$r->w,'l'=>$r->l,'t'=>$r->t,'standings_points'=>$r->standings_points,
-            'fantasy_points_for'=>$r->fantasy_points_for,'fantasy_points_against'=>$r->fantasy_points_against,
-            'player_games'=>$r->player_games,'fantasy_points_per_player_game'=>$r->fantasy_points_per_player_game,
-        ])->all();
+        $rows = $this->history()['team_seasons'] ?? [];
+        $rows = array_values(array_filter($rows, function($r) use($season,$team) {
+            return (!$season || ($r['season'] ?? '') === $season)
+                && (!$team || ($r['team'] ?? '') === $team);
+        }));
+        usort($rows, function($a,$b) {
+            if (($a['season'] ?? '') === ($b['season'] ?? '')) return ($a['rank'] ?? 999) <=> ($b['rank'] ?? 999);
+            return strcmp($b['season'] ?? '', $a['season'] ?? '');
+        });
+        return $rows;
     }
 
     public function teams(): array
     {
-        $franchises = DB::table('franchises')->orderBy('franchise_name')->get();
-        $seasonRows = DB::table('team_seasons as ts')->join('seasons as s','s.season_id','=','ts.season_id')
-            ->select('ts.*','s.format')->get()->groupBy('franchise_id');
-        $awards = DB::table('awards')->get()->groupBy('franchise_id');
-
-        return $franchises->map(function($f) use($seasonRows,$awards) {
-            $history = $seasonRows->get($f->franchise_id, collect());
-            $a = $awards->get($f->franchise_id, collect());
-            $h2h = $history->filter(fn($r)=>stripos($r->format ?? '', 'head') !== false);
-            $w=(int)$h2h->sum('w'); $l=(int)$h2h->sum('l'); $t=(int)$h2h->sum('t'); $gp=$w+$l+$t;
-            return [
-                'id'=>$f->franchise_id,'team'=>$f->franchise_name,'active'=>(bool)$f->active_in_2025_26,
-                'titles'=>$a->where('award_type_id','champion')->count(),
-                'finals'=>$a->whereIn('award_type_id',['champion','second'])->count(),
-                'h2h_first'=>$a->where('award_type_id','president')->count(),
-                'points_leader'=>$a->where('award_type_id','leader')->count(),
-                'w'=>$w,'l'=>$l,'t'=>$t,'win_pct'=>$gp ? (($w + 0.5*$t)/$gp) : null,
-                'fantrax_seasons'=>$history->count(),
-            ];
-        })->all();
+        $rows = $this->history()['team_summary'] ?? [];
+        usort($rows, fn($a,$b) => strcasecmp($a['team'] ?? '', $b['team'] ?? ''));
+        return $rows;
     }
 
     public function team(string $slug): ?array
     {
         foreach ($this->teams() as $team) {
-            if (Str::slug($team['team']) === $slug || $team['id'] === $slug) return $team;
+            if (Str::slug($team['team'] ?? '') === $slug) return $team;
         }
         return null;
     }
 
     public function trades(): array
     {
-        $trades = DB::table('trades as t')->join('seasons as s','s.season_id','=','t.season_id')
-            ->select('t.*','s.season_name','s.sequence')->orderByDesc('s.sequence')->orderByDesc('t.trade_datetime')->get();
-        $assets = DB::table('trade_assets')->orderBy('item_order')->get()->groupBy('trade_id');
+        $h = $this->history();
+        $groups = $h['trades_by_season'] ?? [];
 
-        return $trades->map(function($t) use($assets) {
-            $rows = $assets->get($t->trade_id, collect());
-            $label = function($x) {
-                $text = $x->asset_description ?: ucfirst($x->asset_type ?? 'asset');
-                if ($x->contract_years_at_trade) $text .= ' ('.$x->contract_years_at_trade.' '.($x->contract_years_at_trade == 1 ? 'Year' : 'Years').')';
-                return $text;
-            };
-            return [
-                'id'=>$t->trade_id,'season'=>$t->season_name,'date'=>$t->trade_date_raw,'from'=>$t->from_name_raw,'to'=>$t->to_name_raw,
-                'from_items'=>$rows->where('source_side','from')->map($label)->values()->all(),
-                'to_items'=>$rows->where('source_side','to')->map($label)->values()->all(),
-                'vetoed'=>(bool)$t->is_vetoed,'reversed'=>(bool)$t->is_reversed,'status'=>$t->status,
-            ];
-        })->all();
+        foreach (($h['trades_authenticated_by_season'] ?? []) as $season => $rows) {
+            $groups[$season] = array_merge($groups[$season] ?? [], $rows);
+        }
+
+        if (!empty($h['trades_2025_26'])) $groups['2025-26'] = array_merge($groups['2025-26'] ?? [], $h['trades_2025_26']);
+
+        foreach (($h['vetoed_trades_by_season'] ?? []) as $season => $rows) {
+            $groups[$season] = array_merge($groups[$season] ?? [], $rows);
+        }
+
+        if (!empty($h['trades_2019_20_reversed'])) {
+            $groups['2019-20'] = array_merge($groups['2019-20'] ?? [], $h['trades_2019_20_reversed']);
+        }
+
+        $seen = [];
+        $out = [];
+        foreach ($groups as $season => $rows) {
+            foreach ($rows as $row) {
+                $key = $row['id'] ?? md5($season.json_encode($row));
+                if (isset($seen[$key])) continue;
+                $seen[$key] = true;
+                $row['season'] = $season;
+
+                if (!empty($row['contract_items'])) {
+                    foreach (['from','to'] as $side) {
+                        $labels = $row['contract_items'][$side] ?? [];
+                        if (!$labels || empty($row[$side.'_items'])) continue;
+                        $playersOnly = [];
+                        foreach ($row[$side.'_items'] as $i => $item) {
+                            if (stripos($item, 'Draft Pick') === false && isset($labels[count($playersOnly)]['label'])) {
+                                $label = trim($labels[count($playersOnly)]['label']);
+                                if ($label && !in_array(strtoupper($label), ['FA','MINORS'], true)) {
+                                    $row[$side.'_items'][$i] = $item.' ('.ucwords(strtolower($label)).')';
+                                } elseif ($label) {
+                                    $row[$side.'_items'][$i] = $item.' ('.$label.')';
+                                }
+                                $playersOnly[] = $item;
+                            } elseif (stripos($item, 'Draft Pick') === false) {
+                                $playersOnly[] = $item;
+                            }
+                        }
+                    }
+                }
+
+                $out[] = $row;
+            }
+        }
+        usort($out, function($a,$b){
+            $s = strcmp($b['season'] ?? '', $a['season'] ?? '');
+            if ($s !== 0) return $s;
+            return strcmp($b['date'] ?? '', $a['date'] ?? '');
+        });
+        return $out;
     }
 
     public function draftSeason(string $season): array
     {
-        $draft = DB::table('drafts as d')->join('seasons as s','s.season_id','=','d.season_id')
-            ->where(function($q) use($season){$q->where('s.season_name',$season)->orWhere('s.season_id',$season);})
-            ->select('d.draft_id')->first();
-        if (!$draft) return [];
-
-        return DB::table('draft_picks as dp')->leftJoin('players as p','p.player_id','=','dp.player_id')
-            ->leftJoin('franchises as f','f.franchise_id','=','dp.franchise_id')->where('dp.draft_id',$draft->draft_id)
-            ->select('dp.*','p.player_name','f.franchise_name')->orderBy('dp.overall_pick')->get()->map(fn($r)=>[
-                'overall'=>$r->overall_pick,'round'=>$r->round,'pick'=>$r->pick_in_round,'player'=>$r->player_name,
-                'team'=>$r->franchise_name ?: $r->team_name_raw,'franchise_id'=>$r->franchise_id,
-            ])->all();
+        $teams = $this->drafts()[$season] ?? [];
+        $rows = [];
+        foreach ($teams as $team => $picks) {
+            foreach ($picks as $pick) {
+                $pick['team'] = $team;
+                $rows[] = $pick;
+            }
+        }
+        usort($rows, fn($a,$b) => ($a['overall'] ?? 9999) <=> ($b['overall'] ?? 9999));
+        return $rows;
     }
 
     public function draftSeasons(): array
     {
-        return DB::table('drafts as d')->join('seasons as s','s.season_id','=','d.season_id')
-            ->orderByDesc('s.sequence')->pluck('s.season_name')->all();
+        $seasons = array_keys($this->drafts());
+        rsort($seasons);
+        return $seasons;
     }
 
     public function prizeTotals(): array
     {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('prize_awards')) return [];
         return DB::table('prize_awards as pa')->join('franchises as f','f.franchise_id','=','pa.franchise_id')
             ->select('f.franchise_id','f.franchise_name',DB::raw('SUM(pa.amount_cents) total_cents'),DB::raw('COUNT(*) awards'))
             ->groupBy('f.franchise_id','f.franchise_name')->orderByDesc('total_cents')->get()->map(fn($r)=>(array)$r)->all();
