@@ -19,7 +19,7 @@
   <div id="tradeList" class="season-list">
   @foreach($trades as $t)
     @php($hay=strtolower(($t['from']??'').' '.($t['to']??'').' '.implode(' ',$t['from_items']??[]).' '.implode(' ',$t['to_items']??[])))
-    @php($teamsHay=strtolower(($t['from']??'').'|'.($t['to']??'')))
+    @php($teamsHay=strtolower(implode('|',$t['filter_teams'] ?? [$t['from']??'',$t['to']??''])))
     <article class="card trade-item" data-season="{{ $t['season'] }}" data-search="{{ $hay }}" data-teams="{{ $teamsHay }}">
       <div class="section-title">
         <div><strong>{{ $t['from'] ?? '?' }} ↔ {{ $t['to'] ?? '?' }}</strong><br><span class="subtle">{{ $t['date'] ?? '' }}</span></div>
