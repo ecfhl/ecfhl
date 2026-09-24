@@ -65,7 +65,11 @@ class EcfhlData
         $h = $this->history();
         $groups = $h['trades_by_season'] ?? [];
 
-        if (!empty($h['trades_2025_26'])) $groups['2025-26'] = $h['trades_2025_26'];
+        foreach (($h['trades_authenticated_by_season'] ?? []) as $season => $rows) {
+            $groups[$season] = array_merge($groups[$season] ?? [], $rows);
+        }
+
+        if (!empty($h['trades_2025_26'])) $groups['2025-26'] = array_merge($groups['2025-26'] ?? [], $h['trades_2025_26']);
 
         foreach (($h['vetoed_trades_by_season'] ?? []) as $season => $rows) {
             $groups[$season] = array_merge($groups[$season] ?? [], $rows);
