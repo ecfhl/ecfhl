@@ -27,14 +27,26 @@ Artisan::command('ecfhl:sync', function () {
         );
 
         $decoded = $response->json();
-        $keys = is_array($decoded) ? array_slice(array_keys($decoded), 0, 30) : [];
-        $sample = is_array($decoded) ? array_slice($decoded, 0, 1, true) : null;
 
-        Log::info('ECFHL source shape', [
-            'source' => $key,
-            'keys' => $keys,
-            'sample' => $sample,
-        ]);
+        if ($key === 'history') {
+            Log::info('ECFHL history shape', [
+                'league' => $decoded['league'] ?? null,
+                'coverage' => $decoded['coverage'] ?? null,
+                'seasons_count' => count($decoded['seasons'] ?? []),
+                'seasons_sample' => array_slice($decoded['seasons'] ?? [], 0, 2),
+                'team_seasons_count' => count($decoded['team_seasons'] ?? []),
+                'team_seasons_sample' => array_slice($decoded['team_seasons'] ?? [], 0, 2),
+                'team_summary_type' => gettype($decoded['team_summary'] ?? null),
+                'team_summary_sample' => array_slice($decoded['team_summary'] ?? [], 0, 2, true),
+                'trade_seasons' => array_keys($decoded['trades_by_season'] ?? []),
+                'trade_sample' => array_slice($decoded['trades_by_season'] ?? [], 0, 1, true),
+            ]);
+        } else {
+            Log::info('ECFHL drafts shape', [
+                'seasons' => array_keys($decoded ?? []),
+                'sample' => array_slice($decoded ?? [], 0, 1, true),
+            ]);
+        }
 
         $this->info("Synced {$key}");
     }
