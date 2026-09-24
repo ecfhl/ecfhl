@@ -50,7 +50,18 @@ class EcfhlData
             else $q->where('f.franchise_name',$team);
         }
 
-        return $q->orderByDesc('s.sequence')->orderBy('ts.rank')->get()->map(function($r) {
+        $rows = $q->orderByDesc('s.sequence')->orderBy('ts.rank')->get();
+        $seasonIds = $rows->pluck('season_id')->unique()->values();
+        $franchiseIds = $rows->pluck('franchise_id')->unique()->values();
+        $finishes = DB::table('awards')
+            ->whereIn('season_id',$seasonIds)
+            ->whereIn('franchise_id',$franchiseIds)
+            ->whereIn('award_type_id',['champion','second','third'])
+            ->get()
+            ->keyBy(fn($a)=>$a->season_id.'|'.$a->franchise_id);
+
+        return $rows->map(function($r) use($finishes) {
+            $finish = $finishes->get($r->season_id.'|'.$r->franchise_id);
             return [
                 'season'=>$r->season_name,
                 'season_id'=>$r->season_id,
@@ -59,6 +70,7 @@ class EcfhlData
                 'original_name'=>$r->original_name,
                 'format'=>$r->format,
                 'rank'=>$r->rank,
+                'playoff_finish'=>$finish?->award_type_id,
                 'w'=>$r->w,'l'=>$r->l,'t'=>$r->t,
                 'standings_points'=>$r->standings_points,
                 'fantasy_points_for'=>$r->fantasy_points_for,
@@ -218,6 +230,31 @@ class EcfhlData
                 $out[]=$row;
             }
         }
+        $dbTrades = DB::table('trades as t')
+            ->leftJoin('franchises as ff','ff.franchise_id','=','t.from_franchise_id')
+            ->leftJoin('franchises as tf','tf.franchise_id','=','t.to_franchise_id')
+            ->select('t.source_trade_id','t.trade_id','t.from_franchise_id','t.to_franchise_id','ff.franchise_name as canonical_from','tf.franchise_name as canonical_to')
+            ->get();
+
+        $tradeMap=[];
+        foreach($dbTrades as $dbt){
+            if($dbt->source_trade_id) $tradeMap[$dbt->source_trade_id]=$dbt;
+            $tradeMap[$dbt->trade_id]=$dbt;
+        }
+
+        foreach($out as &$row){
+            $dbt=$tradeMap[$row['id']??'']??null;
+            $filters=[];
+            if($dbt){
+                if($dbt->canonical_from) $filters[]=$this->displayTeamName($dbt->canonical_from,$dbt->from_franchise_id);
+                if($dbt->canonical_to) $filters[]=$this->displayTeamName($dbt->canonical_to,$dbt->to_franchise_id);
+            }
+            $filters[]=$row['from']??'';
+            $filters[]=$row['to']??'';
+            $row['filter_teams']=array_values(array_unique(array_filter($filters)));
+        }
+        unset($row);
+
         usort($out,function($a,$b){
             $s=strcmp($b['season']??'',$a['season']??'');
             return $s!==0?$s:strcmp($b['date']??'',$a['date']??'');
