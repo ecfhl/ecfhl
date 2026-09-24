@@ -2,4 +2,4 @@
 set -eu
 
 php artisan migrate --force
-php artisan db:seed --force
+php artisan ecfhl:sync
