@@ -68,8 +68,9 @@ Route::get('/trades', function (EcfhlData $data) {
     rsort($seasons);
     $teams = [];
     foreach ($trades as $t) {
-        if (!empty($t['from'])) $teams[$t['from']] = true;
-        if (!empty($t['to'])) $teams[$t['to']] = true;
+        foreach (($t['filter_teams'] ?? [$t['from'] ?? null,$t['to'] ?? null]) as $name) {
+            if ($name) $teams[$name] = true;
+        }
     }
     $teams = array_keys($teams);
     sort($teams,SORT_NATURAL|SORT_FLAG_CASE);
