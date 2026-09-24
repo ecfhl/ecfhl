@@ -2,6 +2,7 @@
 
 use App\Support\EcfhlData;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
 
 Route::get('/', function (EcfhlData $data) {
     $seasons = $data->seasons();
@@ -77,32 +78,11 @@ Route::get('/draft', function (EcfhlData $data) {
     return view('draft.index', ['seasons'=>$seasons, 'selected'=>$selected, 'picks'=>$data->draftSeason($selected)]);
 });
 
-Route::get('/prizes', fn(EcfhlData $data) => view('prizes', ['seasons'=>$data->seasons()]));
+Route::get('/prizes', fn(EcfhlData $data) => view('prizes', ['seasons'=>$data->seasons(), 'totals'=>$data->prizeTotals()]));
 
 Route::get('/rules', function () {
-    $sections = [
-        'Trades' => [
-            'No trades are allowed after the trade deadline.',
-            'Teams may trade draft picks for the upcoming draft only. Draft picks received in a trade may be traded again and remain valid if a team changes ownership or becomes defunct.',
-            'Every trade has a one-day review period. A trade is vetoed if four or more General Managers object to it.',
-        ],
-        'Drops and buyouts' => [
-            'A player may be dropped without penalty if the player retires, leaves the NHL, has a one-year contract, or is an eligible minor-league player.',
-            'One-year contract players may not normally be dropped during the offseason unless they are bought out, officially retire, or leave the NHL.',
-            'Buyout cost by contract remaining: three years — third-round pick; two years — fourth-round pick; one year — fifth-round pick.',
-        ],
-        'Free agents and waivers' => [
-            'Undrafted players become free agents after the draft. Free agents may be added until the trade deadline, provided the team remains within roster limits and creates a legal roster spot.',
-            'A dropped player remains on waivers for one day. If multiple teams claim the player, the team with the highest waiver priority receives the player and moves to the end of the waiver order.',
-        ],
-        'Playoffs' => [
-            'ECFHL Cup: seeds 1–7 qualify. Seed 1 receives a bye. Round 1 is #2 vs #7, #3 vs #6 and #4 vs #5. In Round 2, seed 1 plays the lowest remaining seed.',
-            'Loser Cup: seeds 8–14 qualify. Seed 8 receives a bye. Round 1 is #9 vs #14, #10 vs #13 and #11 vs #12. The winner receives Pick 1 and the runner-up receives Pick 2.',
-        ],
-        'Scoring' => [
-            'Skaters: goal 1 point; assist 1; power-play goal 1; short-handed goal 1; game-winning goal 1.',
-            'Goalies: a goalie goal is worth 2 points. Additional goalie scoring rules will be migrated from the full bylaws ledger.',
-        ],
-    ];
+    $sections = DB::table('rules')->orderBy('rule_id')->get()->groupBy('section')->map(function($items){
+        return $items->map(fn($r)=>trim(($r->subsection ? $r->subsection.' — ' : '').$r->rule_text))->all();
+    })->all();
     return view('rules', compact('sections'));
 });
