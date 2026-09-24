@@ -1,37 +1,49 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ECFHL</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; background: #f5f6f8; color: #14171a; }
-        main { max-width: 960px; margin: 80px auto; padding: 32px; background: #fff; border-radius: 12px; box-shadow: 0 12px 35px rgba(0,0,0,.08); }
-        h1 { margin-top: 0; }
-        .status { display: inline-block; padding: 7px 11px; border-radius: 999px; font-weight: 700; }
-        .ok { background: #e8f5e9; color: #176b2c; }
-        .bad { background: #fdecec; color: #9d1c1c; }
-        .details { margin-top: 24px; padding: 18px; background: #f8f9fb; border-radius: 8px; }
-        code { font-family: Consolas, monospace; }
-    </style>
-</head>
-<body>
-<main>
-    <h1>ECFHL</h1>
-    <p>East Coast Fantasy Hockey League history.</p>
-
-    @if ($databaseConnected)
-        <p class="status ok">MySQL connected</p>
-        <div class="details">
-            <div><strong>Database:</strong> <code>{{ $databaseName }}</code></div>
-            <div><strong>MySQL version:</strong> <code>{{ $databaseVersion }}</code></div>
-            <div><strong>Application:</strong> Laravel 12</div>
-        </div>
-    @else
-        <p class="status bad">MySQL connection unavailable</p>
-    @endif
-
-    <p style="margin-top:24px;">The database-backed ECFHL rebuild is now running separately from the existing ecfhl.win site.</p>
-</main>
-</body>
-</html>
+@extends('layouts.app')
+@section('title','ECFHL History')
+@section('content')
+<section class="hero">
+  <div class="shell">
+    <div class="eyebrow">Established in 2007</div>
+    <h1>East Coast Fantasy Hockey League</h1>
+    <p>A complete record of champions, franchise identities, seasons, trades, and draft history.</p>
+    <div class="hero-actions">
+      <a class="button primary" href="/seasons">Explore seasons</a>
+      <a class="button secondary" href="/teams">View franchises</a>
+    </div>
+  </div>
+</section>
+<div class="stats-strip"><div class="shell stats-grid">
+  <div class="stat"><strong>{{ count($seasons) }}</strong><span>Seasons</span></div>
+  <div class="stat"><strong>{{ $championships }}</strong><span>Championships awarded</span></div>
+  <div class="stat"><strong>{{ $statsSeasons }}</strong><span>Seasons with statistics</span></div>
+  <div class="stat"><strong>{{ count($teams) }}</strong><span>Franchises</span></div>
+  <div class="stat"><strong>{{ count($trades) }}</strong><span>Trades recorded</span></div>
+</div></div>
+<section class="section"><div class="shell grid-2">
+  <article class="card"><div class="eyebrow">Latest season</div>
+  @if($latest)
+    <div class="section-title"><h2>{{ $latest['season'] }}</h2><span class="season-badge">{{ $latest['format'] ?? '' }}</span></div>
+    <div class="latest-grid">
+      <div class="placing"><small>🏆 Champion</small><strong>{{ $latest['champion'] ?? '—' }}</strong></div>
+      <div class="placing"><small>🥈 2nd</small><strong>{{ $latest['runner_up'] ?? '—' }}</strong></div>
+      <div class="placing"><small>🥉 3rd</small><strong>{{ $latest['third_place'] ?? '—' }}</strong></div>
+    </div>
+    <p class="subtle">Regular-season leader: <strong>{{ $latestLeader ?? '—' }}</strong></p>
+    <a href="/seasons/{{ rawurlencode($latest['season']) }}">View latest season →</a>
+  @endif
+  </article>
+  <article class="card"><div class="section-title"><h2>All-time leaders</h2><a href="/teams">Full franchise ledger →</a></div>
+    <div class="leader-list">@foreach($leaders as $label => $row)<div class="leader-row"><div><strong>{{ $row['value'] }}</strong><div class="subtle">{{ $label }}</div></div><strong>{{ $row['team'] }}</strong></div>@endforeach</div>
+  </article>
+</div></section>
+<section class="section" style="padding-top:0"><div class="shell">
+  <div class="section-title"><h2>Recent seasons</h2><a href="/seasons">All seasons →</a></div>
+  <div class="grid-3">@foreach(array_slice($seasons,0,6) as $season)<a class="feature-link" href="/seasons/{{ rawurlencode($season['season']) }}"><strong>{{ $season['season'] }}</strong><span>🏆 {{ $season['champion'] ?: 'No champion' }}</span><br><span>{{ $season['format'] ?? '' }}</span></a>@endforeach</div>
+</div></section>
+<section class="section" style="padding-top:0"><div class="shell feature-links">
+  <a class="feature-link" href="/seasons"><strong>Seasons</strong><span>Standings, finishes and playoff results →</span></a>
+  <a class="feature-link" href="/teams"><strong>Teams</strong><span>Franchise history, awards and records →</span></a>
+  <a class="feature-link" href="/trades"><strong>Trades</strong><span>Search every recorded transaction →</span></a>
+  <a class="feature-link" href="/draft"><strong>Draft</strong><span>Browse picks by year and franchise →</span></a>
+</div></section>
+@endsection
