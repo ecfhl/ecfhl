@@ -14,6 +14,7 @@ Artisan::command('ecfhl:sync', function () {
     foreach ($sources as $key => $url) {
         $response = Http::timeout(30)->retry(3, 1000)->get($url);
         $response->throw();
+        $decoded = $response->json();
 
         if ($key === 'history') {
             $replaceTeamName = function (&$value) use (&$replaceTeamName) {
@@ -40,8 +41,6 @@ Artisan::command('ecfhl:sync', function () {
                 'created_at' => now(),
             ]
         );
-
-        $decoded = $response->json();
 
         if ($key === 'history') {
             Log::info('ECFHL history shape', [
