@@ -17,7 +17,12 @@
     <tbody>
     @foreach($history as $r)
       @php
-        $finishIcon = $r['rank']==1 ? '🏆' : ($r['rank']==2 ? '🥈' : ($r['rank']==3 ? '🥉' : ''));
+        $finishIcon = match($r['playoff_finish'] ?? null) {
+          'champion' => '🏆',
+          'second' => '🥈',
+          'third' => '🥉',
+          default => ''
+        };
       @endphp
       <tr>
         <td><a href="/seasons/{{ rawurlencode($r['season']) }}"><strong>{{ $r['season'] }}</strong></a></td>
