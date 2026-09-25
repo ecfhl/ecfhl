@@ -48,12 +48,23 @@ Route::get('/trades', function(EcfhlData $data){
     $trades=$data->trades();$seasons=array_values(array_unique(array_column($trades,'season')));rsort($seasons);
     $teams=[];foreach($trades as $t)foreach(($t['filter_teams']??[$t['from']??null,$t['to']??null]) as $name)if($name)$teams[$name]=true;$teams=array_keys($teams);sort($teams,SORT_NATURAL|SORT_FLAG_CASE);
     $selectedSeason=(string)request('season','');$selectedTeam=(string)request('team','');
-    $names=array_column($data->teamLedger($data->mode(),'all'),'team','id');$traderCounts=[];$partnerCounts=[];$validTradeIds=[];
-    foreach($trades as $t){if($t['vetoed'])continue;$validTradeIds[]=$t['id'];$ids=array_values(array_unique(array_filter([$t['from_id']??null,$t['to_id']??null])));foreach($ids as $id)$traderCounts[$id]=($traderCounts[$id]??0)+1;if(count($ids)===2){sort($ids);$key=implode('|',$ids);$partnerCounts[$key]=($partnerCounts[$key]??0)+1;}}
+    $names=array_column($data->teamLedger($data->mode(),'all'),'team','id');$traderCounts=[];$partnerCounts=[];
+    foreach($trades as $t){if($t['vetoed'])continue;$ids=array_values(array_unique(array_filter([$t['from_id']??null,$t['to_id']??null])));foreach($ids as $id)$traderCounts[$id]=($traderCounts[$id]??0)+1;if(count($ids)===2){sort($ids);$key=implode('|',$ids);$partnerCounts[$key]=($partnerCounts[$key]??0)+1;}}
     arsort($traderCounts);$topTraders=[];foreach($traderCounts as $id=>$n)$topTraders[]=['team'=>$names[$id]??$id,'value'=>$n,'score'=>$n];
     arsort($partnerCounts);$topTradePartners=[];foreach($partnerCounts as $key=>$n){[$a,$b]=explode('|',$key,2);$topTradePartners[]=['team'=>($names[$a]??$a).' ↔ '.($names[$b]??$b),'value'=>$n,'score'=>$n];}
+    // Count first-round picks directly from the rendered trade descriptions. This covers
+    // historical imports where draft_round/pick_original_franchise_id were not populated.
+    // A pick is credited to the franchise that actually sent it in that trade.
     $firstRoundTraded=[];
-    if($validTradeIds){foreach(DB::table('trade_assets')->whereIn('trade_id',$validTradeIds)->where('draft_round',1)->get() as $asset){$owner=$asset->pick_original_franchise_id;$sender=$asset->from_franchise_id;if($owner&&$sender&&$owner===$sender)$firstRoundTraded[$owner]=($firstRoundTraded[$owner]??0)+1;}}
+    foreach($trades as $t){
+        if($t['vetoed'])continue;
+        foreach(['from','to'] as $side){
+            $sender=$t[$side.'_id']??null;if(!$sender)continue;
+            foreach(($t[$side.'_items']??[]) as $item){
+                if(preg_match('/(?:draft\s+pick\s+)?round\s*1(?!\d)/i',(string)$item))$firstRoundTraded[$sender]=($firstRoundTraded[$sender]??0)+1;
+            }
+        }
+    }
     arsort($firstRoundTraded);$topFirstRoundTraders=[];foreach($firstRoundTraded as $id=>$n)$topFirstRoundTraders[]=['team'=>$names[$id]??$id,'value'=>$n,'score'=>$n];
     return view('trades.index',compact('trades','seasons','teams','selectedSeason','selectedTeam','topTraders','topTradePartners','topFirstRoundTraders'));
 });
