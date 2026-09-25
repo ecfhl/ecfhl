@@ -4,6 +4,9 @@
 <div class="shell">
   <div class="page-head"><div class="eyebrow">Season history</div><h1>{{ $season['season'] }}</h1><p>{{ $season['format'] ?? '' }} · {{ $season['status'] ?? '' }}</p></div>
 
+  @php $seasonOptions = app(\App\Support\Archive::class)->seasons(); @endphp
+  <div style="display:flex;justify-content:flex-end;margin:0 0 22px"><select aria-label="Go to season" style="width:260px;padding:10px 12px;border-radius:8px" onchange="if(this.value) window.location.href=this.value"><option value="">Go to season...</option>@foreach($seasonOptions as $option)<option value="/seasons/{{ rawurlencode($option['season']) }}" {{ $option['season']===$season['season']?'selected':'' }}>{{ $option['season'] }}</option>@endforeach</select></div>
+
   <div class="grid-3" style="margin-bottom:20px">
     <div class="card"><span class="subtle">Champion</span><h3>🏆 {{ $season['champion'] ?: 'None' }}</h3></div>
     <div class="card"><span class="subtle">Second</span><h3>🥈 {{ $season['runner_up'] ?: '—' }}</h3></div>
