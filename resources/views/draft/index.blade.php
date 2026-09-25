@@ -13,6 +13,7 @@
 </article>
 @endforeach
 </div>
+<div id="draft-results"></div>
 <form class="toolbar" method="get" id="draftForm">
   <select class="control" name="season" onchange="this.form.submit()"><option value="all" @selected($selected==='all')>All years</option>@foreach($seasons as $s)<option value="{{ $s }}" @selected($s===$selected)>{{ $s }}</option>@endforeach</select>
   <input id="draftSearch" name="q" value="{{ $q }}" class="control" style="flex:1;min-width:220px" placeholder="Search player or team…">
@@ -25,6 +26,9 @@
 <script>
 const draftSearch=document.getElementById('draftSearch');draftSearch.addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#draftTable tbody tr').forEach(r=>r.style.display=r.dataset.search.includes(q)?'':'none');});
 document.querySelectorAll('.expand-card-link').forEach(btn=>btn.addEventListener('click',()=>{const box=document.getElementById(btn.dataset.expandTarget),opening=box.querySelector('.expand-row[hidden]')!==null;box.querySelectorAll('.expand-row').forEach((r,i)=>r.hidden=!opening&&i>=5);btn.textContent=opening?'Show top 5':'View all';}));
+@if($selected !== 'all')
+window.addEventListener('load',()=>{const target=document.getElementById('draft-results');if(target)target.scrollIntoView({block:'start'});});
+@endif
 </script>
-<style>.expand-card-link{display:block;margin:14px auto 0;padding:0;border:0;background:none;color:var(--accent,#1d5fa7);font:inherit;font-weight:700;cursor:pointer}.expand-card-link:hover{text-decoration:underline}</style>
+<style>#draft-results{scroll-margin-top:170px}.expand-card-link{display:block;margin:14px auto 0;padding:0;border:0;background:none;color:var(--accent,#1d5fa7);font:inherit;font-weight:700;cursor:pointer}.expand-card-link:hover{text-decoration:underline}</style>
 @endpush
