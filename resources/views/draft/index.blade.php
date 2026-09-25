@@ -2,11 +2,15 @@
 @section('title','Draft · ECFHL')
 @section('content')
 <div class="shell"><div class="page-head"><div class="eyebrow">Draft archive</div><h1>Draft</h1><p>Browse every recorded ECFHL draft selection.</p></div>
-<div class="grid-3" style="margin-bottom:24px">
-@foreach(['overall1'=>'#1 Overall Picks','top5'=>'Top 5 Picks','round1'=>'1st Round Picks'] as $key=>$title)
-<article class="card" style="padding:20px"><h3 style="margin:0 0 14px">{{ $title }}</h3><div class="leader-list" id="draft-{{ $key }}">
-@forelse(($draftLeaders[$key]??[]) as $i=>$row)<div class="leader-row expand-row" @if($i>=5) hidden @endif><span><strong>{{ $i+1 }}.</strong> {{ $row['team'] }}</span><strong>{{ $row['value'] }}</strong></div>@empty<div class="subtle">No draft data</div>@endforelse
-</div>@if(count($draftLeaders[$key]??[])>5)<button type="button" class="expand-card-link" data-expand-target="draft-{{ $key }}">View all</button>@endif</article>
+<div class="grid-3 leader-cards" style="margin-bottom:22px">
+@foreach([['overall1','#1 Overall Picks'],['top5','Top 5 Picks'],['round1','1st Round Picks']] as [$key,$title])
+<article class="card leader-card" data-expand-card>
+  <h3 class="leader-card-title">{{ $title }}</h3>
+  <div id="draft-{{ $key }}">
+  @forelse(($draftLeaders[$key]??[]) as $i=>$row)<div class="expand-row" @if($i>=5) hidden @endif>@include('partials.leader-row')</div>@empty<div class="empty">No draft data.</div>@endforelse
+  </div>
+  @if(count($draftLeaders[$key]??[])>5)<button type="button" class="expand-card-link" data-expand-target="draft-{{ $key }}">View all</button>@endif
+</article>
 @endforeach
 </div>
 <form class="toolbar" method="get" id="draftForm">
