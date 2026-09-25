@@ -44,7 +44,19 @@ Route::get('/teams/{slug}', function(string $slug,EcfhlData $data){
     return view('teams.show',compact('team','history','tradeCount','firstRoundCount','firstRoundBySeason','tradePartners'));
 });
 
-Route::get('/trades', function(EcfhlData $data){$trades=$data->trades();$seasons=array_values(array_unique(array_column($trades,'season')));rsort($seasons);$teams=[];foreach($trades as $t)foreach(($t['filter_teams']??[$t['from']??null,$t['to']??null]) as $name)if($name)$teams[$name]=true;$teams=array_keys($teams);sort($teams,SORT_NATURAL|SORT_FLAG_CASE);$selectedSeason=(string)request('season','');$selectedTeam=(string)request('team','');return view('trades.index',compact('trades','seasons','teams','selectedSeason','selectedTeam'));});
+Route::get('/trades', function(EcfhlData $data){
+    $trades=$data->trades();$seasons=array_values(array_unique(array_column($trades,'season')));rsort($seasons);
+    $teams=[];foreach($trades as $t)foreach(($t['filter_teams']??[$t['from']??null,$t['to']??null]) as $name)if($name)$teams[$name]=true;$teams=array_keys($teams);sort($teams,SORT_NATURAL|SORT_FLAG_CASE);
+    $selectedSeason=(string)request('season','');$selectedTeam=(string)request('team','');
+    $names=array_column($data->teamLedger($data->mode(),'all'),'team','id');$traderCounts=[];$partnerCounts=[];$validTradeIds=[];
+    foreach($trades as $t){if($t['vetoed'])continue;$validTradeIds[]=$t['id'];$ids=array_values(array_unique(array_filter([$t['from_id']??null,$t['to_id']??null])));foreach($ids as $id)$traderCounts[$id]=($traderCounts[$id]??0)+1;if(count($ids)===2){sort($ids);$key=implode('|',$ids);$partnerCounts[$key]=($partnerCounts[$key]??0)+1;}}
+    arsort($traderCounts);$topTraders=[];foreach($traderCounts as $id=>$n)$topTraders[]=['team'=>$names[$id]??$id,'value'=>$n,'score'=>$n];
+    arsort($partnerCounts);$topTradePartners=[];foreach($partnerCounts as $key=>$n){[$a,$b]=explode('|',$key,2);$topTradePartners[]=['team'=>($names[$a]??$a).' ↔ '.($names[$b]??$b),'value'=>$n,'score'=>$n];}
+    $firstRoundTraded=[];
+    if($validTradeIds){foreach(DB::table('trade_assets')->whereIn('trade_id',$validTradeIds)->where('draft_round',1)->get() as $asset){$owner=$asset->pick_original_franchise_id;$sender=$asset->from_franchise_id;if($owner&&$sender&&$owner===$sender)$firstRoundTraded[$owner]=($firstRoundTraded[$owner]??0)+1;}}
+    arsort($firstRoundTraded);$topFirstRoundTraders=[];foreach($firstRoundTraded as $id=>$n)$topFirstRoundTraders[]=['team'=>$names[$id]??$id,'value'=>$n,'score'=>$n];
+    return view('trades.index',compact('trades','seasons','teams','selectedSeason','selectedTeam','topTraders','topTradePartners','topFirstRoundTraders'));
+});
 
 Route::get('/draft', function(EcfhlData $data){$seasons=$data->draftSeasons();$selected=request('season',$seasons[0]??'all');if($selected!=='all'&&!in_array($selected,$seasons,true))$selected=$seasons[0]??'all';$q=trim((string)request('q',''));$team=trim((string)request('team',''));$picks=$data->draftSeason($selected);if($q!==''){$needle=mb_strtolower($q);$picks=array_values(array_filter($picks,fn($p)=>str_contains(mb_strtolower(($p['player']??'').' '.($p['team']??'')),$needle)));}if($team!==''){$needle=mb_strtolower($team);$picks=array_values(array_filter($picks,fn($p)=>mb_strtolower($p['team']??'')===$needle));}return view('draft.index',compact('seasons','selected','picks','q'));});
 
