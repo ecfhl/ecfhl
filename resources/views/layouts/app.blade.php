@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="{{ asset('ecfhl-logo.png') }}">
     <link rel="shortcut icon" type="image/png" href="{{ asset('ecfhl-logo.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('ecfhl-logo.png') }}">
-    <link rel="stylesheet" href="/app.css?v=3">
+    <link rel="stylesheet" href="/app.css?v=4">
 </head>
 <body>
 <header class="site-header">
@@ -31,22 +31,20 @@
             ] as $url => $label)
                 <a href="{{ $url }}" class="{{ request()->is(ltrim($url,'/')) || ($url==='/' && request()->is('/')) ? 'active' : '' }}">{{ $label }}</a>
             @endforeach
+            @if(!request()->is('rules'))
+                @php($seasonMode = app(\App\Support\Archive::class)->mode())
+                <div class="header-season-filter" role="group" aria-label="Season type">
+                    @foreach(['h2h'=>'Head-to-Head','total'=>'Total Points'] as $value=>$label)
+                        <button type="button" class="header-filter-button season-type-choice {{ in_array($seasonMode,[$value,'all'])?'active':'' }}" data-value="{{ $value }}">{{ $label }}</button>
+                    @endforeach
+                </div>
+            @endif
             <button class="theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button>
         </nav>
     </div>
 </header>
 
-<main>
-@if(!request()->is('rules'))
-@php($seasonMode = app(\App\Support\Archive::class)->mode())
-<div class="shell global-season-filter"><div class="filter-group" role="group" aria-label="Season type">
-<span>Season type</span>
-@foreach(['h2h'=>'Head-to-Head','total'=>'Total Points'] as $value=>$label)
-<label class="filter-button {{ in_array($seasonMode,[$value,'all'])?'active':'' }}"><input class="season-type-choice" type="checkbox" value="{{ $value }}" @checked(in_array($seasonMode,[$value,'all']))> {{ $label }}</label>
-@endforeach
-</div></div>
-@endif
-@yield('content')</main>
+<main>@yield('content')</main>
 
 <footer class="site-footer">
     <div class="shell footer-inner">
@@ -67,9 +65,12 @@ function toggleTheme(){
 }
 </script>
 <script>
-document.querySelectorAll('.season-type-choice').forEach(input=>input.addEventListener('change',()=>{
- const choices=[...document.querySelectorAll('.season-type-choice:checked')].map(x=>x.value);
- const mode=choices.length===2?'all':(choices[0]||'none');
+document.querySelectorAll('.season-type-choice').forEach(button=>button.addEventListener('click',()=>{
+ const value=button.dataset.value;
+ const buttons=[...document.querySelectorAll('.season-type-choice')];
+ const selected=buttons.filter(x=>x.classList.contains('active')).map(x=>x.dataset.value);
+ const next=selected.includes(value)?selected.filter(x=>x!==value):[...selected,value];
+ const mode=next.length===2?'all':(next[0]||'none');
  document.cookie='ecfhl-season-type='+mode+'; Path=/; Max-Age=31536000; SameSite=Lax';
  const url=new URL(location.href);url.searchParams.set('type',mode);
  if (/^\/seasons\//.test(url.pathname)) url.pathname='/seasons';
