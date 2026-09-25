@@ -13,8 +13,6 @@
     <div class="card"><span class="subtle">Third</span><h3>🥉 {{ $season['third_place'] ?: '—' }}</h3></div>
   </div>
 
-  <div class="card" style="margin-bottom:20px"><strong>Season analysis</strong><p class="subtle">{{ $analysis }}</p></div>
-
   <div class="section-title"><h2>Standings</h2><span class="subtle">{{ count($standings) }} teams</span></div>
   <div class="table-card"><div class="table-scroll"><table class="data-table">
     <thead><tr><th class="num">Rank</th><th>Team</th><th class="num">W</th><th class="num">L</th><th class="num">T</th><th class="num">Pts</th><th class="num">Fpts</th><th class="num">Win %</th></tr></thead>
