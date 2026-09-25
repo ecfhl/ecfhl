@@ -1,0 +1,6 @@
+.header-season-filter{display:flex;align-items:center;gap:5px;margin-left:8px;padding-left:10px;border-left:1px solid rgba(255,255,255,.16)}
+.header-filter-button{appearance:none;border:1px solid rgba(255,255,255,.24);background:transparent;color:#dce6f2;border-radius:8px;padding:8px 10px;font:inherit;font-size:12px;line-height:1;cursor:pointer;white-space:nowrap}
+.header-filter-button:hover{background:rgba(255,255,255,.09);color:#fff}
+.header-filter-button.active{background:#d9a62e;border-color:#d9a62e;color:#071a33;font-weight:800}
+@media(max-width:1100px){.header-filter-button{padding:7px 8px;font-size:11px}.main-nav a{padding-left:8px;padding-right:8px}.nav-wrap{gap:16px}}
+@media(max-width:850px){.header-season-filter{order:-1;margin:0 0 4px;padding:8px 0 10px;border-left:0;border-bottom:1px solid rgba(255,255,255,.12);justify-content:center}.header-filter-button{padding:9px 12px}.main-nav .theme-toggle{align-self:center}}
