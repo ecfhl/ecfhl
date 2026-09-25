@@ -1,6 +1,8 @@
-.header-season-filter{display:flex;align-items:center;gap:5px;margin-left:8px;padding-left:10px;border-left:1px solid rgba(255,255,255,.16)}
-.header-filter-button{appearance:none;border:1px solid rgba(255,255,255,.24);background:transparent;color:#dce6f2;border-radius:8px;padding:8px 10px;font:inherit;font-size:12px;line-height:1;cursor:pointer;white-space:nowrap}
-.header-filter-button:hover{background:rgba(255,255,255,.09);color:#fff}
-.header-filter-button.active{background:#d9a62e;border-color:#d9a62e;color:#071a33;font-weight:800}
-@media(max-width:1100px){.header-filter-button{padding:7px 8px;font-size:11px}.main-nav a{padding-left:8px;padding-right:8px}.nav-wrap{gap:16px}}
-@media(max-width:850px){.header-season-filter{order:-1;margin:0 0 4px;padding:8px 0 10px;border-left:0;border-bottom:1px solid rgba(255,255,255,.12);justify-content:center}.header-filter-button{padding:9px 12px}.main-nav .theme-toggle{align-self:center}}
+.brand-area{margin-right:auto;display:flex;align-items:center;gap:14px}
+.brand-area .brand{margin-right:0}
+.header-season-filter{display:flex;align-items:center;gap:10px;align-self:flex-end;margin-bottom:9px}
+.header-filter-button{appearance:none;border:0;background:transparent;color:rgba(220,230,242,.62);padding:0 0 2px;font:inherit;font-size:10px;line-height:1.1;cursor:pointer;white-space:nowrap;border-bottom:1px solid transparent}
+.header-filter-button:hover{color:#fff}
+.header-filter-button.active{background:transparent;color:#e5bc55;border-bottom-color:#e5bc55;font-weight:700}
+@media(max-width:1100px){.brand-area{gap:9px}.header-season-filter{gap:7px}.header-filter-button{font-size:9px}.main-nav a{padding-left:8px;padding-right:8px}.nav-wrap{gap:14px}}
+@media(max-width:850px){.brand-area{margin-right:auto;display:block}.header-season-filter{margin:1px 0 0 55px;justify-content:flex-start;gap:12px}.header-filter-button{font-size:9px}.main-nav .theme-toggle{align-self:center}}
