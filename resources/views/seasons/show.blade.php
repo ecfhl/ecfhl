@@ -35,7 +35,7 @@
 
   <section class="section" style="padding-top:0"><div class="season-links-grid">
     <a class="card season-action-card" href="/trades?season={{ urlencode($season['season']) }}">
-      <span class="subtle">Top 14 traders this season</span>
+      <span class="subtle">Top traders this season</span>
       <div class="top-picks-list">@forelse($tradeLeaders as $r)<div><strong>{{ $r['team'] }}</strong> · {{ $r['value'] }} trades</div>@empty<div class="subtle">No completed trades</div>@endforelse</div>
       <span>View all {{ $tradeCount }} trades →</span>
     </a>
