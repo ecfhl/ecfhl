@@ -28,6 +28,7 @@
       @if($latest)<span class="season-badge">{{ $latest['format'] ?? '' }}</span>@endif
     </div>
     @if($latest)
+      {{-- Team names intentionally sit above the podium blocks. --}}
       <div class="podium">
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">
           <strong style="font-size:17px;text-align:center;margin-bottom:10px;line-height:1.2">{{ $latest['runner_up'] ?? '—' }}</strong>
