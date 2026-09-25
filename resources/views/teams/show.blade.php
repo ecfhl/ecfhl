@@ -28,6 +28,7 @@
         .franchise-summary .summary-card:last-child{border-right:0}
         .franchise-summary .summary-value{font-size:25px;font-weight:800;line-height:1.15;white-space:nowrap}
         .franchise-summary .summary-label{font-size:11px;line-height:1.25;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);white-space:nowrap}
+        .franchise-detail-cards{display:grid;grid-template-columns:1fr;gap:20px}
         @media(max-width:520px){
             .franchise-summary .summary-card{padding:14px 4px}
             .franchise-summary .summary-value{font-size:20px}
@@ -45,25 +46,13 @@
     <div class="table-card">
         <div class="table-scroll">
             <table class="data-table">
-                <thead>
-                    <tr><th>Season</th><th>Team name</th><th class="num">Finish</th><th class="num">Record</th><th class="num">Fpts</th></tr>
-                </thead>
+                <thead><tr><th>Season</th><th>Team name</th><th class="num">Finish</th><th class="num">Record</th><th class="num">Fpts</th></tr></thead>
                 <tbody>
                     @foreach($history as $r)
                         @php
                             $rank = isset($r['rank']) ? (int) $r['rank'] : null;
-                            $icon = match($r['playoff_finish'] ?? null) {
-                                'champion' => '🏆',
-                                'second' => '🥈',
-                                'third' => '🥉',
-                                default => ''
-                            };
-                            $suffix = in_array(($rank ?? 0) % 100, [11,12,13]) ? 'th' : match(($rank ?? 0) % 10) {
-                                1 => 'st',
-                                2 => 'nd',
-                                3 => 'rd',
-                                default => 'th'
-                            };
+                            $icon = match($r['playoff_finish'] ?? null) {'champion'=>'🏆','second'=>'🥈','third'=>'🥉',default=>''};
+                            $suffix = in_array(($rank ?? 0) % 100, [11,12,13]) ? 'th' : match(($rank ?? 0) % 10) {1=>'st',2=>'nd',3=>'rd',default=>'th'};
                             $finishText = trim($icon.' '.($rank > 0 ? $rank.$suffix : '—'));
                         @endphp
                         <tr>
@@ -80,7 +69,7 @@
     </div>
 
     <section class="section">
-        <div class="grid-3" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+        <div class="franchise-detail-cards">
             <article class="card leader-card">
                 <h3 class="leader-card-title">🔄 Trade Partners</h3>
                 @forelse($tradePartners as $i => $row)
@@ -88,11 +77,9 @@
                 @empty
                     <div class="empty">No recorded trades.</div>
                 @endforelse
-
                 @if(!empty($tradePartners))
                     <div class="leader-rank" style="font-weight:800"><span>Σ</span><strong>Total</strong><b>{{ array_sum(array_column($tradePartners, 'value')) }}</b></div>
                 @endif
-
                 <div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/trades?team={{ urlencode($team['team']) }}">View all trades →</a></div>
             </article>
 
@@ -103,11 +90,9 @@
                 @empty
                     <div class="empty">No recorded first-round picks.</div>
                 @endforelse
-
                 @if(!empty($firstRoundBySeason))
                     <div class="leader-rank" style="font-weight:800"><span>Σ</span><strong>Total</strong><b>{{ $firstRoundCount }}</b></div>
                 @endif
-
                 <div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/draft?season=all&team={{ urlencode($team['team']) }}">View all draft picks →</a></div>
             </article>
         </div>
