@@ -26,7 +26,7 @@ foreach($matches as $match){
 function check($condition,$message){if(!$condition)throw new RuntimeException($message);}
 $kernel=$app->make(Illuminate\Contracts\Http\Kernel::class);
 foreach(['h2h','total','all','none'] as $mode){
- foreach(['/','/seasons','/teams','/trades','/draft','/prizes','/players?q=Sidney','/rules'] as $path){
+ foreach(['/','/seasons','/teams','/teams/F001','/trades','/draft','/prizes','/players?q=Sidney','/rules'] as $path){
   $app->forgetScopedInstances();
   $request=Request::create($path.(str_contains($path,'?')?'&':'?').'type='.$mode);
   $response=$kernel->handle($request);
@@ -51,4 +51,4 @@ $app->forgetScopedInstances();$app->instance('request',Request::create('/','GET'
 $data=$app->make(App\Support\Archive::class);check($data->mode()==='total','Cookie not restored');
 foreach($data->seasons() as $s)check(stripos($s['format'],'head')===false,'H2H leaked into total points');
 Artisan::call('view:cache');
-echo "Archive smoke checks passed: 34 page renders, filtering, names, leaders, chronology, cookie persistence, and Blade compilation.\n";
+echo "Archive smoke checks passed: 38 page renders, filtering, names, leaders, chronology, cookie persistence, and Blade compilation.\n";
