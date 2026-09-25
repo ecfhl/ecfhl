@@ -24,7 +24,20 @@ Route::get('/seasons', function (EcfhlData $data) {
     return view('seasons.index',compact('seasons','seasonLeaders'));
 });
 
-Route::get('/seasons/{season}', function(string $season,EcfhlData $data){$season=rawurldecode($season);$row=$data->season($season);if(!$row)return redirect('/seasons')->with('notice','This season is outside the selected season types.');return view('seasons.show',['season'=>$row,'analysis'=>$data->analysis($row),'tradeLeaders'=>$data->seasonTradeLeaders($season),'standings'=>$data->teamSeasons($season),'awards'=>$data->seasonAwards($season),'tradeCount'=>$data->seasonTradeCount($season),'topPicks'=>array_slice($data->draftSeason($season),0,3)]);})->where('season','.*');
+Route::get('/seasons/{season}', function(string $season,EcfhlData $data){
+    $season=rawurldecode($season);$row=$data->season($season);
+    if(!$row)return redirect('/seasons')->with('notice','This season is outside the selected season types.');
+    $draftPicks=$data->draftSeason($season);
+    $firstRoundPicks=array_values(array_filter($draftPicks,fn($p)=>(int)($p['round']??0)===1));
+    return view('seasons.show',[
+        'season'=>$row,
+        'tradeLeaders'=>array_slice($data->seasonTradeLeaders($season),0,14),
+        'standings'=>$data->teamSeasons($season),
+        'awards'=>$data->seasonAwards($season),
+        'tradeCount'=>$data->seasonTradeCount($season),
+        'topPicks'=>$firstRoundPicks,
+    ]);
+})->where('season','.*');
 
 Route::get('/teams', function(EcfhlData $data){
     $type=$data->mode();$status=request('status','all');$allTeams=$data->teamLedger($type,'all');$teams=$data->teamLedger($type,$status);$overview=$data->overviewLeaders();
@@ -60,19 +73,10 @@ Route::get('/trades', function(EcfhlData $data){
 Route::get('/draft', function(EcfhlData $data){
     $seasons=$data->draftSeasons();$selected=request('season',$seasons[0]??'all');if($selected!=='all'&&!in_array($selected,$seasons,true))$selected=$seasons[0]??'all';$q=trim((string)request('q',''));$team=trim((string)request('team',''));
     $allPicks=$data->draftSeason('all');$counts=['overall1'=>[],'top5'=>[],'round1'=>[]];
-    // Build an alias -> franchise map from the canonical franchise ledger plus every historical team name.
     $franchiseNames=[];$aliasToFranchise=[];
     foreach($data->teamLedger($data->mode(),'all') as $f){$franchiseNames[$f['id']]=$f['team'];$aliasToFranchise[mb_strtolower(trim($f['team']))]=$f['id'];}
     foreach($data->teamSeasons() as $h){if(empty($h['franchise_id']))continue;$aliasToFranchise[mb_strtolower(trim($h['team']??$h['original_name']??''))]=$h['franchise_id'];if(!isset($franchiseNames[$h['franchise_id']]))$franchiseNames[$h['franchise_id']]=$h['team']??$h['original_name'];}
-    foreach($allPicks as $p){
-        $teamName=trim((string)($p['team']??''));$id=$p['franchise_id']??null;
-        if(!$id&&$teamName!=='')$id=$aliasToFranchise[mb_strtolower($teamName)]??null;
-        if(!$id)continue; // cards are franchise statistics, so never create a separate row for an unresolved team alias.
-        $overall=(int)($p['overall']??0);$round=(int)($p['round']??0);
-        if($overall===1)$counts['overall1'][$id]=($counts['overall1'][$id]??0)+1;
-        if($overall>=1&&$overall<=5)$counts['top5'][$id]=($counts['top5'][$id]??0)+1;
-        if($round===1)$counts['round1'][$id]=($counts['round1'][$id]??0)+1;
-    }
+    foreach($allPicks as $p){$teamName=trim((string)($p['team']??''));$id=$p['franchise_id']??null;if(!$id&&$teamName!=='')$id=$aliasToFranchise[mb_strtolower($teamName)]??null;if(!$id)continue;$overall=(int)($p['overall']??0);$round=(int)($p['round']??0);if($overall===1)$counts['overall1'][$id]=($counts['overall1'][$id]??0)+1;if($overall>=1&&$overall<=5)$counts['top5'][$id]=($counts['top5'][$id]??0)+1;if($round===1)$counts['round1'][$id]=($counts['round1'][$id]??0)+1;}
     $draftLeaders=[];foreach($counts as $key=>$rows){arsort($rows);$draftLeaders[$key]=[];foreach($rows as $id=>$n)$draftLeaders[$key][]=['team'=>$franchiseNames[$id]??$id,'value'=>$n,'score'=>$n];}
     $picks=$data->draftSeason($selected);if($q!==''){$needle=mb_strtolower($q);$picks=array_values(array_filter($picks,fn($p)=>str_contains(mb_strtolower(($p['player']??'').' '.($p['team']??'')),$needle)));}if($team!==''){$needle=mb_strtolower($team);$picks=array_values(array_filter($picks,fn($p)=>mb_strtolower($p['team']??'')===$needle));}
     return view('draft.index',compact('seasons','selected','picks','q','draftLeaders'));
