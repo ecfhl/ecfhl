@@ -133,7 +133,6 @@ class Archive extends EcfhlData
     public function draftSeason(string $season): array
     {
         $picks=parent::draftSeason($season);
-        // Keep the complete source-cache draft archive; relational exports can be partial.
         if (!$picks) {
             $players=array_column($this->rows('players'),'player_name','player_id');
             $drafts=array_column($this->rows('drafts'),'season_id','draft_id');
@@ -212,7 +211,7 @@ class Archive extends EcfhlData
             $games=($r['w']??0)+($r['l']??0)+($r['t']??0);
             $base=['team'=>$r['team'],'season'=>$r['season']];
             if ($games) $records[]=$base+['score'=>(2*$r['w']+$r['t'])/(2*$games),'value'=>number_format((2*$r['w']+$r['t'])/(2*$games)*100,1).'%','detail'=>$r['w'].'-'.$r['l'].'-'.$r['t']];
-            if ($r['fantasy_points_for']!==null) $points[]=$base+['score'=>(float)$r['fantasy_points_for'],'value'=>number_format($r['fantasy_points_for'],2)];
+            if ($r['fantasy_points_for']!==null) $points[]=$base+['score'=>(float)$r['fantasy_points_for'],'value'=>number_format($r['fantasy_points_for'],0)];
         }
         foreach ($this->rows('prize_awards') as $p) {
             if (!$this->selected($p['season_id'])) continue;
@@ -239,7 +238,7 @@ class Archive extends EcfhlData
         elseif ($season['champion']) $text[]=$season['champion'].' won the championship'.($season['runner_up']?', with '.$season['runner_up'].' finishing second.':'.');
         if ($leader) {
             $gp=($leader['w']??0)+($leader['l']??0)+($leader['t']??0);
-            $text[]=$leader['team'].' led the regular-season standings'.($gp?' with a '.$leader['w'].'-'.$leader['l'].'-'.$leader['t'].' record ('.number_format((2*$leader['w']+$leader['t'])/(2*$gp)*100,1).'% winning percentage).':($leader['fantasy_points_for']!==null?' with '.number_format($leader['fantasy_points_for'],2).' fantasy points.':'.'));
+            $text[]=$leader['team'].' led the regular-season standings'.($gp?' with a '.$leader['w'].'-'.$leader['l'].'-'.$leader['t'].' record ('.number_format((2*$leader['w']+$leader['t'])/(2*$gp)*100,1).'% winning percentage).':($leader['fantasy_points_for']!==null?' with '.number_format($leader['fantasy_points_for'],0).' fantasy points.':'.'));
             if ($gp && !$season['cancelled'] && $season['champion']) $text[]=$season['champion']===$leader['team']?'The regular-season leader also captured the playoff title.':'The playoff title went to a different team than the regular-season leader.';
         }
         $top=$this->seasonTradeLeaders($season['season']);
