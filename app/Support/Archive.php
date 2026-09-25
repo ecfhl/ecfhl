@@ -105,6 +105,8 @@ class Archive extends EcfhlData
     public function trades(): array
     {
         $out=[];
+        $sourceTrades=[];
+        foreach (parent::trades() as $t) if (!empty($t['id'])) $sourceTrades[$t['season'].'|'.$t['id']]=$t;
         $assets=[];
         foreach ($this->rows('trade_assets') as $a) $assets[$a['trade_id']][]=$a;
         foreach ($this->rows('trades') as $r) {
@@ -120,6 +122,9 @@ class Archive extends EcfhlData
                 if ($a['contract_years_at_trade']!==null && !preg_match('/\(\d+ Years?\)/i',$text)) $text.=' ('.$a['contract_years_at_trade'].' '.((int)$a['contract_years_at_trade']===1?'Year':'Years').')';
                 $t[$side.'_items'][]=$text;
             }
+            // Preserve richer imported descriptions, including recorded contracts.
+            $source=$sourceTrades[$t['season'].'|'.($r['source_trade_id']?:$r['trade_id'])]??null;
+            foreach (['from_items','to_items'] as $key) if (!empty($source[$key])) $t[$key]=$source[$key];
             $out[]=$t;
         }
         usort($out,fn($a,$b)=>strcmp($b['datetime']??$b['season'],$a['datetime']??$a['season']));
