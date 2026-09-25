@@ -1,11 +1,105 @@
 @extends('layouts.app')
-@section('title',$team['team'].' · ECFHL')
+@section('title', $team['team'].' · ECFHL')
+
 @section('content')
-<div class="shell"><div class="page-head"><div class="eyebrow">Franchise history</div><h1>{{ $team['team'] }}</h1><p>Complete recorded franchise history.</p></div>
-@php $franchiseOptions = app(\App\Support\Archive::class)->teamLedger(app(\App\Support\Archive::class)->mode(),'all'); @endphp
-<div style="display:flex;justify-content:flex-end;margin:0 0 22px"><select aria-label="Go to franchise" style="width:260px;padding:10px 12px;border-radius:8px" onchange="if(this.value) window.location.href=this.value"><option value="">Go to franchise...</option>@foreach($franchiseOptions as $option)<option value="/teams/{{ \Illuminate\Support\Str::slug($option['team']) }}" {{ $option['id']===$team['id']?'selected':'' }}>{{ $option['team'] }}</option>@endforeach</select></div>
-<div class="stats-grid team-detail-stats" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:26px"><div class="stat"><strong>{{ count($history) }}</strong><span>Seasons played</span></div><div class="stat"><strong>{{ $team['champion']??0 }}</strong><span>Championships</span></div><div class="stat"><strong>{{ ($team['w']??0).'-'.($team['l']??0).'-'.($team['t']??0) }}</strong><span>H2H record</span></div><div class="stat"><strong>{{ isset($team['win_pct'])&&$team['win_pct']!==null?number_format($team['win_pct']*100,1).'%':'—' }}</strong><span>Win %</span></div></div>
-<div class="table-card"><div class="table-scroll"><table class="data-table"><thead><tr><th>Season</th><th>Team name</th><th>Format</th><th class="num">Finish</th><th class="num">Record</th><th class="num">Points</th><th class="num">Fpts</th></tr></thead><tbody>@foreach($history as $r)@php $rank=isset($r['rank'])?(int)$r['rank']:null;$icon=match($r['playoff_finish']??null){'champion'=>'🏆','second'=>'🥈','third'=>'🥉',default=>''};$suffix=in_array(($rank??0)%100,[11,12,13])?'th':match(($rank??0)%10){1=>'st',2=>'nd',3=>'rd',default=>'th'};$finishText=trim($icon.' '.($rank>0?$rank.$suffix:'—'));@endphp<tr><td><a href="/seasons/{{ rawurlencode($r['season']) }}"><strong>{{ $r['season'] }}</strong></a></td><td>{{ $r['original_name'] }}</td><td>{{ $r['format'] }}</td><td class="num nowrap">{{ $finishText }}</td><td class="num">{{ isset($r['w'])&&$r['w']!==null?($r['w'].'-'.($r['l']??0).'-'.($r['t']??0)):'—' }}</td><td class="num">{{ $r['standings_points']!==null?number_format($r['standings_points'],0):'—' }}</td><td class="num">{{ $r['fantasy_points_for']!==null?number_format($r['fantasy_points_for'],0):'—' }}</td></tr>@endforeach</tbody></table></div></div>
-<section class="section"><div class="grid-3" style="grid-template-columns:repeat(2,minmax(0,1fr))"><article class="card leader-card"><h3 class="leader-card-title">🔄 Trade Partners</h3>@forelse($tradePartners as $i=>$row)@include('partials.leader-row')@empty<div class="empty">No recorded trades.</div>@endforelse@if(!empty($tradePartners))<div class="leader-rank" style="font-weight:800"><span>Σ</span><strong>Total</strong><b>{{ array_sum(array_column($tradePartners,'value')) }}</b></div>@endif<div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/trades?team={{ urlencode($team['team']) }}">View all trades →</a></div></article><article class="card leader-card"><h3 class="leader-card-title">1️⃣ 1st Round Picks by Season</h3>@forelse($firstRoundBySeason as $i=>$row)@include('partials.leader-row')@empty<div class="empty">No recorded first-round picks.</div>@endforelse@if(!empty($firstRoundBySeason))<div class="leader-rank" style="font-weight:800"><span>Σ</span><strong>Total</strong><b>{{ $firstRoundCount }}</b></div>@endif<div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/draft?season=all&team={{ urlencode($team['team']) }}">View all draft picks →</a></div></article></div></section>
+<div class="shell">
+    <div class="page-head">
+        <div class="eyebrow">Franchise history</div>
+        <h1>{{ $team['team'] }}</h1>
+        <p>Complete recorded franchise history.</p>
+    </div>
+
+    @php
+        $franchiseOptions = app(\App\Support\Archive::class)->teamLedger(app(\App\Support\Archive::class)->mode(), 'all');
+    @endphp
+
+    <div style="display:flex;justify-content:flex-end;margin:0 0 22px">
+        <select aria-label="Go to franchise" style="width:260px;padding:10px 12px;border-radius:8px" onchange="if(this.value) window.location.href=this.value">
+            <option value="">Go to franchise...</option>
+            @foreach($franchiseOptions as $option)
+                <option value="/teams/{{ \Illuminate\Support\Str::slug($option['team']) }}" {{ $option['id'] === $team['id'] ? 'selected' : '' }}>{{ $option['team'] }}</option>
+            @endforeach
+        </select>
+    </div>
+
+    <div class="stats-grid team-detail-stats" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:26px">
+        <div class="stat"><strong>{{ count($history) }}</strong><span>Seasons played</span></div>
+        <div class="stat"><strong>{{ $team['champion'] ?? 0 }}</strong><span>Championships</span></div>
+        <div class="stat"><strong>{{ ($team['w'] ?? 0).'-'.($team['l'] ?? 0).'-'.($team['t'] ?? 0) }}</strong><span>H2H record</span></div>
+        <div class="stat"><strong>{{ isset($team['win_pct']) && $team['win_pct'] !== null ? number_format($team['win_pct'] * 100, 1).'%' : '—' }}</strong><span>Win %</span></div>
+    </div>
+
+    <div class="table-card">
+        <div class="table-scroll">
+            <table class="data-table">
+                <thead>
+                    <tr><th>Season</th><th>Team name</th><th>Format</th><th class="num">Finish</th><th class="num">Record</th><th class="num">Points</th><th class="num">Fpts</th></tr>
+                </thead>
+                <tbody>
+                    @foreach($history as $r)
+                        @php
+                            $rank = isset($r['rank']) ? (int) $r['rank'] : null;
+                            $icon = match($r['playoff_finish'] ?? null) {
+                                'champion' => '🏆',
+                                'second' => '🥈',
+                                'third' => '🥉',
+                                default => ''
+                            };
+                            $suffix = in_array(($rank ?? 0) % 100, [11,12,13]) ? 'th' : match(($rank ?? 0) % 10) {
+                                1 => 'st',
+                                2 => 'nd',
+                                3 => 'rd',
+                                default => 'th'
+                            };
+                            $finishText = trim($icon.' '.($rank > 0 ? $rank.$suffix : '—'));
+                        @endphp
+                        <tr>
+                            <td><a href="/seasons/{{ rawurlencode($r['season']) }}"><strong>{{ $r['season'] }}</strong></a></td>
+                            <td>{{ $r['original_name'] }}</td>
+                            <td>{{ $r['format'] }}</td>
+                            <td class="num nowrap">{{ $finishText }}</td>
+                            <td class="num">{{ isset($r['w']) && $r['w'] !== null ? ($r['w'].'-'.($r['l'] ?? 0).'-'.($r['t'] ?? 0)) : '—' }}</td>
+                            <td class="num">{{ $r['standings_points'] !== null ? number_format($r['standings_points'], 0) : '—' }}</td>
+                            <td class="num">{{ $r['fantasy_points_for'] !== null ? number_format($r['fantasy_points_for'], 0) : '—' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <section class="section">
+        <div class="grid-3" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+            <article class="card leader-card">
+                <h3 class="leader-card-title">🔄 Trade Partners</h3>
+                @forelse($tradePartners as $i => $row)
+                    @include('partials.leader-row')
+                @empty
+                    <div class="empty">No recorded trades.</div>
+                @endforelse
+
+                @if(!empty($tradePartners))
+                    <div class="leader-rank" style="font-weight:800"><span>Σ</span><strong>Total</strong><b>{{ array_sum(array_column($tradePartners, 'value')) }}</b></div>
+                @endif
+
+                <div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/trades?team={{ urlencode($team['team']) }}">View all trades →</a></div>
+            </article>
+
+            <article class="card leader-card">
+                <h3 class="leader-card-title">1️⃣ 1st Round Picks by Season</h3>
+                @forelse($firstRoundBySeason as $i => $row)
+                    @include('partials.leader-row')
+                @empty
+                    <div class="empty">No recorded first-round picks.</div>
+                @endforelse
+
+                @if(!empty($firstRoundBySeason))
+                    <div class="leader-rank" style="font-weight:800"><span>Σ</span><strong>Total</strong><b>{{ $firstRoundCount }}</b></div>
+                @endif
+
+                <div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/draft?season=all&team={{ urlencode($team['team']) }}">View all draft picks →</a></div>
+            </article>
+        </div>
+    </section>
 </div>
 @endsection
