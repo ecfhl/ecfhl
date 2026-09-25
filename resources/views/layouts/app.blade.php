@@ -9,15 +9,25 @@
     <link rel="shortcut icon" type="image/png" href="{{ asset('ecfhl-logo.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('ecfhl-logo.png') }}">
     <link rel="stylesheet" href="/app.css?v=4">
-    <link rel="stylesheet" href="/header-filters.css?v=1">
+    <link rel="stylesheet" href="/header-filters.css?v=2">
 </head>
 <body>
 <header class="site-header">
     <div class="shell nav-wrap">
-        <a class="brand" href="/">
-            <img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo">
-            <span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span>
-        </a>
+        <div class="brand-area">
+            <a class="brand" href="/">
+                <img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo">
+                <span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span>
+            </a>
+            @if(!request()->is('rules'))
+                @php($seasonMode = app(\App\Support\Archive::class)->mode())
+                <div class="header-season-filter" role="group" aria-label="Season type">
+                    @foreach(['h2h'=>'Head-to-Head','total'=>'Total Points'] as $value=>$label)
+                        <button type="button" class="header-filter-button season-type-choice {{ in_array($seasonMode,[$value,'all'])?'active':'' }}" data-value="{{ $value }}">{{ $label }}</button>
+                    @endforeach
+                </div>
+            @endif
+        </div>
         <button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button>
         <nav class="main-nav">
             @foreach ([
@@ -32,14 +42,6 @@
             ] as $url => $label)
                 <a href="{{ $url }}" class="{{ request()->is(ltrim($url,'/')) || ($url==='/' && request()->is('/')) ? 'active' : '' }}">{{ $label }}</a>
             @endforeach
-            @if(!request()->is('rules'))
-                @php($seasonMode = app(\App\Support\Archive::class)->mode())
-                <div class="header-season-filter" role="group" aria-label="Season type">
-                    @foreach(['h2h'=>'Head-to-Head','total'=>'Total Points'] as $value=>$label)
-                        <button type="button" class="header-filter-button season-type-choice {{ in_array($seasonMode,[$value,'all'])?'active':'' }}" data-value="{{ $value }}">{{ $label }}</button>
-                    @endforeach
-                </div>
-            @endif
             <button class="theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button>
         </nav>
     </div>
