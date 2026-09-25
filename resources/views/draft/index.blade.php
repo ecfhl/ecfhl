@@ -2,6 +2,13 @@
 @section('title','Draft · ECFHL')
 @section('content')
 <div class="shell"><div class="page-head"><div class="eyebrow">Draft archive</div><h1>Draft</h1><p>Browse every recorded ECFHL draft selection.</p></div>
+<div class="grid-3" style="margin-bottom:24px">
+@foreach(['overall1'=>'#1 Overall Picks','top5'=>'Top 5 Picks','round1'=>'1st Round Picks'] as $key=>$title)
+<article class="card" style="padding:20px"><h3 style="margin:0 0 14px">{{ $title }}</h3><div class="leader-list">
+@forelse(($draftLeaders[$key]??[]) as $i=>$row)<div class="leader-row"><span><strong>{{ $i+1 }}.</strong> {{ $row['team'] }}</span><strong>{{ $row['value'] }}</strong></div>@empty<div class="subtle">No draft data</div>@endforelse
+</div></article>
+@endforeach
+</div>
 <form class="toolbar" method="get" id="draftForm">
   <select class="control" name="season" onchange="this.form.submit()">
     <option value="all" @selected($selected==='all')>All years</option>
