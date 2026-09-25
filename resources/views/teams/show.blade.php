@@ -22,11 +22,24 @@
         </select>
     </div>
 
-    <div class="stats-grid team-detail-stats" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:26px">
-        <div class="stat"><strong>{{ count($history) }}</strong><span>Seasons played</span></div>
-        <div class="stat"><strong>{{ $team['champion'] ?? 0 }}</strong><span>Championships</span></div>
-        <div class="stat"><strong>{{ ($team['w'] ?? 0).'-'.($team['l'] ?? 0).'-'.($team['t'] ?? 0) }}</strong><span>H2H record</span></div>
-        <div class="stat"><strong>{{ isset($team['win_pct']) && $team['win_pct'] !== null ? number_format($team['win_pct'] * 100, 1).'%' : '—' }}</strong><span>Win %</span></div>
+    <style>
+        .franchise-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--panel);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:26px}
+        .franchise-summary .summary-card{min-width:0;padding:20px 10px;text-align:center;border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+        .franchise-summary .summary-card:last-child{border-right:0}
+        .franchise-summary .summary-value{font-size:25px;font-weight:800;line-height:1.15;white-space:nowrap}
+        .franchise-summary .summary-label{font-size:11px;line-height:1.25;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);white-space:nowrap}
+        @media(max-width:520px){
+            .franchise-summary .summary-card{padding:14px 4px}
+            .franchise-summary .summary-value{font-size:20px}
+            .franchise-summary .summary-label{font-size:9px;letter-spacing:.25px}
+        }
+    </style>
+
+    <div class="franchise-summary">
+        <div class="summary-card"><div class="summary-value">{{ count($history) }}</div><div class="summary-label">Seasons</div></div>
+        <div class="summary-card"><div class="summary-value">{{ $team['champion'] ?? 0 }}</div><div class="summary-label">Champions</div></div>
+        <div class="summary-card"><div class="summary-value">{{ ($team['w'] ?? 0).'-'.($team['l'] ?? 0).'-'.($team['t'] ?? 0) }}</div><div class="summary-label">Record</div></div>
+        <div class="summary-card"><div class="summary-value">{{ isset($team['win_pct']) && $team['win_pct'] !== null ? number_format($team['win_pct'] * 100, 1).'%' : '—' }}</div><div class="summary-label">Win %</div></div>
     </div>
 
     <div class="table-card">
