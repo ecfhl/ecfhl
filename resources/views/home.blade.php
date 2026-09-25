@@ -2,7 +2,7 @@
 @section('title','ECFHL History')
 @section('content')
 <section class="hero"><div class="shell"><div class="eyebrow">Established in 2007</div><h1>East Coast Fantasy Hockey League</h1><p>A complete record of champions, franchise identities, seasons, trades, and draft history.</p><div class="hero-actions"><a class="button primary" href="/seasons">Explore seasons</a><a class="button secondary" href="/teams">View franchises</a></div></div></section>
-<div class="stats-strip"><div class="shell stats-grid">
+<div class="stats-strip"><div class="shell stats-grid" style="grid-template-columns:repeat(4,minmax(0,1fr))">
 <div class="stat"><strong>{{ count($seasons) }}</strong><span>Seasons</span></div>
 <div class="stat"><strong>{{ $championships }}</strong><span>Championships awarded</span></div>
 <div class="stat"><strong>{{ $prizesAwarded }}</strong><span>Prizes Awarded</span></div>
