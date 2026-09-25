@@ -28,7 +28,10 @@
         .franchise-summary .summary-card:last-child{border-right:0}
         .franchise-summary .summary-value{font-size:25px;font-weight:800;line-height:1.15;white-space:nowrap}
         .franchise-summary .summary-label{font-size:11px;line-height:1.25;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);white-space:nowrap}
-        .franchise-detail-cards{display:grid;grid-template-columns:1fr;gap:20px}
+        .franchise-detail-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
+        @media(max-width:760px){
+            .franchise-detail-cards{grid-template-columns:1fr}
+        }
         @media(max-width:520px){
             .franchise-summary .summary-card{padding:14px 4px}
             .franchise-summary .summary-value{font-size:20px}
