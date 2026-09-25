@@ -36,7 +36,7 @@
             @foreach ([
                 '/' => 'Overview',
                 '/seasons' => 'Seasons',
-                '/teams' => 'Teams',
+                '/teams' => 'Franchises',
                 '/prizes' => 'Prizes',
                 '/trades' => 'Trades',
                 '/draft' => 'Draft',
