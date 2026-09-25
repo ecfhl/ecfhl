@@ -34,11 +34,15 @@
   @endif
 
   <section class="section" style="padding-top:0"><div class="season-links-grid">
-    <a class="card season-action-card" href="/trades?season={{ urlencode($season['season']) }}">
+    <div class="card season-action-card">
       <span class="subtle">Top traders this season</span>
-      <div class="top-picks-list">@forelse($tradeLeaders as $r)<div><strong>{{ $r['team'] }}</strong> · {{ $r['value'] }} trades</div>@empty<div class="subtle">No completed trades</div>@endforelse</div>
-      <span>View all {{ $tradeCount }} trades →</span>
-    </a>
+      <div class="table-card" style="margin-top:14px"><div class="table-scroll"><table class="data-table">
+        <thead><tr><th>Team</th><th class="num">Trades</th></tr></thead>
+        <tbody>@foreach($tradeLeaders as $r)<tr><td><strong>{{ $r['team'] }}</strong></td><td class="num">{{ $r['value'] }}</td></tr>@endforeach</tbody>
+        <tfoot><tr><th>Total trades</th><th class="num">{{ $tradeCount }}</th></tr></tfoot>
+      </table></div></div>
+      <a href="/trades?season={{ urlencode($season['season']) }}">View all {{ $tradeCount }} trades →</a>
+    </div>
 
     <a class="card season-action-card" href="/draft?season={{ urlencode($season['season']) }}">
       <span class="subtle">1st round draft picks</span>
