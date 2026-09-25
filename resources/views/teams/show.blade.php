@@ -46,7 +46,7 @@
         <div class="table-scroll">
             <table class="data-table">
                 <thead>
-                    <tr><th>Season</th><th>Team name</th><th>Format</th><th class="num">Finish</th><th class="num">Record</th><th class="num">Points</th><th class="num">Fpts</th></tr>
+                    <tr><th>Season</th><th>Team name</th><th class="num">Finish</th><th class="num">Record</th><th class="num">Fpts</th></tr>
                 </thead>
                 <tbody>
                     @foreach($history as $r)
@@ -69,10 +69,8 @@
                         <tr>
                             <td><a href="/seasons/{{ rawurlencode($r['season']) }}"><strong>{{ $r['season'] }}</strong></a></td>
                             <td>{{ $r['original_name'] }}</td>
-                            <td>{{ $r['format'] }}</td>
                             <td class="num nowrap">{{ $finishText }}</td>
                             <td class="num">{{ isset($r['w']) && $r['w'] !== null ? ($r['w'].'-'.($r['l'] ?? 0).'-'.($r['t'] ?? 0)) : '—' }}</td>
-                            <td class="num">{{ $r['standings_points'] !== null ? number_format($r['standings_points'], 0) : '—' }}</td>
                             <td class="num">{{ $r['fantasy_points_for'] !== null ? number_format($r['fantasy_points_for'], 0) : '—' }}</td>
                         </tr>
                     @endforeach
