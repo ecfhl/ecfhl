@@ -1,8 +1,8 @@
-.brand-area{margin-right:auto;display:flex;align-items:center;gap:14px}
+.brand-area{margin-right:auto;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px}
 .brand-area .brand{margin-right:0}
-.header-season-filter{display:flex;align-items:center;gap:10px;align-self:flex-end;margin-bottom:9px}
-.header-filter-button{appearance:none;border:0;background:transparent;color:rgba(220,230,242,.62);padding:0 0 2px;font:inherit;font-size:10px;line-height:1.1;cursor:pointer;white-space:nowrap;border-bottom:1px solid transparent}
-.header-filter-button:hover{color:#fff}
-.header-filter-button.active{background:transparent;color:#e5bc55;border-bottom-color:#e5bc55;font-weight:700}
-@media(max-width:1100px){.brand-area{gap:9px}.header-season-filter{gap:7px}.header-filter-button{font-size:9px}.main-nav a{padding-left:8px;padding-right:8px}.nav-wrap{gap:14px}}
-@media(max-width:850px){.brand-area{margin-right:auto;display:block}.header-season-filter{margin:1px 0 0 55px;justify-content:flex-start;gap:12px}.header-filter-button{font-size:9px}.main-nav .theme-toggle{align-self:center}}
+.header-season-filter{display:flex;align-items:center;gap:5px;margin-left:63px;margin-top:-3px}
+.header-filter-button{appearance:none;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:rgba(220,230,242,.78);border-radius:4px;padding:2px 6px;font:inherit;font-size:9px;line-height:1.15;cursor:pointer;white-space:nowrap}
+.header-filter-button:hover{background:rgba(255,255,255,.11);color:#fff}
+.header-filter-button.active{background:rgba(229,188,85,.16);color:#f0c75e;border-color:rgba(229,188,85,.55);font-weight:700}
+@media(max-width:1100px){.header-season-filter{margin-left:55px}.header-filter-button{font-size:8px;padding:2px 5px}.main-nav a{padding-left:8px;padding-right:8px}.nav-wrap{gap:14px}}
+@media(max-width:850px){.brand-area{margin-right:auto}.header-season-filter{margin-left:55px;margin-top:-2px}.header-filter-button{font-size:8px}.main-nav .theme-toggle{align-self:center}}
