@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <title>@yield('title', 'ECFHL History')</title>
+    <link rel="icon" type="image/png" href="{{ asset('ecfhl-logo.png') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('ecfhl-logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('ecfhl-logo.png') }}">
     <link rel="stylesheet" href="/app.css?v=3">
 </head>
 <body>
