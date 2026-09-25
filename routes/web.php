@@ -5,7 +5,13 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 
 Route::get('/', function (EcfhlData $data) {
-    $seasons=$data->seasons(); $teams=$data->teams(); $trades=$data->trades(); $latest=$seasons[0]??null;
+    $seasons=$data->seasons(); $teams=$data->teams(); $trades=$data->trades();
+    // The home-page season card should represent the most recent completed season,
+    // not the current/in-progress season. A completed season has a champion recorded.
+    $latest=null;
+    foreach($seasons as $season){
+        if(!empty($season['champion'])){$latest=$season;break;}
+    }
     $latestStandings=$latest?$data->teamSeasons($latest['season']):[]; $latestLeader=$latestStandings[0]['team']??null;
     $championships=count(array_filter($seasons,fn($s)=>!empty($s['champion'])));
     $prizesAwarded=array_sum(array_column($data->prizeTotals(),'awards'));
