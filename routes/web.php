@@ -108,6 +108,13 @@ Route::get('/draft', function(EcfhlData $data){
 });
 
 Route::get('/prizes',fn(EcfhlData $data)=>view('prizes',['totals'=>$data->prizeTotals(),'awardEvents'=>$data->awardEvents(),'leaders'=>$data->overviewLeaders(),'seasonLeaders'=>$data->seasonLeaders()]));
-Route::get('/players',function(EcfhlData $data){$q=trim((string)request('q',''));return view('players',['q'=>$q,'events'=>$data->playerHistory($q)]);});
+Route::get('/players',function(EcfhlData $data){
+    $q=trim((string)request('q',''));$events=$data->playerHistory($q);$stats=['overall1'=>0,'trades'=>0,'round1'=>0];
+    foreach($events as $event){
+        if(($event['kind']??'')==='trade')$stats['trades']++;
+        if(($event['kind']??'')==='draft'){$p=$event['data']??[];if((int)($p['overall']??0)===1)$stats['overall1']++;if((int)($p['round']??0)===1)$stats['round1']++;}
+    }
+    return view('players',compact('q','events','stats'));
+});
 Route::get('/rules',function(){$sections=DB::table('rules')->orderBy('rule_id')->get()->groupBy('section')->map(fn($items)=>$items->map(fn($r)=>trim(($r->subsection?$r->subsection.' — ':'').$r->rule_text))->all())->all();foreach($sections as $title=>&$items)if(preg_match('/injur.*reserve/i',$title))$items=['Each team is allowed 5 injured reserve spots. Players on injured reserve can be replaced with free agents.'];unset($items);return view('rules',compact('sections'));});
 Route::get('/api/debug/db-status',function(){$tables=['seasons','franchises','team_seasons','players','drafts','draft_picks','trades','trade_assets','award_types','awards','prize_awards','season_prizes','rules'];$counts=[];foreach($tables as $table)try{$counts[$table]=DB::table($table)->count();}catch(\Throwable $e){$counts[$table]='ERROR: '.$e->getMessage();}return response()->json($counts);});
