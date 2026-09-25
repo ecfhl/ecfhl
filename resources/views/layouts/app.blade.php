@@ -9,6 +9,7 @@
     <link rel="shortcut icon" type="image/png" href="{{ asset('ecfhl-logo.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('ecfhl-logo.png') }}">
     <link rel="stylesheet" href="/app.css?v=4">
+    <link rel="stylesheet" href="/header-filters.css?v=1">
 </head>
 <body>
 <header class="site-header">
