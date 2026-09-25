@@ -28,19 +28,18 @@
       @if($latest)<span class="season-badge">{{ $latest['format'] ?? '' }}</span>@endif
     </div>
     @if($latest)
-      {{-- Team names intentionally sit above the podium blocks. --}}
-      <div class="podium">
+      <div class="podium" style="min-height:170px;margin-top:4px">
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">
-          <strong style="font-size:17px;text-align:center;margin-bottom:10px;line-height:1.2">{{ $latest['runner_up'] ?? '—' }}</strong>
-          <div class="podium-place podium-second" style="width:100%"><span class="podium-medal">🥈</span><small>2nd</small></div>
+          <strong style="font-size:17px;text-align:center;margin-bottom:8px;line-height:1.2">{{ $latest['runner_up'] ?? '—' }}</strong>
+          <div class="podium-place podium-second" style="width:100%;height:112px;justify-content:center;padding:10px 12px"><span class="podium-medal" style="margin-bottom:7px">🥈</span><small>2nd</small></div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">
-          <strong style="font-size:18px;text-align:center;margin-bottom:10px;line-height:1.2">{{ $latest['champion'] ?? '—' }}</strong>
-          <div class="podium-place podium-first" style="width:100%"><span class="podium-medal">🏆</span><small>Champion</small></div>
+          <strong style="font-size:18px;text-align:center;margin-bottom:8px;line-height:1.2">{{ $latest['champion'] ?? '—' }}</strong>
+          <div class="podium-place podium-first" style="width:100%;height:145px;justify-content:center;padding:10px 12px"><span class="podium-medal" style="margin-bottom:7px">🏆</span><small>Champion</small></div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">
-          <strong style="font-size:17px;text-align:center;margin-bottom:10px;line-height:1.2">{{ $latest['third_place'] ?? '—' }}</strong>
-          <div class="podium-place podium-third" style="width:100%"><span class="podium-medal">🥉</span><small>3rd</small></div>
+          <strong style="font-size:17px;text-align:center;margin-bottom:8px;line-height:1.2">{{ $latest['third_place'] ?? '—' }}</strong>
+          <div class="podium-place podium-third" style="width:100%;height:90px;justify-content:center;padding:10px 12px"><span class="podium-medal" style="margin-bottom:7px">🥉</span><small>3rd</small></div>
         </div>
       </div>
       <div class="latest-footer"><span class="subtle">Regular-season leader: <strong>{{ $latestLeader ?? '—' }}</strong></span><a href="/seasons/{{ rawurlencode($latest['season']) }}">View latest season →</a></div>
