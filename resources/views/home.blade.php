@@ -29,9 +29,18 @@
     </div>
     @if($latest)
       <div class="podium">
-        <div class="podium-place podium-second"><span class="podium-medal">🥈</span><small>2nd</small><strong>{{ $latest['runner_up'] ?? '—' }}</strong></div>
-        <div class="podium-place podium-first"><span class="podium-medal">🏆</span><small>Champion</small><strong>{{ $latest['champion'] ?? '—' }}</strong></div>
-        <div class="podium-place podium-third"><span class="podium-medal">🥉</span><small>3rd</small><strong>{{ $latest['third_place'] ?? '—' }}</strong></div>
+        <div class="podium-entry podium-entry-second">
+          <strong class="podium-team">{{ $latest['runner_up'] ?? '—' }}</strong>
+          <div class="podium-place podium-second"><span class="podium-medal">🥈</span><small>2nd</small></div>
+        </div>
+        <div class="podium-entry podium-entry-first">
+          <strong class="podium-team">{{ $latest['champion'] ?? '—' }}</strong>
+          <div class="podium-place podium-first"><span class="podium-medal">🏆</span><small>Champion</small></div>
+        </div>
+        <div class="podium-entry podium-entry-third">
+          <strong class="podium-team">{{ $latest['third_place'] ?? '—' }}</strong>
+          <div class="podium-place podium-third"><span class="podium-medal">🥉</span><small>3rd</small></div>
+        </div>
       </div>
       <div class="latest-footer"><span class="subtle">Regular-season leader: <strong>{{ $latestLeader ?? '—' }}</strong></span><a href="/seasons/{{ rawurlencode($latest['season']) }}">View latest season →</a></div>
     @endif
