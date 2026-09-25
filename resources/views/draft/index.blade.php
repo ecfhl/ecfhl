@@ -18,7 +18,7 @@
   <select class="control" name="season" onchange="this.form.submit()"><option value="all" @selected($selected==='all')>All years</option>@foreach($seasons as $s)<option value="{{ $s }}" @selected($s===$selected)>{{ $s }}</option>@endforeach</select>
   <input id="draftSearch" name="q" value="{{ $q }}" class="control" style="flex:1;min-width:220px" placeholder="Search player or team…">
 </form>
-<div class="table-card"><div class="table-scroll"><table class="data-table" id="draftTable"><thead><tr><th class="num">Pick</th><th>Player</th><th>Team</th><th class="num">Pick in round</th></tr></thead><tbody>
+<div class="table-card"><div class="table-scroll"><table class="data-table" id="draftTable"><thead><tr><th class="num">Pick</th><th class="num">Overall</th><th>Player</th><th>Team</th></tr></thead><tbody>
 @php $lastSeason = null; $lastRound = null; @endphp
 @foreach($picks as $p)
   @php
@@ -36,7 +36,7 @@
   @if($showRoundHeader)
     <tr class="draft-round-header"><td colspan="4">Round {{ $round }}</td></tr>
   @endif
-  <tr class="draft-pick-row" data-search="{{ strtolower(($p['player']??'').' '.($p['team']??'').' '.$season) }}"><td class="num"><strong>{{ $p['overall'] ?? '—' }}</strong></td><td>{{ $p['player'] ?? '' }}</td><td>{{ $p['team'] ?? '' }}</td><td class="num">{{ $p['pick'] ?? '' }}</td></tr>
+  <tr class="draft-pick-row" data-search="{{ strtolower(($p['player']??'').' '.($p['team']??'').' '.$season) }}"><td class="num"><strong>{{ $p['pick'] ?? '' }}</strong></td><td class="num">{{ $p['overall'] ?? '—' }}</td><td>{{ $p['player'] ?? '' }}</td><td>{{ $p['team'] ?? '' }}</td></tr>
 @endforeach
 </tbody></table></div></div></div>
 @endsection
