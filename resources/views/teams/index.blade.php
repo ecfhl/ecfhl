@@ -2,66 +2,18 @@
 @section('title','Teams · ECFHL')
 @section('content')
 <div class="shell">
-  <div class="page-head"><div class="eyebrow">Franchise ledger</div><h1>Teams</h1><p>All-time franchise performance across the ECFHL archive.</p></div>
-
-  <div class="filter-bar">
-    <div class="filter-group"><span>Status</span>
-      <a class="filter-button {{ $status==='all'?'active':'' }}" href="?type={{ $type }}&status=all">Active + Inactive</a>
-      <a class="filter-button {{ $status==='active'?'active':'' }}" href="?type={{ $type }}&status=active">Active</a>
-      <a class="filter-button {{ $status==='inactive'?'active':'' }}" href="?type={{ $type }}&status=inactive">Inactive</a>
-    </div>
-  </div>
-
-  <div class="table-card"><div class="table-scroll"><table class="data-table sortable-table" id="teamsTable">
-    <thead><tr>
-      <th data-col="0" data-type="text">Franchise</th>
-      <th data-col="1" data-type="num" class="num">Seasons</th>
-      <th data-col="2" data-type="num" class="num">Champion</th>
-      <th data-col="3" data-type="num" class="num">2nd</th>
-      <th data-col="4" data-type="num" class="num">3rd</th>
-      <th data-col="5" data-type="num" class="num">President</th>
-      <th data-col="6" data-type="num" class="num">Fpts Leader</th>
-      <th data-col="7" data-type="text" class="num">Record</th>
-      <th data-col="8" data-type="num" class="num">Win %</th>
-    </tr></thead>
-    <tbody>
-    @foreach($teams as $t)
-      <tr>
-        <td data-value="{{ strtolower($t['team']) }}"><a href="/teams/{{ \Illuminate\Support\Str::slug($t['team']) }}"><strong>{{ $t['team'] }}</strong></a></td>
-        <td class="num" data-value="{{ $t['seasons'] }}">{{ $t['seasons'] }}</td>
-        <td class="num" data-value="{{ $t['champion'] }}">{{ $t['champion'] }}</td>
-        <td class="num" data-value="{{ $t['second'] }}">{{ $t['second'] }}</td>
-        <td class="num" data-value="{{ $t['third'] }}">{{ $t['third'] }}</td>
-        <td class="num" data-value="{{ $t['president'] }}">{{ $t['president'] }}</td>
-        <td class="num" data-value="{{ $t['fpts_leader'] }}">{{ $t['fpts_leader'] }}</td>
-        <td class="num" data-value="{{ $t['w']*1000000+$t['l']*1000+$t['t'] }}">{{ $t['games'] ? ($t['w'].'-'.$t['l'].'-'.$t['t']) : '—' }}</td>
-        <td class="num" data-value="{{ $t['win_pct'] ?? -1 }}">{{ $t['win_pct']!==null ? number_format($t['win_pct']*100,1).'%' : '—' }}</td>
-      </tr>
-    @endforeach
-    </tbody>
-  </table></div></div>
+<div class="page-head"><div class="eyebrow">Franchise ledger</div><h1>Teams</h1><p>All-time franchise performance across the ECFHL archive.</p></div>
+<div class="filter-bar" style="justify-content:space-between;flex-wrap:wrap">
+<div class="filter-group">
+<a class="filter-button" style="{{ $status==='active'?'background:#17834b;color:white;border-color:#17834b':'background:#e5e7eb;color:#555' }}" href="?type={{ $type }}&status=active">Active</a>
+<a class="filter-button" style="{{ $status==='inactive'?'background:#b42318;color:white;border-color:#b42318':'background:#e5e7eb;color:#555' }}" href="?type={{ $type }}&status=inactive">Inactive</a>
+<a class="filter-button" style="{{ $status==='all'?'background:#050C4F;color:white':'background:#e5e7eb;color:#555' }}" href="?type={{ $type }}&status=all">All</a>
+</div>
+<form method="get"><input type="hidden" name="type" value="{{ $type }}"><input type="hidden" name="status" value="{{ $status }}"><select name="go" aria-label="Go to franchise" onchange="this.form.action=this.value;this.form.submit()" style="padding:9px 12px;border-radius:8px"><option value="">Go to franchise…</option>@foreach($allTeams as $f)<option value="/teams/{{ \Illuminate\Support\Str::slug($f['team']) }}">{{ $f['team'] }}</option>@endforeach</select></form>
+</div>
+<section class="section" style="padding-top:0"><div class="section-title"><h2>Franchise leaders</h2></div>@include('partials.leaders',['leaderRows'=>$franchiseLeaders,'cards'=>['championships'=>'🏆 Champions','presidents'=>'🏆 President Trophies','winning_pct'=>'📈 Winning %','first_picks'=>'1️⃣ #1 Overall Picks','trades'=>'🔄 Trades','awards'=>'🏅 Awards']])</section>
+<div class="table-card"><div class="table-scroll"><table class="data-table sortable-table" id="teamsTable"><thead><tr><th>Franchise</th><th class="num">Seasons</th><th class="num">Champion</th><th class="num">2nd</th><th class="num">3rd</th><th class="num">President</th><th class="num">Fpts Leader</th><th class="num">Total Fpts</th><th class="num">Record</th><th class="num">Win %</th></tr></thead><tbody>
+@foreach($teams as $t)<tr><td><a href="/teams/{{ \Illuminate\Support\Str::slug($t['team']) }}"><strong>{{ $t['team'] }}</strong></a><br><small style="display:inline-block;margin-top:4px;padding:2px 7px;border-radius:999px;background:{{ !empty($t['active'])?'#dcfce7':'#fee2e2' }};color:{{ !empty($t['active'])?'#166534':'#991b1b' }}">{{ !empty($t['active'])?'Active':'Inactive' }}</small></td><td class="num">{{ $t['seasons'] }}</td><td class="num">{{ $t['champion'] }}</td><td class="num">{{ $t['second'] }}</td><td class="num">{{ $t['third'] }}</td><td class="num">{{ $t['president'] }}</td><td class="num">{{ $t['fpts_leader'] }}</td><td class="num">{{ isset($t['total_fpts']) ? number_format($t['total_fpts'],0) : '—' }}</td><td class="num">{{ $t['games'] ? ($t['w'].'-'.$t['l'].'-'.$t['t']) : '—' }}</td><td class="num">{{ $t['win_pct']!==null ? number_format($t['win_pct']*100,1).'%' : '—' }}</td></tr>@endforeach
+</tbody></table></div></div>
 </div>
 @endsection
-@push('scripts')
-<script>
-(() => {
-  const table=document.getElementById('teamsTable'), body=table.tBodies[0];
-  let activeCol=null, direction=-1;
-  table.querySelectorAll('th[data-col]').forEach(th=>th.addEventListener('click',()=>{
-    const col=+th.dataset.col, type=th.dataset.type;
-    direction = activeCol===col ? -direction : (type==='text'?1:-1);
-    activeCol=col;
-    const rows=[...body.rows];
-    rows.sort((a,b)=>{
-      let av=a.cells[col].dataset.value ?? a.cells[col].textContent.trim();
-      let bv=b.cells[col].dataset.value ?? b.cells[col].textContent.trim();
-      if(type==='num'){av=parseFloat(av);bv=parseFloat(bv);return (av-bv)*direction;}
-      return av.localeCompare(bv)*direction;
-    });
-    rows.forEach(r=>body.appendChild(r));
-    table.querySelectorAll('th').forEach(x=>x.classList.remove('sort-asc','sort-desc'));
-    th.classList.add(direction===1?'sort-asc':'sort-desc');
-  }));
-})();
-</script>
-@endpush
