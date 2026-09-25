@@ -28,11 +28,24 @@ Route::get('/seasons/{season}', function(string $season,EcfhlData $data){
     $season=rawurldecode($season);$row=$data->season($season);
     if(!$row)return redirect('/seasons')->with('notice','This season is outside the selected season types.');
     $standings=$data->teamSeasons($season);
+
+    // Count every completed trade in this season for both participating franchises.
+    // Key by franchise ID so historical/team-name aliases cannot split the totals.
     $tradeCounts=[];
-    foreach($data->seasonTradeLeaders($season) as $r)$tradeCounts[$r['team']]=(int)$r['value'];
+    foreach($data->trades() as $trade){
+        if(($trade['season']??null)!==$season || !empty($trade['vetoed'])) continue;
+        foreach(array_unique(array_filter([$trade['from_id']??null,$trade['to_id']??null])) as $franchiseId){
+            $tradeCounts[$franchiseId]=($tradeCounts[$franchiseId]??0)+1;
+        }
+    }
     $tradeLeaders=[];
-    foreach($standings as $r){$name=$r['team'];$tradeLeaders[]=['team'=>$name,'value'=>$tradeCounts[$name]??0,'score'=>$tradeCounts[$name]??0];}
+    foreach($standings as $r){
+        $franchiseId=$r['franchise_id']??null;
+        $count=$franchiseId ? ($tradeCounts[$franchiseId]??0) : 0;
+        $tradeLeaders[]=['team'=>$r['team'],'value'=>$count,'score'=>$count];
+    }
     usort($tradeLeaders,fn($a,$b)=>($b['score']<=>$a['score'])?:strnatcasecmp($a['team'],$b['team']));
+
     $draftPicks=$data->draftSeason($season);
     $firstRoundPicks=array_values(array_filter($draftPicks,fn($p)=>(int)($p['round']??0)===1));
     return view('seasons.show',[
