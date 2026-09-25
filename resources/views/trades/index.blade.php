@@ -4,6 +4,21 @@
 <div class="shell">
   <div class="page-head"><div class="eyebrow">Transaction archive</div><h1>Trades</h1><p>Search recorded ECFHL trades by season, team or player.</p></div>
 
+  <div class="grid-3 leader-cards" style="margin-bottom:22px">
+    <article class="card leader-card">
+      <h3 class="leader-card-title">🔄 Top Traders</h3>
+      @forelse(array_slice($topTraders,0,5) as $i=>$row)@include('partials.leader-row')@empty<div class="empty">No recorded trades.</div>@endforelse
+    </article>
+    <article class="card leader-card">
+      <h3 class="leader-card-title">🤝 Top Trade Partners</h3>
+      @forelse(array_slice($topTradePartners,0,5) as $i=>$row)@include('partials.leader-row')@empty<div class="empty">No recorded trade partners.</div>@endforelse
+    </article>
+    <article class="card leader-card">
+      <h3 class="leader-card-title">1️⃣ 1st Round Picks Traded</h3>
+      @forelse(array_slice($topFirstRoundTraders,0,5) as $i=>$row)@include('partials.leader-row')@empty<div class="empty">No recorded own first-round picks traded.</div>@endforelse
+    </article>
+  </div>
+
   <div class="toolbar">
     <select id="tradeSeason" class="control">
       <option value="">All seasons</option>
