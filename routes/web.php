@@ -52,8 +52,7 @@ Route::get('/trades', function(EcfhlData $data){
     foreach($trades as $t){if($t['vetoed'])continue;$ids=array_values(array_unique(array_filter([$t['from_id']??null,$t['to_id']??null])));foreach($ids as $id)$traderCounts[$id]=($traderCounts[$id]??0)+1;if(count($ids)===2){sort($ids);$key=implode('|',$ids);$partnerCounts[$key]=($partnerCounts[$key]??0)+1;}}
     arsort($traderCounts);$topTraders=[];foreach($traderCounts as $id=>$n)$topTraders[]=['team'=>$names[$id]??$id,'value'=>$n,'score'=>$n];
     arsort($partnerCounts);$topTradePartners=[];foreach($partnerCounts as $key=>$n){[$a,$b]=explode('|',$key,2);$topTradePartners[]=['team'=>($names[$a]??$a).' ↔ '.($names[$b]??$b),'value'=>$n,'score'=>$n];}
-    $firstRoundTraded=[];
-    foreach($trades as $t){if($t['vetoed'])continue;foreach(['from','to'] as $side){$sender=$t[$side.'_id']??null;if(!$sender)continue;foreach(($t[$side.'_items']??[]) as $item){if(preg_match('/(?:draft\s+pick\s+)?round\s*1(?!\d)/i',(string)$item))$firstRoundTraded[$sender]=($firstRoundTraded[$sender]??0)+1;}}}
+    $firstRoundTraded=[];foreach($trades as $t){if($t['vetoed'])continue;foreach(['from','to'] as $side){$sender=$t[$side.'_id']??null;if(!$sender)continue;foreach(($t[$side.'_items']??[]) as $item){if(preg_match('/(?:draft\s+pick\s+)?round\s*1(?!\d)/i',(string)$item))$firstRoundTraded[$sender]=($firstRoundTraded[$sender]??0)+1;}}}
     arsort($firstRoundTraded);$topFirstRoundTraders=[];foreach($firstRoundTraded as $id=>$n)$topFirstRoundTraders[]=['team'=>$names[$id]??$id,'value'=>$n,'score'=>$n];
     return view('trades.index',compact('trades','seasons','teams','selectedSeason','selectedTeam','topTraders','topTradePartners','topFirstRoundTraders'));
 });
@@ -61,7 +60,14 @@ Route::get('/trades', function(EcfhlData $data){
 Route::get('/draft', function(EcfhlData $data){
     $seasons=$data->draftSeasons();$selected=request('season',$seasons[0]??'all');if($selected!=='all'&&!in_array($selected,$seasons,true))$selected=$seasons[0]??'all';$q=trim((string)request('q',''));$team=trim((string)request('team',''));
     $allPicks=$data->draftSeason('all');$counts=['overall1'=>[],'top5'=>[],'round1'=>[]];$names=[];
-    foreach($allPicks as $p){$id=$p['franchise_id']??null;if(!$id)continue;$names[$id]=$p['team']??$id;$overall=(int)($p['overall']??0);$round=(int)($p['round']??0);if($overall===1)$counts['overall1'][$id]=($counts['overall1'][$id]??0)+1;if($overall>=1&&$overall<=5)$counts['top5'][$id]=($counts['top5'][$id]??0)+1;if($round===1)$counts['round1'][$id]=($counts['round1'][$id]??0)+1;}
+    foreach($allPicks as $p){
+        $id=$p['franchise_id']??null;$teamName=trim((string)($p['team']??''));if(!$id&&!$teamName)continue;
+        $key=$id ?: 'name:'.mb_strtolower($teamName);$names[$key]=$teamName ?: $id;
+        $overall=(int)($p['overall']??0);$round=(int)($p['round']??0);
+        if($overall===1)$counts['overall1'][$key]=($counts['overall1'][$key]??0)+1;
+        if($overall>=1&&$overall<=5)$counts['top5'][$key]=($counts['top5'][$key]??0)+1;
+        if($round===1)$counts['round1'][$key]=($counts['round1'][$key]??0)+1;
+    }
     $draftLeaders=[];foreach($counts as $key=>$rows){arsort($rows);$draftLeaders[$key]=[];foreach($rows as $id=>$n)$draftLeaders[$key][]=['team'=>$names[$id]??$id,'value'=>$n,'score'=>$n];}
     $picks=$data->draftSeason($selected);if($q!==''){$needle=mb_strtolower($q);$picks=array_values(array_filter($picks,fn($p)=>str_contains(mb_strtolower(($p['player']??'').' '.($p['team']??'')),$needle)));}if($team!==''){$needle=mb_strtolower($team);$picks=array_values(array_filter($picks,fn($p)=>mb_strtolower($p['team']??'')===$needle));}
     return view('draft.index',compact('seasons','selected','picks','q','draftLeaders'));
