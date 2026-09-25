@@ -28,7 +28,10 @@
                 </div>
             @endif
         </div>
-        <button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button>
+        <div class="header-actions">
+            <button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button>
+            <button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button>
+        </div>
         <nav class="main-nav">
             @foreach ([
                 '/' => 'Overview',
@@ -42,7 +45,6 @@
             ] as $url => $label)
                 <a href="{{ $url }}" class="{{ request()->is(ltrim($url,'/')) || ($url==='/' && request()->is('/')) ? 'active' : '' }}">{{ $label }}</a>
             @endforeach
-            <button class="theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button>
         </nav>
     </div>
 </header>
@@ -80,6 +82,11 @@ document.querySelectorAll('.season-type-choice').forEach(button=>button.addEvent
  url.searchParams.delete('season');location.assign(url);
 }));
 </script>
+<style>
+.header-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.header-theme-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+@media(min-width:901px){.header-actions{order:3}.main-nav{order:2}.header-theme-toggle{margin-left:6px}}
+</style>
 @stack('scripts')
 </body>
 </html>
