@@ -71,7 +71,7 @@ document.querySelectorAll('.season-type-choice').forEach(input=>input.addEventLi
  const url=new URL(location.href);url.searchParams.set('type',mode);
  if (/^\/seasons\//.test(url.pathname)) url.pathname='/seasons';
  url.searchParams.delete('season');location.assign(url);
-});
+}));
 </script>
 @stack('scripts')
 </body>
