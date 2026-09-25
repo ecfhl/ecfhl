@@ -27,12 +27,18 @@ Route::get('/seasons', function (EcfhlData $data) {
 Route::get('/seasons/{season}', function(string $season,EcfhlData $data){
     $season=rawurldecode($season);$row=$data->season($season);
     if(!$row)return redirect('/seasons')->with('notice','This season is outside the selected season types.');
+    $standings=$data->teamSeasons($season);
+    $tradeCounts=[];
+    foreach($data->seasonTradeLeaders($season) as $r)$tradeCounts[$r['team']]=(int)$r['value'];
+    $tradeLeaders=[];
+    foreach($standings as $r){$name=$r['team'];$tradeLeaders[]=['team'=>$name,'value'=>$tradeCounts[$name]??0,'score'=>$tradeCounts[$name]??0];}
+    usort($tradeLeaders,fn($a,$b)=>($b['score']<=>$a['score'])?:strnatcasecmp($a['team'],$b['team']));
     $draftPicks=$data->draftSeason($season);
     $firstRoundPicks=array_values(array_filter($draftPicks,fn($p)=>(int)($p['round']??0)===1));
     return view('seasons.show',[
         'season'=>$row,
-        'tradeLeaders'=>array_slice($data->seasonTradeLeaders($season),0,14),
-        'standings'=>$data->teamSeasons($season),
+        'tradeLeaders'=>$tradeLeaders,
+        'standings'=>$standings,
         'awards'=>$data->seasonAwards($season),
         'tradeCount'=>$data->seasonTradeCount($season),
         'topPicks'=>$firstRoundPicks,
