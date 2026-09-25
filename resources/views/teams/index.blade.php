@@ -5,11 +5,6 @@
   <div class="page-head"><div class="eyebrow">Franchise ledger</div><h1>Teams</h1><p>All-time franchise performance across the ECFHL archive.</p></div>
 
   <div class="filter-bar">
-    <div class="filter-group"><span>Season type</span>
-      <a class="filter-button {{ $type==='h2h'?'active':'' }}" href="?type=h2h&status={{ $status }}">Head-to-Head</a>
-      <a class="filter-button {{ $type==='total'?'active':'' }}" href="?type=total&status={{ $status }}">Total Points</a>
-      <a class="filter-button {{ $type==='all'?'active':'' }}" href="?type=all&status={{ $status }}">Both</a>
-    </div>
     <div class="filter-group"><span>Status</span>
       <a class="filter-button {{ $status==='all'?'active':'' }}" href="?type={{ $type }}&status=all">Active + Inactive</a>
       <a class="filter-button {{ $status==='active'?'active':'' }}" href="?type={{ $type }}&status=active">Active</a>

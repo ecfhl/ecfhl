@@ -10,11 +10,11 @@
     <div class="card"><span class="subtle">Third</span><h3>🥉 {{ $season['third_place'] ?: '—' }}</h3></div>
   </div>
 
-  @if(!empty($season['note']))<div class="card" style="margin-bottom:20px"><strong>Season note</strong><p class="subtle">{{ $season['note'] }}</p></div>@endif
+  <div class="card" style="margin-bottom:20px"><strong>Season analysis</strong><p class="subtle">{{ $analysis }}</p></div>
 
   <div class="section-title"><h2>Standings</h2><span class="subtle">{{ count($standings) }} teams</span></div>
   <div class="table-card"><div class="table-scroll"><table class="data-table">
-    <thead><tr><th class="num">Rank</th><th>Franchise</th><th>Season name</th><th class="num">W</th><th class="num">L</th><th class="num">T</th><th class="num">Pts</th><th class="num">Fpts</th><th class="num">Win %</th></tr></thead>
+    <thead><tr><th class="num">Rank</th><th>Team</th><th class="num">W</th><th class="num">L</th><th class="num">T</th><th class="num">Pts</th><th class="num">Fpts</th><th class="num">Win %</th></tr></thead>
     <tbody>
     @foreach($standings as $r)
       @php
@@ -24,7 +24,6 @@
       <tr>
         <td class="num">{{ $r['rank'] ?? '—' }}</td>
         <td><strong>{{ $r['team'] }}</strong></td>
-        <td>{{ $r['original_name'] }}</td>
         <td class="num">{{ $r['w'] ?? '—' }}</td>
         <td class="num">{{ $r['l'] ?? '—' }}</td>
         <td class="num">{{ $r['t'] ?? '—' }}</td>
@@ -53,7 +52,7 @@
           };
         @endphp
         <div class="card">
-          <span class="subtle">{{ $icon }} {{ $a['label'] }}</span>
+          <span class="subtle"><span class="award-icon">{{ $icon }}</span> {{ $a['label'] }}</span>
           <h3>{{ $a['player'] ?: $a['team'] }}</h3>
           @if($a['player'])<div>{{ $a['team'] }}</div>@endif
           @if($a['points']!==null)<span class="subtle">{{ number_format($a['points'],0) }} pts</span>@endif
@@ -67,8 +66,8 @@
     <div class="season-links-grid">
       <a class="card season-action-card" href="/trades?season={{ urlencode($season['season']) }}">
         <span class="subtle">Trades this season</span>
-        <strong class="season-action-value">{{ $tradeCount }}</strong>
-        <span>View {{ $season['season'] }} trades →</span>
+        <div class="top-picks-list">@forelse($tradeLeaders as $r)<div><strong>{{ $r['team'] }}</strong> · {{ $r['value'] }} trades</div>@empty<div class="subtle">No completed trades</div>@endforelse</div>
+        <span>View all {{ $tradeCount }} trades →</span>
       </a>
 
       <a class="card season-action-card" href="/draft?season={{ urlencode($season['season']) }}">

@@ -3,6 +3,9 @@
 @section('content')
 <div class="shell">
   <div class="page-head"><div class="eyebrow">League archive</div><h1>Seasons</h1><p>Playoff finishes and regular-season leaders from 2007–08 to the present.</p></div>
+  <section class="section"><div class="section-title"><h2>All-time leaders</h2></div>
+  @include('partials.leaders',['leaderRows'=>$seasonLeaders,'cards'=>['top_seasons'=>'📈 Top Seasons','most_fpts'=>'🏒 Most Fpts','top_earners'=>'💵 Top Earners','season_trades'=>'🔄 Trades']])
+  </section>
   <div class="season-cards">
   @foreach($seasons as $season)
     <a class="season-card" href="/seasons/{{ rawurlencode($season['season']) }}">

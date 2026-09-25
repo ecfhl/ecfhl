@@ -2,7 +2,7 @@
 @section('title','Trades · ECFHL')
 @section('content')
 <div class="shell">
-  <div class="page-head"><div class="eyebrow">Transaction archive</div><h1>Trades</h1><p>Search recorded ECFHL trades by season, franchise or player.</p></div>
+  <div class="page-head"><div class="eyebrow">Transaction archive</div><h1>Trades</h1><p>Search recorded ECFHL trades by season, team or player.</p></div>
 
   <div class="toolbar">
     <select id="tradeSeason" class="control">
@@ -18,18 +18,7 @@
 
   <div id="tradeList" class="season-list">
   @foreach($trades as $t)
-    @php($hay=strtolower(($t['from']??'').' '.($t['to']??'').' '.implode(' ',$t['from_items']??[]).' '.implode(' ',$t['to_items']??[])))
-    @php($teamsHay=strtolower(implode('|',$t['filter_teams'] ?? [$t['from']??'',$t['to']??''])))
-    <article class="card trade-item" data-season="{{ $t['season'] }}" data-search="{{ $hay }}" data-teams="{{ $teamsHay }}">
-      <div class="section-title">
-        <div><strong>{{ $t['from'] ?? '?' }} ↔ {{ $t['to'] ?? '?' }}</strong><br><span class="subtle">{{ $t['date'] ?? '' }}</span></div>
-        <span class="pill {{ !empty($t['vetoed']) ? 'pill-vetoed' : '' }}">{{ $t['season'] }}{{ !empty($t['vetoed']) ? ' · Vetoed' : '' }}</span>
-      </div>
-      <div class="grid-2">
-        <div><strong>{{ $t['from'] ?? '?' }} sent</strong><ul>@foreach($t['from_items']??[] as $i)<li>{{ $i }}</li>@endforeach</ul></div>
-        <div><strong>{{ $t['to'] ?? '?' }} sent</strong><ul>@foreach($t['to_items']??[] as $i)<li>{{ $i }}</li>@endforeach</ul></div>
-      </div>
-    </article>
+    @include('partials.trade-card')
   @endforeach
   </div>
 </div>

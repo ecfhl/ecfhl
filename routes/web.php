@@ -1,6 +1,6 @@
 <?php
 
-use App\Support\EcfhlData;
+use App\Support\Archive as EcfhlData;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 
@@ -25,16 +25,18 @@ Route::get('/seasons', function (EcfhlData $data) {
         $season['regular_top3'] = $data->seasonRegularTop3($season['season']);
     }
     unset($season);
-    return view('seasons.index', compact('seasons'));
+    return view('seasons.index', ['seasons'=>$seasons,'leaders'=>$data->overviewLeaders(),'seasonLeaders'=>$data->seasonLeaders()]);
 });
 
 Route::get('/seasons/{season}', function (string $season, EcfhlData $data) {
     $season = rawurldecode($season);
     $row = $data->season($season);
-    abort_unless($row, 404);
+    if (!$row) return redirect('/seasons')->with('notice','This season is outside the selected season types.');
 
     return view('seasons.show', [
         'season' => $row,
+        'analysis' => $data->analysis($row),
+        'tradeLeaders' => $data->seasonTradeLeaders($season),
         'standings' => $data->teamSeasons($season),
         'awards' => $data->seasonAwards($season),
         'tradeCount' => $data->seasonTradeCount($season),
@@ -43,7 +45,7 @@ Route::get('/seasons/{season}', function (string $season, EcfhlData $data) {
 })->where('season', '.*');
 
 Route::get('/teams', function (EcfhlData $data) {
-    $type = request('type','h2h');
+    $type = $data->mode();
     $status = request('status','all');
     return view('teams.index', [
         'teams'=>$data->teamLedger($type,$status),
@@ -96,13 +98,24 @@ Route::get('/draft', function (EcfhlData $data) {
 
 Route::get('/prizes', fn(EcfhlData $data) => view('prizes', [
     'totals'=>$data->prizeTotals(),
-    'awardsBySeason'=>$data->awardsBySeason(),
+    'awardEvents'=>$data->awardEvents(),
+    'leaders'=>$data->overviewLeaders(),
+    'seasonLeaders'=>$data->seasonLeaders(),
 ]));
+
+Route::get('/players', function (EcfhlData $data) {
+    $q=trim((string)request('q',''));
+    return view('players', ['q'=>$q,'events'=>$data->playerHistory($q)]);
+});
 
 Route::get('/rules', function () {
     $sections = DB::table('rules')->orderBy('rule_id')->get()->groupBy('section')->map(function($items){
         return $items->map(fn($r)=>trim(($r->subsection ? $r->subsection.' — ' : '').$r->rule_text))->all();
     })->all();
+    foreach ($sections as $title=>&$items) {
+        if (preg_match('/injur.*reserve/i',$title)) $items=['Each team is allowed 5 injured reserve spots. Players on injured reserve can be replaced with free agents.'];
+    }
+    unset($items);
     return view('rules', compact('sections'));
 });
 

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <title>@yield('title', 'ECFHL History')</title>
-    <link rel="stylesheet" href="/app.css?v=2">
+    <link rel="stylesheet" href="/app.css?v=3">
 </head>
 <body>
 <header class="site-header">
@@ -23,6 +23,7 @@
                 '/prizes' => 'Prizes',
                 '/trades' => 'Trades',
                 '/draft' => 'Draft',
+                '/players' => 'Players',
                 '/rules' => 'Rules',
             ] as $url => $label)
                 <a href="{{ $url }}" class="{{ request()->is(ltrim($url,'/')) || ($url==='/' && request()->is('/')) ? 'active' : '' }}">{{ $label }}</a>
@@ -32,7 +33,17 @@
     </div>
 </header>
 
-<main>@yield('content')</main>
+<main>
+@if(!request()->is('rules'))
+@php($seasonMode = app(\App\Support\Archive::class)->mode())
+<div class="shell global-season-filter"><div class="filter-group" role="group" aria-label="Season type">
+<span>Season type</span>
+@foreach(['h2h'=>'Head-to-Head','total'=>'Total Points'] as $value=>$label)
+<label class="filter-button {{ in_array($seasonMode,[$value,'all'])?'active':'' }}"><input class="season-type-choice" type="checkbox" value="{{ $value }}" @checked(in_array($seasonMode,[$value,'all']))> {{ $label }}</label>
+@endforeach
+</div></div>
+@endif
+@yield('content')</main>
 
 <footer class="site-footer">
     <div class="shell footer-inner">
@@ -51,6 +62,16 @@ function toggleTheme(){
     document.documentElement.dataset.theme = next;
     localStorage.setItem('ecfhl-theme', next);
 }
+</script>
+<script>
+document.querySelectorAll('.season-type-choice').forEach(input=>input.addEventListener('change',()=>{
+ const choices=[...document.querySelectorAll('.season-type-choice:checked')].map(x=>x.value);
+ const mode=choices.length===2?'all':(choices[0]||'none');
+ document.cookie='ecfhl-season-type='+mode+'; Path=/; Max-Age=31536000; SameSite=Lax';
+ const url=new URL(location.href);url.searchParams.set('type',mode);
+ if (/^\/seasons\//.test(url.pathname)) url.pathname='/seasons';
+ url.searchParams.delete('season');location.assign(url);
+});
 </script>
 @stack('scripts')
 </body>

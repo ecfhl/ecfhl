@@ -7,11 +7,11 @@
     <option value="all" @selected($selected==='all')>All years</option>
     @foreach($seasons as $s)<option value="{{ $s }}" @selected($s===$selected)>{{ $s }}</option>@endforeach
   </select>
-  <input id="draftSearch" name="q" value="{{ $q }}" class="control" style="flex:1;min-width:220px" placeholder="Search player or franchise…">
+  <input id="draftSearch" name="q" value="{{ $q }}" class="control" style="flex:1;min-width:220px" placeholder="Search player or team…">
 </form>
 <div class="table-card"><div class="table-scroll"><table class="data-table" id="draftTable"><thead><tr>
   @if($selected==='all')<th>Season</th>@endif
-  <th class="num">Pick</th><th>Player</th><th>Franchise</th><th class="num">Round</th><th class="num">Pick in round</th>
+  <th class="num">Pick</th><th>Player</th><th>Team</th><th class="num">Round</th><th class="num">Pick in round</th>
 </tr></thead><tbody>
 @foreach($picks as $p)<tr data-search="{{ strtolower(($p['player']??'').' '.($p['team']??'')) }}">
   @if($selected==='all')<td class="nowrap">{{ $p['season'] ?? '' }}</td>@endif

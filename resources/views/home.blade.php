@@ -40,23 +40,7 @@
 
 <section class="section" style="padding-top:0"><div class="shell">
   <div class="section-title"><h2>All-time leaders</h2><a href="/teams">Full franchise ledger →</a></div>
-  <div class="grid-3 leader-cards">
-    <article class="card leader-card"><div class="leader-card-title">🏆 Championships</div>
-      @foreach($leaders['championships'] ?? [] as $i=>$row)
-        <div class="leader-rank"><span>{{ $i+1 }}</span><strong>{{ $row['team'] }}</strong><b>{{ $row['value'] }}</b></div>
-      @endforeach
-    </article>
-    <article class="card leader-card"><div class="leader-card-title">📈 Winning %</div>
-      @foreach($leaders['winning_pct'] ?? [] as $i=>$row)
-        <div class="leader-rank"><span>{{ $i+1 }}</span><strong>{{ $row['team'] }}<small>{{ $row['detail'] }}</small></strong><b>{{ $row['value'] }}</b></div>
-      @endforeach
-    </article>
-    <article class="card leader-card"><div class="leader-card-title">🔄 Trades <small>H2H era</small></div>
-      @foreach($leaders['trades'] ?? [] as $i=>$row)
-        <div class="leader-rank"><span>{{ $i+1 }}</span><strong>{{ $row['team'] }}</strong><b>{{ $row['value'] }}</b></div>
-      @endforeach
-    </article>
-  </div>
+  @include('partials.leaders',['leaderRows'=>$leaders,'cards'=>['championships'=>'🏆 Championships','winning_pct'=>'📈 Winning %','trades'=>'🔄 Trades','winnings'=>'💵 Winnings','first_picks'=>'1️⃣ #1 overall picks','awards'=>'🏅 Awards']])
 </div></section>
 
 <section class="section" style="padding-top:0"><div class="shell">

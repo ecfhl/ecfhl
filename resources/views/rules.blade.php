@@ -19,9 +19,9 @@
       @endphp
       <section class="card rule-card">
         <div class="rule-card-head"><span>{{ $icon }}</span><h2>{{ $title ?: 'General' }}</h2></div>
-        <ol class="rule-list">
+        <ul class="rule-list unnumbered">
           @foreach($items as $item)<li>{{ $item }}</li>@endforeach
-        </ol>
+        </ul>
       </section>
     @endforeach
   </div>

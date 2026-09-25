@@ -115,3 +115,36 @@ html[data-theme="dark"] .pill-vetoed{background:#431b1b!important;color:#ffb4ad!
 @media(max-width:850px){
   .prizes-grid,.season-links-grid,.rules-grid{grid-template-columns:1fr}
 }
+
+/* Shared archive filters and compact historical cards. */
+[hidden]{display:none!important}
+.global-season-filter{padding-top:18px;padding-bottom:18px}
+.season-type-choice{accent-color:var(--accent)}
+.filter-button{cursor:pointer;color:var(--text);font-family:inherit}
+.leader-more summary{padding:14px 18px;cursor:pointer;color:var(--text);font-size:13px;text-decoration:underline}
+.leader-more .when-open,.leader-more[open] .when-closed{display:none}
+.leader-more[open] .when-open{display:inline}
+.leader-rank strong{min-width:0;overflow-wrap:anywhere}
+.leader-rank b{font-size:15px}
+.prizes-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.prizes-grid>section{min-width:0}
+.prizes-grid .data-table td:first-child,.prizes-grid .data-table th:first-child{white-space:normal;overflow-wrap:anywhere}
+.winnings-table{table-layout:fixed}
+.winnings-table th:first-child{width:48%}
+.winnings-table td,.winnings-table th{padding:12px 8px;overflow-wrap:anywhere}
+.award-entry{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.award-entry:last-child{border-bottom:0}
+.award-icon{font-size:34px;line-height:1.3;display:inline-block;flex-shrink:0}
+.trade-item{padding:14px 18px;position:relative;box-shadow:none}
+.trade-sides{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.trade-sides ul{margin:6px 0 8px;padding-left:18px;font-size:14px}
+.trade-date{font-size:12px;display:block;margin-top:6px}
+.trade-vetoed{background:#fff0f4;border-color:#efc2d0;padding-top:35px}
+.veto-label{position:absolute;right:14px;top:8px;color:#9f234c;font-size:12px;font-weight:800}
+html[data-theme="dark"] .trade-vetoed{background:#35222d;border-color:#624050}
+html[data-theme="dark"] .veto-label{color:#ffb7d1}
+.unnumbered{list-style:none;padding:18px 22px}
+.player-timeline{display:grid;gap:22px}.timeline-label{font-size:13px;color:var(--muted);margin-bottom:8px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+@media(max-width:850px){.prizes-grid{grid-template-columns:1fr}}
+@media(max-width:520px){.trade-sides{grid-template-columns:1fr;gap:8px}.award-line strong{white-space:normal}.season-card-head>div{flex-wrap:wrap;gap:4px}}
