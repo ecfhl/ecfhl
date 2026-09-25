@@ -62,7 +62,7 @@ Route::get('/draft', function(EcfhlData $data){
     $seasons=$data->draftSeasons();$selected=request('season',$seasons[0]??'all');if($selected!=='all'&&!in_array($selected,$seasons,true))$selected=$seasons[0]??'all';$q=trim((string)request('q',''));$team=trim((string)request('team',''));
     $allPicks=$data->draftSeason('all');$counts=['overall1'=>[],'top5'=>[],'round1'=>[]];$names=[];
     foreach($allPicks as $p){$id=$p['franchise_id']??null;if(!$id)continue;$names[$id]=$p['team']??$id;$overall=(int)($p['overall']??0);$round=(int)($p['round']??0);if($overall===1)$counts['overall1'][$id]=($counts['overall1'][$id]??0)+1;if($overall>=1&&$overall<=5)$counts['top5'][$id]=($counts['top5'][$id]??0)+1;if($round===1)$counts['round1'][$id]=($counts['round1'][$id]??0)+1;}
-    $draftLeaders=[];foreach($counts as $key=>$rows){arsort($rows);$draftLeaders[$key]=[];foreach(array_slice($rows,0,5,true) as $id=>$n)$draftLeaders[$key][]=['team'=>$names[$id]??$id,'value'=>$n,'score'=>$n];}
+    $draftLeaders=[];foreach($counts as $key=>$rows){arsort($rows);$draftLeaders[$key]=[];foreach($rows as $id=>$n)$draftLeaders[$key][]=['team'=>$names[$id]??$id,'value'=>$n,'score'=>$n];}
     $picks=$data->draftSeason($selected);if($q!==''){$needle=mb_strtolower($q);$picks=array_values(array_filter($picks,fn($p)=>str_contains(mb_strtolower(($p['player']??'').' '.($p['team']??'')),$needle)));}if($team!==''){$needle=mb_strtolower($team);$picks=array_values(array_filter($picks,fn($p)=>mb_strtolower($p['team']??'')===$needle));}
     return view('draft.index',compact('seasons','selected','picks','q','draftLeaders'));
 });
