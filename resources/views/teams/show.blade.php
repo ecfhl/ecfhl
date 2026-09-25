@@ -46,7 +46,7 @@
     <div class="table-card">
         <div class="table-scroll">
             <table class="data-table">
-                <thead><tr><th>Season</th><th>Team name</th><th class="num">Finish</th><th class="num">Record</th><th class="num">Fpts</th></tr></thead>
+                <thead><tr><th>Season</th><th>Team</th><th class="num">Finish</th><th class="num">Record</th><th class="num">Fpts</th></tr></thead>
                 <tbody>
                     @foreach($history as $r)
                         @php
