@@ -33,24 +33,35 @@
   </div></section>
   @endif
 
-  <section class="section" style="padding-top:0"><div class="season-links-grid">
-    <div class="card season-action-card">
-      <span class="subtle">Top traders this season</span>
-      <div class="table-card" style="margin-top:14px"><div class="table-scroll"><table class="data-table">
-        <thead><tr><th>Team</th><th class="num">Trades</th></tr></thead>
-        <tbody>@foreach($tradeLeaders as $r)<tr><td><strong>{{ $r['team'] }}</strong></td><td class="num">{{ $r['value'] }}</td></tr>@endforeach</tbody>
-        <tfoot><tr><th>Total trades</th><th class="num">{{ $tradeCount }}</th></tr></tfoot>
-      </table></div></div>
-      <a href="/trades?season={{ urlencode($season['season']) }}">View all {{ $tradeCount }} trades →</a>
+  <section class="section" style="padding-top:0"><div class="season-links-grid season-rank-cards">
+    <div class="season-rank-card">
+      <div class="season-rank-head"><span class="season-rank-icon">🔄</span><h2>Trades</h2></div>
+      <div class="season-rank-body">
+        @foreach($tradeLeaders as $i=>$r)
+          <div class="season-rank-row"><span class="season-rank-number">{{ $i+1 }}</span><strong class="season-rank-name">{{ $r['team'] }}</strong><strong class="season-rank-value">{{ $r['value'] }}</strong></div>
+        @endforeach
+      </div>
+      <a class="season-rank-footer" href="/trades?season={{ urlencode($season['season']) }}">▶ <span>View all {{ $tradeCount }} trades</span></a>
     </div>
 
-    <a class="card season-action-card" href="/draft?season={{ urlencode($season['season']) }}">
-      <span class="subtle">1st round draft picks</span>
-      <div class="top-picks-list">
-        @forelse($topPicks as $pick)<div><b>{{ $pick['overall'] ?? '—' }}.</b> {{ $pick['player'] ?? '—' }} <small>{{ $pick['team'] ?? '' }}</small></div>@empty<div class="subtle">No first-round draft data</div>@endforelse
+    <div class="season-rank-card">
+      <div class="season-rank-head"><span class="season-rank-icon">🏒</span><h2>1st Round Draft Picks</h2></div>
+      <div class="season-rank-body">
+        @forelse($topPicks as $i=>$pick)
+          <div class="season-rank-row draft-rank-row"><span class="season-rank-number">{{ $pick['overall'] ?? $i+1 }}</span><span class="season-rank-name"><strong>{{ $pick['player'] ?? '—' }}</strong><small>{{ $pick['team'] ?? '' }}</small></span></div>
+        @empty
+          <div class="season-rank-empty">No first-round draft data</div>
+        @endforelse
       </div>
-      <span>View {{ $season['season'] }} draft →</span>
-    </a>
+      <a class="season-rank-footer" href="/draft?season={{ urlencode($season['season']) }}">▶ <span>View all draft picks</span></a>
+    </div>
   </div></section>
 </div>
+<style>
+.season-rank-cards{align-items:start}.season-rank-card{overflow:hidden;border:1px solid var(--border,#d9e0ea);border-radius:20px;background:var(--card,#fff);box-shadow:0 8px 24px rgba(18,38,63,.06)}
+.season-rank-head{display:flex;align-items:center;gap:10px;padding:22px 26px;background:rgba(225,232,242,.45);border-bottom:1px solid var(--border,#d9e0ea)}.season-rank-head h2{margin:0;font-size:1.65rem}.season-rank-icon{font-size:1.5rem}
+.season-rank-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:16px;padding:20px 26px;border-bottom:1px solid var(--border,#e2e7ee)}.season-rank-row:last-child{border-bottom:0}.season-rank-number{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:rgba(225,232,242,.55);font-weight:800}.season-rank-name{min-width:0}.season-rank-value{font-size:1.2rem}.draft-rank-row{grid-template-columns:44px minmax(0,1fr)}.draft-rank-row small{display:block;margin-top:3px;color:var(--muted,#758092);font-weight:400}.season-rank-empty{padding:24px 26px;color:var(--muted,#758092)}
+.season-rank-footer{display:block;padding:20px 26px;border-top:1px solid var(--border,#e2e7ee);font-weight:700;text-decoration:none}.season-rank-footer span{text-decoration:underline;text-underline-offset:3px}
+@media(max-width:700px){.season-rank-head{padding:18px 20px}.season-rank-head h2{font-size:1.35rem}.season-rank-row{padding:16px 20px;grid-template-columns:38px minmax(0,1fr) auto;gap:12px}.draft-rank-row{grid-template-columns:38px minmax(0,1fr)}.season-rank-number{width:36px;height:36px}.season-rank-footer{padding:18px 20px}}
+</style>
 @endsection
