@@ -36,7 +36,7 @@
   @if($showRoundHeader)
     <tr class="draft-round-header"><td colspan="4">Round {{ $round }}</td></tr>
   @endif
-  <tr class="draft-pick-row" data-search="{{ strtolower(($p['player']??'').' '.($p['team']??'').' '.$season) }}"><td class="num"><strong>{{ $p['pick'] ?? '' }}</strong></td><td class="num">{{ $p['overall'] ?? '—' }}</td><td>{{ $p['player'] ?? '' }}</td><td>{{ $p['team'] ?? '' }}</td></tr>
+  <tr class="draft-pick-row" data-search="{{ strtolower(($p['player']??'').' '.($p['team']??'').' '.$season) }}"><td class="num"><span class="draft-number">{{ $p['pick'] ?? '' }}</span></td><td class="num"><span class="draft-number draft-number-secondary">{{ $p['overall'] ?? '—' }}</span></td><td>{{ $p['player'] ?? '' }}</td><td>{{ $p['team'] ?? '' }}</td></tr>
 @endforeach
 </tbody></table></div></div></div>
 @endsection
@@ -48,5 +48,5 @@ document.querySelectorAll('.expand-card-link').forEach(btn=>btn.addEventListener
 window.addEventListener('load',()=>{const target=document.getElementById('draft-results');if(target)target.scrollIntoView({block:'start'});});
 @endif
 </script>
-<style>#draft-results{scroll-margin-top:170px}.draft-season-header td{padding:18px 20px!important;background:rgba(205,214,228,.7);font-size:19px;font-weight:900;letter-spacing:.3px;color:var(--text,#142238);border-top:3px solid var(--line,#d4dbe5);border-bottom:1px solid var(--line,#d4dbe5)}.draft-season-header:first-child td{border-top:0}.draft-round-header td{padding:12px 20px!important;background:rgba(225,232,242,.45);font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--muted,#687486);border-bottom:1px solid var(--line,#dce2ea)}.expand-card-link{display:block;margin:14px auto 0;padding:0;border:0;background:none;color:var(--accent,#1d5fa7);font:inherit;font-weight:700;cursor:pointer}.expand-card-link:hover{text-decoration:underline}</style>
+<style>#draft-results{scroll-margin-top:170px}.draft-season-header td{padding:18px 20px!important;background:rgba(205,214,228,.7);font-size:19px;font-weight:900;letter-spacing:.3px;color:var(--text,#142238);border-top:3px solid var(--line,#d4dbe5);border-bottom:1px solid var(--line,#d4dbe5)}.draft-season-header:first-child td{border-top:0}.draft-round-header td{padding:12px 20px!important;background:rgba(225,232,242,.45);font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--muted,#687486);border-bottom:1px solid var(--line,#dce2ea)}.draft-number{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:rgba(225,232,242,.55);font-weight:800;line-height:1}.draft-number-secondary{font-weight:700}.expand-card-link{display:block;margin:14px auto 0;padding:0;border:0;background:none;color:var(--accent,#1d5fa7);font:inherit;font-weight:700;cursor:pointer}.expand-card-link:hover{text-decoration:underline}@media(max-width:700px){#draftTable th.num,#draftTable td.num{width:54px;padding-left:8px;padding-right:8px}.draft-number{width:34px;height:34px;font-size:14px}}</style>
 @endpush
