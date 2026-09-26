@@ -104,6 +104,8 @@ class EcfhlData
             ->join('seasons as s','s.season_id','=','ts.season_id')
             ->select('ts.*','s.format')->get()->groupBy('franchise_id');
 
+        $members = DB::table('season_members as sm')->join('seasons as s','s.season_id','=','sm.season_id')->select('sm.franchise_id','sm.season_id','s.format')->get()->groupBy('franchise_id');
+
         $awardRows = DB::table('awards as a')
             ->join('seasons as s','s.season_id','=','a.season_id')
             ->select('a.*','s.format')->get()->groupBy('franchise_id');
@@ -123,7 +125,8 @@ class EcfhlData
             $history = ($seasonRows->get($f->franchise_id, collect()))->filter(fn($r)=>$matchesMode($r->format));
             $awards = ($awardRows->get($f->franchise_id, collect()))->filter(fn($r)=>$matchesMode($r->format));
 
-            if ($mode !== 'all' && $history->count() === 0) continue;
+            $participation = $members->get($f->franchise_id,collect())->filter(fn($r)=>$matchesMode($r->format))->pluck('season_id')->merge($history->pluck('season_id'))->unique();
+            if ($mode !== 'all' && $participation->isEmpty()) continue;
 
             $recordRows = $history->filter(fn($r)=>$r->w !== null || $r->l !== null || $r->t !== null);
             $w=(int)$recordRows->sum('w'); $l=(int)$recordRows->sum('l'); $t=(int)$recordRows->sum('t');
@@ -134,7 +137,7 @@ class EcfhlData
                 'id'=>$f->franchise_id,
                 'team'=>$this->displayTeamName($f->franchise_name, $f->franchise_id),
                 'active'=>$active,
-                'seasons'=>$history->count(),
+                'seasons'=>$participation->count(),
                 'champion'=>$awards->where('award_type_id','champion')->count(),
                 'second'=>$awards->where('award_type_id','second')->count(),
                 'third'=>$awards->where('award_type_id','third')->count(),
@@ -201,7 +204,7 @@ class EcfhlData
 
     public function seasonRegularTop3(string $season): array
     {
-        return array_slice($this->teamSeasons($season),0,3);
+        return array_slice(array_values(array_filter($this->teamSeasons($season),fn($r)=>($r['rank']??0)>0)),0,3);
     }
 
     public function trades(): array
@@ -223,7 +226,7 @@ class EcfhlData
         $seen=[];$out=[];
         foreach ($groups as $season=>$rows) {
             foreach ($rows as $row) {
-                $key=$row['id']??md5($season.json_encode($row));
+                $key=$season.'|'.($row['id']??md5(json_encode($row)));
                 if(isset($seen[$key])) continue;
                 $seen[$key]=true;
                 $row['season']=$season;
@@ -317,10 +320,11 @@ class EcfhlData
             ->where('s.season_name',$season)
             ->whereIn('a.award_type_id',['president','leader','art_ross','norris','vezina','calder'])
             ->select('a.award_type_id','at.award_name','a.franchise_id','f.franchise_name','a.team_name_raw','p.player_name','a.points')
-            ->orderByRaw("FIELD(a.award_type_id,'president','leader','art_ross','norris','vezina','calder')")
+            ->orderByRaw("CASE a.award_type_id WHEN 'president' THEN 1 WHEN 'leader' THEN 2 WHEN 'art_ross' THEN 3 WHEN 'norris' THEN 4 WHEN 'vezina' THEN 5 WHEN 'calder' THEN 6 ELSE 7 END")
             ->get()->map(function($r){
                 $team=$this->displayTeamName($r->franchise_name ?: $r->team_name_raw,$r->franchise_id);
                 return [
+                    'franchise_id'=>$r->franchise_id,
                     'id'=>$r->award_type_id,
                     'label'=>$r->award_name,
                     'player'=>$r->player_name,

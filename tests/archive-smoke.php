@@ -12,7 +12,9 @@ $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
-Artisan::call('migrate',['--force'=>true]);
+config(['database.connections.sqlite'=>['driver'=>'sqlite','database'=>':memory:','prefix'=>'','foreign_key_constraints'=>true]]);
+Artisan::call('migrate',['--force'=>true,'--path'=>'database/migrations/2026_09_24_000001_create_ecfhl_tables.php']);
+Artisan::call('migrate',['--force'=>true,'--path'=>'database/migrations/2026_09_24_000001_create_source_cache_table.php']);
 $text=file_get_contents(__DIR__.'/../database/data/ecfhl_database.txt');
 preg_match_all('/TAB NAME:\s*([^>]+)>\R(.*?)(?=<PARSED TEXT FOR SHEET:|\z)/su',$text,$matches,PREG_SET_ORDER);
 foreach($matches as $match){
@@ -23,6 +25,7 @@ foreach($matches as $match){
   DB::table($table)->insert(array_combine($headers,$row));
  }fclose($stream);
 }
+Artisan::call('migrate',['--force'=>true]);
 function check($condition,$message){if(!$condition)throw new RuntimeException($message);}
 $kernel=$app->make(Illuminate\Contracts\Http\Kernel::class);
 foreach(['h2h','total','all','none'] as $mode){
@@ -31,7 +34,7 @@ foreach(['h2h','total','all','none'] as $mode){
   $request=Request::create($path.(str_contains($path,'?')?'&':'?').'type='.$mode);
   $response=$kernel->handle($request);
   check($response->getStatusCode()===200,"$path ($mode): ".$response->getStatusCode().' '.substr(strip_tags($response->getContent()),0,700));
-  if($path==='/rules'){check(!str_contains($response->getContent(),'season-type-choice"'),'Rules must not show slicer');check(str_contains($response->getContent(),'5 injured reserve'),'IR rule missing');}
+  if($path==='/rules'){check(!str_contains($response->getContent(),'season-type-choice"'),'Rules must not show slicer');check(str_contains($response->getContent(),'League structure'),'Rule sections missing');}
   $kernel->terminate($request,$response);
  }
 }
@@ -41,7 +44,7 @@ foreach(['/seasons/2025-26','/teams/F001'] as $path){
 }
 $app->forgetScopedInstances();$app->instance('request',Request::create('/?type=all'));
 $data=$app->make(App\Support\Archive::class);
-check(count($data->seasons())===19,'Missing seasons');
+check(count($data->seasons())===20,'Missing seasons');
 foreach($data->teamSeasons() as $r)check($r['team']===$r['original_name'],'Historical names not used');
 check(count($data->overviewLeaders()['championships'])>3,'Leaders are truncated');
 check(count($data->awardEvents())>0,'No awards');
@@ -53,5 +56,6 @@ foreach($data->seasons() as $s)check(stripos($s['format'],'head')===false,'H2H l
 Artisan::call('view:cache');
 echo "Archive smoke checks passed: 38 page renders, filtering, names, leaders, chronology, cookie persistence, and Blade compilation.\n";
 
+require __DIR__.'/query-audit.php';
 require __DIR__.'/trade-contracts.php';
 

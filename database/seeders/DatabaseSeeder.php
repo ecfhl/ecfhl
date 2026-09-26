@@ -36,6 +36,30 @@ class DatabaseSeeder extends Seeder
             throw new RuntimeException('No ECFHL spreadsheet sections were detected in the seed file.');
         }
 
+        // Validate the complete input before any table is truncated. The legacy
+        // spreadsheet export can be clipped to 1,000 rows per sheet.
+        $minimums = ['seasons'=>19,'franchises'=>21,'team_seasons'=>218,'players'=>975,
+            'draft_picks'=>2103,'trades'=>482,'trade_assets'=>1881];
+        $sourceCounts = [];
+        foreach ($matches as $match) {
+            $table = trim($match[1]);
+            if (!isset($minimums[$table])) continue;
+            $stream = fopen('php://temp','r+');
+            fwrite($stream,$match[2]);rewind($stream);
+            $headers = fgetcsv($stream);
+            $count = 0;
+            if ($headers) while (($row = fgetcsv($stream)) !== false) {
+                if ($row !== [null] && count($row) === count($headers)) $count++;
+            }
+            fclose($stream);
+            $sourceCounts[$table] = $count;
+        }
+        foreach ($minimums as $table=>$minimum) {
+            if (($sourceCounts[$table] ?? 0) < $minimum) {
+                throw new RuntimeException("Import refused before database writes: {$table} requires at least {$minimum} source rows; got ".($sourceCounts[$table] ?? 0).'.');
+            }
+        }
+
         DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
         try {

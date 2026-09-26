@@ -40,7 +40,7 @@
     </style>
 
     <div class="franchise-summary">
-        <div class="summary-card"><div class="summary-value">{{ count($history) }}</div><div class="summary-label">Seasons</div></div>
+        <div class="summary-card"><div class="summary-value">{{ $team['seasons'] }}</div><div class="summary-label">Seasons</div></div>
         <div class="summary-card"><div class="summary-value">{{ $team['champion'] ?? 0 }}</div><div class="summary-label">Champions</div></div>
         <div class="summary-card"><div class="summary-value">{{ ($team['w'] ?? 0).'-'.($team['l'] ?? 0).'-'.($team['t'] ?? 0) }}</div><div class="summary-label">Record</div></div>
         <div class="summary-card"><div class="summary-value">{{ isset($team['win_pct']) && $team['win_pct'] !== null ? number_format($team['win_pct'] * 100, 1).'%' : '—' }}</div><div class="summary-label">Win %</div></div>
@@ -83,7 +83,7 @@
                 @if(!empty($tradePartners))
                     <div class="leader-rank" style="font-weight:800"><span>Σ</span><strong>Total</strong><b>{{ array_sum(array_column($tradePartners, 'value')) }}</b></div>
                 @endif
-                <div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/trades?team={{ urlencode($team['team']) }}">View all trades →</a></div>
+                <div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/trades?franchise={{ urlencode($team['id']) }}">View all trades →</a></div>
             </article>
 
             <article class="card leader-card">
@@ -96,7 +96,7 @@
                 @if(!empty($firstRoundBySeason))
                     <div class="leader-rank" style="font-weight:800"><span>Σ</span><strong>Total</strong><b>{{ $firstRoundCount }}</b></div>
                 @endif
-                <div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/draft?season=all&team={{ urlencode($team['team']) }}">View all draft picks →</a></div>
+                <div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/draft?season=all&franchise={{ urlencode($team['id']) }}">View all draft picks →</a></div>
             </article>
         </div>
     </section>

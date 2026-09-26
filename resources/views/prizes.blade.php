@@ -5,23 +5,7 @@
 <div class="page-head"><div class="eyebrow">League prizes</div><h1>Prizes</h1><p>Historical awards and winnings for the selected season types.</p></div>
 @php
     $selectedSeasonNames = collect(app(\App\Support\Archive::class)->seasons())->pluck('season')->all();
-    $singleSeasonEarners = [];
-    if ($selectedSeasonNames) {
-        $rows = \Illuminate\Support\Facades\DB::table('prize_awards as pa')
-            ->join('seasons as s','s.season_id','=','pa.season_id')
-            ->leftJoin('team_seasons as ts',function($join){$join->on('ts.season_id','=','pa.season_id')->on('ts.franchise_id','=','pa.franchise_id');})
-            ->join('franchises as f','f.franchise_id','=','pa.franchise_id')
-            ->whereIn('s.season_name',$selectedSeasonNames)
-            ->select('s.season_name','pa.franchise_id','f.franchise_name','ts.original_name',\Illuminate\Support\Facades\DB::raw('SUM(pa.amount_cents) as total_cents'))
-            ->groupBy('s.season_name','pa.franchise_id','f.franchise_name','ts.original_name')
-            ->get();
-        foreach($rows as $r){
-            $cents=(int)$r->total_cents;
-            if($cents<=0) continue;
-            $singleSeasonEarners[]=['team'=>$r->original_name ?: $r->franchise_name,'season'=>$r->season_name,'value'=>'$'.number_format($cents/100,0),'score'=>$cents];
-        }
-        usort($singleSeasonEarners,fn($a,$b)=>($b['score']<=>$a['score']) ?: strcmp($b['season'],$a['season']));
-    }
+    $singleSeasonEarners = $seasonLeaders['top_earners'];
 @endphp
 <section class="section"><div class="section-title"><h2>All-time leaders</h2></div>
 @include('partials.leaders',['leaderRows'=>['champions'=>$leaders['championships'],'earners'=>$singleSeasonEarners,'top_pick'=>$leaders['first_picks'] ?? []],'cards'=>['champions'=>'🏆 Champions','earners'=>'💵 Single season top earner','top_pick'=>'🎯 Top Pick Winner']])
@@ -50,7 +34,7 @@
             ->whereIn('a.award_type_id',array_keys($awardLabels))
             ->select('s.season_name','s.sequence','a.award_type_id','a.team_name_raw','f.franchise_name','ts.original_name','p.player_name')
             ->orderByDesc('s.sequence')
-            ->orderByRaw("FIELD(a.award_type_id,'champion','second','third','president','leader','top_pick','art_ross','norris','vezina','calder')")
+            ->orderByRaw("CASE a.award_type_id WHEN 'champion' THEN 1 WHEN 'second' THEN 2 WHEN 'third' THEN 3 WHEN 'president' THEN 4 WHEN 'leader' THEN 5 WHEN 'top_pick' THEN 6 WHEN 'art_ross' THEN 7 WHEN 'norris' THEN 8 WHEN 'vezina' THEN 9 WHEN 'calder' THEN 10 ELSE 11 END")
             ->get()
             ->map(function($r) use ($awardLabels){
                 return ['season'=>$r->season_name,'id'=>$r->award_type_id,'award'=>$awardLabels[$r->award_type_id] ?? $r->award_type_id,'team'=>$r->original_name ?: ($r->team_name_raw ?: $r->franchise_name),'player'=>$r->player_name];

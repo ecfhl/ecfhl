@@ -11,7 +11,7 @@
     // Display draft picks as: 1st Round (2026) [Original Owner Team Name].
     // Link directly to that draft season and round.
     // Omit the owner when the team trading the pick is its original owner.
-    if (preg_match('/^(\d{4})\s+Draft\s+Pick\s+Round\s+(\d+)(?:\s+Pick\s+\d+)?(?:\s*\(([^)]+)\))?$/i', trim($player), $pick)) {
+    if (preg_match('/^(\d{4})\s+(?:Draft\s+Pick\s+)?Round\s+(\d+)(?:\s+Pick(?:\s+\d+)?)?(?:\s*\(([^)]+)\))?$/i', trim($player), $pick)) {
         $isPick = true;
         $year = (int) $pick[1];
         $round = (int) $pick[2];
