@@ -12,7 +12,7 @@
 <div class="empty">No recorded results for this selection.</div>
 @endforelse
 </div>
-@if(count($leaderRows[$key]??[])>$leaderLimit)
+@if(count($leaderRows[$key]??[])>0)
 <button type="button" class="expand-card-link" data-expand-target="leader-{{ $key }}" data-limit="{{ $leaderLimit }}">View all</button>
 @endif
 </article>
@@ -25,9 +25,14 @@
 document.querySelectorAll('.expand-card-link').forEach(btn=>btn.addEventListener('click',()=>{
     const box=document.getElementById(btn.dataset.expandTarget);
     const limit=parseInt(btn.dataset.limit||'5',10);
-    const opening=box.querySelector('.expand-row[hidden]')!==null;
-    box.querySelectorAll('.expand-row').forEach((r,i)=>r.hidden=!opening&&i>=limit);
-    btn.textContent=opening?'Show top '+limit:'View all';
+    const hiddenRows=box.querySelector('.expand-row[hidden]');
+    if(!hiddenRows){
+        box.querySelectorAll('.expand-row').forEach((r,i)=>r.hidden=i>=limit);
+        btn.textContent='View all';
+        return;
+    }
+    box.querySelectorAll('.expand-row').forEach(r=>r.hidden=false);
+    btn.textContent='Show top '+limit;
 }));
 </script>
 <style>
