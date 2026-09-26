@@ -113,6 +113,9 @@ class Archive extends EcfhlData
         foreach (TradeContracts::records() as $c) {
             $verified[$c['trade_id']][$c['season']][$c['source_side']][$c['player_name']]=$c['contract_years_at_trade'];
         }
+        foreach (TradeContracts::statusRecords() as $c) {
+            $verified[$c['trade_id']][$c['season']][$c['source_side']][$c['player_name']]=$c['contract_raw'];
+        }
         foreach ($this->rows('trades') as $r) {
             if (!$this->selected($r['season_id']) || $r['is_reversed']) continue;
             $t=['id'=>$r['trade_id'],'season'=>$this->year($r['season_id']),'date'=>$r['trade_date_raw'] ?: $r['trade_datetime'],'datetime'=>$r['trade_datetime'], 'vetoed'=>(bool)$r['is_vetoed'], 'from_id'=>$r['from_franchise_id'],'to_id'=>$r['to_franchise_id'], 'from_items'=>[], 'to_items'=>[]];
