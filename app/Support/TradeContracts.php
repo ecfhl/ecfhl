@@ -33,4 +33,20 @@ final class TradeContracts
         if (is_string($years)) return self::playerName($text).' ('.$years.')';
         return self::playerName($text).' ('.$years.' '.($years === 1 ? 'Year' : 'Years').')';
     }
+
+    public static function leagueIds(): array
+    {
+        $ids=[];
+        foreach (array_merge(self::records(), self::statusRecords()) as $row) {
+            if (!empty($row['season']) && !empty($row['league_id'])) $ids[$row['season']]=$row['league_id'];
+        }
+        return $ids;
+    }
+
+    public static function fantraxSearchUrl(string $season, string $player): ?string
+    {
+        $leagueId=self::leagueIds()[$season]??null;
+        if (!$leagueId) return null;
+        return 'https://www.fantrax.com/fantasy/league/'.$leagueId.'/players;searchName='.rawurlencode($player).';miscDisplayType=1;statusOrTeamFilter=ALL;positionOrGroup=ALL;pageNumber=1';
+    }
 }
