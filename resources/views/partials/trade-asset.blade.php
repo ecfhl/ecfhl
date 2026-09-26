@@ -24,11 +24,12 @@
     $fantraxUrl = (!$isPick && !$contract && !empty($season))
         ? \App\Support\TradeContracts::fantraxSearchUrl($season, $player)
         : null;
+    $playerUrl = !$isPick ? '/players?q='.urlencode(trim($player)).'#player-results' : null;
     $color = in_array($contract, ['MINOR','MINORS','TBD'], true) ? 'orange' : (in_array($contract, ['2 YEARS','3 YEARS','4 YEARS'], true) ? 'blue' : 'gray');
 @endphp
 
-@if($fantraxUrl)
-    <a class="trade-missing-contract" href="{{ $fantraxUrl }}" target="_blank" rel="noopener" title="Contract missing — search this player in the {{ $season }} Fantrax league">{{ $player }}</a>
+@if($playerUrl)
+    <a class="trade-player-link{{ $fantraxUrl ? ' trade-missing-contract' : '' }}" href="{{ $playerUrl }}" @if($fantraxUrl) title="Contract missing — click to view this player's ECFHL history" @endif>{{ $player }}</a>
 @else
     {{ $player }}
 @endif
@@ -43,6 +44,8 @@
 .trade-contract--gray{background:#e5e7eb;color:#374151}
 .trade-contract--blue{background:#dbeafe;color:#1e40af}
 .trade-contract--orange{background:#ffedd5;color:#9a3412}
-.trade-missing-contract{text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;cursor:pointer}
+.trade-player-link{color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+.trade-player-link:hover{color:var(--brand,#2563eb)}
+.trade-missing-contract{text-decoration-style:dotted}
 </style>
 @endonce
