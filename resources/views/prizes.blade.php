@@ -26,10 +26,26 @@
 <section class="section"><div class="section-title"><h2>All-time leaders</h2></div>
 @include('partials.leaders',['leaderRows'=>['champions'=>$leaders['championships'],'earners'=>$singleSeasonEarners,'top_pick'=>$leaders['first_picks'] ?? []],'cards'=>['champions'=>'🏆 Champions','earners'=>'💵 Single season top earner','top_pick'=>'🎯 Top Pick Winner']])
 </section>
-@php($awardTypes = collect($awardEvents)->pluck('award','id')->all())
+@php
+    $awardTypes = collect($awardEvents)->pluck('award','id')->all();
+    $awardLabels = [
+        'president' => 'President',
+        'leader' => 'Fpts Leader',
+        'top_pick' => 'Top Pick',
+        'art_ross' => 'Art Ross',
+        'norris' => 'Norris',
+        'vezina' => 'Vezina',
+        'calder' => 'Calder',
+    ];
+    foreach($awardTypes as $id=>$label){
+        if(!isset($awardLabels[$id])) $awardLabels[$id]=$label;
+    }
+@endphp
 <div class="toolbar award-filters" role="group" aria-label="Award type">
 <button type="button" class="filter-button active" data-award="all" aria-pressed="true">All awards</button>
-@foreach($awardTypes as $id=>$label)<button type="button" class="filter-button" data-award="{{ $id }}" aria-pressed="false">{{ $label }}</button>@endforeach
+@foreach($awardLabels as $id=>$label)
+    @if(array_key_exists($id,$awardTypes))<button type="button" class="filter-button" data-award="{{ $id }}" aria-pressed="false">{{ $label }}</button>@endif
+@endforeach
 </div>
 <div class="prizes-grid">
 <section><div class="section-title"><h2>Awards and Total Winnings</h2></div>
