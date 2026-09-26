@@ -7,11 +7,13 @@
     }
 
     $isPick = false;
+    $draftPickUrl = null;
     // Display draft picks as: 1st Round (2026) [Original Owner Team Name].
+    // Link directly to that draft season and round.
     // Omit the owner when the team trading the pick is its original owner.
     if (preg_match('/^(\d{4})\s+Draft\s+Pick\s+Round\s+(\d+)(?:\s+Pick\s+\d+)?(?:\s*\(([^)]+)\))?$/i', trim($player), $pick)) {
         $isPick = true;
-        $year = $pick[1];
+        $year = (int) $pick[1];
         $round = (int) $pick[2];
         $owner = isset($pick[3]) ? trim($pick[3]) : null;
         $sender = trim((string)($senderTeam ?? ''));
@@ -19,6 +21,8 @@
         $mod100 = $round % 100;
         $suffix = ($mod100 >= 11 && $mod100 <= 13) ? 'th' : match ($round % 10) { 1 => 'st', 2 => 'nd', 3 => 'rd', default => 'th' };
         $player = $round.$suffix.' Round ('.$year.')'.($owner ? ' ['.$owner.']' : '');
+        $draftSeason = $year.'-'.substr((string)($year + 1), -2);
+        $draftPickUrl = '/draft?season='.urlencode($draftSeason).'#draft-round-'.$round;
     }
 
     $fantraxUrl = (!$isPick && !$contract && !empty($season))
@@ -28,7 +32,9 @@
     $color = in_array($contract, ['MINOR','MINORS','TBD'], true) ? 'orange' : (in_array($contract, ['2 YEARS','3 YEARS','4 YEARS'], true) ? 'blue' : 'gray');
 @endphp
 
-@if($playerUrl)
+@if($draftPickUrl)
+    <a class="trade-player-link" href="{{ $draftPickUrl }}">{{ $player }}</a>
+@elseif($playerUrl)
     <a class="trade-player-link{{ $fantraxUrl ? ' trade-missing-contract' : '' }}" href="{{ $playerUrl }}" @if($fantraxUrl) title="Contract missing — click to view this player's ECFHL history" @endif>{{ $player }}</a>
 @else
     {{ $player }}
