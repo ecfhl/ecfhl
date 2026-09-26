@@ -8,7 +8,10 @@ Route::get('/', function (EcfhlData $data) {
     $seasons=$data->seasons(); $teams=$data->teams(); $trades=$data->trades();
     $latest=null; foreach($seasons as $season){if(!empty($season['champion'])){$latest=$season;break;}}
     $latestStandings=$latest?$data->teamSeasons($latest['season']):[]; $latestLeader=$latestStandings[0]['team']??null;
-    $championships=count(array_filter($seasons,fn($s)=>!empty($s['champion']))); $prizesAwarded=array_sum(array_column($data->prizeTotals(),'awards')); $leaders=$data->overviewLeaders();
+    $championships=count(array_filter($seasons,fn($s)=>!empty($s['champion'])));
+    $selectedSeasonIds=array_column($seasons,'season_id');
+    $prizesAwarded=$selectedSeasonIds ? ((int)DB::table('prize_awards')->whereIn('season_id',$selectedSeasonIds)->sum('amount_cents'))/100 : 0;
+    $leaders=$data->overviewLeaders();
     return view('home',compact('seasons','teams','trades','latest','latestLeader','championships','prizesAwarded','leaders'));
 });
 Route::get('/seasons', function (EcfhlData $data) {
@@ -47,5 +50,4 @@ Route::get('/players',function(EcfhlData $data){
     $playerLeaders=[];foreach($counts as $type=>$rows){$list=[];foreach($rows as $row)$list[]=['team'=>$row['name'],'value'=>$row['count'],'score'=>$row['count']];usort($list,fn($a,$b)=>($b['score']<=>$a['score'])?:strnatcasecmp($a['team'],$b['team']));$playerLeaders[$type]=$list;}
     return view('players',compact('q','events','playerLeaders'));
 });
-Route::get('/rules',function(){$sections=DB::table('rules')->orderBy('rule_id')->get()->groupBy('section')->map(fn($items)=>$items->map(fn($r)=>trim(($r->subsection?$r->subsection.' — ':'').$r->rule_text))->all())->all();foreach($sections as $title=>&$items)if(preg_match('/injur.*reserve/i',$title))$items=['Each team is allowed 5 injured reserve spots. Players on injured reserve can be replaced with free agents.'];unset($items);return view('rules',compact('sections'));});
-Route::get('/api/debug/db-status',function(){$tables=['seasons','franchises','team_seasons','players','drafts','draft_picks','trades','trade_assets','award_types','awards','prize_awards','season_prizes','rules'];$counts=[];foreach($tables as $table)try{$counts[$table]=DB::table($table)->count();}catch(\Throwable $e){$counts[$table]='ERROR: '.$e->getMessage();}return response()->json($counts);});
+Route::get('/rules',function(){$sections=DB::table('rules')->orderBy('rule_id')->get()->groupBy('section')->map(fn($rows,$section)=>['title'=>$section,'items'=>$rows->map(fn($r)=>['title'=>$r->rule_title,'body'=>$r->rule_text])->all()])->values()->all();return view('rules',compact('sections'));});
