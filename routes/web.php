@@ -38,8 +38,11 @@ Route::get('/teams', function(EcfhlData $data){
 });
 Route::get('/teams/{slug}', function(string $slug,EcfhlData $data){
     $team=$data->team($slug);abort_unless($team,404);$history=$data->teamSeasons(null,$team['team']);$tradeCount=$data->teamTradeCount($team['id']);
-    $selectedSeasons=$data->seasons();$selectedNames=array_column($selectedSeasons,'season');$seasonIds=array_column($selectedSeasons,'season_id','season');$bySeason=[];
-    foreach($data->draftSeason('all') as $p){$season=$p['season']??null;if(!$season||!in_array($season,$selectedNames,true)||(int)($p['round']??0)!==1)continue;$fid=$p['franchise_id']??null;if(!$fid&&!empty($p['team']))$fid=$data->franchiseId($p['team'],$seasonIds[$season]??null);if($fid===$team['id'])$bySeason[$season]=($bySeason[$season]??0)+1;}
+    $selectedSeasons=$data->seasons();$selectedSeasonIds=array_column($selectedSeasons,'season_id');$bySeason=[];
+    if($selectedSeasonIds){
+        $rows=DB::table('draft_picks as dp')->join('drafts as d','d.draft_id','=','dp.draft_id')->join('seasons as s','s.season_id','=','d.season_id')->whereIn('s.season_id',$selectedSeasonIds)->where('dp.round',1)->where('dp.franchise_id',$team['id'])->select('s.season_name',DB::raw('COUNT(*) as pick_count'))->groupBy('s.season_name')->get();
+        foreach($rows as $row)$bySeason[$row->season_name]=(int)$row->pick_count;
+    }
     $firstRoundCount=array_sum($bySeason);$firstRoundBySeason=[];foreach($bySeason as $s=>$n)$firstRoundBySeason[]=['team'=>$s,'value'=>$n,'score'=>$n];usort($firstRoundBySeason,fn($a,$b)=>strcmp($b['team'],$a['team']));
     $partners=[];foreach($data->trades() as $t){if($t['vetoed'])continue;if(($t['from_id']??null)===$team['id'])$pid=$t['to_id']??null;elseif(($t['to_id']??null)===$team['id'])$pid=$t['from_id']??null;else continue;if($pid)$partners[$pid]=($partners[$pid]??0)+1;}$names=array_column($data->teamLedger($data->mode(),'all'),'team','id');$tradePartners=[];foreach($partners as $id=>$n)$tradePartners[]=['team'=>$names[$id]??$id,'value'=>$n,'score'=>$n];usort($tradePartners,fn($a,$b)=>$b['score']<=>$a['score']);return view('teams.show',compact('team','history','tradeCount','firstRoundCount','firstRoundBySeason','tradePartners'));
 });
