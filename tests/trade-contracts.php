@@ -32,9 +32,9 @@ check($trades['TR0482']['to_items']===['Matt Boldy (3 Years)'],'Source-only play
 check($trades['TR0482']['from_items']===['Cutter Gauthier (MINORS)','2026 Draft Pick round 1 (Brasse Camarade)'],'Unknown contract or draft pick changed');
 check(TradeContracts::label('Player (2 Years)',1)==='Player (1 Year)','Repeated contract suffix or singular label incorrect');
 $html=view('partials.trade-card',['t'=>$trades['TR0482']])->render();
-check(str_contains($html,'Matt Boldy (3 Years)'),'Contract not rendered in trade card');
+check(str_contains($html,'trade-contract--blue\">3 YEARS</span>'),'Contract not rendered in trade card');
 echo "Trade contracts passed: numeric evidence, backfill, idempotence, missing contracts, source merge, and rendered labels.\n";
 
 check(count(TradeContracts::statusRecords())===519,'Missing observed status contracts');
 foreach (['MINORS','FA','TBD'] as $status) check(TradeContracts::label('Player (MINORS)',$status)==='Player ('.$status.')','Status label not preserved');
-check(str_contains($html,'Cutter Gauthier (MINORS)'),'MINORS not rendered');
+check(str_contains($html,'trade-contract--orange\">MINORS</span>'),'MINORS not rendered');

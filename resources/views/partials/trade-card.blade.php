@@ -2,8 +2,8 @@
 <article class="card trade-item {{ !empty($t['vetoed'])?'trade-vetoed':'' }}" data-franchises="{{ implode('|',array_filter([$t['from_id']??null,$t['to_id']??null])) }}" data-season="{{ $t['season'] }}" data-search="{{ $hay }}" data-teams="{{ strtolower(implode('|',$t['filter_teams']??[])) }}">
 @if(!empty($t['vetoed']))<span class="veto-label">Vetoed</span>@endif
 <div class="trade-sides">
-<div><strong>{{ $t['from'] }} sent</strong><ul>@foreach($t['from_items'] as $item)<li>{{ $item }}</li>@endforeach</ul></div>
-<div><strong>{{ $t['to'] }} sent</strong><ul>@foreach($t['to_items'] as $item)<li>{{ $item }}</li>@endforeach</ul></div>
+<div><strong>{{ $t['from'] }} sent</strong><ul>@foreach($t['from_items'] as $item)<li>@include('partials.trade-asset',['item'=>$item])</li>@endforeach</ul></div>
+<div><strong>{{ $t['to'] }} sent</strong><ul>@foreach($t['to_items'] as $item)<li>@include('partials.trade-asset',['item'=>$item])</li>@endforeach</ul></div>
 </div>
 <time class="subtle trade-date" datetime="{{ $t['datetime']??'' }}">{{ $t['date'] }}</time>
 </article>
