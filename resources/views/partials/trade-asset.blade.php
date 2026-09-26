@@ -26,7 +26,17 @@
         : null;
     $color = in_array($contract, ['MINOR','MINORS','TBD'], true) ? 'orange' : (in_array($contract, ['2 YEARS','3 YEARS','4 YEARS'], true) ? 'blue' : 'gray');
 @endphp
-@if($fantraxUrl)<a class="trade-missing-contract" href="{{ $fantraxUrl }}" target="_blank" rel="noopener" title="Contract missing — search this player in the {{ $season }} Fantrax league">{{ $player }}</a>@else{{ $player }}@endif@if($contract) <span class="trade-contract trade-contract--{{ $color }}">{{ $contract }}</span>@endif
+
+@if($fantraxUrl)
+    <a class="trade-missing-contract" href="{{ $fantraxUrl }}" target="_blank" rel="noopener" title="Contract missing — search this player in the {{ $season }} Fantrax league">{{ $player }}</a>
+@else
+    {{ $player }}
+@endif
+
+@if($contract)
+    <span class="trade-contract trade-contract--{{ $color }}">{{ $contract }}</span>
+@endif
+
 @once
 <style>
 .trade-contract{display:inline-block;vertical-align:middle;margin-left:.3rem;padding:.15rem .45rem;border-radius:.35rem;font-size:.68em;font-weight:700;line-height:1.45;letter-spacing:.025em;white-space:nowrap}
