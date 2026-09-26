@@ -160,6 +160,14 @@ class Archive extends EcfhlData
                     if ($side==='from') $years[TradeContracts::playerKey('Elias Pettersson')]=2;
                     if ($side==='to') $years[TradeContracts::playerKey('Sebastian Aho')]=2;
                 }
+                // Ryan O'Reilly: these two historical trades were 1 year. Any other
+                // unresolved O'Reilly trade is FA; existing registered contracts win.
+                $oreillyKey=TradeContracts::playerKey("Ryan O'Reilly");
+                if (str_contains($date, 'Nov 11, 2023') || str_contains($date, 'Jan 15, 2021')) {
+                    $years[$oreillyKey]=1;
+                } elseif (!isset($years[$oreillyKey])) {
+                    $years[$oreillyKey]='FA';
+                }
                 foreach ($t[$side.'_items'] as &$text) {
                     $key=TradeContracts::playerKey($text);
                     if (isset($years[$key])) $text=TradeContracts::label($text, $years[$key]);
