@@ -73,7 +73,7 @@
 <div class="prizes-grid">
 <section><div class="section-title"><h2>Awards and Total Winnings</h2></div>
 <div class="table-card"><table class="data-table winnings-table"><thead><tr><th>Team</th><th class="num">Winnings</th><th class="num">Fees</th><th class="num">Net</th></tr></thead><tbody>
-@forelse($totals as $r)<tr><td><strong>{{ $r['team'] ?? '—' }}</strong></td><td class="num">${{ number_format((float)($r['awards'] ?? 0),2) }}</td><td class="num">${{ number_format((float)($r['fees'] ?? 0),2) }}</td><td class="num">${{ number_format((float)($r['net'] ?? 0),2) }}</td></tr>@empty<tr><td colspan="4">No recorded winnings.</td></tr>@endforelse
+@forelse($totals as $r)<tr><td><strong>{{ ($r['team'] ?? '—') === 'Lone Tsar' ? 'Ꮮσոє⚡️𐌕รคг' : ($r['team'] ?? '—') }}</strong></td><td class="num">${{ number_format((float)($r['awards'] ?? 0),2) }}</td><td class="num">${{ number_format((float)($r['fees'] ?? 0),2) }}</td><td class="num">${{ number_format((float)($r['net'] ?? 0),2) }}</td></tr>@empty<tr><td colspan="4">No recorded winnings.</td></tr>@endforelse
 </tbody></table></div></section>
 <section><div class="section-title"><h2>Awards by season</h2></div><div class="season-list">
 @forelse($seasonAwardRows->groupBy('season') as $year=>$items)
@@ -81,7 +81,7 @@
 @foreach($items as $a)
 <div class="award-entry" data-award-type="{{ $a['id'] }}">
 <span class="award-icon">{{ \App\Support\AwardIcon::for($a['id']) }}</span>
-<div><strong>{{ $a['award'] }}</strong><div>@if(!empty($a['player']))@include('partials.player-link',['name'=>$a['player']]) · @endif{{ $a['team'] }}</div></div>
+<div><strong>{{ $a['award'] }}</strong><div>{{ $a['team'] }}@if(!empty($a['player'])): @include('partials.player-link',['name'=>$a['player']])@endif</div></div>
 </div>
 @endforeach
 </article>
