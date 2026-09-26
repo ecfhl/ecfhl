@@ -4,7 +4,27 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
-    <title>@yield('title', 'East Coast Fantasy Hockey League')</title>
+    @php
+        if (request()->is('/')) {
+            $browserTitle = 'East Coast Fantasy Hockey League';
+        } elseif (request()->is('teams/*') && isset($team)) {
+            $browserTitle = 'ECFHL - '.($team['team'] ?? 'Franchise');
+        } elseif (request()->is('seasons/*') && isset($season)) {
+            $browserTitle = 'ECFHL - '.($season['season'] ?? 'Season');
+        } else {
+            $pageTitles = [
+                'seasons' => 'Seasons',
+                'teams' => 'Franchises',
+                'prizes' => 'Prizes',
+                'trades' => 'Trades',
+                'draft' => 'Draft',
+                'players' => 'Players',
+                'rules' => 'Rules',
+            ];
+            $browserTitle = 'ECFHL - '.($pageTitles[request()->segment(1)] ?? 'East Coast Fantasy Hockey League');
+        }
+    @endphp
+    <title>{{ $browserTitle }}</title>
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('ecfhl-logo.png') }}?v=3">
     <link rel="shortcut icon" type="image/png" href="{{ asset('ecfhl-logo.png') }}?v=3">
     <link rel="apple-touch-icon" href="{{ asset('ecfhl-logo.png') }}?v=3">
