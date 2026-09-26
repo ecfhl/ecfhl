@@ -63,7 +63,7 @@
                 '/players' => 'Players',
                 '/rules' => 'Rules',
             ] as $url => $label)
-                <a href="{{ $url }}" class="{{ request()->is(ltrim($url,'/')) || ($url==='/' && request()->is('/')) ? 'active' : '' }}">{{ $label }}</a>
+                <a href="{{ $url }}" class="{{ request()->is(ltrim($url,'/')) || ($url==='/' && request()->is('/')) ? 'active' : '' }}" @if($url==='/draft') onclick="if(location.pathname==='/draft'){event.preventDefault();history.replaceState(null,'','/draft');window.scrollTo({top:0,left:0,behavior:'auto'});}" @endif>{{ $label }}</a>
             @endforeach
         </nav>
     </div>
@@ -82,6 +82,7 @@
 (function(){
     const saved = localStorage.getItem('ecfhl-theme');
     if(saved) document.documentElement.dataset.theme = saved;
+    if(location.pathname==='/draft' && location.hash){history.replaceState(null,'',location.pathname+location.search);window.scrollTo(0,0);}
 })();
 function toggleTheme(){
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
