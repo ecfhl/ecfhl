@@ -7,6 +7,7 @@
 
 <style>
 .player-leader-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin:22px 0 28px;align-items:start}
+#player-results{scroll-margin-top:110px}
 @media(max-width:760px){.player-leader-grid{grid-template-columns:1fr}}
 </style>
 <div class="player-leader-grid">
@@ -30,6 +31,7 @@
     </article>
 </div>
 
+<div id="player-results">
 @if($q==='')
 <div class="empty">Enter a player name to explore their league history.</div>
 @else
@@ -50,5 +52,6 @@
 @empty<div class="empty">No matching player history in the selected season types.</div>@endforelse
 </div>
 @endif
+</div>
 </div>
 @endsection
