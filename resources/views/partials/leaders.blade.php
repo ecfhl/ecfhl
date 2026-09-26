@@ -1,4 +1,4 @@
-@php $leaderLimit = $limit ?? 5; @endphp
+@php $leaderLimit = $limit ?? 3; @endphp
 <div class="grid-3 leader-cards">
 @foreach($cards as $key=>$title)
 <article class="card leader-card" data-expand-card>
@@ -12,7 +12,7 @@
 <div class="empty">No recorded results for this selection.</div>
 @endforelse
 </div>
-@if(count($leaderRows[$key]??[])>0)
+@if(count($leaderRows[$key]??[]) > $leaderLimit)
 <button type="button" class="expand-card-link" data-expand-target="leader-{{ $key }}" data-limit="{{ $leaderLimit }}">View all</button>
 @endif
 </article>
@@ -24,7 +24,7 @@
 <script>
 document.querySelectorAll('.expand-card-link').forEach(btn=>btn.addEventListener('click',()=>{
     const box=document.getElementById(btn.dataset.expandTarget);
-    const limit=parseInt(btn.dataset.limit||'5',10);
+    const limit=parseInt(btn.dataset.limit||'3',10);
     const hiddenRows=box.querySelector('.expand-row[hidden]');
     if(!hiddenRows){
         box.querySelectorAll('.expand-row').forEach((r,i)=>r.hidden=i>=limit);
@@ -38,6 +38,7 @@ document.querySelectorAll('.expand-card-link').forEach(btn=>btn.addEventListener
 <style>
 .expand-card-link{display:block;margin:14px auto 0;padding:0;border:0;background:none;color:var(--accent,#1d5fa7);font:inherit;font-weight:700;cursor:pointer}
 .expand-card-link:hover{text-decoration:underline}
+.franchise-link,.franchise-link:hover{text-decoration:none}
 </style>
 @endpush
 @endonce
