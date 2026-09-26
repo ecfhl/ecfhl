@@ -142,18 +142,17 @@ class Archive extends EcfhlData
             }
             foreach (['from','to'] as $side) {
                 $years=array_replace($contracts[$side]??[], $verified[$t['id']][$t['season']][$side]??[]);
-                // Historical Sebastian Aho contracts supplied from the league record.
-                if (TradeContracts::playerKey('Sebastian Aho')) {
-                    $date=(string)$t['date'];
-                    if ($t['season']==='2025-26' && str_contains($date, 'Nov 20, 2025') && $side==='to') {
-                        $years[TradeContracts::playerKey('Sebastian Aho')]=2;
-                    }
-                    if ($t['season']==='2022-23' && str_contains($date, 'Nov 22, 2022') && $side==='from') {
-                        $years[TradeContracts::playerKey('Sebastian Aho')]='FA';
-                    }
-                    if ($t['season']==='2021-22' && str_contains($date, 'Oct 21, 2021') && $side==='to') {
-                        $years[TradeContracts::playerKey('Sebastian Aho')]=2;
-                    }
+                $date=(string)$t['date'];
+                // Historical contracts supplied from the league record.
+                if ($t['season']==='2025-26' && str_contains($date, 'Nov 20, 2025') && $side==='to') {
+                    $years[TradeContracts::playerKey('Sebastian Aho')]=2;
+                }
+                if ($t['season']==='2022-23' && str_contains($date, 'Nov 22, 2022') && $side==='from') {
+                    $years[TradeContracts::playerKey('Sebastian Aho')]='FA';
+                }
+                if ($t['season']==='2021-22' && str_contains($date, 'Oct 21, 2021')) {
+                    if ($side==='from') $years[TradeContracts::playerKey('Elias Pettersson')]=2;
+                    if ($side==='to') $years[TradeContracts::playerKey('Sebastian Aho')]=2;
                 }
                 foreach ($t[$side.'_items'] as &$text) {
                     $key=TradeContracts::playerKey($text);
