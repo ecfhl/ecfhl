@@ -85,7 +85,7 @@ class Archive extends EcfhlData
     }
     public function draftSeason(string $season): array
     {
-        // Merge by season/pick. A partially populated source cache must not hide DB seasons.
+        // Merge by season/pick, preserving source identity when imported DB fields are blank.
         $picks = [];
         foreach (parent::draftSeason($season) as $p) {
             $picks[$p['season'].'|'.$p['overall']] = $p;
@@ -97,17 +97,22 @@ class Archive extends EcfhlData
             if (!$sid || ($season !== 'all' && $this->year($sid) !== $season)) continue;
             $year = $this->year($sid);
             $key = $year.'|'.$p['overall_pick'];
+            $source = $picks[$key] ?? [];
             $picks[$key] = [
-                'season'=>$year, 'team'=>$p['team_name_raw'], 'franchise_id'=>$p['franchise_id'],
-                'player'=>$players[$p['player_id']] ?? ($picks[$key]['player'] ?? '—'),
-                'overall'=>$p['overall_pick'], 'round'=>$p['round'], 'pick'=>$p['pick_in_round'],
+                'season'=>$year,
+                'team'=>($p['team_name_raw'] ?? null) ?: ($source['team'] ?? null),
+                'franchise_id'=>($p['franchise_id'] ?? null) ?: ($source['franchise_id'] ?? null),
+                'player'=>$players[$p['player_id']] ?? ($source['player'] ?? '—'),
+                'overall'=>$p['overall_pick'] ?: ($source['overall'] ?? null),
+                'round'=>$p['round'] ?: ($source['round'] ?? null),
+                'pick'=>$p['pick_in_round'] ?: ($source['pick'] ?? null),
             ];
         }
         $out = [];
         foreach ($picks as $p) {
             $id = $this->seasonId($p['season']);
             if (!$id || !$this->selected($id)) continue;
-            $p['franchise_id'] = $p['franchise_id'] ?? $this->franchiseId($p['team'] ?? null, $id);
+            $p['franchise_id'] = ($p['franchise_id'] ?? null) ?: $this->franchiseId($p['team'] ?? null, $id);
             $p['team'] = $this->historical($p['franchise_id'], $id, $p['team'] ?? null);
             $out[] = $p;
         }
