@@ -12,8 +12,8 @@
 <article class="card trade-item {{ !empty($t['vetoed'])?'trade-vetoed':'' }}" data-franchises="{{ implode('|',array_filter([$t['from_id']??null,$t['to_id']??null])) }}" data-season="{{ $t['season'] }}" data-search="{{ $hay }}" data-teams="{{ strtolower(implode('|',$t['filter_teams']??[])) }}">
 @if(!empty($t['vetoed']))<span class="veto-label">Vetoed</span>@endif
 <div class="trade-sides">
-<div><strong>{{ $t['from'] }} sent</strong><ul class="trade-assets">@foreach($fromItems as $item)@php($isPick=preg_match('/\b(?:draft\s+pick|pick\s+\d+|round\s+\d+)\b/i',$item))<li class="{{ $isPick?'trade-asset-pick':'trade-asset-player' }}">@include('partials.trade-asset',['item'=>$item,'senderTeam'=>$t['from']])</li>@endforeach</ul></div>
-<div><strong>{{ $t['to'] }} sent</strong><ul class="trade-assets">@foreach($toItems as $item)@php($isPick=preg_match('/\b(?:draft\s+pick|pick\s+\d+|round\s+\d+)\b/i',$item))<li class="{{ $isPick?'trade-asset-pick':'trade-asset-player' }}">@include('partials.trade-asset',['item'=>$item,'senderTeam'=>$t['to']])</li>@endforeach</ul></div>
+<div><strong>{{ $t['from'] }} sent</strong><ul class="trade-assets">@foreach($fromItems as $item)@php($isPick=preg_match('/\b(?:draft\s+pick|pick\s+\d+|round\s+\d+)\b/i',$item))<li class="{{ $isPick?'trade-asset-pick':'trade-asset-player' }}">@include('partials.trade-asset',['item'=>$item,'senderTeam'=>$t['from'],'season'=>$t['season']])</li>@endforeach</ul></div>
+<div><strong>{{ $t['to'] }} sent</strong><ul class="trade-assets">@foreach($toItems as $item)@php($isPick=preg_match('/\b(?:draft\s+pick|pick\s+\d+|round\s+\d+)\b/i',$item))<li class="{{ $isPick?'trade-asset-pick':'trade-asset-player' }}">@include('partials.trade-asset',['item'=>$item,'senderTeam'=>$t['to'],'season'=>$t['season']])</li>@endforeach</ul></div>
 </div>
 <time class="subtle trade-date" datetime="{{ $t['datetime']??'' }}">{{ $t['date'] }}</time>
 </article>
