@@ -14,7 +14,7 @@
 <div class="prizes-grid">
 <section><div class="section-title"><h2>Awards and Total Winnings</h2></div>
 <div class="table-card"><table class="data-table winnings-table"><thead><tr><th>Team</th><th class="num">Paid awards</th><th class="num">Winnings</th></tr></thead><tbody>
-@forelse($totals as $r)<tr><td><a href="/teams/{{ $r['franchise_id'] }}"><strong>{{ $r['franchise_name'] }}</strong></a></td><td class="num">{{ $r['awards'] }}</td><td class="num">${{ number_format($r['total_cents']/100,2) }}</td></tr>@empty<tr><td colspan="3">No recorded winnings.</td></tr>@endforelse
+@forelse($totals as $r)<tr><td><strong>{{ $r['team'] ?? '—' }}</strong></td><td class="num">{{ $r['paid_awards'] ?? $r['award_count'] ?? 0 }}</td><td class="num">${{ number_format((float)($r['awards'] ?? 0),2) }}</td></tr>@empty<tr><td colspan="3">No recorded winnings.</td></tr>@endforelse
 </tbody></table></div></section>
 <section><div class="section-title"><h2>Awards by season</h2></div><div class="season-list">
 @forelse(collect($awardEvents)->groupBy('season') as $year=>$items)
