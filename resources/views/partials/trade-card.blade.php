@@ -19,10 +19,10 @@
 </article>
 @once
 <style>
-.trade-assets{list-style:none;padding-left:1.2rem}
+.trade-assets{list-style:none;padding-left:1.65rem}
 .trade-assets li{position:relative}
-.trade-assets li::before{position:absolute;right:calc(100% + .55rem);font-weight:800}
-.trade-asset-player::before{content:'•';font-size:1.15em;line-height:1.2}
-.trade-asset-pick::before{content:'◆';font-size:.62em;line-height:2.05}
+.trade-assets li::before{position:absolute;right:calc(100% + .45rem);width:1.2rem;text-align:center;font-size:.85em;line-height:1.55}
+.trade-asset-player::before{content:'🏒'}
+.trade-asset-pick::before{content:'🎟️'}
 </style>
 @endonce
