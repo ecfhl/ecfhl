@@ -14,19 +14,19 @@
     <article class="card leader-card">
         <h3 class="leader-card-title">🥇 #1 Overall Picks</h3>
         @forelse(array_slice($playerLeaders['overall1'] ?? [],0,10) as $i => $row)
-            @include('partials.leader-row')
+            @include('partials.leader-row',['playerLink'=>true])
         @empty<div class="empty">No recorded #1 overall picks.</div>@endforelse
     </article>
     <article class="card leader-card">
         <h3 class="leader-card-title">🔄 Most Traded Players</h3>
         @forelse(array_slice($playerLeaders['trades'] ?? [],0,10) as $i => $row)
-            @include('partials.leader-row')
+            @include('partials.leader-row',['playerLink'=>true])
         @empty<div class="empty">No recorded player trades.</div>@endforelse
     </article>
     <article class="card leader-card">
         <h3 class="leader-card-title">1️⃣ 1st Round Picks</h3>
         @forelse(array_slice($playerLeaders['round1'] ?? [],0,10) as $i => $row)
-            @include('partials.leader-row')
+            @include('partials.leader-row',['playerLink'=>true])
         @empty<div class="empty">No recorded first-round picks.</div>@endforelse
     </article>
 </div>
@@ -43,10 +43,10 @@
 @include('partials.trade-card',['t'=>$event['data']])
 @elseif($event['kind']==='draft')
 @php($p=$event['data'])
-<article class="card"><h3>📝 {{ $p['player'] }}</h3><div>{{ $p['team'] }}</div><p>Round {{ $p['round']??'—' }} · Pick {{ $p['pick']??'—' }} · #{{ $p['overall']??'—' }} overall</p><a href="/draft?season={{ urlencode($p['season']) }}">View season draft →</a></article>
+<article class="card"><h3>📝 @include('partials.player-link',['name'=>$p['player']])</h3><div>{{ $p['team'] }}</div><p>Round {{ $p['round']??'—' }} · Pick {{ $p['pick']??'—' }} · #{{ $p['overall']??'—' }} overall</p><a href="/draft?season={{ urlencode($p['season']) }}">View season draft →</a></article>
 @else
 @php($a=$event['data'])
-<article class="card"><span class="award-icon">{{ \App\Support\AwardIcon::for($a['id']) }}</span><h3>{{ $a['label'] }} · {{ $a['player'] }}</h3><div>{{ $a['team'] }}</div></article>
+<article class="card"><span class="award-icon">{{ \App\Support\AwardIcon::for($a['id']) }}</span><h3>{{ $a['label'] }} · @include('partials.player-link',['name'=>$a['player']])</h3><div>{{ $a['team'] }}</div></article>
 @endif
 </section>
 @empty<div class="empty">No matching player history in the selected season types.</div>@endforelse
