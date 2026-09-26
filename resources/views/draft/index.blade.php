@@ -36,7 +36,7 @@
   @if($showRoundHeader)
     <tr class="draft-round-header"><td colspan="4">Round {{ $round }}</td></tr>
   @endif
-  <tr class="draft-pick-row" data-search="{{ strtolower(($p['player']??'').' '.($p['team']??'').' '.$season) }}"><td class="num"><span class="draft-number">{{ $p['pick'] ?? '' }}</span></td><td class="num"><span class="draft-number draft-number-secondary">{{ $p['overall'] ?? '—' }}</span></td><td>{{ $p['player'] ?? '' }}</td><td>{{ $p['team'] ?? '' }}</td></tr>
+  <tr class="draft-pick-row" data-search="{{ strtolower(($p['player']??'').' '.($p['team']??'').' '.$season) }}"><td class="num"><span class="draft-number">{{ $p['pick'] ?? '' }}</span></td><td class="num"><span class="draft-number draft-number-secondary">{{ $p['overall'] ?? '—' }}</span></td><td>@include('partials.player-link',['name'=>$p['player'] ?? ''])</td><td>{{ $p['team'] ?? '' }}</td></tr>
 @endforeach
 </tbody></table></div></div></div>
 @endsection
