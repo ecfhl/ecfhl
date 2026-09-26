@@ -16,7 +16,16 @@ final class TradeContracts
 
     public static function playerName(string $text): string
     {
-        return trim(preg_replace('/\s*\((?:\d+ Years?|MINORS|FA|TBD)\)\s*$/i', '', $text));
+        return trim(preg_replace('/\s*\((?:\d+ Years?|MINORS?|FA|TBD)\)\s*$/i', '', $text));
+    }
+
+    /** Stable comparison key for names coming from Fantrax/imported trade text. */
+    public static function playerKey(string $text): string
+    {
+        $name = self::playerName($text);
+        $name = str_replace(["’", "‘", "`", "´"], "'", $name);
+        $name = preg_replace('/\s+/u', ' ', trim($name));
+        return mb_strtolower($name, 'UTF-8');
     }
 
     public static function label(string $text, int|string $years): string
