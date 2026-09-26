@@ -6,29 +6,23 @@
 <form method="get" class="toolbar"><label class="sr-only" for="playerQuery">Player name</label><input id="playerQuery" name="q" value="{{ $q }}" class="control" placeholder="Enter a player name…" style="flex:1" required><button class="button primary" type="submit">Search</button></form>
 
 <style>
-.player-leader-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin:22px 0 28px;align-items:start}
+.player-leader-grid{margin:22px 0 28px}
 #player-results{scroll-margin-top:110px}
-@media(max-width:760px){.player-leader-grid{grid-template-columns:1fr}}
 </style>
 <div class="player-leader-grid">
-    <article class="card leader-card">
-        <h3 class="leader-card-title">🥇 #1 Overall Picks</h3>
-        @forelse(array_slice($playerLeaders['overall1'] ?? [],0,10) as $i => $row)
-            @include('partials.leader-row',['playerLink'=>true])
-        @empty<div class="empty">No recorded #1 overall picks.</div>@endforelse
-    </article>
-    <article class="card leader-card">
-        <h3 class="leader-card-title">🔄 Most Traded Players</h3>
-        @forelse(array_slice($playerLeaders['trades'] ?? [],0,10) as $i => $row)
-            @include('partials.leader-row',['playerLink'=>true])
-        @empty<div class="empty">No recorded player trades.</div>@endforelse
-    </article>
-    <article class="card leader-card">
-        <h3 class="leader-card-title">1️⃣ 1st Round Picks</h3>
-        @forelse(array_slice($playerLeaders['round1'] ?? [],0,10) as $i => $row)
-            @include('partials.leader-row',['playerLink'=>true])
-        @empty<div class="empty">No recorded first-round picks.</div>@endforelse
-    </article>
+@include('partials.leaders',[
+    'leaderRows'=>[
+        'overall1'=>$playerLeaders['overall1'] ?? [],
+        'trades'=>$playerLeaders['trades'] ?? [],
+        'round1'=>$playerLeaders['round1'] ?? [],
+    ],
+    'cards'=>[
+        'overall1'=>'🥇 #1 Overall Picks',
+        'trades'=>'🔄 Most Traded Players',
+        'round1'=>'1️⃣ 1st Round Picks',
+    ],
+    'playerLink'=>true,
+])
 </div>
 
 <div id="player-results">
