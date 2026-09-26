@@ -36,7 +36,9 @@ document.querySelectorAll('.expand-card-link').forEach(btn=>btn.addEventListener
 }));
 </script>
 <style>
-.expand-card-link{display:block;margin:14px auto 0;padding:0;border:0;background:none;color:var(--accent,#1d5fa7);font:inherit;font-weight:700;cursor:pointer}
+.leader-cards{align-items:stretch}
+.leader-cards .leader-card{display:flex;flex-direction:column}
+.expand-card-link{display:block;margin:auto auto 0;padding:14px 0 0;border:0;background:none;color:var(--accent,#1d5fa7);font:inherit;font-weight:700;cursor:pointer}
 .expand-card-link:hover{text-decoration:underline}
 .franchise-link,.franchise-link:hover{text-decoration:none}
 </style>
