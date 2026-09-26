@@ -1,72 +1,26 @@
 @extends('layouts.app')
 @section('title', $team['team'].' · ECFHL')
-
 @section('content')
 <div class="shell">
-    <div class="page-head">
-        <div class="eyebrow">Franchise history</div>
-        <h1>{{ $team['team'] }}</h1>
-        <p>Complete recorded franchise history.</p>
-    </div>
-
-    @php
-        $franchiseOptions = app(\App\Support\Archive::class)->teamLedger(app(\App\Support\Archive::class)->mode(), 'all');
-        $tradePartnerRows = array_slice($tradePartners, 0, 15);
-        $firstRoundRows = array_slice($firstRoundBySeason, 0, 15);
-    @endphp
-
-    <div style="display:flex;justify-content:flex-end;margin:0 0 22px">
-        <select aria-label="Go to franchise" style="width:260px;padding:10px 12px;border-radius:8px" onchange="if(this.value) window.location.href=this.value">
-            <option value="">Go to franchise...</option>
-            @foreach($franchiseOptions as $option)
-                <option value="/teams/{{ \Illuminate\Support\Str::slug($option['team']) }}" {{ $option['id'] === $team['id'] ? 'selected' : '' }}>{{ $option['team'] }}</option>
-            @endforeach
-        </select>
-    </div>
-
-    <style>
-        .franchise-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--panel);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:26px}
-        .franchise-summary .summary-card{min-width:0;padding:20px 10px;text-align:center;border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
-        .franchise-summary .summary-card:last-child{border-right:0}
-        .franchise-summary .summary-value{font-size:25px;font-weight:800;line-height:1.15;white-space:nowrap}
-        .franchise-summary .summary-label{font-size:11px;line-height:1.25;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);white-space:nowrap}
-        .franchise-detail-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
-        .leader-card-head{position:relative}.leader-card-head .leader-card-title{padding-right:42px}.leader-expand-button{position:absolute;top:50%;right:14px;transform:translateY(-50%);display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:7px;background:transparent;color:inherit;font:inherit;font-size:18px;line-height:1;cursor:pointer}.leader-expand-button:hover{background:rgba(127,127,127,.12)}.leader-expand-button:focus-visible{outline:2px solid var(--accent,#1d5fa7);outline-offset:2px}
-        @media(max-width:760px){.franchise-detail-cards{grid-template-columns:1fr}}
-        @media(max-width:520px){.franchise-summary .summary-card{padding:14px 4px}.franchise-summary .summary-value{font-size:20px}.franchise-summary .summary-label{font-size:9px;letter-spacing:.25px}}
-    </style>
-
-    <div class="franchise-summary">
-        <div class="summary-card"><div class="summary-value">{{ $team['seasons'] }}</div><div class="summary-label">Seasons</div></div>
-        <div class="summary-card"><div class="summary-value">{{ $team['champion'] ?? 0 }}</div><div class="summary-label">Champions</div></div>
-        <div class="summary-card"><div class="summary-value">{{ ($team['w'] ?? 0).'-'.($team['l'] ?? 0).'-'.($team['t'] ?? 0) }}</div><div class="summary-label">Record</div></div>
-        <div class="summary-card"><div class="summary-value">{{ isset($team['win_pct']) && $team['win_pct'] !== null ? number_format($team['win_pct'] * 100, 1).'%' : '—' }}</div><div class="summary-label">Win %</div></div>
-    </div>
-
-    <div class="table-card"><div class="table-scroll"><table class="data-table"><thead><tr><th>Season</th><th>Team</th><th class="num">Finish</th><th class="num">Record</th><th class="num">Fpts</th></tr></thead><tbody>
-    @foreach($history as $r) @php $rank=isset($r['rank'])?(int)$r['rank']:null;$icon=match($r['playoff_finish']??null){'champion'=>'🏆','second'=>'🥈','third'=>'🥉',default=>''};$suffix=in_array(($rank??0)%100,[11,12,13])?'th':match(($rank??0)%10){1=>'st',2=>'nd',3=>'rd',default=>'th'};$finishText=trim($icon.' '.($rank>0?$rank.$suffix:'—')); @endphp
-    <tr><td><a href="/seasons/{{ rawurlencode($r['season']) }}"><strong>{{ $r['season'] }}</strong></a></td><td>{{ $r['original_name'] }}</td><td class="num nowrap">{{ $finishText }}</td><td class="num">{{ isset($r['w'])&&$r['w']!==null?($r['w'].'-'.($r['l']??0).'-'.($r['t']??0)):'—' }}</td><td class="num">{{ $r['fantasy_points_for']!==null?number_format($r['fantasy_points_for'],0):'—' }}</td></tr>
-    @endforeach
-    </tbody></table></div></div>
-
-    <section class="section"><div class="franchise-detail-cards">
-        <article class="card leader-card">
-            <div class="leader-card-head"><h3 class="leader-card-title">🔄 Trade Partners</h3>@if(count($tradePartnerRows)>3)<button type="button" class="leader-expand-button" data-expand-target="franchise-trade-partners" aria-expanded="false" title="Expand"><span class="expand-icon">⛶</span><span class="minimize-icon" hidden>✕</span></button>@endif</div>
-            <div id="franchise-trade-partners">@forelse($tradePartnerRows as $i=>$row)<div class="expand-row" @if($i>=3) hidden @endif>@include('partials.leader-row')</div>@empty<div class="empty">No recorded trades.</div>@endforelse</div>
-            @if(!empty($tradePartners))<div class="leader-rank franchise-total" style="font-weight:800"><span>Σ</span><strong>Total</strong><b>{{ array_sum(array_column($tradePartners,'value')) }}</b></div>@endif
-            <div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/trades?franchise={{ urlencode($team['id']) }}">View all trades →</a></div>
-        </article>
-        <article class="card leader-card">
-            <div class="leader-card-head"><h3 class="leader-card-title">1️⃣ 1st Round Picks by Season</h3>@if(count($firstRoundRows)>3)<button type="button" class="leader-expand-button" data-expand-target="franchise-first-round" aria-expanded="false" title="Expand"><span class="expand-icon">⛶</span><span class="minimize-icon" hidden>✕</span></button>@endif</div>
-            <div id="franchise-first-round">@forelse($firstRoundRows as $i=>$row)<div class="expand-row" @if($i>=3) hidden @endif>@include('partials.leader-row')</div>@empty<div class="empty">No recorded first-round picks.</div>@endforelse</div>
-            @if(!empty($firstRoundBySeason))<div class="leader-rank franchise-total" style="font-weight:800"><span>Σ</span><strong>Total</strong><b>{{ $firstRoundCount }}</b></div>@endif
-            <div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/draft?season=all&franchise={{ urlencode($team['id']) }}">View all draft picks →</a></div>
-        </article>
-    </div></section>
-</div>
+<div class="page-head"><div class="eyebrow">Franchise history</div><h1>{{ $team['team'] }}</h1><p>Complete recorded franchise history.</p></div>
+@php
+$archive=app(\App\Support\Archive::class);$franchiseOptions=$archive->teamLedger($archive->mode(),'all');$tradePartnerRows=array_slice($tradePartners,0,15);
+/* Build first-round history directly from draft_picks. The franchise_id is missing on some older picks, so match the raw draft team to that franchise's name in the same season as a fallback. $history is already filtered by the global season-type selection. */
+$selectedSeasonIds=array_values(array_unique(array_filter(array_column($history,'season_id'))));
+$aliasesBySeason=[];foreach($history as $h){if(!empty($h['season_id'])&&!empty($h['original_name']))$aliasesBySeason[$h['season_id']][]=mb_strtolower(trim($h['original_name']));}
+$draftRows=empty($selectedSeasonIds)?collect():\Illuminate\Support\Facades\DB::table('draft_picks as dp')->join('drafts as d','d.draft_id','=','dp.draft_id')->join('seasons as s','s.season_id','=','d.season_id')->whereIn('d.season_id',$selectedSeasonIds)->where('dp.round',1)->select('d.season_id','s.season_name','s.sequence','dp.franchise_id','dp.team_name_raw')->orderByDesc('s.sequence')->get();
+$bySeason=[];foreach($draftRows as $p){$belongs=$p->franchise_id===$team['id'];if(!$belongs&&!empty($p->team_name_raw))$belongs=in_array(mb_strtolower(trim($p->team_name_raw)),$aliasesBySeason[$p->season_id]??[],true);if($belongs)$bySeason[$p->season_name]=($bySeason[$p->season_name]??0)+1;}
+$firstRoundCount=array_sum($bySeason);$firstRoundBySeason=[];foreach($bySeason as $season=>$count)$firstRoundBySeason[]=['team'=>$season,'value'=>$count,'score'=>$count];$firstRoundRows=array_slice($firstRoundBySeason,0,15);
+@endphp
+<div style="display:flex;justify-content:flex-end;margin:0 0 22px"><select aria-label="Go to franchise" style="width:260px;padding:10px 12px;border-radius:8px" onchange="if(this.value) window.location.href=this.value"><option value="">Go to franchise...</option>@foreach($franchiseOptions as $option)<option value="/teams/{{ \Illuminate\Support\Str::slug($option['team']) }}" {{ $option['id']===$team['id']?'selected':'' }}>{{ $option['team'] }}</option>@endforeach</select></div>
+<style>
+.franchise-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--panel);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:26px}.franchise-summary .summary-card{min-width:0;padding:20px 10px;text-align:center;border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}.franchise-summary .summary-card:last-child{border-right:0}.franchise-summary .summary-value{font-size:25px;font-weight:800;line-height:1.15;white-space:nowrap}.franchise-summary .summary-label{font-size:11px;line-height:1.25;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);white-space:nowrap}.franchise-detail-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}.leader-card-head{position:relative}.leader-card-head .leader-card-title{padding-right:42px}.leader-expand-button{position:absolute;top:50%;right:14px;transform:translateY(-50%);display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:7px;background:transparent;color:inherit;font:inherit;font-size:18px;line-height:1;cursor:pointer}.leader-expand-button:hover{background:rgba(127,127,127,.12)}.leader-expand-button:focus-visible{outline:2px solid var(--accent,#1d5fa7);outline-offset:2px}@media(max-width:760px){.franchise-detail-cards{grid-template-columns:1fr}}@media(max-width:520px){.franchise-summary .summary-card{padding:14px 4px}.franchise-summary .summary-value{font-size:20px}.franchise-summary .summary-label{font-size:9px;letter-spacing:.25px}}
+</style>
+<div class="franchise-summary"><div class="summary-card"><div class="summary-value">{{ $team['seasons'] }}</div><div class="summary-label">Seasons</div></div><div class="summary-card"><div class="summary-value">{{ $team['champion']??0 }}</div><div class="summary-label">Champions</div></div><div class="summary-card"><div class="summary-value">{{ ($team['w']??0).'-'.($team['l']??0).'-'.($team['t']??0) }}</div><div class="summary-label">Record</div></div><div class="summary-card"><div class="summary-value">{{ isset($team['win_pct'])&&$team['win_pct']!==null?number_format($team['win_pct']*100,1).'%':'—' }}</div><div class="summary-label">Win %</div></div></div>
+<div class="table-card"><div class="table-scroll"><table class="data-table"><thead><tr><th>Season</th><th>Team</th><th class="num">Finish</th><th class="num">Record</th><th class="num">Fpts</th></tr></thead><tbody>@foreach($history as $r)@php $rank=isset($r['rank'])?(int)$r['rank']:null;$icon=match($r['playoff_finish']??null){'champion'=>'🏆','second'=>'🥈','third'=>'🥉',default=>''};$suffix=in_array(($rank??0)%100,[11,12,13])?'th':match(($rank??0)%10){1=>'st',2=>'nd',3=>'rd',default=>'th'};$finishText=trim($icon.' '.($rank>0?$rank.$suffix:'—'));@endphp<tr><td><a href="/seasons/{{ rawurlencode($r['season']) }}"><strong>{{ $r['season'] }}</strong></a></td><td>{{ $r['original_name'] }}</td><td class="num nowrap">{{ $finishText }}</td><td class="num">{{ isset($r['w'])&&$r['w']!==null?($r['w'].'-'.($r['l']??0).'-'.($r['t']??0)):'—' }}</td><td class="num">{{ $r['fantasy_points_for']!==null?number_format($r['fantasy_points_for'],0):'—' }}</td></tr>@endforeach</tbody></table></div></div>
+<section class="section"><div class="franchise-detail-cards">
+<article class="card leader-card"><div class="leader-card-head"><h3 class="leader-card-title">🔄 Trade Partners</h3>@if(count($tradePartnerRows)>3)<button type="button" class="leader-expand-button" data-expand-target="franchise-trade-partners" aria-expanded="false" title="Expand"><span class="expand-icon">⛶</span><span class="minimize-icon" hidden>✕</span></button>@endif</div><div id="franchise-trade-partners">@forelse($tradePartnerRows as $i=>$row)<div class="expand-row" @if($i>=3) hidden @endif>@include('partials.leader-row')</div>@empty<div class="empty">No recorded trades.</div>@endforelse</div>@if(!empty($tradePartners))<div class="leader-rank franchise-total" style="font-weight:800"><span>Σ</span><strong>Total</strong><b>{{ array_sum(array_column($tradePartners,'value')) }}</b></div>@endif<div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/trades?franchise={{ urlencode($team['id']) }}">View all trades →</a></div></article>
+<article class="card leader-card"><div class="leader-card-head"><h3 class="leader-card-title">1️⃣ 1st Round Picks by Season</h3>@if(count($firstRoundRows)>3)<button type="button" class="leader-expand-button" data-expand-target="franchise-first-round" aria-expanded="false" title="Expand"><span class="expand-icon">⛶</span><span class="minimize-icon" hidden>✕</span></button>@endif</div><div id="franchise-first-round">@forelse($firstRoundRows as $i=>$row)<div class="expand-row" @if($i>=3) hidden @endif>@include('partials.leader-row')</div>@empty<div class="empty">No recorded first-round picks.</div>@endforelse</div>@if(!empty($firstRoundBySeason))<div class="leader-rank franchise-total" style="font-weight:800"><span>Σ</span><strong>Total</strong><b>{{ $firstRoundCount }}</b></div>@endif<div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/draft?season=all&franchise={{ urlencode($team['id']) }}">View all draft picks →</a></div></article>
+</div></section></div>
 @endsection
-@push('scripts')
-<script>
-document.querySelectorAll('.leader-expand-button').forEach(btn=>btn.addEventListener('click',()=>{const box=document.getElementById(btn.dataset.expandTarget),expanded=btn.getAttribute('aria-expanded')==='true';box.querySelectorAll('.expand-row').forEach((r,i)=>r.hidden=expanded?i>=3:false);btn.setAttribute('aria-expanded',expanded?'false':'true');btn.title=expanded?'Expand':'Minimize';btn.querySelector('.expand-icon').hidden=!expanded;btn.querySelector('.minimize-icon').hidden=expanded;}));
-</script>
-@endpush
+@push('scripts')<script>document.querySelectorAll('.leader-expand-button').forEach(btn=>btn.addEventListener('click',()=>{const box=document.getElementById(btn.dataset.expandTarget),expanded=btn.getAttribute('aria-expanded')==='true';box.querySelectorAll('.expand-row').forEach((r,i)=>r.hidden=expanded?i>=3:false);btn.setAttribute('aria-expanded',expanded?'false':'true');btn.title=expanded?'Expand':'Minimize';btn.querySelector('.expand-icon').hidden=!expanded;btn.querySelector('.minimize-icon').hidden=expanded;}));</script>@endpush
