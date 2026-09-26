@@ -28,7 +28,7 @@
   <section class="section"><div class="section-title"><h2>Individual awards</h2></div><div class="grid-3">
     @foreach($awards as $a)
       @php $icon=match($a['id']){'president'=>'🏅','leader'=>'⭐','art_ross'=>'🏒','norris'=>'🛡️','vezina'=>'🥅','calder'=>'🌟',default=>'🏆'}; @endphp
-      <div class="card"><span class="subtle"><span class="award-icon">{{ $icon }}</span> {{ $a['label'] }}</span><h3>{{ $a['player'] ?: $a['team'] }}</h3>@if($a['player'])<div>{{ $a['team'] }}</div>@endif @if($a['points']!==null)<span class="subtle">{{ number_format($a['points'],0) }} pts</span>@endif</div>
+      <div class="card"><span class="subtle"><span class="award-icon">{{ $icon }}</span> {{ $a['label'] }}</span><h3>@if($a['player'])@include('partials.player-link',['name'=>$a['player']])@else{{ $a['team'] }}@endif</h3>@if($a['player'])<div>{{ $a['team'] }}</div>@endif @if($a['points']!==null)<span class="subtle">{{ number_format($a['points'],0) }} pts</span>@endif</div>
     @endforeach
   </div></section>
   @endif
@@ -48,7 +48,7 @@
       <div class="season-rank-head"><span class="season-rank-icon">🏒</span><h2>1st Round Draft Picks</h2></div>
       <div class="season-rank-body">
         @forelse($topPicks as $i=>$pick)
-          <div class="season-rank-row draft-rank-row"><span class="season-rank-number">{{ $pick['overall'] ?? $i+1 }}</span><span class="season-rank-name"><strong>{{ $pick['player'] ?? '—' }}</strong><small>{{ $pick['team'] ?? '' }}</small></span></div>
+          <div class="season-rank-row draft-rank-row"><span class="season-rank-number">{{ $pick['overall'] ?? $i+1 }}</span><span class="season-rank-name"><strong>@include('partials.player-link',['name'=>$pick['player'] ?? ''])</strong><small>{{ $pick['team'] ?? '' }}</small></span></div>
         @empty
           <div class="season-rank-empty">No first-round draft data</div>
         @endforelse
