@@ -147,8 +147,14 @@ class Archive extends EcfhlData
                 if ($t['season']==='2025-26' && str_contains($date, 'Nov 20, 2025') && $side==='to') {
                     $years[TradeContracts::playerKey('Sebastian Aho')]=2;
                 }
+                if ($t['season']==='2024-25' && str_contains($date, 'Dec 17, 2024') && $side==='from') {
+                    $years[TradeContracts::playerKey('Elias Pettersson')]=3;
+                }
                 if ($t['season']==='2022-23' && str_contains($date, 'Nov 22, 2022') && $side==='from') {
                     $years[TradeContracts::playerKey('Sebastian Aho')]='FA';
+                }
+                if ($t['season']==='2022-23' && str_contains($date, 'Feb 22, 2023') && $side==='to') {
+                    $years[TradeContracts::playerKey('Elias Pettersson')]='FA';
                 }
                 if ($t['season']==='2021-22' && str_contains($date, 'Oct 21, 2021')) {
                     if ($side==='from') $years[TradeContracts::playerKey('Elias Pettersson')]=2;
