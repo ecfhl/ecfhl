@@ -22,7 +22,7 @@
 .trade-assets{list-style:none;padding-left:1.65rem}
 .trade-assets li{position:relative}
 .trade-assets li::before{position:absolute;right:calc(100% + .45rem);width:1.2rem;text-align:center;font-size:.85em;line-height:1.55}
-.trade-asset-player::before{content:'🏒'}
-.trade-asset-pick::before{content:'🎟️'}
+.trade-asset-player::before{content:'👨‍🦰'}
+.trade-asset-pick::before{content:'🎯'}
 </style>
 @endonce
