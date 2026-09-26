@@ -27,19 +27,38 @@
 @include('partials.leaders',['leaderRows'=>['champions'=>$leaders['championships'],'earners'=>$singleSeasonEarners,'top_pick'=>$leaders['first_picks'] ?? []],'cards'=>['champions'=>'🏆 Champions','earners'=>'💵 Single season top earner','top_pick'=>'🎯 Top Pick Winner']])
 </section>
 @php
-    $awardTypes = collect($awardEvents)->pluck('award','id')->all();
     $awardLabels = [
-        'president' => 'President',
+        'champion' => 'Champion',
+        'second' => '2nd Place',
+        'third' => '3rd Place',
+        'president' => "President's Trophy",
         'leader' => 'Fpts Leader',
         'top_pick' => 'Top Pick',
-        'art_ross' => 'Art Ross',
-        'norris' => 'Norris',
-        'vezina' => 'Vezina',
-        'calder' => 'Calder',
     ];
-    foreach($awardTypes as $id=>$label){
-        if(!isset($awardLabels[$id])) $awardLabels[$id]=$label;
+    $seasonAwardRows = collect();
+    if ($selectedSeasonNames) {
+        $seasonAwardRows = \Illuminate\Support\Facades\DB::table('awards as a')
+            ->join('seasons as s','s.season_id','=','a.season_id')
+            ->leftJoin('franchises as f','f.franchise_id','=','a.franchise_id')
+            ->leftJoin('team_seasons as ts',function($join){$join->on('ts.season_id','=','a.season_id')->on('ts.franchise_id','=','a.franchise_id');})
+            ->leftJoin('players as p','p.player_id','=','a.player_id')
+            ->whereIn('s.season_name',$selectedSeasonNames)
+            ->whereIn('a.award_type_id',array_keys($awardLabels))
+            ->select('s.season_name','s.sequence','a.award_type_id','a.team_name_raw','f.franchise_name','ts.original_name','p.player_name')
+            ->orderByDesc('s.sequence')
+            ->orderByRaw("FIELD(a.award_type_id,'champion','second','third','president','leader','top_pick')")
+            ->get()
+            ->map(function($r) use ($awardLabels){
+                return [
+                    'season'=>$r->season_name,
+                    'id'=>$r->award_type_id,
+                    'award'=>$awardLabels[$r->award_type_id] ?? $r->award_type_id,
+                    'team'=>$r->original_name ?: ($r->team_name_raw ?: $r->franchise_name),
+                    'player'=>$r->player_name,
+                ];
+            });
     }
+    $awardTypes = $seasonAwardRows->pluck('award','id')->all();
 @endphp
 <div class="toolbar award-filters" role="group" aria-label="Award type">
 <button type="button" class="filter-button active" data-award="all" aria-pressed="true">All awards</button>
@@ -53,12 +72,12 @@
 @forelse($totals as $r)<tr><td><strong>{{ $r['team'] ?? '—' }}</strong></td><td class="num">${{ number_format((float)($r['awards'] ?? 0),2) }}</td><td class="num">${{ number_format((float)($r['fees'] ?? 0),2) }}</td><td class="num">${{ number_format((float)($r['net'] ?? 0),2) }}</td></tr>@empty<tr><td colspan="4">No recorded winnings.</td></tr>@endforelse
 </tbody></table></div></section>
 <section><div class="section-title"><h2>Awards by season</h2></div><div class="season-list">
-@forelse(collect($awardEvents)->groupBy('season') as $year=>$items)
+@forelse($seasonAwardRows->groupBy('season') as $year=>$items)
 <article class="card award-season"><h3><a href="/seasons/{{ rawurlencode($year) }}">{{ $year }}</a></h3>
 @foreach($items as $a)
 <div class="award-entry" data-award-type="{{ $a['id'] }}">
 <span class="award-icon">{{ \App\Support\AwardIcon::for($a['id']) }}</span>
-<div><strong>{{ $a['award'] ?? $a['id'] }}</strong><div>@if(!empty($a['player']))@include('partials.player-link',['name'=>$a['player']]) · @endif{{ $a['team'] }}</div></div>
+<div><strong>{{ $a['award'] }}</strong><div>@if(!empty($a['player']))@include('partials.player-link',['name'=>$a['player']]) · @endif{{ $a['team'] }}</div></div>
 </div>
 @endforeach
 </article>
