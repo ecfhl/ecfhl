@@ -1,22 +1,27 @@
 @extends('layouts.app')
 @section('title','East Coast Fantasy Hockey League')
 @section('content')
+@php
+$prizeTotals = app(\App\Support\Archive::class)->prizeTotals();
+$prizesAwarded = collect($prizeTotals)->sum('total_cents') / 100;
+@endphp
 <section class="hero"><div class="shell"><div class="eyebrow">Established in 2007</div><h1>East Coast Fantasy Hockey League</h1><p>A complete record of champions, franchise identities, seasons, trades, and draft history.</p><div class="hero-actions"><a class="button primary" href="/seasons">Explore seasons</a><a class="button secondary" href="/teams">View franchises</a></div></div></section>
 <div class="stats-strip"><div class="shell stats-grid" style="grid-template-columns:repeat(4,minmax(0,1fr))">
 <div class="stat"><strong>{{ count($seasons) }}</strong><span>Seasons</span></div>
 <div class="stat"><strong>{{ $championships }}</strong><span>Champions</span></div>
-<div class="stat"><strong>{{ $prizesAwarded }}</strong><span>Prizes</span></div>
+<div class="stat"><strong>${{ number_format($prizesAwarded, 0) }}</strong><span>Prizes</span></div>
 <div class="stat"><strong>{{ count($trades) }}</strong><span>Trades</span></div>
 </div></div>
 <section class="section"><div class="shell"><article class="card latest-season-card"><div class="section-title"><div><div class="eyebrow">Latest season</div><h2>{{ $latest['season'] ?? '—' }}</h2></div>@if($latest)<span class="season-badge">{{ $latest['format'] ?? '' }}</span>@endif</div>@if($latest)<div class="podium" style="min-height:170px;margin-top:4px"><div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><strong style="font-size:17px;text-align:center;margin-bottom:8px;line-height:1.2">{{ $latest['runner_up'] ?? '—' }}</strong><div class="podium-place podium-second" style="width:100%;height:112px;justify-content:center;padding:10px 12px"><span class="podium-medal" style="margin-bottom:7px">🥈</span><small>2nd</small></div></div><div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><strong style="font-size:18px;text-align:center;margin-bottom:8px;line-height:1.2">{{ $latest['champion'] ?? '—' }}</strong><div class="podium-place podium-first" style="width:100%;height:145px;justify-content:center;padding:10px 12px"><span class="podium-medal" style="margin-bottom:7px">🏆</span><small>Champion</small></div></div><div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><strong style="font-size:17px;text-align:center;margin-bottom:8px;line-height:1.2">{{ $latest['third_place'] ?? '—' }}</strong><div class="podium-place podium-third" style="width:100%;height:90px;justify-content:center;padding:10px 12px"><span class="podium-medal" style="margin-bottom:7px">🥉</span><small>3rd</small></div></div></div><div class="latest-footer"><span class="subtle">President's Trophy: <strong>{{ $latestLeader ?? '—' }}</strong></span><a href="/seasons/{{ rawurlencode($latest['season']) }}">View latest season →</a></div>@endif</article></div></section>
 @php
-$leaders['winnings'] = collect(app(\App\Support\Archive::class)->prizeTotals())->map(fn($r) => [
-    'team' => $r['team'] ?? '—',
-    'value' => '$'.number_format((float)($r['awards'] ?? 0), 2),
-    'score' => (float)($r['awards'] ?? 0),
+$leaders['winnings'] = collect($prizeTotals)->map(fn($r) => [
+    'team' => $r['franchise_name'] ?? '—',
+    'value' => '$'.number_format(((float)($r['total_cents'] ?? 0)) / 100, 0),
+    'score' => (float)($r['total_cents'] ?? 0),
 ])->sortByDesc('score')->values()->all();
 @endphp
 <section class="section" style="padding-top:0"><div class="shell"><div class="section-title"><h2>All-time leaders</h2><a href="/teams">Full franchise ledger →</a></div>@include('partials.leaders',['leaderRows'=>$leaders,'limit'=>3,'cards'=>['championships'=>'🏆 Championships','winning_pct'=>'📈 Winning %','trades'=>'🔄 Trades','winnings'=>'💵 Winnings','first_picks'=>'1️⃣ #1 overall picks','awards'=>'🏅 Awards']])</div></section>
+<section class="section" style="padding-top:0"><div class="shell"><div class="section-title"><h2>Recent seasons</h2><a href="/seasons">All seasons →</a></div>@include('partials.leaders',['leaderRows'=>$leaders,'limit'=>3,'cards'=>['championships'=>'🏆 Championships','winning_pct'=>'📈 Winning %','trades'=>'🔄 Trades','winnings'=>'💵 Winnings','first_picks'=>'1️⃣ #1 overall picks','awards'=>'🏅 Awards']])</div></section>
 <section class="section" style="padding-top:0"><div class="shell"><div class="section-title"><h2>Recent seasons</h2><a href="/seasons">All seasons →</a></div><div class="grid-3">@foreach(array_slice($seasons,0,6) as $season)<a class="feature-link" href="/seasons/{{ rawurlencode($season['season']) }}"><strong>{{ $season['season'] }}</strong><span>🏆 {{ $season['champion'] ?: 'No champion' }}</span><br><span>{{ $season['format'] ?? '' }}</span></a>@endforeach</div></div></section>
 <section class="section" style="padding-top:0"><div class="shell feature-links"><a class="feature-link" href="/seasons"><strong>Seasons</strong><span>Standings, finishes and playoff results →</span></a><a class="feature-link" href="/teams"><strong>Teams</strong><span>Franchise history, awards and records →</span></a><a class="feature-link" href="/trades"><strong>Trades</strong><span>Search every recorded transaction →</span></a><a class="feature-link" href="/draft"><strong>Draft</strong><span>Browse picks by year and franchise →</span></a></div></section>
 @endsection
