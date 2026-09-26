@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
-    <title>@yield('title', 'ECFHL History')</title>
-    <link rel="icon" type="image/png" href="{{ asset('ecfhl-logo.png') }}">
-    <link rel="shortcut icon" type="image/png" href="{{ asset('ecfhl-logo.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('ecfhl-logo.png') }}">
+    <title>@yield('title', 'East Coast Fantasy Hockey League')</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('ecfhl-logo.png') }}?v=3">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('ecfhl-logo.png') }}?v=3">
+    <link rel="apple-touch-icon" href="{{ asset('ecfhl-logo.png') }}?v=3">
     <link rel="stylesheet" href="/app.css?v=4">
     <link rel="stylesheet" href="/header-filters.css?v=2">
 </head>
