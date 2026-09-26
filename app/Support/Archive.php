@@ -109,6 +109,10 @@ class Archive extends EcfhlData
         foreach (parent::trades() as $t) if (!empty($t['id'])) $sourceTrades[$t['season'].'|'.$t['id']]=$t;
         $assets=[];
         foreach ($this->rows('trade_assets') as $a) $assets[$a['trade_id']][]=$a;
+        $verified=[];
+        foreach (TradeContracts::records() as $c) {
+            $verified[$c['trade_id']][$c['season']][$c['source_side']][$c['player_name']]=$c['contract_years_at_trade'];
+        }
         foreach ($this->rows('trades') as $r) {
             if (!$this->selected($r['season_id']) || $r['is_reversed']) continue;
             $t=['id'=>$r['trade_id'],'season'=>$this->year($r['season_id']),'date'=>$r['trade_date_raw'] ?: $r['trade_datetime'],'datetime'=>$r['trade_datetime'], 'vetoed'=>(bool)$r['is_vetoed'], 'from_id'=>$r['from_franchise_id'],'to_id'=>$r['to_franchise_id'], 'from_items'=>[], 'to_items'=>[]];
@@ -125,6 +129,21 @@ class Archive extends EcfhlData
             // Preserve richer imported descriptions, including recorded contracts.
             $source=$sourceTrades[$t['season'].'|'.($r['source_trade_id']?:$r['trade_id'])]??null;
             foreach (['from_items','to_items'] as $key) if (!empty($source[$key])) $t[$key]=$source[$key];
+            // Decorate after merging: source descriptions must not erase contracts.
+            $contracts=[];
+            foreach ($items as $a) {
+                if ($a['asset_type']==='player' && $a['contract_years_at_trade']!==null) {
+                    $contracts[$a['source_side']==='to'?'to':'from'][TradeContracts::playerName($a['asset_description']??'')]=(int)$a['contract_years_at_trade'];
+                }
+            }
+            foreach (['from','to'] as $side) {
+                $years=array_replace($contracts[$side]??[], $verified[$t['id']][$t['season']][$side]??[]);
+                foreach ($t[$side.'_items'] as &$text) {
+                    $name=TradeContracts::playerName($text);
+                    if (isset($years[$name])) $text=TradeContracts::label($text, $years[$name]);
+                }
+                unset($text);
+            }
             $out[]=$t;
         }
         usort($out,fn($a,$b)=>strcmp($b['datetime']??$b['season'],$a['datetime']??$a['season']));

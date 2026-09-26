@@ -52,3 +52,6 @@ $data=$app->make(App\Support\Archive::class);check($data->mode()==='total','Cook
 foreach($data->seasons() as $s)check(stripos($s['format'],'head')===false,'H2H leaked into total points');
 Artisan::call('view:cache');
 echo "Archive smoke checks passed: 38 page renders, filtering, names, leaders, chronology, cookie persistence, and Blade compilation.\n";
+
+require __DIR__.'/trade-contracts.php';
+
