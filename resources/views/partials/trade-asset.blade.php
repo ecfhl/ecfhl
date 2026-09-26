@@ -5,6 +5,17 @@
         $player = $match[1];
         $contract = strtoupper($match[2]);
     }
+
+    // Display draft picks as: 1st Round (2026) [Original Owner Team Name]
+    if (preg_match('/^(\d{4})\s+Draft\s+Pick\s+Round\s+(\d+)(?:\s+Pick\s+\d+)?(?:\s*\(([^)]+)\))?$/i', trim($player), $pick)) {
+        $year = $pick[1];
+        $round = (int) $pick[2];
+        $owner = isset($pick[3]) ? trim($pick[3]) : null;
+        $mod100 = $round % 100;
+        $suffix = ($mod100 >= 11 && $mod100 <= 13) ? 'th' : match ($round % 10) { 1 => 'st', 2 => 'nd', 3 => 'rd', default => 'th' };
+        $player = $round.$suffix.' Round ('.$year.')'.($owner ? ' ['.$owner.']' : '');
+    }
+
     $color = in_array($contract, ['MINOR','MINORS','TBD'], true) ? 'orange' : (in_array($contract, ['2 YEARS','3 YEARS','4 YEARS'], true) ? 'blue' : 'gray');
 @endphp
 {{ $player }}@if($contract) <span class="trade-contract trade-contract--{{ $color }}">{{ $contract }}</span>@endif
