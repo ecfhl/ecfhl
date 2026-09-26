@@ -150,6 +150,9 @@ class Archive extends EcfhlData
                 if ($t['season']==='2024-25' && str_contains($date, 'Dec 17, 2024') && $side==='from') {
                     $years[TradeContracts::playerKey('Elias Pettersson')]=3;
                 }
+                if ($t['season']==='2023-24' && str_contains($date, 'Nov 24, 2023') && $side==='to') {
+                    $years[TradeContracts::playerKey('Jack Hughes')]='FA';
+                }
                 if ($t['season']==='2022-23' && str_contains($date, 'Nov 22, 2022') && $side==='from') {
                     $years[TradeContracts::playerKey('Sebastian Aho')]='FA';
                 }
@@ -159,6 +162,9 @@ class Archive extends EcfhlData
                 if ($t['season']==='2021-22' && str_contains($date, 'Oct 21, 2021')) {
                     if ($side==='from') $years[TradeContracts::playerKey('Elias Pettersson')]=2;
                     if ($side==='to') $years[TradeContracts::playerKey('Sebastian Aho')]=2;
+                }
+                if ($t['season']==='2020-21' && str_contains($date, 'Jan 4, 2021') && $side==='to') {
+                    $years[TradeContracts::playerKey('Jack Hughes')]=4;
                 }
                 // Ryan O'Reilly: these two historical trades were 1 year. Any other
                 // unresolved O'Reilly trade is FA; existing registered contracts win.
