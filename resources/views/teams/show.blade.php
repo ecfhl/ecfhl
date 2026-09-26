@@ -4,13 +4,7 @@
 <div class="shell">
 <div class="page-head"><div class="eyebrow">Franchise history</div><h1>{{ $team['team'] }}</h1><p>Complete recorded franchise history.</p></div>
 @php
-$archive=app(\App\Support\Archive::class);$franchiseOptions=$archive->teamLedger($archive->mode(),'all');$tradePartnerRows=array_slice($tradePartners,0,15);
-/* Build first-round history directly from draft_picks. The franchise_id is missing on some older picks, so match the raw draft team to that franchise's name in the same season as a fallback. $history is already filtered by the global season-type selection. */
-$selectedSeasonIds=array_values(array_unique(array_filter(array_column($history,'season_id'))));
-$aliasesBySeason=[];foreach($history as $h){if(!empty($h['season_id'])&&!empty($h['original_name']))$aliasesBySeason[$h['season_id']][]=mb_strtolower(trim($h['original_name']));}
-$draftRows=empty($selectedSeasonIds)?collect():\Illuminate\Support\Facades\DB::table('draft_picks as dp')->join('drafts as d','d.draft_id','=','dp.draft_id')->join('seasons as s','s.season_id','=','d.season_id')->whereIn('d.season_id',$selectedSeasonIds)->where('dp.round',1)->select('d.season_id','s.season_name','s.sequence','dp.franchise_id','dp.team_name_raw')->orderByDesc('s.sequence')->get();
-$bySeason=[];foreach($draftRows as $p){$belongs=$p->franchise_id===$team['id'];if(!$belongs&&!empty($p->team_name_raw))$belongs=in_array(mb_strtolower(trim($p->team_name_raw)),$aliasesBySeason[$p->season_id]??[],true);if($belongs)$bySeason[$p->season_name]=($bySeason[$p->season_name]??0)+1;}
-$firstRoundCount=array_sum($bySeason);$firstRoundBySeason=[];foreach($bySeason as $season=>$count)$firstRoundBySeason[]=['team'=>$season,'value'=>$count,'score'=>$count];$firstRoundRows=array_slice($firstRoundBySeason,0,15);
+$archive=app(\App\Support\Archive::class);$franchiseOptions=$archive->teamLedger($archive->mode(),'all');$tradePartnerRows=array_slice($tradePartners,0,15);$firstRoundRows=array_slice($firstRoundBySeason,0,15);
 @endphp
 <div style="display:flex;justify-content:flex-end;margin:0 0 22px"><select aria-label="Go to franchise" style="width:260px;padding:10px 12px;border-radius:8px" onchange="if(this.value) window.location.href=this.value"><option value="">Go to franchise...</option>@foreach($franchiseOptions as $option)<option value="/teams/{{ \Illuminate\Support\Str::slug($option['team']) }}" {{ $option['id']===$team['id']?'selected':'' }}>{{ $option['team'] }}</option>@endforeach</select></div>
 <style>
