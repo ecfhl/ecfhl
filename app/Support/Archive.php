@@ -142,6 +142,10 @@ class Archive extends EcfhlData
             }
             foreach (['from','to'] as $side) {
                 $years=array_replace($contracts[$side]??[], $verified[$t['id']][$t['season']][$side]??[]);
+                // Known 2025-26 Nov 20 trade: Sebastian Aho sent by Orcas had 2 years.
+                if ($t['season']==='2025-26' && str_contains((string)$t['date'], 'Nov 20, 2025') && $side==='to') {
+                    $years[TradeContracts::playerKey('Sebastian Aho')]=2;
+                }
                 foreach ($t[$side.'_items'] as &$text) {
                     $key=TradeContracts::playerKey($text);
                     if (isset($years[$key])) $text=TradeContracts::label($text, $years[$key]);
