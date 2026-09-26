@@ -3,8 +3,28 @@
 @section('content')
 <div class="shell">
 <div class="page-head"><div class="eyebrow">League prizes</div><h1>Prizes</h1><p>Historical awards and winnings for the selected season types.</p></div>
+@php
+    $selectedSeasonNames = collect(app(\App\Support\Archive::class)->seasons())->pluck('season')->all();
+    $singleSeasonEarners = [];
+    if ($selectedSeasonNames) {
+        $rows = \Illuminate\Support\Facades\DB::table('prize_awards as pa')
+            ->join('seasons as s','s.season_id','=','pa.season_id')
+            ->leftJoin('team_seasons as ts',function($join){$join->on('ts.season_id','=','pa.season_id')->on('ts.franchise_id','=','pa.franchise_id');})
+            ->join('franchises as f','f.franchise_id','=','pa.franchise_id')
+            ->whereIn('s.season_name',$selectedSeasonNames)
+            ->select('s.season_name','pa.franchise_id','f.franchise_name','ts.original_name',\Illuminate\Support\Facades\DB::raw('SUM(pa.amount_cents) as total_cents'))
+            ->groupBy('s.season_name','pa.franchise_id','f.franchise_name','ts.original_name')
+            ->get();
+        foreach($rows as $r){
+            $cents=(int)$r->total_cents;
+            if($cents<=0) continue;
+            $singleSeasonEarners[]=['team'=>$r->original_name ?: $r->franchise_name,'season'=>$r->season_name,'value'=>'$'.number_format($cents/100,0),'score'=>$cents];
+        }
+        usort($singleSeasonEarners,fn($a,$b)=>($b['score']<=>$a['score']) ?: strcmp($b['season'],$a['season']));
+    }
+@endphp
 <section class="section"><div class="section-title"><h2>All-time leaders</h2></div>
-@include('partials.leaders',['leaderRows'=>['champions'=>$leaders['championships'],'earners'=>$seasonLeaders['top_earners'],'top_pick'=>$leaders['first_picks'] ?? []],'cards'=>['champions'=>'🏆 Champions','earners'=>'💵 Single season top earner','top_pick'=>'🎯 Top Pick Winner']])
+@include('partials.leaders',['leaderRows'=>['champions'=>$leaders['championships'],'earners'=>$singleSeasonEarners,'top_pick'=>$leaders['first_picks'] ?? []],'cards'=>['champions'=>'🏆 Champions','earners'=>'💵 Single season top earner','top_pick'=>'🎯 Top Pick Winner']])
 </section>
 @php($awardTypes = collect($awardEvents)->pluck('award','id')->all())
 <div class="toolbar award-filters" role="group" aria-label="Award type">
