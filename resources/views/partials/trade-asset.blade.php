@@ -6,11 +6,14 @@
         $contract = strtoupper($match[2]);
     }
 
-    // Display draft picks as: 1st Round (2026) [Original Owner Team Name]
+    // Display draft picks as: 1st Round (2026) [Original Owner Team Name].
+    // Omit the owner when the team trading the pick is its original owner.
     if (preg_match('/^(\d{4})\s+Draft\s+Pick\s+Round\s+(\d+)(?:\s+Pick\s+\d+)?(?:\s*\(([^)]+)\))?$/i', trim($player), $pick)) {
         $year = $pick[1];
         $round = (int) $pick[2];
         $owner = isset($pick[3]) ? trim($pick[3]) : null;
+        $sender = trim((string)($senderTeam ?? ''));
+        if ($owner && $sender !== '' && strcasecmp($owner, $sender) === 0) $owner = null;
         $mod100 = $round % 100;
         $suffix = ($mod100 >= 11 && $mod100 <= 13) ? 'th' : match ($round % 10) { 1 => 'st', 2 => 'nd', 3 => 'rd', default => 'th' };
         $player = $round.$suffix.' Round ('.$year.')'.($owner ? ' ['.$owner.']' : '');
