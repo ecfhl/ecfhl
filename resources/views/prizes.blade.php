@@ -4,7 +4,7 @@
 <div class="shell">
 <div class="page-head"><div class="eyebrow">League prizes</div><h1>Prizes</h1><p>Historical awards and winnings for the selected season types.</p></div>
 <section class="section"><div class="section-title"><h2>All-time leaders</h2></div>
-@include('partials.leaders',['leaderRows'=>['champions'=>$leaders['championships'],'earners'=>$seasonLeaders['top_earners'],'top_pick'=>$leaders['top_pick']],'cards'=>['champions'=>'🏆 Champions','earners'=>'💵 Single season top earner','top_pick'=>'🎯 Top Pick Winner']])
+@include('partials.leaders',['leaderRows'=>['champions'=>$leaders['championships'],'earners'=>$seasonLeaders['top_earners'],'top_pick'=>$leaders['first_picks'] ?? []],'cards'=>['champions'=>'🏆 Champions','earners'=>'💵 Single season top earner','top_pick'=>'🎯 Top Pick Winner']])
 </section>
 @php($awardTypes = collect($awardEvents)->pluck('label','id')->all())
 <div class="toolbar award-filters" role="group" aria-label="Award type">
