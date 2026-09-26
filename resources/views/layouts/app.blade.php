@@ -17,9 +17,9 @@
         }
     @endphp
     <title>{{ $browserTitle }}</title>
-    <link rel="icon" type="image/png" href="/ecfhl-logo.png?v=6">
-    <link rel="shortcut icon" type="image/png" href="/ecfhl-logo.png?v=6">
-    <link rel="apple-touch-icon" href="/ecfhl-logo.png?v=6">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7">
+    <link rel="shortcut icon" href="/favicon.svg?v=7">
+    <link rel="apple-touch-icon" href="/ecfhl-logo.png?v=7">
     <link rel="stylesheet" href="/app.css?v=4">
     <link rel="stylesheet" href="/header-filters.css?v=2">
 </head>
