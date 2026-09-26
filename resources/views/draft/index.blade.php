@@ -14,7 +14,9 @@
 @endforeach
 </div>
 <div id="draft-results"></div>
-@php($draftFranchises = collect($picks)->pluck('team')->filter()->unique()->sort(SORT_NATURAL|SORT_FLAG_CASE)->values())
+@php
+    $draftFranchises = collect($picks)->pluck('team')->filter()->unique()->sort()->values();
+@endphp
 <form class="toolbar" method="get" id="draftForm">
   <select class="control" name="season" onchange="this.form.submit()"><option value="all" @selected($selected==='all')>All years</option>@foreach($seasons as $s)<option value="{{ $s }}" @selected($s===$selected)>{{ $s }}</option>@endforeach</select>
   <select class="control" id="draftFranchise"><option value="">All franchises</option>@foreach($draftFranchises as $franchise)<option value="{{ strtolower($franchise) }}">{{ $franchise }}</option>@endforeach</select>
