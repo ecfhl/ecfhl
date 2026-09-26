@@ -8,13 +8,21 @@ $archive=app(\App\Support\Archive::class);
 $franchiseOptions=$archive->teamLedger($archive->mode(),'all');
 $tradePartnerRows=array_slice($tradePartners,0,15);
 $tradePartnerTotal=array_sum(array_column($tradePartners,'value'));
+$selectedSeasonIds=array_values(array_filter(array_column($archive->seasons(),'season_id')));
 $firstRoundRows=\Illuminate\Support\Facades\DB::table('draft_picks as dp')
     ->join('drafts as d','d.draft_id','=','dp.draft_id')
     ->join('seasons as s','s.season_id','=','d.season_id')
     ->leftJoin('players as p','p.player_id','=','dp.player_id')
-    ->where('dp.franchise_id',$team['id'])
+    ->leftJoin('team_seasons as ts',function($join){
+        $join->on('ts.season_id','=','d.season_id')->on('ts.original_name','=','dp.team_name_raw');
+    })
     ->where('dp.round',1)
+    ->whereIn('d.season_id',$selectedSeasonIds)
+    ->where(function($q)use($team){
+        $q->where('dp.franchise_id',$team['id'])->orWhere('ts.franchise_id',$team['id']);
+    })
     ->select('s.season_name','s.sequence','p.player_name','dp.overall_pick','dp.pick_in_round')
+    ->distinct()
     ->orderByDesc('s.sequence')
     ->orderBy('dp.overall_pick')
     ->limit(15)
