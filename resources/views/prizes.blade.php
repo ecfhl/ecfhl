@@ -60,13 +60,34 @@
 <section><div class="section-title"><h2>Awards and Total Winnings</h2></div><div class="table-card"><table class="data-table winnings-table"><thead><tr><th>Team</th><th class="num">Winnings</th><th class="num">Fees</th><th class="num">Net</th></tr></thead><tbody>
 @forelse($totals as $r)<tr><td><strong>{{ ($r['team'] ?? '—') === 'Lone Tsar' ? 'Ꮮσոє⚡️𐌕รคг' : ($r['team'] ?? '—') }}</strong></td><td class="num">${{ number_format((float)($r['awards'] ?? 0),2) }}</td><td class="num">${{ number_format((float)($r['fees'] ?? 0),2) }}</td><td class="num">${{ number_format((float)($r['net'] ?? 0),2) }}</td></tr>@empty<tr><td colspan="4">No recorded winnings.</td></tr>@endforelse
 </tbody></table></div></section>
-<section><div class="section-title"><h2>Awards by season</h2></div><div class="season-list">
-@forelse($seasonAwardRows->groupBy('season') as $year=>$items)<article class="card award-season"><h3><a href="/seasons/{{ rawurlencode($year) }}">{{ $year }}</a></h3>@foreach($items as $a)<div class="award-entry" data-award-type="{{ $a['id'] }}"><span class="award-icon">{{ \App\Support\AwardIcon::for($a['id']) }}</span><div><strong>{{ $a['award'] }}</strong><div>{{ $a['team'] }}@if(!empty($a['player'])): @include('partials.player-link',['name'=>$a['player']])@endif</div></div></div>@endforeach</article>@empty<div class="empty">No recorded awards.</div>@endforelse
-<p id="noAwards" class="empty" hidden>No awards of this type in the selected seasons.</p></div></section>
+<section><div class="section-title" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><h2>Awards by season</h2><select id="awardSeasonFilter" aria-label="Season" style="min-width:150px"><option value="all">All Seasons</option>@foreach($seasonAwardRows->pluck('season')->unique()->values() as $year)<option value="{{ $year }}">{{ $year }}</option>@endforeach</select></div><div class="season-list">
+@forelse($seasonAwardRows->groupBy('season') as $year=>$items)<article class="card award-season" data-season="{{ $year }}"><h3><a href="/seasons/{{ rawurlencode($year) }}">{{ $year }}</a></h3>@foreach($items as $a)<div class="award-entry" data-award-type="{{ $a['id'] }}"><span class="award-icon">{{ \App\Support\AwardIcon::for($a['id']) }}</span><div><strong>{{ $a['award'] }}</strong><div>{{ $a['team'] }}@if(!empty($a['player'])): @include('partials.player-link',['name'=>$a['player']])@endif</div></div></div>@endforeach</article>@empty<div class="empty">No recorded awards.</div>@endforelse
+<p id="noAwards" class="empty" hidden>No awards matching the selected filters.</p></div></section>
 </div></div>
 @endsection
 @push('scripts')
 <script>
-document.querySelectorAll('[data-award]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-award]').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',b===button?'true':'false');});document.querySelectorAll('[data-award-type]').forEach(e=>e.hidden=button.dataset.award!=='all'&&e.dataset.awardType!==button.dataset.award);document.querySelectorAll('.award-season').forEach(e=>e.hidden=![...e.querySelectorAll('[data-award-type]')].some(a=>!a.hidden));document.getElementById('noAwards').hidden=[...document.querySelectorAll('.award-season')].some(e=>!e.hidden);});
+const awardButtons=[...document.querySelectorAll('[data-award]')];
+const seasonFilter=document.getElementById('awardSeasonFilter');
+function applyAwardFilters(){
+    const activeAward=document.querySelector('[data-award].active')?.dataset.award||'all';
+    const activeSeason=seasonFilter?.value||'all';
+    document.querySelectorAll('.award-season').forEach(card=>{
+        const seasonMatches=activeSeason==='all'||card.dataset.season===activeSeason;
+        let hasVisibleAward=false;
+        card.querySelectorAll('[data-award-type]').forEach(entry=>{
+            const awardMatches=activeAward==='all'||entry.dataset.awardType===activeAward;
+            entry.hidden=!awardMatches;
+            if(awardMatches)hasVisibleAward=true;
+        });
+        card.hidden=!(seasonMatches&&hasVisibleAward);
+    });
+    document.getElementById('noAwards').hidden=[...document.querySelectorAll('.award-season')].some(card=>!card.hidden);
+}
+awardButtons.forEach(button=>button.addEventListener('click',()=>{
+    awardButtons.forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',b===button?'true':'false');});
+    applyAwardFilters();
+}));
+seasonFilter?.addEventListener('change',applyAwardFilters);
 </script>
 @endpush
