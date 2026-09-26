@@ -14,8 +14,10 @@
 @endforeach
 </div>
 <div id="draft-results"></div>
+@php($draftFranchises = collect($picks)->pluck('team')->filter()->unique()->sort(SORT_NATURAL|SORT_FLAG_CASE)->values())
 <form class="toolbar" method="get" id="draftForm">
   <select class="control" name="season" onchange="this.form.submit()"><option value="all" @selected($selected==='all')>All years</option>@foreach($seasons as $s)<option value="{{ $s }}" @selected($s===$selected)>{{ $s }}</option>@endforeach</select>
+  <select class="control" id="draftFranchise"><option value="">All franchises</option>@foreach($draftFranchises as $franchise)<option value="{{ strtolower($franchise) }}">{{ $franchise }}</option>@endforeach</select>
   <input id="draftSearch" name="q" value="{{ $q }}" class="control" style="flex:1;min-width:220px" placeholder="Search player or team…">
 </form>
 <div class="table-card"><div class="table-scroll"><table class="data-table" id="draftTable"><thead><tr><th class="num">Pick</th><th class="num">Overall</th><th>Player</th><th>Team</th></tr></thead><tbody>
@@ -36,19 +38,17 @@
   @if($showRoundHeader)
     <tr class="draft-round-header" id="draft-round-{{ $round }}"><td colspan="4">Round {{ $round }}</td></tr>
   @endif
-  <tr class="draft-pick-row" data-search="{{ strtolower(($p['player']??'').' '.($p['team']??'').' '.$season) }}"><td class="num"><span class="draft-number">{{ $p['pick'] ?? '' }}</span></td><td class="num"><span class="draft-number draft-number-secondary">{{ $p['overall'] ?? '—' }}</span></td><td>@include('partials.player-link',['name'=>$p['player'] ?? ''])</td><td>{{ $p['team'] ?? '' }}</td></tr>
+  <tr class="draft-pick-row" data-team="{{ strtolower($p['team']??'') }}" data-search="{{ strtolower(($p['player']??'').' '.($p['team']??'').' '.$season) }}"><td class="num"><span class="draft-number">{{ $p['pick'] ?? '' }}</span></td><td class="num"><span class="draft-number draft-number-secondary">{{ $p['overall'] ?? '—' }}</span></td><td>@include('partials.player-link',['name'=>$p['player'] ?? ''])</td><td>{{ $p['team'] ?? '' }}</td></tr>
 @endforeach
 </tbody></table></div></div></div>
 @endsection
 @push('scripts')
 <script>
-const draftSearch=document.getElementById('draftSearch');draftSearch.addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#draftTable .draft-pick-row').forEach(r=>r.style.display=r.dataset.search.includes(q)?'':'none');document.querySelectorAll('#draftTable .draft-round-header').forEach(h=>{let row=h.nextElementSibling,visible=false;while(row&&!row.classList.contains('draft-round-header')&&!row.classList.contains('draft-season-header')){if(row.classList.contains('draft-pick-row')&&row.style.display!=='none')visible=true;row=row.nextElementSibling;}h.style.display=visible?'':'none';});document.querySelectorAll('#draftTable .draft-season-header').forEach(h=>{let row=h.nextElementSibling,visible=false;while(row&&!row.classList.contains('draft-season-header')){if(row.classList.contains('draft-pick-row')&&row.style.display!=='none')visible=true;row=row.nextElementSibling;}h.style.display=visible?'':'none';});});
+const draftSearch=document.getElementById('draftSearch'),draftFranchise=document.getElementById('draftFranchise');
+function filterDraft(){const q=draftSearch.value.toLowerCase(),franchise=draftFranchise.value;document.querySelectorAll('#draftTable .draft-pick-row').forEach(r=>r.style.display=r.dataset.search.includes(q)&&(!franchise||r.dataset.team===franchise)?'':'none');document.querySelectorAll('#draftTable .draft-round-header').forEach(h=>{let row=h.nextElementSibling,visible=false;while(row&&!row.classList.contains('draft-round-header')&&!row.classList.contains('draft-season-header')){if(row.classList.contains('draft-pick-row')&&row.style.display!=='none')visible=true;row=row.nextElementSibling;}h.style.display=visible?'':'none';});document.querySelectorAll('#draftTable .draft-season-header').forEach(h=>{let row=h.nextElementSibling,visible=false;while(row&&!row.classList.contains('draft-season-header')){if(row.classList.contains('draft-pick-row')&&row.style.display!=='none')visible=true;row=row.nextElementSibling;}h.style.display=visible?'':'none';});}
+draftSearch.addEventListener('input',filterDraft);draftFranchise.addEventListener('change',()=>{filterDraft();document.getElementById('draft-results')?.scrollIntoView({block:'start'});});
 document.querySelectorAll('.expand-card-link').forEach(btn=>btn.addEventListener('click',()=>{const box=document.getElementById(btn.dataset.expandTarget),opening=box.querySelector('.expand-row[hidden]')!==null;box.querySelectorAll('.expand-row').forEach((r,i)=>r.hidden=!opening&&i>=5);btn.textContent=opening?'Show top 5':'View all';}));
-const draftParams=new URLSearchParams(window.location.search);
-const draftFilterUsed=draftParams.has('season')||draftParams.has('q');
-if(draftFilterUsed){
- window.addEventListener('load',()=>{const hash=window.location.hash;if(hash){const target=document.querySelector(hash);if(target){target.scrollIntoView({block:'start'});return;}}const target=document.getElementById('draft-results');if(target)target.scrollIntoView({block:'start'});});
-}
+const draftParams=new URLSearchParams(window.location.search);const draftFilterUsed=draftParams.has('season')||draftParams.has('q');if(draftFilterUsed){window.addEventListener('load',()=>{const hash=window.location.hash;if(hash){const target=document.querySelector(hash);if(target){target.scrollIntoView({block:'start'});return;}}document.getElementById('draft-results')?.scrollIntoView({block:'start'});});}
 </script>
 <style>#draft-results,.draft-round-header{scroll-margin-top:170px}.draft-season-header td{padding:18px 20px!important;background:rgba(205,214,228,.7);font-size:19px;font-weight:900;letter-spacing:.3px;color:var(--text,#142238);border-top:3px solid var(--line,#d4dbe5);border-bottom:1px solid var(--line,#d4dbe5)}.draft-season-header:first-child td{border-top:0}.draft-round-header td{padding:12px 20px!important;background:rgba(225,232,242,.45);font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--muted,#687486);border-bottom:1px solid var(--line,#dce2ea)}.draft-number{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:rgba(225,232,242,.55);font-weight:800;line-height:1}.draft-number-secondary{font-weight:700}.expand-card-link{display:block;margin:14px auto 0;padding:0;border:0;background:none;color:var(--accent,#1d5fa7);font:inherit;font-weight:700;cursor:pointer}.expand-card-link:hover{text-decoration:underline}@media(max-width:700px){#draftTable th.num,#draftTable td.num{width:54px;padding-left:8px;padding-right:8px}.draft-number{width:34px;height:34px;font-size:14px}}</style>
 @endpush
