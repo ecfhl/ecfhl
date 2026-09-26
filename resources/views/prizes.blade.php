@@ -53,50 +53,36 @@
             ->orderByRaw("FIELD(a.award_type_id,'champion','second','third','president','leader','top_pick','art_ross','norris','vezina','calder')")
             ->get()
             ->map(function($r) use ($awardLabels){
-                return [
-                    'season'=>$r->season_name,
-                    'id'=>$r->award_type_id,
-                    'award'=>$awardLabels[$r->award_type_id] ?? $r->award_type_id,
-                    'team'=>$r->original_name ?: ($r->team_name_raw ?: $r->franchise_name),
-                    'player'=>$r->player_name,
-                ];
+                return ['season'=>$r->season_name,'id'=>$r->award_type_id,'award'=>$awardLabels[$r->award_type_id] ?? $r->award_type_id,'team'=>$r->original_name ?: ($r->team_name_raw ?: $r->franchise_name),'player'=>$r->player_name];
             });
     }
     $awardTypes = $seasonAwardRows->pluck('award','id')->all();
+    $playerAwardLeaders = [];
+    foreach(['art_ross','norris','vezina'] as $awardId){
+        $playerAwardLeaders[$awardId] = $seasonAwardRows
+            ->where('id',$awardId)->filter(fn($r)=>!empty($r['player']))->groupBy('player')
+            ->map(fn($rows,$player)=>['team'=>$player,'value'=>$rows->count(),'score'=>$rows->count()])
+            ->sort(function($a,$b){ return ($b['score'] <=> $a['score']) ?: strcasecmp($a['team'],$b['team']); })->values()->all();
+    }
 @endphp
+<section class="section" style="padding-top:0"><div class="section-title"><h2>Player award leaders</h2></div>
+@include('partials.leaders',['leaderRows'=>$playerAwardLeaders,'limit'=>5,'cards'=>['art_ross'=>'🏒 Art Ross','norris'=>'🛡️ Norris','vezina'=>'🥅 Vezina']])
+</section>
 <div class="toolbar award-filters" role="group" aria-label="Award type">
 <button type="button" class="filter-button active" data-award="all" aria-pressed="true">All awards</button>
-@foreach($awardLabels as $id=>$label)
-    @if(array_key_exists($id,$awardTypes))<button type="button" class="filter-button" data-award="{{ $id }}" aria-pressed="false">{{ $label }}</button>@endif
-@endforeach
+@foreach($awardLabels as $id=>$label)@if(array_key_exists($id,$awardTypes))<button type="button" class="filter-button" data-award="{{ $id }}" aria-pressed="false">{{ $label }}</button>@endif @endforeach
 </div>
 <div class="prizes-grid">
-<section><div class="section-title"><h2>Awards and Total Winnings</h2></div>
-<div class="table-card"><table class="data-table winnings-table"><thead><tr><th>Team</th><th class="num">Winnings</th><th class="num">Fees</th><th class="num">Net</th></tr></thead><tbody>
+<section><div class="section-title"><h2>Awards and Total Winnings</h2></div><div class="table-card"><table class="data-table winnings-table"><thead><tr><th>Team</th><th class="num">Winnings</th><th class="num">Fees</th><th class="num">Net</th></tr></thead><tbody>
 @forelse($totals as $r)<tr><td><strong>{{ ($r['team'] ?? '—') === 'Lone Tsar' ? 'Ꮮσոє⚡️𐌕รคг' : ($r['team'] ?? '—') }}</strong></td><td class="num">${{ number_format((float)($r['awards'] ?? 0),2) }}</td><td class="num">${{ number_format((float)($r['fees'] ?? 0),2) }}</td><td class="num">${{ number_format((float)($r['net'] ?? 0),2) }}</td></tr>@empty<tr><td colspan="4">No recorded winnings.</td></tr>@endforelse
 </tbody></table></div></section>
 <section><div class="section-title"><h2>Awards by season</h2></div><div class="season-list">
-@forelse($seasonAwardRows->groupBy('season') as $year=>$items)
-<article class="card award-season"><h3><a href="/seasons/{{ rawurlencode($year) }}">{{ $year }}</a></h3>
-@foreach($items as $a)
-<div class="award-entry" data-award-type="{{ $a['id'] }}">
-<span class="award-icon">{{ \App\Support\AwardIcon::for($a['id']) }}</span>
-<div><strong>{{ $a['award'] }}</strong><div>{{ $a['team'] }}@if(!empty($a['player'])): @include('partials.player-link',['name'=>$a['player']])@endif</div></div>
-</div>
-@endforeach
-</article>
-@empty<div class="empty">No recorded awards.</div>@endforelse
-<p id="noAwards" class="empty" hidden>No awards of this type in the selected seasons.</p>
-</div></section>
+@forelse($seasonAwardRows->groupBy('season') as $year=>$items)<article class="card award-season"><h3><a href="/seasons/{{ rawurlencode($year) }}">{{ $year }}</a></h3>@foreach($items as $a)<div class="award-entry" data-award-type="{{ $a['id'] }}"><span class="award-icon">{{ \App\Support\AwardIcon::for($a['id']) }}</span><div><strong>{{ $a['award'] }}</strong><div>{{ $a['team'] }}@if(!empty($a['player'])): @include('partials.player-link',['name'=>$a['player']])@endif</div></div></div>@endforeach</article>@empty<div class="empty">No recorded awards.</div>@endforelse
+<p id="noAwards" class="empty" hidden>No awards of this type in the selected seasons.</p></div></section>
 </div></div>
 @endsection
 @push('scripts')
 <script>
-document.querySelectorAll('[data-award]').forEach(button=>button.addEventListener('click',()=>{
- document.querySelectorAll('[data-award]').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',b===button?'true':'false');});
- document.querySelectorAll('[data-award-type]').forEach(e=>e.hidden=button.dataset.award!=='all'&&e.dataset.awardType!==button.dataset.award);
- document.querySelectorAll('.award-season').forEach(e=>e.hidden=![...e.querySelectorAll('[data-award-type]')].some(a=>!a.hidden));
- document.getElementById('noAwards').hidden=[...document.querySelectorAll('.award-season')].some(e=>!e.hidden);
-}));
+document.querySelectorAll('[data-award]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-award]').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',b===button?'true':'false');});document.querySelectorAll('[data-award-type]').forEach(e=>e.hidden=button.dataset.award!=='all'&&e.dataset.awardType!==button.dataset.award);document.querySelectorAll('.award-season').forEach(e=>e.hidden=![...e.querySelectorAll('[data-award-type]')].some(a=>!a.hidden));document.getElementById('noAwards').hidden=[...document.querySelectorAll('.award-season')].some(e=>!e.hidden);});
 </script>
 @endpush
