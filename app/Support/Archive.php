@@ -116,7 +116,6 @@ class Archive extends EcfhlData
         foreach (TradeContracts::statusRecords() as $c) {
             $verified[$c['trade_id']][$c['season']][$c['source_side']][TradeContracts::playerKey($c['player_name'])]=$c['contract_raw'];
         }
-        // Directly verified duplicate-name Fantrax results. Prefer Sta != FA.
         $verified['TR0480']['2025-26']['to'][TradeContracts::playerKey("Ryan O'Reilly")]='FA';
         $verified['TR0481']['2025-26']['to'][TradeContracts::playerKey('Elias Pettersson')]=2;
         foreach ($this->rows('trades') as $r) {
@@ -143,37 +142,19 @@ class Archive extends EcfhlData
             foreach (['from','to'] as $side) {
                 $years=array_replace($contracts[$side]??[], $verified[$t['id']][$t['season']][$side]??[]);
                 $date=(string)$t['date'];
-                // Historical contracts supplied from the league record.
-                if ($t['season']==='2025-26' && str_contains($date, 'Nov 20, 2025') && $side==='to') {
-                    $years[TradeContracts::playerKey('Sebastian Aho')]=2;
-                }
-                if ($t['season']==='2024-25' && str_contains($date, 'Dec 17, 2024') && $side==='from') {
-                    $years[TradeContracts::playerKey('Elias Pettersson')]=3;
-                }
-                if ($t['season']==='2023-24' && str_contains($date, 'Nov 24, 2023') && $side==='to') {
-                    $years[TradeContracts::playerKey('Jack Hughes')]='FA';
-                }
-                if ($t['season']==='2022-23' && str_contains($date, 'Nov 22, 2022') && $side==='from') {
-                    $years[TradeContracts::playerKey('Sebastian Aho')]='FA';
-                }
-                if ($t['season']==='2022-23' && str_contains($date, 'Feb 22, 2023') && $side==='to') {
-                    $years[TradeContracts::playerKey('Elias Pettersson')]='FA';
-                }
+                if ($t['season']==='2025-26' && str_contains($date, 'Nov 20, 2025') && $side==='to') $years[TradeContracts::playerKey('Sebastian Aho')]=2;
+                if ($t['season']==='2024-25' && str_contains($date, 'Dec 17, 2024') && $side==='from') $years[TradeContracts::playerKey('Elias Pettersson')]=3;
+                if ($t['season']==='2023-24' && str_contains($date, 'Nov 24, 2023') && $side==='to') $years[TradeContracts::playerKey('Jack Hughes')]='FA';
+                if ($t['season']==='2022-23' && str_contains($date, 'Nov 22, 2022') && $side==='from') $years[TradeContracts::playerKey('Sebastian Aho')]='FA';
+                if ($t['season']==='2022-23' && str_contains($date, 'Feb 22, 2023') && $side==='to') $years[TradeContracts::playerKey('Elias Pettersson')]='FA';
                 if ($t['season']==='2021-22' && str_contains($date, 'Oct 21, 2021')) {
                     if ($side==='from') $years[TradeContracts::playerKey('Elias Pettersson')]=2;
                     if ($side==='to') $years[TradeContracts::playerKey('Sebastian Aho')]=2;
                 }
-                if ($t['season']==='2020-21' && str_contains($date, 'Jan 4, 2021') && $side==='to') {
-                    $years[TradeContracts::playerKey('Jack Hughes')]=4;
-                }
-                // Ryan O'Reilly: these two historical trades were 1 year. Any other
-                // unresolved O'Reilly trade is FA; existing registered contracts win.
+                if ($t['season']==='2020-21' && str_contains($date, 'Jan 4, 2021') && $side==='to') $years[TradeContracts::playerKey('Jack Hughes')]=4;
                 $oreillyKey=TradeContracts::playerKey("Ryan O'Reilly");
-                if (str_contains($date, 'Nov 11, 2023') || str_contains($date, 'Jan 15, 2021')) {
-                    $years[$oreillyKey]=1;
-                } elseif (!isset($years[$oreillyKey])) {
-                    $years[$oreillyKey]='FA';
-                }
+                if (str_contains($date, 'Nov 11, 2023') || str_contains($date, 'Jan 15, 2021')) $years[$oreillyKey]=1;
+                elseif (!isset($years[$oreillyKey])) $years[$oreillyKey]='FA';
                 foreach ($t[$side.'_items'] as &$text) {
                     $key=TradeContracts::playerKey($text);
                     if (isset($years[$key])) $text=TradeContracts::label($text, $years[$key]);
@@ -209,8 +190,43 @@ class Archive extends EcfhlData
         return $out;
     }
     public function draftSeasons(): array { return array_values(array_unique(array_column($this->draftSeason('all'),'season'))); }
-    public function awardEvents(): array
+    public function awardEvents(): array { return parent::awardEvents(); }
+
+    public function playerHistory(string $query): array
     {
-        return parent::awardEvents();
+        $needle=mb_strtolower(trim($query));
+        if ($needle==='') return [];
+        $events=[];
+
+        foreach ($this->draftSeason('all') as $p) {
+            if (!str_contains(mb_strtolower((string)($p['player']??'')), $needle)) continue;
+            $events[]=['season'=>$p['season'],'kind'=>'draft','data'=>$p,'sort'=>$p['season'].'-00'];
+        }
+
+        foreach ($this->trades() as $t) {
+            $matched=false;
+            foreach (['from_items','to_items'] as $field) {
+                foreach (($t[$field]??[]) as $item) {
+                    $name=preg_replace('/\s*\((?:FA|MINORS|TBD|\d+\s+Years?)\)\s*$/i','',(string)$item);
+                    if (str_contains(mb_strtolower($name),$needle)) {$matched=true;break 2;}
+                }
+            }
+            if ($matched) $events[]=['season'=>$t['season'],'kind'=>'trade','data'=>$t,'sort'=>$t['datetime']??$t['date']??$t['season']];
+        }
+
+        foreach ($this->awardEvents() as $a) {
+            if (empty($a['player']) || !str_contains(mb_strtolower((string)$a['player']),$needle)) continue;
+            $events[]=['season'=>$a['season'],'kind'=>'award','data'=>$a,'sort'=>$a['season'].'-99'];
+        }
+
+        usort($events,function($a,$b){
+            $season=strcmp($a['season'],$b['season']);
+            if ($season!==0) return $season;
+            $order=['draft'=>0,'trade'=>1,'award'=>2];
+            $kind=($order[$a['kind']]??1)<=>($order[$b['kind']]??1);
+            if ($kind!==0) return $kind;
+            return strcmp((string)$a['sort'],(string)$b['sort']);
+        });
+        return $events;
     }
 }
