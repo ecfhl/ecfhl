@@ -3,7 +3,7 @@
 use App\Support\TradeContracts;
 
 $records=TradeContracts::records();
-check(count($records)===604,'Expected all 604 observed numeric trade/player contracts');
+check(count($records)===607,'Expected all 607 observed numeric trade/player contracts');
 $keys=[];
 foreach($records as $c){
     check(is_int($c['contract_years_at_trade']) && $c['status']==='verified_numeric','Unverified contract in backfill');
@@ -35,6 +35,6 @@ $html=view('partials.trade-card',['t'=>$trades['TR0482']])->render();
 check(str_contains($html,'Matt Boldy (3 Years)'),'Contract not rendered in trade card');
 echo "Trade contracts passed: numeric evidence, backfill, idempotence, missing contracts, source merge, and rendered labels.\n";
 
-check(count(TradeContracts::statusRecords())===518,'Missing observed status contracts');
+check(count(TradeContracts::statusRecords())===519,'Missing observed status contracts');
 foreach (['MINORS','FA','TBD'] as $status) check(TradeContracts::label('Player (MINORS)',$status)==='Player ('.$status.')','Status label not preserved');
 check(str_contains($html,'Cutter Gauthier (MINORS)'),'MINORS not rendered');
