@@ -50,7 +50,7 @@
     }
 @endphp
 <section class="section" style="padding-top:0"><div class="section-title"><h2>Player award leaders</h2></div>
-@include('partials.leaders',['leaderRows'=>$playerAwardLeaders,'limit'=>5,'cards'=>['art_ross'=>'🏒 Art Ross','norris'=>'🛡️ Norris','vezina'=>'🥅 Vezina']])
+@include('partials.leaders',['leaderRows'=>$playerAwardLeaders,'cards'=>['art_ross'=>'🏒 Art Ross','norris'=>'🛡️ Norris','vezina'=>'🥅 Vezina']])
 </section>
 <div class="toolbar award-filters" role="group" aria-label="Award type">
 <button type="button" class="filter-button active" data-award="all" aria-pressed="true">All awards</button>
