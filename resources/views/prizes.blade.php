@@ -22,7 +22,7 @@
 @foreach($items as $a)
 <div class="award-entry" data-award-type="{{ $a['id'] }}">
 <span class="award-icon">{{ \App\Support\AwardIcon::for($a['id']) }}</span>
-<div><strong>{{ $a['label'] }}</strong><div>{{ $a['player'] ? $a['player'].' · ' : '' }}{{ $a['team'] }}</div></div>
+<div><strong>{{ $a['label'] }}</strong><div>@if($a['player'])@include('partials.player-link',['name'=>$a['player']]) · @endif{{ $a['team'] }}</div></div>
 </div>
 @endforeach
 </article>
