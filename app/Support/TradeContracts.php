@@ -34,6 +34,32 @@ final class TradeContracts
         return self::playerName($text).' ('.$years.' '.($years === 1 ? 'Year' : 'Years').')';
     }
 
+    /**
+     * Fantrax duplicate-name lookup rule used when verifying missing contracts:
+     * 1. Prefer a search result whose Sta value is NOT FA.
+     * 2. If every matching result has Sta=FA, the verified contract is FA.
+     *
+     * This prevents an unrostered namesake from hiding the contract belonging
+     * to the player who was actually on an ECFHL roster.
+     */
+    public static function preferredFantraxResult(array $results): ?array
+    {
+        foreach ($results as $result) {
+            if (strcasecmp(trim((string)($result['sta'] ?? '')), 'FA') !== 0 && trim((string)($result['sta'] ?? '')) !== '') {
+                return $result;
+            }
+        }
+
+        foreach ($results as $result) {
+            if (strcasecmp(trim((string)($result['sta'] ?? '')), 'FA') === 0) {
+                $result['contract'] = 'FA';
+                return $result;
+            }
+        }
+
+        return null;
+    }
+
     public static function leagueIds(): array
     {
         $ids=[];
