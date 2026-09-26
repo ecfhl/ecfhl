@@ -4,7 +4,7 @@
 <div class="shell">
 <div class="page-head"><div class="eyebrow">Franchise history</div><h1>{{ $team['team'] }}</h1><p>Complete recorded franchise history.</p></div>
 @php
-$archive=app(\App\Support\Archive::class);$franchiseOptions=$archive->teamLedger($archive->mode(),'all');$tradePartnerRows=array_slice($tradePartners,0,15);$firstRoundRows=array_slice($firstRoundBySeason,0,15);$tradePartnerTotal=array_sum(array_column($tradePartners,'value'));
+$archive=app(\App\Support\Archive::class);$franchiseOptions=$archive->teamLedger($archive->mode(),'all');$tradePartnerRows=array_slice($tradePartners,0,15);$sortedFirstRound=$firstRoundBySeason;usort($sortedFirstRound,fn($a,$b)=>(($b['value']??0)<=>($a['value']??0))?:strcmp($b['team']??'',$a['team']??''));$firstRoundRows=array_slice($sortedFirstRound,0,15);$tradePartnerTotal=array_sum(array_column($tradePartners,'value'));
 @endphp
 <div style="display:flex;justify-content:flex-end;margin:0 0 22px"><select aria-label="Go to franchise" style="width:260px;padding:10px 12px;border-radius:8px" onchange="if(this.value) window.location.href=this.value"><option value="">Go to franchise...</option>@foreach($franchiseOptions as $option)<option value="/teams/{{ \Illuminate\Support\Str::slug($option['team']) }}" {{ $option['id']===$team['id']?'selected':'' }}>{{ $option['team'] }}</option>@endforeach</select></div>
 <style>
