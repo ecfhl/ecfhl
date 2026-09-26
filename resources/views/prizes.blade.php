@@ -6,15 +6,15 @@
 <section class="section"><div class="section-title"><h2>All-time leaders</h2></div>
 @include('partials.leaders',['leaderRows'=>['champions'=>$leaders['championships'],'earners'=>$seasonLeaders['top_earners'],'top_pick'=>$leaders['first_picks'] ?? []],'cards'=>['champions'=>'🏆 Champions','earners'=>'💵 Single season top earner','top_pick'=>'🎯 Top Pick Winner']])
 </section>
-@php($awardTypes = collect($awardEvents)->pluck('label','id')->all())
+@php($awardTypes = collect($awardEvents)->pluck('award','id')->all())
 <div class="toolbar award-filters" role="group" aria-label="Award type">
 <button type="button" class="filter-button active" data-award="all" aria-pressed="true">All awards</button>
 @foreach($awardTypes as $id=>$label)<button type="button" class="filter-button" data-award="{{ $id }}" aria-pressed="false">{{ $label }}</button>@endforeach
 </div>
 <div class="prizes-grid">
 <section><div class="section-title"><h2>Awards and Total Winnings</h2></div>
-<div class="table-card"><table class="data-table winnings-table"><thead><tr><th>Team</th><th class="num">Paid awards</th><th class="num">Winnings</th></tr></thead><tbody>
-@forelse($totals as $r)<tr><td><strong>{{ $r['team'] ?? '—' }}</strong></td><td class="num">{{ $r['paid_awards'] ?? $r['award_count'] ?? 0 }}</td><td class="num">${{ number_format((float)($r['awards'] ?? 0),2) }}</td></tr>@empty<tr><td colspan="3">No recorded winnings.</td></tr>@endforelse
+<div class="table-card"><table class="data-table winnings-table"><thead><tr><th>Team</th><th class="num">Winnings</th><th class="num">Fees</th><th class="num">Net</th></tr></thead><tbody>
+@forelse($totals as $r)<tr><td><strong>{{ $r['team'] ?? '—' }}</strong></td><td class="num">${{ number_format((float)($r['awards'] ?? 0),2) }}</td><td class="num">${{ number_format((float)($r['fees'] ?? 0),2) }}</td><td class="num">${{ number_format((float)($r['net'] ?? 0),2) }}</td></tr>@empty<tr><td colspan="4">No recorded winnings.</td></tr>@endforelse
 </tbody></table></div></section>
 <section><div class="section-title"><h2>Awards by season</h2></div><div class="season-list">
 @forelse(collect($awardEvents)->groupBy('season') as $year=>$items)
@@ -22,7 +22,7 @@
 @foreach($items as $a)
 <div class="award-entry" data-award-type="{{ $a['id'] }}">
 <span class="award-icon">{{ \App\Support\AwardIcon::for($a['id']) }}</span>
-<div><strong>{{ $a['label'] }}</strong><div>@if($a['player'])@include('partials.player-link',['name'=>$a['player']]) · @endif{{ $a['team'] }}</div></div>
+<div><strong>{{ $a['award'] ?? $a['id'] }}</strong><div>@if(!empty($a['player']))@include('partials.player-link',['name'=>$a['player']]) · @endif{{ $a['team'] }}</div></div>
 </div>
 @endforeach
 </article>
