@@ -34,40 +34,81 @@
 </head>
 <body>
 <header class="site-header">
-<div class="shell header-inner">
-<a class="brand" href="/">
-<img src="/ecfhl-logo.png" alt="ECFHL logo">
-<div><strong>East Coast</strong><span>Fantasy Hockey League</span></div>
-</a>
-@if(!request()->is('rules'))
-<div class="header-season-types" aria-label="Season type">
-<a href="{{ request()->fullUrlWithQuery(['type'=>'h2h']) }}" class="header-type {{ request('type','h2h')==='h2h'?'active':'' }}">Head-to-Head</a>
-<a href="{{ request()->fullUrlWithQuery(['type'=>'points']) }}" class="header-type {{ request('type')==='points'?'active':'' }}">Total Points</a>
-</div>
-@endif
-<button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">◐</button>
-<button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
-<nav class="site-nav" id="siteNav">
-<a href="/" class="{{ request()->is('/')?'active':'' }}">Summary</a>
-<a href="/seasons" class="{{ request()->is('seasons*')?'active':'' }}">Seasons</a>
-<a href="/teams" class="{{ request()->is('teams*')?'active':'' }}">Franchises</a>
-<a href="/prizes" class="{{ request()->is('prizes*')?'active':'' }}">Prizes</a>
-<a href="/trades" class="{{ request()->is('trades*')?'active':'' }}">Trades</a>
-<a href="/draft" class="{{ request()->is('draft*')?'active':'' }}">Draft</a>
-<a href="/players" class="{{ request()->is('players*')?'active':'' }}">Players</a>
-<a href="/rules" class="{{ request()->is('rules*')?'active':'' }}">Rules</a>
-</nav>
-</div>
+    <div class="shell nav-wrap">
+        <div class="brand-area">
+            <a class="brand" href="/">
+                <img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo">
+                <span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span>
+            </a>
+            @if(!request()->is('rules'))
+                @php($seasonMode = app(\App\Support\Archive::class)->mode())
+                <div class="header-season-filter" role="group" aria-label="Season type">
+                    @foreach(['h2h'=>'Head-to-Head','total'=>'Total Points'] as $value=>$label)
+                        <button type="button" class="header-filter-button season-type-choice {{ in_array($seasonMode,[$value,'all'])?'active':'' }}" data-value="{{ $value }}">{{ $label }}</button>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+        <div class="header-actions">
+            <button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button>
+            <button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button>
+        </div>
+        <nav class="main-nav">
+            @foreach ([
+                '/' => 'Overview',
+                '/seasons' => 'Seasons',
+                '/teams' => 'Franchises',
+                '/prizes' => 'Prizes',
+                '/trades' => 'Trades',
+                '/draft' => 'Draft',
+                '/players' => 'Players',
+                '/rules' => 'Rules',
+            ] as $url => $label)
+                <a href="{{ $url }}" class="{{ request()->is(ltrim($url,'/')) || ($url==='/' && request()->is('/')) ? 'active' : '' }}" @if($url==='/draft') onclick="if(location.pathname==='/draft'){event.preventDefault();history.replaceState(null,'','/draft');window.scrollTo({top:0,left:0,behavior:'auto'});}" @endif>{{ $label }}</a>
+            @endforeach
+        </nav>
+    </div>
 </header>
+
 <main>@yield('content')</main>
-<footer class="site-footer"><div class="shell"><strong>ECFHL HISTORY</strong><span>2007–08 → present</span></div></footer>
+
+<footer class="site-footer">
+    <div class="shell footer-inner">
+        <div><strong>ECFHL HISTORY</strong><br><span>2007–08 → present</span></div>
+        <div class="footer-right">Database-backed league archive</div>
+    </div>
+</footer>
+
 <script>
-const root=document.documentElement;
-const storedTheme=localStorage.getItem('ecfhl-theme');
-if(storedTheme)root.dataset.theme=storedTheme;
-document.getElementById('themeToggle')?.addEventListener('click',()=>{const next=root.dataset.theme==='dark'?'light':'dark';root.dataset.theme=next;localStorage.setItem('ecfhl-theme',next);});
-document.getElementById('menuToggle')?.addEventListener('click',()=>document.getElementById('siteNav')?.classList.toggle('open'));
+(function(){
+    const saved = localStorage.getItem('ecfhl-theme');
+    if(saved) document.documentElement.dataset.theme = saved;
+    if(location.pathname==='/draft' && location.hash){history.replaceState(null,'',location.pathname+location.search);window.scrollTo(0,0);}
+})();
+function toggleTheme(){
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem('ecfhl-theme', next);
+}
 </script>
+<script>
+document.querySelectorAll('.season-type-choice').forEach(button=>button.addEventListener('click',()=>{
+ const value=button.dataset.value;
+ const buttons=[...document.querySelectorAll('.season-type-choice')];
+ const selected=buttons.filter(x=>x.classList.contains('active')).map(x=>x.dataset.value);
+ const next=selected.includes(value)?selected.filter(x=>x!==value):[...selected,value];
+ const mode=next.length===2?'all':(next[0]||'none');
+ document.cookie='ecfhl-season-type='+mode+'; Path=/; Max-Age=31536000; SameSite=Lax';
+ const url=new URL(location.href);url.searchParams.set('type',mode);
+ if (/^\/seasons\//.test(url.pathname)) url.pathname='/seasons';
+ url.searchParams.delete('season');location.assign(url);
+}));
+</script>
+<style>
+.header-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.header-theme-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+@media(min-width:901px){.header-actions{order:3}.main-nav{order:2}.header-theme-toggle{margin-left:6px}}
+</style>
 @stack('scripts')
 </body>
 </html>
