@@ -11,6 +11,8 @@
 
     @php
         $franchiseOptions = app(\App\Support\Archive::class)->teamLedger(app(\App\Support\Archive::class)->mode(), 'all');
+        $tradePartnerRows = array_slice($tradePartners, 0, 15);
+        $firstRoundRows = array_slice($firstRoundBySeason, 0, 15);
     @endphp
 
     <div style="display:flex;justify-content:flex-end;margin:0 0 22px">
@@ -29,14 +31,9 @@
         .franchise-summary .summary-value{font-size:25px;font-weight:800;line-height:1.15;white-space:nowrap}
         .franchise-summary .summary-label{font-size:11px;line-height:1.25;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);white-space:nowrap}
         .franchise-detail-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
-        @media(max-width:760px){
-            .franchise-detail-cards{grid-template-columns:1fr}
-        }
-        @media(max-width:520px){
-            .franchise-summary .summary-card{padding:14px 4px}
-            .franchise-summary .summary-value{font-size:20px}
-            .franchise-summary .summary-label{font-size:9px;letter-spacing:.25px}
-        }
+        .leader-card-head{position:relative}.leader-card-head .leader-card-title{padding-right:42px}.leader-expand-button{position:absolute;top:50%;right:14px;transform:translateY(-50%);display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:7px;background:transparent;color:inherit;font:inherit;font-size:18px;line-height:1;cursor:pointer}.leader-expand-button:hover{background:rgba(127,127,127,.12)}.leader-expand-button:focus-visible{outline:2px solid var(--accent,#1d5fa7);outline-offset:2px}
+        @media(max-width:760px){.franchise-detail-cards{grid-template-columns:1fr}}
+        @media(max-width:520px){.franchise-summary .summary-card{padding:14px 4px}.franchise-summary .summary-value{font-size:20px}.franchise-summary .summary-label{font-size:9px;letter-spacing:.25px}}
     </style>
 
     <div class="franchise-summary">
@@ -46,59 +43,30 @@
         <div class="summary-card"><div class="summary-value">{{ isset($team['win_pct']) && $team['win_pct'] !== null ? number_format($team['win_pct'] * 100, 1).'%' : '—' }}</div><div class="summary-label">Win %</div></div>
     </div>
 
-    <div class="table-card">
-        <div class="table-scroll">
-            <table class="data-table">
-                <thead><tr><th>Season</th><th>Team</th><th class="num">Finish</th><th class="num">Record</th><th class="num">Fpts</th></tr></thead>
-                <tbody>
-                    @foreach($history as $r)
-                        @php
-                            $rank = isset($r['rank']) ? (int) $r['rank'] : null;
-                            $icon = match($r['playoff_finish'] ?? null) {'champion'=>'🏆','second'=>'🥈','third'=>'🥉',default=>''};
-                            $suffix = in_array(($rank ?? 0) % 100, [11,12,13]) ? 'th' : match(($rank ?? 0) % 10) {1=>'st',2=>'nd',3=>'rd',default=>'th'};
-                            $finishText = trim($icon.' '.($rank > 0 ? $rank.$suffix : '—'));
-                        @endphp
-                        <tr>
-                            <td><a href="/seasons/{{ rawurlencode($r['season']) }}"><strong>{{ $r['season'] }}</strong></a></td>
-                            <td>{{ $r['original_name'] }}</td>
-                            <td class="num nowrap">{{ $finishText }}</td>
-                            <td class="num">{{ isset($r['w']) && $r['w'] !== null ? ($r['w'].'-'.($r['l'] ?? 0).'-'.($r['t'] ?? 0)) : '—' }}</td>
-                            <td class="num">{{ $r['fantasy_points_for'] !== null ? number_format($r['fantasy_points_for'], 0) : '—' }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <div class="table-card"><div class="table-scroll"><table class="data-table"><thead><tr><th>Season</th><th>Team</th><th class="num">Finish</th><th class="num">Record</th><th class="num">Fpts</th></tr></thead><tbody>
+    @foreach($history as $r) @php $rank=isset($r['rank'])?(int)$r['rank']:null;$icon=match($r['playoff_finish']??null){'champion'=>'🏆','second'=>'🥈','third'=>'🥉',default=>''};$suffix=in_array(($rank??0)%100,[11,12,13])?'th':match(($rank??0)%10){1=>'st',2=>'nd',3=>'rd',default=>'th'};$finishText=trim($icon.' '.($rank>0?$rank.$suffix:'—')); @endphp
+    <tr><td><a href="/seasons/{{ rawurlencode($r['season']) }}"><strong>{{ $r['season'] }}</strong></a></td><td>{{ $r['original_name'] }}</td><td class="num nowrap">{{ $finishText }}</td><td class="num">{{ isset($r['w'])&&$r['w']!==null?($r['w'].'-'.($r['l']??0).'-'.($r['t']??0)):'—' }}</td><td class="num">{{ $r['fantasy_points_for']!==null?number_format($r['fantasy_points_for'],0):'—' }}</td></tr>
+    @endforeach
+    </tbody></table></div></div>
 
-    <section class="section">
-        <div class="franchise-detail-cards">
-            <article class="card leader-card">
-                <h3 class="leader-card-title">🔄 Trade Partners</h3>
-                @forelse($tradePartners as $i => $row)
-                    @include('partials.leader-row')
-                @empty
-                    <div class="empty">No recorded trades.</div>
-                @endforelse
-                @if(!empty($tradePartners))
-                    <div class="leader-rank" style="font-weight:800"><span>Σ</span><strong>Total</strong><b>{{ array_sum(array_column($tradePartners, 'value')) }}</b></div>
-                @endif
-                <div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/trades?franchise={{ urlencode($team['id']) }}">View all trades →</a></div>
-            </article>
-
-            <article class="card leader-card">
-                <h3 class="leader-card-title">1️⃣ 1st Round Picks by Season</h3>
-                @forelse($firstRoundBySeason as $i => $row)
-                    @include('partials.leader-row')
-                @empty
-                    <div class="empty">No recorded first-round picks.</div>
-                @endforelse
-                @if(!empty($firstRoundBySeason))
-                    <div class="leader-rank" style="font-weight:800"><span>Σ</span><strong>Total</strong><b>{{ $firstRoundCount }}</b></div>
-                @endif
-                <div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/draft?season=all&franchise={{ urlencode($team['id']) }}">View all draft picks →</a></div>
-            </article>
-        </div>
-    </section>
+    <section class="section"><div class="franchise-detail-cards">
+        <article class="card leader-card">
+            <div class="leader-card-head"><h3 class="leader-card-title">🔄 Trade Partners</h3>@if(count($tradePartnerRows)>3)<button type="button" class="leader-expand-button" data-expand-target="franchise-trade-partners" aria-expanded="false" title="Expand"><span class="expand-icon">⛶</span><span class="minimize-icon" hidden>✕</span></button>@endif</div>
+            <div id="franchise-trade-partners">@forelse($tradePartnerRows as $i=>$row)<div class="expand-row" @if($i>=3) hidden @endif>@include('partials.leader-row')</div>@empty<div class="empty">No recorded trades.</div>@endforelse</div>
+            @if(!empty($tradePartners))<div class="leader-rank franchise-total" style="font-weight:800"><span>Σ</span><strong>Total</strong><b>{{ array_sum(array_column($tradePartners,'value')) }}</b></div>@endif
+            <div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/trades?franchise={{ urlencode($team['id']) }}">View all trades →</a></div>
+        </article>
+        <article class="card leader-card">
+            <div class="leader-card-head"><h3 class="leader-card-title">1️⃣ 1st Round Picks by Season</h3>@if(count($firstRoundRows)>3)<button type="button" class="leader-expand-button" data-expand-target="franchise-first-round" aria-expanded="false" title="Expand"><span class="expand-icon">⛶</span><span class="minimize-icon" hidden>✕</span></button>@endif</div>
+            <div id="franchise-first-round">@forelse($firstRoundRows as $i=>$row)<div class="expand-row" @if($i>=3) hidden @endif>@include('partials.leader-row')</div>@empty<div class="empty">No recorded first-round picks.</div>@endforelse</div>
+            @if(!empty($firstRoundBySeason))<div class="leader-rank franchise-total" style="font-weight:800"><span>Σ</span><strong>Total</strong><b>{{ $firstRoundCount }}</b></div>@endif
+            <div style="padding:15px 18px;border-top:1px solid var(--line)"><a class="filter-button" href="/draft?season=all&franchise={{ urlencode($team['id']) }}">View all draft picks →</a></div>
+        </article>
+    </div></section>
 </div>
 @endsection
+@push('scripts')
+<script>
+document.querySelectorAll('.leader-expand-button').forEach(btn=>btn.addEventListener('click',()=>{const box=document.getElementById(btn.dataset.expandTarget),expanded=btn.getAttribute('aria-expanded')==='true';box.querySelectorAll('.expand-row').forEach((r,i)=>r.hidden=expanded?i>=3:false);btn.setAttribute('aria-expanded',expanded?'false':'true');btn.title=expanded?'Expand':'Minimize';btn.querySelector('.expand-icon').hidden=!expanded;btn.querySelector('.minimize-icon').hidden=expanded;}));
+</script>
+@endpush
