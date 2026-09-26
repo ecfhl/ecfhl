@@ -20,10 +20,8 @@ class Archive extends EcfhlData
     {
         if (!$id) return $fallback;
         if (isset($this->cache['names'][$id])) return $this->cache['names'][$id];
-        $history=array_values(array_filter($this->rows('team_seasons'),fn($r)=>$r['franchise_id']===$id));
-        usort($history,fn($a,$b)=>strcmp($this->year($b['season_id']),$this->year($a['season_id'])));
-        if (!$history) foreach ($this->rows('franchises') as $f) if ($f['franchise_id']===$id) $fallback=$f['franchise_name'];
-        return $this->cache['names'][$id]=$history[0]['original_name']??$fallback;
+        foreach ($this->rows('franchises') as $f) if ($f['franchise_id']===$id) return $this->cache['names'][$id]=$f['franchise_name'];
+        return $this->cache['names'][$id]=$fallback;
     }
     private function historical(?string $id,string $seasonId,?string $fallback=null): string { foreach($this->rows('team_seasons') as $r) if($r['season_id']===$seasonId&&$r['franchise_id']===$id) return $r['original_name']; return $fallback?:$this->franchiseName($id); }
     private function resolve(?string $name): ?string
@@ -41,10 +39,18 @@ class Archive extends EcfhlData
 
     public function overviewLeaders(): array
     {
-        $base=parent::overviewLeaders();
+        $ledger=$this->teamLedger($this->mode(),'all');
+        $championships=[];$winning=[];
+        foreach($ledger as $r){
+            if(($r['champion']??0)>0)$championships[]=['team'=>$r['team'],'value'=>$r['champion'],'score'=>$r['champion']];
+            if(($r['games']??0)>0)$winning[]=['team'=>$r['team'],'value'=>number_format(($r['win_pct']??0)*100,1).'%','detail'=>$r['w'].'-'.$r['l'].'-'.$r['t'],'score'=>$r['win_pct']??0,'games'=>$r['games']];
+        }
+        usort($championships,fn($a,$b)=>($b['score']<=>$a['score'])?:strnatcasecmp($a['team'],$b['team']));
+        usort($winning,fn($a,$b)=>($b['score']<=>$a['score'])?:(($b['games']??0)<=>($a['games']??0))?:strnatcasecmp($a['team'],$b['team']));
+        $tradeCounts=[];foreach($this->trades() as $t){if(!empty($t['vetoed']))continue;foreach(array_unique(array_filter([$t['from_id']??null,$t['to_id']??null])) as $id)$tradeCounts[$id]=($tradeCounts[$id]??0)+1;}arsort($tradeCounts);$tradeRows=[];foreach($tradeCounts as $id=>$n)$tradeRows[]=['team'=>$this->franchiseName($id),'value'=>$n,'score'=>$n];
         $first=[];foreach($this->draftSeason('all') as $p)if((int)($p['overall']??0)===1){$id=$p['franchise_id']??$this->resolve($p['team']??null);if($id)$first[$id]=($first[$id]??0)+1;}arsort($first);$firstRows=[];foreach($first as $id=>$n)$firstRows[]=['team'=>$this->franchiseName($id),'value'=>$n,'score'=>$n];
         $awards=[];foreach($this->rows('awards') as $a){if(!$this->selected($a['season_id'])||!in_array($a['award_type_id'],['president','leader','art_ross','norris','vezina','calder','champion','second','third'],true)||empty($a['franchise_id']))continue;$awards[$a['franchise_id']]=($awards[$a['franchise_id']]??0)+1;}arsort($awards);$awardRows=[];foreach($awards as $id=>$n)$awardRows[]=['team'=>$this->franchiseName($id),'value'=>$n,'score'=>$n];
-        $base['first_picks']=$firstRows;$base['awards']=$awardRows;return $base;
+        return ['championships'=>$championships,'winning_pct'=>$winning,'trades'=>$tradeRows,'first_picks'=>$firstRows,'awards'=>$awardRows];
     }
     public function seasonLeaders(): array
     {
@@ -74,14 +80,20 @@ class Archive extends EcfhlData
     {
         $types=[];foreach($this->rows('award_types') as $t)$types[$t['award_type_id']]=$t['award_name'];
         $players=[];foreach($this->rows('players') as $p)$players[$p['player_id']]=$p['player_name'];
-        $out=[];foreach($this->rows('awards') as $a){if(empty($a['player_id'])||!isset($players[$a['player_id']])||!$this->selected($a['season_id']))continue;$out[]=['id'=>$a['award_type_id'],'label'=>$types[$a['award_type_id']]??$a['award_type_id'],'player'=>$players[$a['player_id']],'team'=>$this->historical($a['franchise_id'],$a['season_id'],$a['team_name_raw']??null),'season'=>$this->year($a['season_id'])];}return $out;
+        $out=[];foreach($this->rows('awards') as $a){if(empty($a['player_id'])||!isset($players[$a['player_id']])||!$this->selected($a['season_id']))continue;$out[]=['id'=>$a['award_type_id'],'award'=>$types[$a['award_type_id']]??$a['award_type_id'],'team'=>$this->historical($a['franchise_id'],$a['season_id'],$a['team_name_raw']),'player'=>$players[$a['player_id']],'points'=>$a['points'],'season'=>$this->year($a['season_id'])];}return $out;
     }
-    public function playerHistory(string $query): array
+    public function prizeTotals(): array
     {
-        $needle=mb_strtolower(trim($query));if($needle==='')return [];$events=[];
-        foreach($this->draftSeason('all') as $p){if(!str_contains(mb_strtolower((string)($p['player']??'')),$needle))continue;$events[]=['season'=>$p['season'],'kind'=>'draft','data'=>$p,'sort'=>$p['season'].'-00'];}
-        foreach($this->trades() as $t){$matched=false;foreach(['from_items','to_items'] as $field){foreach(($t[$field]??[]) as $item){$name=preg_replace('/\s*\((?:FA|MINORS|TBD|\d+\s+Years?)\)\s*$/i','',(string)$item);if(str_contains(mb_strtolower($name),$needle)){$matched=true;break 2;}}}if($matched)$events[]=['season'=>$t['season'],'kind'=>'trade','data'=>$t,'sort'=>$t['datetime']??$t['date']??$t['season']];}
-        foreach($this->awardEvents() as $a){if(!str_contains(mb_strtolower((string)$a['player']),$needle))continue;$events[]=['season'=>$a['season'],'kind'=>'award','data'=>$a,'sort'=>$a['season'].'-99'];}
-        usort($events,function($a,$b){$season=strcmp($a['season'],$b['season']);if($season!==0)return $season;$order=['draft'=>0,'trade'=>1,'award'=>2];$kind=($order[$a['kind']]??1)<=>($order[$b['kind']]??1);if($kind!==0)return $kind;return strcmp((string)$a['sort'],(string)$b['sort']);});return $events;
+        $tot=[];foreach($this->rows('prize_awards') as $p){if(!$this->selected($p['season_id']))continue;$id=$p['franchise_id'];$tot[$id]=($tot[$id]??0)+(int)$p['amount_cents'];}
+        $fees=[];foreach($this->rows('team_seasons') as $ts){if(!$this->selected($ts['season_id']))continue;foreach($this->rows('seasons') as $s)if($s['season_id']===$ts['season_id']&&$s['entry_fee_paid_per_franchise']!==null)$fees[$ts['franchise_id']]=($fees[$ts['franchise_id']]??0)+(float)$s['entry_fee_paid_per_franchise'];}
+        $ids=array_unique(array_merge(array_keys($tot),array_keys($fees)));$out=[];foreach($ids as $id){$w=($tot[$id]??0)/100;$f=$fees[$id]??0;$out[]=['team'=>$this->franchiseName($id),'awards'=>$w,'fees'=>$f,'net'=>$w-$f];}usort($out,fn($a,$b)=>$b['net']<=>$a['net']);return $out;
+    }
+    public function playerHistory(string $q): array
+    {
+        $needle=mb_strtolower(trim($q));if($needle==='')return [];$out=[];
+        foreach($this->draftSeason('all') as $p)if(str_contains(mb_strtolower($p['player']??''),$needle))$out[]=['type'=>'Draft','season'=>$p['season'],'player'=>$p['player'],'team'=>$p['team'],'detail'=>'Round '.$p['round'].' · Pick '.$p['pick'].' · #'.$p['overall'].' overall'];
+        foreach($this->trades() as $t)foreach(['from','to'] as $side)foreach($t[$side.'_items'] as $item)if(str_contains(mb_strtolower($item),$needle))$out[]=['type'=>'Trade','season'=>$t['season'],'player'=>$item,'team'=>$t[$side],'detail'=>$t];
+        foreach($this->awardEvents() as $a)if(str_contains(mb_strtolower($a['player']??''),$needle))$out[]=['type'=>'Award','season'=>$a['season'],'player'=>$a['player'],'team'=>$a['team'],'detail'=>$a['award'].($a['points']!==null?' · '.$a['points'].' pts':'')];
+        usort($out,fn($a,$b)=>strcmp($b['season'],$a['season']));return $out;
     }
 }
