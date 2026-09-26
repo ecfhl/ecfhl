@@ -1,3 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-  <image href="ecfhl-logo.png" x="0" y="0" width="64" height="64" preserveAspectRatio="xMidYMid meet"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <path d="M32 3 52 10v17c0 15-8 26-20 34C20 53 12 42 12 27V10Z" fill="#fff" stroke="#0a2342" stroke-width="3"/>
+  <path d="M32 7 48 13v14c0 12-6 21-16 29-10-8-16-17-16-29V13Z" fill="#050505" stroke="#fff" stroke-width="2"/>
+  <path d="M15 39 49 19v9L17 47Z" fill="#fff"/>
+  <path d="M17 40 47 22" stroke="#0a2342" stroke-width="2"/>
+  <text x="32" y="38" text-anchor="middle" dominant-baseline="middle" transform="rotate(-30 32 38)" fill="#050505" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="900" letter-spacing="-.7">ECFHL</text>
 </svg>
