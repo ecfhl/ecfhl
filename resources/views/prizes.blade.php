@@ -34,6 +34,10 @@
         'president' => "President's Trophy",
         'leader' => 'Fpts Leader',
         'top_pick' => 'Top Pick',
+        'art_ross' => 'Art Ross',
+        'norris' => 'Norris',
+        'vezina' => 'Vezina',
+        'calder' => 'Calder',
     ];
     $seasonAwardRows = collect();
     if ($selectedSeasonNames) {
@@ -46,7 +50,7 @@
             ->whereIn('a.award_type_id',array_keys($awardLabels))
             ->select('s.season_name','s.sequence','a.award_type_id','a.team_name_raw','f.franchise_name','ts.original_name','p.player_name')
             ->orderByDesc('s.sequence')
-            ->orderByRaw("FIELD(a.award_type_id,'champion','second','third','president','leader','top_pick')")
+            ->orderByRaw("FIELD(a.award_type_id,'champion','second','third','president','leader','top_pick','art_ross','norris','vezina','calder')")
             ->get()
             ->map(function($r) use ($awardLabels){
                 return [
