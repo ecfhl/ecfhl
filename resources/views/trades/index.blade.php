@@ -9,9 +9,9 @@
     <article class="card leader-card" data-expand-card>
       <h3 class="leader-card-title">{{ $title }}</h3>
       <div id="{{ $id }}">
-      @forelse($rows as $i=>$row)<div class="expand-row" @if($i>=5) hidden @endif>@include('partials.leader-row')</div>@empty<div class="empty">{{ $empty }}</div>@endforelse
+      @forelse($rows as $i=>$row)<div class="expand-row" @if($i>=3) hidden @endif>@include('partials.leader-row')</div>@empty<div class="empty">{{ $empty }}</div>@endforelse
       </div>
-      @if(count($rows)>5)<button type="button" class="expand-card-link" data-expand-target="{{ $id }}">View all</button>@endif
+      @if(count($rows)>3)<button type="button" class="expand-card-link" data-expand-target="{{ $id }}">View all</button>@endif
     </article>
     @endforeach
   </div>
@@ -29,7 +29,7 @@
 const q=document.getElementById('tradeSearch'),s=document.getElementById('tradeSeason'),t=document.getElementById('tradeFranchise');
 function filterTrades(){const n=q.value.toLowerCase(),franchise=t.value;document.querySelectorAll('.trade-item').forEach(e=>{const seasonOk=!s.value||e.dataset.season===s.value;const franchiseOk=!franchise||e.dataset.franchises.split('|').includes(franchise);const searchOk=!n||e.dataset.search.includes(n);e.style.display=(seasonOk&&franchiseOk&&searchOk)?'':'none';});}
 q.addEventListener('input',filterTrades);s.addEventListener('change',filterTrades);t.addEventListener('change',filterTrades);filterTrades();
-document.querySelectorAll('.expand-card-link').forEach(btn=>btn.addEventListener('click',()=>{const box=document.getElementById(btn.dataset.expandTarget),opening=box.querySelector('.expand-row[hidden]')!==null;box.querySelectorAll('.expand-row').forEach((r,i)=>r.hidden=!opening&&i>=5);btn.textContent=opening?'Show top 5':'View all';}));
+document.querySelectorAll('.expand-card-link').forEach(btn=>btn.addEventListener('click',()=>{const box=document.getElementById(btn.dataset.expandTarget),opening=box.querySelector('.expand-row[hidden]')!==null;box.querySelectorAll('.expand-row').forEach((r,i)=>r.hidden=!opening&&i>=3);btn.textContent=opening?'Show top 3':'View all';}));
 </script>
-<style>.expand-card-link{display:block;margin:14px auto 0;padding:0;border:0;background:none;color:var(--accent,#1d5fa7);font:inherit;font-weight:700;cursor:pointer}.expand-card-link:hover{text-decoration:underline}</style>
+<style>.expand-card-link{display:block;margin:14px auto 0;padding:0;border:0;background:none;color:var(--accent,#1d5fa7);font:inherit;font-weight:700;cursor:pointer}.expand-card-link:hover{text-decoration:underline}.franchise-link,.franchise-link:hover{text-decoration:none}</style>
 @endpush
