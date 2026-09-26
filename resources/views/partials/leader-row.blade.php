@@ -1,4 +1,4 @@
-<div class="leader-rank"><span>{{ $i+1 }}</span><strong>{{ $row['team'] }}
+<div class="leader-rank"><span>{{ $i+1 }}</span><strong>@if(!empty($playerLink))@include('partials.player-link',['name'=>$row['team']])@else{{ $row['team'] }}@endif
 @if(!empty($row['season']))<small><a href="/seasons/{{ rawurlencode($row['season']) }}">{{ $row['season'] }}</a></small>@endif
 @if(!empty($row['detail']))<small>{{ $row['detail'] }}</small>@endif
 </strong><b>{{ $row['value'] }}</b></div>
