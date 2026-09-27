@@ -8,17 +8,21 @@
 <style>
 .player-leader-grid{margin:22px 0 28px}
 #player-results{scroll-margin-top:110px}
-.player-timeline{position:relative;display:block;padding:0 0 0 34px;margin:26px 0}
+.player-timeline{position:relative;display:block;padding:0 0 0 34px;margin:20px 0}
 .player-timeline::before{content:"";position:absolute;left:10px;top:14px;bottom:18px;width:2px;background:var(--line)}
-.timeline-season{position:relative;margin:30px 0 20px;font-size:20px;font-weight:800}
+.timeline-season{position:relative;margin:22px 0 14px;font-size:20px;font-weight:800}
 .timeline-season:first-child{margin-top:0}
 .timeline-season::before{content:"";position:absolute;left:-30px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--accent,#1d5fa7);border:3px solid var(--panel);box-sizing:border-box}
-.timeline-event{position:relative;margin:0 0 24px}
+.timeline-event{position:relative;margin:0 0 14px}
 .timeline-marker{position:absolute;left:-37px;top:0;display:grid;place-items:center;width:28px;height:28px;border:1px solid var(--line);border-radius:50%;background:var(--panel);font-size:14px}
-.timeline-label{display:flex;align-items:center;gap:10px;min-height:28px;margin-bottom:9px;font-size:13px;color:var(--muted)}
+.timeline-label{display:flex;align-items:center;gap:10px;min-height:28px;margin-bottom:5px;font-size:13px;color:var(--muted)}
 .timeline-kind{font-weight:800;color:var(--text)}
-.timeline-event .card{margin:0}
-@media(max-width:600px){.player-timeline{padding-left:29px}.player-timeline::before{left:8px}.timeline-marker{left:-33px}.timeline-season::before{left:-27px}.timeline-event .card{padding:16px}.timeline-label{flex-wrap:wrap;gap:4px 10px}}
+.timeline-event .card{margin:0;padding:12px 16px}
+.timeline-event .card h3{margin:0 0 5px;font-size:16px;line-height:1.25}
+.timeline-event .card p{margin:5px 0}
+.timeline-event .card .award-icon{display:inline-block;margin:0 5px 0 0;font-size:16px;vertical-align:middle}
+.timeline-event .card .award-icon + h3{display:inline-block;vertical-align:middle;margin-bottom:5px}
+@media(max-width:600px){.player-timeline{padding-left:29px}.player-timeline::before{left:8px}.timeline-marker{left:-33px}.timeline-season::before{left:-27px}.timeline-event .card{padding:10px 12px}.timeline-label{flex-wrap:wrap;gap:4px 10px}}
 
 </style>
 <div class="player-leader-grid">
