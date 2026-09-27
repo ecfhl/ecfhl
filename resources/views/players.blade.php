@@ -18,10 +18,7 @@
 .timeline-label{display:flex;align-items:center;gap:10px;min-height:28px;margin-bottom:5px;font-size:13px;color:var(--muted)}
 .timeline-kind{font-weight:800;color:var(--text)}
 .timeline-event .card{margin:0;padding:12px 16px}
-.timeline-event .card h3{margin:0 0 5px;font-size:16px;line-height:1.25}
-.timeline-event .card p{margin:5px 0}
-.timeline-event .card .award-icon{display:inline-block;margin:0 5px 0 0;font-size:16px;vertical-align:middle}
-.timeline-event .card .award-icon + h3{display:inline-block;vertical-align:middle;margin-bottom:5px}
+.timeline-event .card h3{margin:0;font-size:16px;line-height:1.35}
 @media(max-width:600px){.player-timeline{padding-left:29px}.player-timeline::before{left:8px}.timeline-marker{left:-33px}.timeline-season::before{left:-27px}.timeline-event .card{padding:10px 12px}.timeline-label{flex-wrap:wrap;gap:4px 10px}}
 
 </style>
@@ -60,10 +57,11 @@
 @include('partials.trade-card',['t'=>$event['data']])
 @elseif($event['kind']==='draft')
 @php($p=$event['data'])
-<article class="card"><h3>📝 @include('partials.player-link',['name'=>$p['player']])</h3><div>{{ $p['team'] }}</div><p>Round {{ $p['round']??'—' }} · Pick {{ $p['pick']??'—' }} · #{{ $p['overall']??'—' }} overall</p><a href="/draft?season={{ urlencode($p['season']) }}">View season draft →</a></article>
+@php($ordinal=function($n){$n=(int)$n;$mod100=$n%100;if($mod100>=11&&$mod100<=13)return $n.'th';return $n.match($n%10){1=>'st',2=>'nd',3=>'rd',default=>'th'};})
+<article class="card"><h3>@include('partials.player-link',['name'=>$p['player']]) drafted in the {{ $ordinal($p['round']??0) }} round ({{ $ordinal($p['overall']??0) }} overall) by {{ $p['team'] }}</h3></article>
 @else
 @php($a=$event['data'])
-<article class="card"><span class="award-icon">{{ \App\Support\AwardIcon::for($a['id']) }}</span><h3>{{ $a['label'] }} · @include('partials.player-link',['name'=>$a['player']])</h3><div>{{ $a['team'] }}</div></article>
+<article class="card"><h3>@include('partials.player-link',['name'=>$a['player']]) wins the {{ $a['label'] }} ({{ $a['team'] }})</h3></article>
 @endif
 </section>
 @empty<div class="empty">No matching player history across all seasons.</div>@endforelse
