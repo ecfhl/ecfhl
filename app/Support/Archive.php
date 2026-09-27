@@ -9,6 +9,7 @@ class Archive extends EcfhlData
     private array $cache = [];
     public function mode(): string
     {
+        if (request()->is('players')) return 'all';
         $mode = request()->query('type', request()->cookie('ecfhl-season-type', 'h2h'));
         return in_array($mode, ['h2h','total','all','none'], true) ? $mode : 'h2h';
     }

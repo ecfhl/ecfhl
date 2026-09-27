@@ -28,7 +28,7 @@
     <div class="shell nav-wrap">
         <div class="brand-area">
             <a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a>
-            @if(!request()->is('rules'))
+            @if(!request()->is('rules', 'players'))
                 @php($seasonMode = app(\App\Support\Archive::class)->mode())
                 <div class="header-season-filter" role="group" aria-label="Season type">@foreach(['h2h'=>'Head-to-Head','total'=>'Total Points'] as $value=>$label)<button type="button" class="header-filter-button season-type-choice {{ in_array($seasonMode,[$value,'all'])?'active':'' }}" data-value="{{ $value }}">{{ $label }}</button>@endforeach</div>
             @endif
