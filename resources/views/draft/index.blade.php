@@ -18,9 +18,9 @@
     $draftFranchises = collect($archive->teamLedger($archive->mode(), 'all'))->mapWithKeys(fn($f) => [$f['id'] => $f['team']])->sort();
 @endphp
 <form class="toolbar" method="get" id="draftForm">
-  @if($selectedFranchise)<input type="hidden" name="franchise" value="{{ $selectedFranchise }}">@endif
+  <input type="hidden" name="type" value="{{ $archive->mode() }}">
   <select class="control" name="season" onchange="this.form.submit()"><option value="all" @selected($selected==='all')>All years</option>@foreach($seasons as $s)<option value="{{ $s }}" @selected($s===$selected)>{{ $s }}</option>@endforeach</select>
-  <select class="control" id="draftFranchise"><option value="">All franchises</option>@foreach($draftFranchises as $id=>$franchise)<option value="{{ $id }}">{{ $franchise }}</option>@endforeach</select>
+  <select class="control" id="draftFranchise" name="franchise"><option value="">All franchises</option>@foreach($draftFranchises as $id=>$franchise)<option value="{{ $id }}" @selected($selectedFranchise===$id)>{{ $franchise }}</option>@endforeach</select>
   <input id="draftSearch" name="q" value="{{ $q }}" class="control" style="flex:1;min-width:220px" placeholder="Search player or team…">
 </form>
 <div class="table-card"><div class="table-scroll"><table class="data-table" id="draftTable"><thead><tr><th class="num">Pick</th><th class="num">Overall</th><th>Player</th><th>Team</th></tr></thead><tbody>
@@ -45,7 +45,7 @@
 <script>
 const draftSearch=document.getElementById('draftSearch'),draftFranchise=document.getElementById('draftFranchise');
 function filterDraft(){const q=draftSearch.value.toLowerCase(),franchise=draftFranchise.value;document.querySelectorAll('#draftTable .draft-pick-row').forEach(r=>r.style.display=r.dataset.search.includes(q)&&(!franchise||r.dataset.franchise===franchise)?'':'none');document.querySelectorAll('#draftTable .draft-round-header').forEach(h=>{let row=h.nextElementSibling,visible=false;while(row&&!row.classList.contains('draft-round-header')&&!row.classList.contains('draft-season-header')){if(row.classList.contains('draft-pick-row')&&row.style.display!=='none')visible=true;row=row.nextElementSibling;}h.style.display=visible?'':'none';});document.querySelectorAll('#draftTable .draft-season-header').forEach(h=>{let row=h.nextElementSibling,visible=false;while(row&&!row.classList.contains('draft-season-header')){if(row.classList.contains('draft-pick-row')&&row.style.display!=='none')visible=true;row=row.nextElementSibling;}h.style.display=visible?'':'none';});}
-draftSearch.addEventListener('input',filterDraft);draftFranchise.addEventListener('change',()=>{filterDraft();document.getElementById('draft-results')?.scrollIntoView({block:'start'});});
+draftSearch.addEventListener('input',filterDraft);draftFranchise.addEventListener('change',()=>document.getElementById('draftForm').submit());
 document.querySelectorAll('.expand-card-icon').forEach(btn=>btn.addEventListener('click',()=>{const box=document.getElementById(btn.dataset.expandTarget),opening=box.querySelector('.expand-row[hidden]')!==null;box.querySelectorAll('.expand-row').forEach((r,i)=>r.hidden=!opening&&i>=3);btn.textContent=opening?'×':'⛶';btn.setAttribute('aria-label',opening?'Minimize':'Expand');btn.title=opening?'Minimize':'Expand';}));
 const draftParams=new URLSearchParams(window.location.search);const draftFilterUsed=draftParams.has('season')||draftParams.has('q');if(draftFilterUsed){window.addEventListener('load',()=>{const hash=window.location.hash;if(hash){const target=document.querySelector(hash);if(target){target.scrollIntoView({block:'start'});return;}}document.getElementById('draft-results')?.scrollIntoView({block:'start'});});}
 </script>

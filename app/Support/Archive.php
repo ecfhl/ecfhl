@@ -85,11 +85,8 @@ class Archive extends EcfhlData
     }
     public function draftSeason(string $season): array
     {
-        // Merge by season/pick, preserving source identity when imported DB fields are blank.
+        // The rebuilt relational tables are authoritative for draft history.
         $picks = [];
-        foreach (parent::draftSeason($season) as $p) {
-            $picks[$p['season'].'|'.$p['overall']] = $p;
-        }
         $players = array_column($this->rows('players'), 'player_name', 'player_id');
         $drafts = array_column($this->rows('drafts'), 'season_id', 'draft_id');
         foreach ($this->rows('draft_picks') as $p) {

@@ -67,3 +67,8 @@ Artisan::command('ecfhl:sync', function () {
 
     DB::table('franchises')->where('franchise_id','F009')->update(['franchise_name'=>'JDPower']);
 })->purpose('Import the current ECFHL history data into MySQL');
+
+Artisan::command('ecfhl:validate-drafts', function () {
+    $plan = (new \Database\Seeders\DraftsOnlySeeder)->plan();
+    $this->info('READ ONLY: '.count($plan['draft_picks']).' picks validated; season counts: '.json_encode($plan['counts']));
+});
