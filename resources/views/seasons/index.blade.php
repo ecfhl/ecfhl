@@ -10,8 +10,8 @@
 </style>
 <div class="season-cards">
 @foreach($seasons as $season)
-<a class="season-card" href="/seasons/{{ rawurlencode($season['season']) }}">
-<div class="season-card-head"><div><strong>{{ $season['season'] }}</strong><span>{{ $season['format'] ?? '' }}</span></div><span>View →</span></div>
+<article class="season-card">
+<div class="season-card-head"><div><strong>{{ $season['season'] }}</strong><span>{{ $season['format'] ?? '' }}</span>@include('partials.fantrax-standings',['season'=>$season])</div><a class="season-card-view" href="/seasons/{{ rawurlencode($season['season']) }}">View →</a></div>
 <div class="season-card-columns">
 <div><h3>Playoffs</h3><div class="season-playoff-podium">
 <div class="podium-entry"><strong class="podium-team">{{ $season['runner_up'] ?: '—' }}</strong><div class="podium-place podium-second"><span class="podium-medal">🥈</span><small>2nd</small></div></div>
@@ -19,7 +19,7 @@
 <div class="podium-entry"><strong class="podium-team">{{ $season['third_place'] ?: '—' }}</strong><div class="podium-place podium-third"><span class="podium-medal">🥉</span><small>3rd</small></div></div>
 </div></div>
 <div><h3>Regular Season</h3>@forelse($season['regular_top3'] ?? [] as $i=>$row)@php $hasRecord=$row['w']!==null||$row['l']!==null||$row['t']!==null;$record=$hasRecord?(($row['w']??0).'-'.($row['l']??0).'-'.($row['t']??0)):(($row['fantasy_points_for']!==null)?number_format($row['fantasy_points_for'],0).' Fpts':'—');$rankIcon=['1️⃣','2️⃣','3️⃣'][$i]??($i+1);@endphp<div class="award-line"><span>{{ $rankIcon }} {{ $row['team'] }}</span><strong>{{ $record }}</strong></div>@empty<div class="subtle">No regular-season data</div>@endforelse</div>
-</div></a>
+</div></article>
 @endforeach
 </div></div>
 @endsection

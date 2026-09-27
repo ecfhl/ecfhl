@@ -2,7 +2,7 @@
 @section('title',($season['season'] ?? 'Season').' · ECFHL')
 @section('content')
 <div class="shell">
-  <div class="page-head"><div class="eyebrow">Season history</div><h1>{{ $season['season'] }}</h1><p>{{ $season['format'] ?? '' }} · {{ $season['status'] ?? '' }}</p></div>
+  <div class="page-head"><div class="eyebrow">Season history</div><h1>{{ $season['season'] }}</h1><p>{{ $season['format'] ?? '' }} · {{ $season['status'] ?? '' }}</p>@include('partials.fantrax-standings',['season'=>$season])</div>
 
   @php $seasonOptions = app(\App\Support\Archive::class)->seasons(); @endphp
   <div style="display:flex;justify-content:flex-end;margin:0 0 22px"><select aria-label="Go to season" style="width:260px;padding:10px 12px;border-radius:8px" onchange="if(this.value) window.location.href=this.value"><option value="">Go to season...</option>@foreach($seasonOptions as $option)<option value="/seasons/{{ rawurlencode($option['season']) }}" {{ $option['season']===$season['season']?'selected':'' }}>{{ $option['season'] }}</option>@endforeach</select></div>
