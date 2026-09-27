@@ -8,19 +8,22 @@
 <style>
 .player-leader-grid{margin:22px 0 28px}
 #player-results{scroll-margin-top:110px}
-.player-timeline{position:relative;display:block;padding:0 0 0 34px;margin:20px 0}
-.player-timeline::before{content:"";position:absolute;left:10px;top:14px;bottom:18px;width:2px;background:var(--line)}
-.timeline-season{position:relative;margin:22px 0 14px;font-size:20px;font-weight:800}
+.player-timeline{display:block;margin:18px 0 30px}
+.timeline-season{display:flex;align-items:center;gap:12px;margin:26px 0 10px;font-size:18px;font-weight:800}
 .timeline-season:first-child{margin-top:0}
-.timeline-season::before{content:"";position:absolute;left:-30px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--accent,#1d5fa7);border:3px solid var(--panel);box-sizing:border-box}
-.timeline-event{position:relative;margin:0 0 14px}
-.timeline-marker{position:absolute;left:-37px;top:0;display:grid;place-items:center;width:28px;height:28px;border:1px solid var(--line);border-radius:50%;background:var(--panel);font-size:14px}
-.timeline-label{display:flex;align-items:center;gap:10px;min-height:28px;margin-bottom:5px;font-size:13px;color:var(--muted)}
+.timeline-season::after{content:"";height:1px;flex:1;background:var(--line)}
+.timeline-season a{text-decoration:none}
+.timeline-season a:hover{text-decoration:underline}
+.timeline-event{margin:0 0 8px}
+.timeline-label{display:flex;align-items:center;gap:8px;margin:0 0 5px 12px;font-size:12px;color:var(--muted)}
 .timeline-kind{font-weight:800;color:var(--text)}
-.timeline-event .card{margin:0;padding:12px 16px}
-.timeline-event .card h3{margin:0;font-size:16px;line-height:1.35}
-@media(max-width:600px){.player-timeline{padding-left:29px}.player-timeline::before{left:8px}.timeline-marker{left:-33px}.timeline-season::before{left:-27px}.timeline-event .card{padding:10px 12px}.timeline-label{flex-wrap:wrap;gap:4px 10px}}
-
+.timeline-icon{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--panel);border:1px solid var(--line);font-size:12px}
+.timeline-event .card{margin:0;padding:10px 14px;border-left:3px solid var(--line);border-radius:8px;box-shadow:none}
+.timeline-event[data-kind="draft"] .card{border-left-color:#f29e0d}
+.timeline-event[data-kind="trade"] .card{border-left-color:#4a56b1}
+.timeline-event[data-kind="award"] .card{border-left-color:#aa086d}
+.timeline-event .card h3{margin:0;font-size:15px;line-height:1.4}
+@media(max-width:600px){.timeline-season{margin-top:22px}.timeline-event .card{padding:9px 11px}.timeline-label{margin-left:6px}}
 </style>
 <div class="player-leader-grid">
 @include('partials.leaders',[
@@ -50,9 +53,8 @@
 @php($timelineSeason=$event['season'])
 <h2 class="timeline-season"><a href="/seasons/{{ rawurlencode($event['season']) }}">{{ $event['season'] }}</a></h2>
 @endif
-<section class="timeline-event">
-<span class="timeline-marker" aria-hidden="true">{{ match($event['kind']){'draft'=>'🎯','trade'=>'🔄',default=>'🏆'} }}</span>
-<div class="timeline-label"><span class="timeline-kind">{{ match($event['kind']){'draft'=>'Drafted','trade'=>!empty($event['data']['vetoed'])?'Trade vetoed':'Traded',default=>'Award won'} }}</span><span>{{ match($event['kind']){'draft'=>'Season draft','trade'=>$event['data']['date'],default=>'Season awards'} }}</span></div>
+<section class="timeline-event" data-kind="{{ $event['kind'] }}">
+<div class="timeline-label"><span class="timeline-icon" aria-hidden="true">{{ match($event['kind']){'draft'=>'🎯','trade'=>'🔄',default=>'🏆'} }}</span><span class="timeline-kind">{{ match($event['kind']){'draft'=>'Drafted','trade'=>!empty($event['data']['vetoed'])?'Trade vetoed':'Traded',default=>'Award won'} }}</span><span>{{ match($event['kind']){'draft'=>'Season draft','trade'=>$event['data']['date'],default=>'Season awards'} }}</span></div>
 @if($event['kind']==='trade')
 @include('partials.trade-card',['t'=>$event['data']])
 @elseif($event['kind']==='draft')
