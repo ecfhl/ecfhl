@@ -12,7 +12,7 @@
         } elseif (request()->is('seasons/*') && isset($season)) {
             $browserTitle = 'ECFHL - '.($season['season'] ?? 'Season');
         } else {
-            $pageTitles = ['seasons'=>'Seasons','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','rules'=>'Rules'];
+            $pageTitles = ['seasons'=>'Seasons','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','ai-tips'=>'AI Tips','rules'=>'Rules'];
             $browserTitle = 'ECFHL - '.($pageTitles[request()->segment(1)] ?? 'East Coast Fantasy Hockey League');
         }
     @endphp
@@ -28,14 +28,14 @@
     <div class="shell nav-wrap">
         <div class="brand-area">
             <a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a>
-            @if(!request()->is('rules', 'players'))
+            @if(!request()->is('rules', 'players', 'ai-tips'))
                 @php($seasonMode = app(\App\Support\Archive::class)->mode())
                 <div class="header-season-filter" role="group" aria-label="Season type">@foreach(['h2h'=>'Head-to-Head','total'=>'Total Points'] as $value=>$label)<button type="button" class="header-filter-button season-type-choice {{ in_array($seasonMode,[$value,'all'])?'active':'' }}" data-value="{{ $value }}">{{ $label }}</button>@endforeach</div>
             @endif
         </div>
         <div class="header-actions"><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div>
         <nav class="main-nav">
-            @foreach (['/'=>'Overview','/seasons'=>'Seasons','/teams'=>'Franchises','/prizes'=>'Prizes','/trades'=>'Trades','/draft'=>'Draft','/players'=>'Players','/rules'=>'Rules'] as $url=>$label)
+            @foreach (['/'=>'Overview','/seasons'=>'Seasons','/teams'=>'Franchises','/prizes'=>'Prizes','/trades'=>'Trades','/draft'=>'Draft','/players'=>'Players','/ai-tips'=>'AI Tips','/rules'=>'Rules'] as $url=>$label)
                 <a href="{{ $url }}" class="{{ request()->is(ltrim($url,'/')) || ($url==='/' && request()->is('/')) ? 'active' : '' }}" @if($url==='/draft') onclick="if(location.pathname==='/draft'){event.preventDefault();history.replaceState(null,'','/draft');window.scrollTo({top:0,left:0,behavior:'auto'});}" @endif>{{ $label }}</a>
             @endforeach
         </nav>
