@@ -3,9 +3,7 @@
 @php
     $fantraxLeagueId = '092zcn40molvao69';
     $fantraxPlayerUrl = function ($player) use ($fantraxLeagueId) {
-        if (!empty($player['fantrax_url'])) return $player['fantrax_url'];
-        if (!empty($player['fantrax_id'])) return 'https://www.fantrax.com/player/'.$player['fantrax_id'].'/'.$fantraxLeagueId.'/'.\Illuminate\Support\Str::slug($player['name']).'/';
-        return 'https://www.fantrax.com/fantasy/league/'.$fantraxLeagueId.'/players;searchName='.rawurlencode($player['name']);
+        return 'https://www.fantrax.com/fantasy/league/'.$fantraxLeagueId.'/players;searchName='.rawurlencode($player['name']).';positionOrGroup=ALL;';
     };
 @endphp
 <div class="page-head"><div class="shell">
