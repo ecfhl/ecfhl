@@ -21,15 +21,15 @@
     @else
         <section class="tips-section" id="goalies">
             <div class="section-title"><div><h2>Top 10 available goalies</h2><p class="subtle">Available goalies listed by Daily Faceoff are included first. Remaining spots are filled with the highest projected available goalies playing that day.</p></div></div>
-            <div class="table-card"><div class="table-scroll"><table class="data-table tips-table">
+            <div class="table-card"><div class="table-scroll"><table class="data-table tips-table tips-goalie-table">
                 <thead><tr><th scope="col">Goalie</th><th scope="col">Opponent</th><th scope="col">Status</th><th scope="col">Starting status</th><th scope="col">Proj. season FPts</th><th scope="col">Fantrax</th></tr></thead>
                 <tbody>@forelse($groups['G'] as $player)<tr>
-                    <td><strong>{{ $player['name'] }} ({{ $player['team'] }})</strong>@if(!empty($player['injury_status']) && preg_match('/IR/i', $player['injury_status'])) <span class="pill tips-ir">IR</span>@endif</td>
-                    <td>{{ $player['opponent'] }}</td>
-                    <td><span class="pill {{ $player['status']==='FA'?'tips-fa':'tips-waiver' }}">{{ $player['status'] }}</span></td>
-                    <td>@if(!empty($player['starting_status']))@php($startingClass = match(strtolower($player['starting_status'])) {'confirmed' => 'tips-start-confirmed', 'probable' => 'tips-start-probable', default => 'tips-start-unconfirmed'})<span class="pill {{ $startingClass }}">{{ $player['starting_status'] }}</span>@else<span class="subtle">—</span>@endif</td>
-                    <td>@if(array_key_exists('projected_points', $player)){{ number_format($player['projected_points'], 0) }}@else<span class="subtle">—</span>@endif</td>
-                    <td><a class="tips-add-button" href="{{ $fantraxPlayerUrl($player) }}" target="_blank" rel="noopener noreferrer">+ Add</a></td>
+                    <td data-label="Goalie"><strong>{{ $player['name'] }} ({{ $player['team'] }})</strong>@if(!empty($player['injury_status']) && preg_match('/IR/i', $player['injury_status'])) <span class="pill tips-ir">IR</span>@endif</td>
+                    <td data-label="Opponent">{{ $player['opponent'] }}</td>
+                    <td data-label="Status"><span class="pill {{ $player['status']==='FA'?'tips-fa':'tips-waiver' }}">{{ $player['status'] }}</span></td>
+                    <td data-label="Starting">@if(!empty($player['starting_status']))@php($startingClass = match(strtolower($player['starting_status'])) {'confirmed' => 'tips-start-confirmed', 'probable' => 'tips-start-probable', default => 'tips-start-unconfirmed'})<span class="pill {{ $startingClass }}">{{ $player['starting_status'] }}</span>@else<span class="subtle">—</span>@endif</td>
+                    <td data-label="Proj. FPts">@if(array_key_exists('projected_points', $player)){{ number_format($player['projected_points'], 0) }}@else<span class="subtle">—</span>@endif</td>
+                    <td data-label="Fantrax"><a class="tips-add-button" href="{{ $fantraxPlayerUrl($player) }}" target="_blank" rel="noopener noreferrer">+ Add</a></td>
                 </tr>@empty<tr><td colspan="6" class="empty">No qualifying available goalies in this update.</td></tr>@endforelse</tbody>
             </table></div></div>
         </section>
@@ -37,15 +37,15 @@
         @foreach(['F'=>['forwards','Top 10 available forwards','Ranked by projected season fantasy points in ECFHL scoring.'], 'D'=>['defensemen','Top 5 available defensemen','Ranked by projected season fantasy points in ECFHL scoring.']] as $position=>$section)
         <section class="tips-section" id="{{ $section[0] }}">
             <div class="section-title"><div><h2>{{ $section[1] }}</h2><p class="subtle">{{ $section[2] }}</p></div></div>
-            <div class="table-card"><div class="table-scroll"><table class="data-table tips-table">
+            <div class="table-card"><div class="table-scroll"><table class="data-table tips-table tips-skater-table">
                 <thead><tr><th scope="col">#</th><th scope="col">Player</th><th scope="col">Opponent</th><th scope="col">Status</th><th scope="col">Proj. season FPts</th><th scope="col">Fantrax</th></tr></thead>
                 <tbody>@forelse($groups[$position] as $player)<tr>
-                    <td>{{ $loop->iteration }}</td>
-                    <td><strong>{{ $player['name'] }} ({{ $player['team'] }})</strong>@if(!empty($player['injury_status']) && preg_match('/IR/i', $player['injury_status'])) <span class="pill tips-ir">IR</span>@endif</td>
-                    <td>{{ $player['opponent'] }}</td>
-                    <td><span class="pill {{ $player['status']==='FA'?'tips-fa':'tips-waiver' }}">{{ $player['status'] }}</span></td>
-                    <td>{{ number_format($player['projected_points'], 0) }}</td>
-                    <td><a class="tips-add-button" href="{{ $fantraxPlayerUrl($player) }}" target="_blank" rel="noopener noreferrer">+ Add</a></td>
+                    <td data-label="#">{{ $loop->iteration }}</td>
+                    <td data-label="Player"><strong>{{ $player['name'] }} ({{ $player['team'] }})</strong>@if(!empty($player['injury_status']) && preg_match('/IR/i', $player['injury_status'])) <span class="pill tips-ir">IR</span>@endif</td>
+                    <td data-label="Opponent">{{ $player['opponent'] }}</td>
+                    <td data-label="Status"><span class="pill {{ $player['status']==='FA'?'tips-fa':'tips-waiver' }}">{{ $player['status'] }}</span></td>
+                    <td data-label="Proj. FPts">{{ number_format($player['projected_points'], 0) }}</td>
+                    <td data-label="Fantrax"><a class="tips-add-button" href="{{ $fantraxPlayerUrl($player) }}" target="_blank" rel="noopener noreferrer">+ Add</a></td>
                 </tr>@empty<tr><td colspan="6" class="empty">No qualifying available players in this update.</td></tr>@endforelse</tbody>
             </table></div></div>
         </section>
@@ -56,6 +56,10 @@
     @endif
 </div>
 <style>
-.tips-toolbar{align-items:center;margin-bottom:18px}.tips-date-inactive{background:#e5e7eb!important;border-color:#d1d5db!important;color:#374151!important}.tips-date-inactive:hover{background:#d1d5db!important;color:#111827!important}.tips-section{margin:28px 0;scroll-margin-top:95px}.tips-section .section-title p{margin:5px 0 0;font-size:13px}.tips-waiver{background:var(--accent-soft);border-color:var(--accent)}.tips-fa{color:var(--success);font-weight:700}.tips-ir{background:#dc2626;color:#fff;border-color:#dc2626;font-weight:800;margin-left:6px}.tips-start-confirmed{background:#16a34a;color:#fff;border-color:#15803d;font-weight:800}.tips-start-probable{background:#facc15;color:#422006;border-color:#eab308;font-weight:800}.tips-start-unconfirmed{background:#e5e7eb;color:#374151;border-color:#d1d5db;font-weight:700}.tips-add-button{display:inline-flex;align-items:center;justify-content:center;background:#16a34a;color:#fff!important;border:1px solid #15803d;border-radius:8px;padding:6px 12px;font-weight:800;font-size:12px;text-decoration:none;white-space:nowrap}.tips-add-button:hover{background:#15803d;text-decoration:none}.tips-table td:first-child{white-space:normal}.tips-method{font-size:13px}.tips-sources{margin-top:18px}.tips-updated{margin-top:24px;padding:14px 0 4px;border-top:1px solid var(--line);font-size:12px;text-align:right}.tips-table .pill{white-space:nowrap}.ai-tips .table-scroll{overflow-x:auto}@media(max-width:520px){.tips-table th,.tips-table td{padding:10px 8px;font-size:12px}.tips-table .pill{padding:4px 6px;font-size:11px}.tips-section h2{font-size:21px}.tips-updated{text-align:left}}@media(min-width:851px) and (max-width:1100px){.main-nav a{padding:8px 5px;font-size:12px}.nav-wrap{gap:8px}}
+.tips-toolbar{align-items:center;margin-bottom:18px}.tips-date-inactive{background:#e5e7eb!important;border-color:#d1d5db!important;color:#374151!important}.tips-date-inactive:hover{background:#d1d5db!important;color:#111827!important}.tips-section{margin:28px 0;scroll-margin-top:95px}.tips-section .section-title p{margin:5px 0 0;font-size:13px}.tips-waiver{background:var(--accent-soft);border-color:var(--accent)}.tips-fa{color:var(--success);font-weight:700}.tips-ir{background:#dc2626;color:#fff;border-color:#dc2626;font-weight:800;margin-left:6px}.tips-start-confirmed{background:#16a34a;color:#fff;border-color:#15803d;font-weight:800}.tips-start-probable{background:#facc15;color:#422006;border-color:#eab308;font-weight:800}.tips-start-unconfirmed{background:#e5e7eb;color:#374151;border-color:#d1d5db;font-weight:700}.tips-add-button{display:inline-flex;align-items:center;justify-content:center;background:#16a34a;color:#fff!important;border:1px solid #15803d;border-radius:8px;padding:6px 12px;font-weight:800;font-size:12px;text-decoration:none;white-space:nowrap}.tips-add-button:hover{background:#15803d;text-decoration:none}.tips-table td:first-child{white-space:normal}.tips-method{font-size:13px}.tips-sources{margin-top:18px}.tips-updated{margin-top:24px;padding:14px 0 4px;border-top:1px solid var(--line);font-size:12px;text-align:right}.tips-table .pill{white-space:nowrap}.ai-tips .table-scroll{overflow-x:auto}
+@media(max-width:600px){
+.ai-tips .table-card{background:transparent;border:0;box-shadow:none;overflow:visible}.ai-tips .table-scroll{overflow:visible}.tips-table,.tips-table tbody,.tips-table tr,.tips-table td{display:block;width:100%}.tips-table thead{display:none}.tips-table tr{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;padding:10px 12px;box-shadow:0 2px 8px rgba(15,23,42,.04)}.tips-table td{display:flex;align-items:center;justify-content:space-between;gap:12px;border:0!important;padding:5px 0!important;font-size:13px;text-align:right;white-space:normal}.tips-table td::before{content:attr(data-label);flex:0 0 auto;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;text-align:left}.tips-table td[data-label="Goalie"],.tips-table td[data-label="Player"]{display:block;text-align:left;font-size:15px;padding-bottom:9px!important;margin-bottom:4px;border-bottom:1px solid var(--line)!important}.tips-table td[data-label="Goalie"]::before,.tips-table td[data-label="Player"]::before{display:none}.tips-skater-table td[data-label="#"]{display:none}.tips-table .pill{padding:4px 7px;font-size:11px}.tips-add-button{padding:5px 11px}.tips-section h2{font-size:21px}.tips-updated{text-align:left}.tips-sources{gap:7px}.tips-sources>span{width:100%}
+}
+@media(min-width:851px) and (max-width:1100px){.main-nav a{padding:8px 5px;font-size:12px}.nav-wrap{gap:8px}}
 </style>
 @endsection
