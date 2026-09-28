@@ -24,35 +24,21 @@
         </div>
         <nav class="filter-group tips-jumps" aria-label="Player sections">
             <a class="filter-button" href="#goalies">Goalies · {{ count($groups['G']) }}</a>
-            <a class="filter-button" href="#other-goalies">Other Goalies · {{ count($groups['GO'] ?? []) }}</a>
             <a class="filter-button" href="#forwards">Forwards · {{ count($groups['F']) }}</a>
             <a class="filter-button" href="#defensemen">Defensemen · {{ count($groups['D']) }}</a>
         </nav>
 
         <section class="tips-section" id="goalies">
-            <div class="section-title"><div><h2>Available goalies</h2><p class="subtle">Available goalies listed by Daily Faceoff for this date. Unconfirmed does not guarantee a start.</p></div></div>
+            <div class="section-title"><div><h2>Available goalies</h2><p class="subtle">Daily Faceoff goalies first, followed by up to 10 other available goalies playing this date ranked by projected season fantasy points.</p></div></div>
             <div class="table-card"><div class="table-scroll"><table class="data-table tips-table">
-                <thead><tr><th scope="col">Goalie</th><th scope="col">Opponent</th><th scope="col">Status</th><th scope="col">Starting status</th></tr></thead>
+                <thead><tr><th scope="col">Goalie</th><th scope="col">Opponent</th><th scope="col">Status</th><th scope="col">Starting status</th><th scope="col">Proj. season FPts</th></tr></thead>
                 <tbody>@forelse($groups['G'] as $player)<tr>
                     <td><strong>{{ $player['name'] }} ({{ $player['team'] }})</strong>@if(!empty($player['injury_status']) && preg_match('/IR/i', $player['injury_status'])) <span class="pill tips-ir">IR</span>@endif</td>
                     <td>{{ $player['opponent'] }}</td>
                     <td><span class="pill {{ $player['status']==='FA'?'tips-fa':'tips-waiver' }}">{{ $player['status'] }}</span></td>
-                    <td><span class="pill">{{ $player['starting_status'] }}</span></td>
-                </tr>@empty<tr><td colspan="4" class="empty">No qualifying available goalies in this update.</td></tr>@endforelse</tbody>
-            </table></div></div>
-        </section>
-
-        <section class="tips-section" id="other-goalies">
-            <div class="section-title"><div><h2>Top 10 other available goalies</h2><p class="subtle">Other available goalies playing this date, ranked by projected season fantasy points in ECFHL scoring.</p></div></div>
-            <div class="table-card"><div class="table-scroll"><table class="data-table tips-table">
-                <thead><tr><th scope="col">#</th><th scope="col">Goalie</th><th scope="col">Opponent</th><th scope="col">Status</th><th scope="col">Proj. season FPts</th></tr></thead>
-                <tbody>@forelse(($groups['GO'] ?? []) as $player)<tr>
-                    <td>{{ $loop->iteration }}</td>
-                    <td><strong>{{ $player['name'] }} ({{ $player['team'] }})</strong>@if(!empty($player['injury_status']) && preg_match('/IR/i', $player['injury_status'])) <span class="pill tips-ir">IR</span>@endif</td>
-                    <td>{{ $player['opponent'] }}</td>
-                    <td><span class="pill {{ $player['status']==='FA'?'tips-fa':'tips-waiver' }}">{{ $player['status'] }}</span></td>
-                    <td>{{ number_format($player['projected_points'], 0) }}</td>
-                </tr>@empty<tr><td colspan="5" class="empty">No other available goalies with projections in this update.</td></tr>@endforelse</tbody>
+                    <td>@if(!empty($player['starting_status']))<span class="pill">{{ $player['starting_status'] }}</span>@else<span class="subtle">—</span>@endif</td>
+                    <td>@if(array_key_exists('projected_points', $player)){{ number_format($player['projected_points'], 0) }}@else<span class="subtle">—</span>@endif</td>
+                </tr>@empty<tr><td colspan="5" class="empty">No qualifying available goalies in this update.</td></tr>@endforelse</tbody>
             </table></div></div>
         </section>
 
