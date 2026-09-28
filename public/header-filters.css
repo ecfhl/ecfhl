@@ -5,10 +5,10 @@
 .brand-area .brand-copy strong{font-size:15px;line-height:1}
 .brand-area .brand-copy small{font-size:8px;margin-top:3px}
 
-.season-filter-bar{position:sticky;top:56px;z-index:49;background:linear-gradient(135deg,var(--navy),var(--navy-2));border-bottom:1px solid rgba(255,255,255,.08);padding:6px 0;box-shadow:0 4px 12px rgba(0,0,0,.10)}
-.season-filter-bar .shell{display:flex;align-items:center}
-.header-season-filter{display:inline-flex;align-items:center;gap:3px;width:max-content;padding:3px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:7px}
-.header-filter-button{appearance:none;border:0;background:transparent;color:rgba(235,241,248,.78);border-radius:5px;padding:4px 9px;font:inherit;font-size:10px;font-weight:700;line-height:1.15;cursor:pointer;white-space:nowrap;box-shadow:none;transition:background .15s ease,color .15s ease,box-shadow .15s ease}
+.season-filter-bar{position:sticky;top:56px;z-index:49;background:linear-gradient(135deg,var(--navy),var(--navy-2));border-bottom:1px solid rgba(255,255,255,.08);padding:2px 0;box-shadow:0 3px 8px rgba(0,0,0,.10)}
+.season-filter-bar .shell{display:flex;align-items:center;min-height:0}
+.header-season-filter{display:inline-flex;align-items:center;gap:2px;width:max-content;padding:2px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:6px}
+.header-filter-button{appearance:none;border:0;background:transparent;color:rgba(235,241,248,.78);border-radius:4px;padding:3px 8px;font:inherit;font-size:9px;font-weight:700;line-height:1.1;cursor:pointer;white-space:nowrap;box-shadow:none;transition:background .15s ease,color .15s ease,box-shadow .15s ease}
 .header-filter-button:hover{background:rgba(255,255,255,.10);color:#fff}
 .header-filter-button.active{background:#d5aa38;color:#0b294b;font-weight:800;box-shadow:0 1px 2px rgba(0,0,0,.2)}
 
@@ -32,6 +32,6 @@
   .brand-area .brand-copy strong{font-size:14px}
   .brand-area .brand-copy small{font-size:8px}
   .main-nav{top:58px}
-  .season-filter-bar{top:58px;padding:5px 0}
-  .header-filter-button{font-size:9px;padding:4px 8px}
+  .season-filter-bar{top:58px;padding:2px 0}
+  .header-filter-button{font-size:9px;padding:3px 7px}
 }
