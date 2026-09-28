@@ -1,175 +1,29 @@
 {
   "date": "2026-09-29",
   "checked_at": "2026-09-28T13:56:25.902885+00:00",
-  "fantrax_url": "https://www.fantrax.com/fantasy/league/092zcn40molvao69/players;positionOrGroup=ALL;pageNumber=1;datePlaying=2026-09-29;seasonOrProjection=PROJECTION_0_31n_SEASON;timeframeTypeCode=PROJECTED_SEASON",
+  "fantrax_url": "https://www.fantrax.com/fantasy/league/092zcn40molvao69/players;positionOrGroup=POS_201;pageNumber=1;datePlaying=2026-09-29;seasonOrProjection=PROJECTION_0_31n_SEASON;timeframeTypeCode=PROJECTED_SEASON;startDate=2026-09-29;endDate=2026-09-28",
   "players": [
-    {
-      "name": "Kevin Lankinen",
-      "team": "VAN",
-      "opponent": "@EDM",
-      "position": "G",
-      "game_date": "2026-09-29",
-      "status": "W (Tue)",
-      "starting_status": "Unconfirmed"
-    },
-    {
-      "name": "Tristan Jarry",
-      "team": "EDM",
-      "opponent": "VAN",
-      "position": "G",
-      "game_date": "2026-09-29",
-      "status": "W (Tue)",
-      "starting_status": "Unconfirmed"
-    },
-    {
-      "name": "Jake DeBrusk",
-      "team": "VAN",
-      "opponent": "@EDM",
-      "position": "F",
-      "game_date": "2026-09-29",
-      "status": "W (Tue)",
-      "projected_points": 61,
-      "source_rank": 116
-    },
-    {
-      "name": "Elias Lindholm",
-      "team": "BOS",
-      "opponent": "NYR",
-      "position": "F",
-      "game_date": "2026-09-29",
-      "status": "W (Tue)",
-      "projected_points": 58,
-      "source_rank": 127
-    },
-    {
-      "name": "Anton Lundell",
-      "team": "FLA",
-      "opponent": "@CAR",
-      "position": "F",
-      "game_date": "2026-09-29",
-      "status": "W (Tue)",
-      "projected_points": 52,
-      "source_rank": 149
-    },
-    {
-      "name": "Teuvo Teravainen",
-      "team": "CHI",
-      "opponent": "@VGK",
-      "position": "F",
-      "game_date": "2026-09-29",
-      "status": "W (Tue)",
-      "projected_points": 52,
-      "source_rank": 153
-    },
-    {
-      "name": "Taylor Hall",
-      "team": "CAR",
-      "opponent": "FLA",
-      "position": "F",
-      "game_date": "2026-09-29",
-      "status": "W (Tue)",
-      "projected_points": 49,
-      "source_rank": 163
-    },
-    {
-      "name": "Oliver Bjorkstrand",
-      "team": "NYR",
-      "opponent": "@BOS",
-      "position": "F",
-      "game_date": "2026-09-29",
-      "status": "W (Tue)",
-      "projected_points": 48,
-      "source_rank": 167
-    },
-    {
-      "name": "Casey Mittelstadt",
-      "team": "BOS",
-      "opponent": "NYR",
-      "position": "F",
-      "game_date": "2026-09-29",
-      "status": "W (Tue)",
-      "projected_points": 48,
-      "source_rank": 169
-    },
-    {
-      "name": "William Karlsson",
-      "team": "VGK",
-      "opponent": "CHI",
-      "position": "F",
-      "game_date": "2026-09-29",
-      "status": "W (Tue)",
-      "projected_points": 46,
-      "source_rank": 178
-    },
-    {
-      "name": "Will Cuylle",
-      "team": "NYR",
-      "opponent": "@BOS",
-      "position": "F",
-      "game_date": "2026-09-29",
-      "status": "W (Tue)",
-      "projected_points": 42,
-      "source_rank": 199
-    },
-    {
-      "name": "Jordan Staal",
-      "team": "CAR",
-      "opponent": "FLA",
-      "position": "F",
-      "game_date": "2026-09-29",
-      "status": "W (Tue)",
-      "projected_points": 41,
-      "source_rank": 204
-    },
-    {
-      "name": "Oliver Ekman-Larsson",
-      "team": "TOR",
-      "opponent": "MTL",
-      "position": "D",
-      "game_date": "2026-09-29",
-      "status": "W (Tue)",
-      "projected_points": 38,
-      "source_rank": 44
-    },
-    {
-      "name": "Jake Walman",
-      "team": "EDM",
-      "opponent": "VAN",
-      "position": "D",
-      "game_date": "2026-09-29",
-      "status": "W (Tue)",
-      "projected_points": 32,
-      "source_rank": 66
-    },
-    {
-      "name": "Sean Walker",
-      "team": "CAR",
-      "opponent": "FLA",
-      "position": "D",
-      "game_date": "2026-09-29",
-      "status": "W (Tue)",
-      "projected_points": 31,
-      "source_rank": 68
-    },
-    {
-      "name": "Hampus Lindholm",
-      "team": "BOS",
-      "opponent": "NYR",
-      "position": "D",
-      "game_date": "2026-09-29",
-      "status": "W (Tue)",
-      "projected_points": 30,
-      "source_rank": 72
-    },
-    {
-      "name": "Mason Lohrei",
-      "team": "BOS",
-      "opponent": "NYR",
-      "position": "D",
-      "game_date": "2026-09-29",
-      "status": "W (Tue)",
-      "projected_points": 27,
-      "source_rank": 84
-    }
+    {"name":"Kevin Lankinen","team":"VAN","opponent":"@EDM","position":"G","game_date":"2026-09-29","status":"W (Tue)","starting_status":"Unconfirmed","projected_points":35,"source_rank":44},
+    {"name":"Tristan Jarry","team":"EDM","opponent":"VAN","position":"G","game_date":"2026-09-29","status":"W (Tue)","starting_status":"Unconfirmed","projected_points":30,"source_rank":49},
+    {"name":"Akira Schmid","team":"FLA","opponent":"@CAR","position":"G","game_date":"2026-09-29","status":"W (Tue)","projected_points":47,"source_rank":32},
+    {"name":"Pyotr Kochetkov","team":"CAR","opponent":"FLA","position":"G","game_date":"2026-09-29","status":"W (Tue)","projected_points":46,"source_rank":34},
+    {"name":"Frederik Andersen","team":"CAR","opponent":"FLA","position":"G","game_date":"2026-09-29","status":"W (Tue)","projected_points":41,"source_rank":35},
+    {"name":"Thatcher Demko","team":"VAN","opponent":"@EDM","position":"G","game_date":"2026-09-29","status":"W (Tue)","projected_points":38,"source_rank":38},
+    {"name":"Adin Hill","team":"VGK","opponent":"CHI","position":"G","game_date":"2026-09-29","status":"W (Tue)","projected_points":38,"source_rank":40},
+    {"name":"Jake DeBrusk","team":"VAN","opponent":"@EDM","position":"F","game_date":"2026-09-29","status":"W (Tue)","projected_points":61,"source_rank":116},
+    {"name":"Elias Lindholm","team":"BOS","opponent":"NYR","position":"F","game_date":"2026-09-29","status":"W (Tue)","projected_points":58,"source_rank":127},
+    {"name":"Anton Lundell","team":"FLA","opponent":"@CAR","position":"F","game_date":"2026-09-29","status":"W (Tue)","projected_points":52,"source_rank":149},
+    {"name":"Teuvo Teravainen","team":"CHI","opponent":"@VGK","position":"F","game_date":"2026-09-29","status":"W (Tue)","projected_points":52,"source_rank":153},
+    {"name":"Taylor Hall","team":"CAR","opponent":"FLA","position":"F","game_date":"2026-09-29","status":"W (Tue)","projected_points":49,"source_rank":163},
+    {"name":"Oliver Bjorkstrand","team":"NYR","opponent":"@BOS","position":"F","game_date":"2026-09-29","status":"W (Tue)","projected_points":48,"source_rank":167},
+    {"name":"Casey Mittelstadt","team":"BOS","opponent":"NYR","position":"F","game_date":"2026-09-29","status":"W (Tue)","projected_points":48,"source_rank":169},
+    {"name":"William Karlsson","team":"VGK","opponent":"CHI","position":"F","game_date":"2026-09-29","status":"W (Tue)","projected_points":46,"source_rank":178},
+    {"name":"Will Cuylle","team":"NYR","opponent":"@BOS","position":"F","game_date":"2026-09-29","status":"W (Tue)","projected_points":42,"source_rank":199},
+    {"name":"Jordan Staal","team":"CAR","opponent":"FLA","position":"F","game_date":"2026-09-29","status":"W (Tue)","projected_points":41,"source_rank":204},
+    {"name":"Oliver Ekman-Larsson","team":"TOR","opponent":"MTL","position":"D","game_date":"2026-09-29","status":"W (Tue)","projected_points":38,"source_rank":44},
+    {"name":"Jake Walman","team":"EDM","opponent":"VAN","position":"D","game_date":"2026-09-29","status":"W (Tue)","projected_points":32,"source_rank":66},
+    {"name":"Sean Walker","team":"CAR","opponent":"FLA","position":"D","game_date":"2026-09-29","status":"W (Tue)","projected_points":31,"source_rank":68},
+    {"name":"Hampus Lindholm","team":"BOS","opponent":"NYR","position":"D","game_date":"2026-09-29","status":"W (Tue)","projected_points":30,"source_rank":72},
+    {"name":"Mason Lohrei","team":"BOS","opponent":"NYR","position":"D","game_date":"2026-09-29","status":"W (Tue)","projected_points":27,"source_rank":84}
   ]
 }
