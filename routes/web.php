@@ -42,3 +42,22 @@ Route::get('/prizes',fn(EcfhlData $data)=>view('prizes',['totals'=>$data->prizeT
 Route::get('/players',function(EcfhlData $data){$q=trim((string)request('q',''));$events=$q!==''?$data->playerHistory($q):[];$counts=['overall1'=>[],'trades'=>[],'round1'=>[]];foreach($data->draftSeason('all') as $p){$name=trim((string)($p['player']??''));if($name==='')continue;$key=mb_strtolower($name);if((int)($p['overall']??0)===1){$counts['overall1'][$key]['name']=$name;$counts['overall1'][$key]['count']=($counts['overall1'][$key]['count']??0)+1;}if((int)($p['round']??0)===1){$counts['round1'][$key]['name']=$name;$counts['round1'][$key]['count']=($counts['round1'][$key]['count']??0)+1;}}foreach($data->trades() as $t){if(!empty($t['vetoed']))continue;foreach(['from_items','to_items'] as $field){foreach(($t[$field]??[]) as $item){$name=trim((string)$item);if($name===''||preg_match('/draft\s+pick|round\s*\d|\b1st\b|\b2nd\b|\b3rd\b/i',$name))continue;$name=trim((string)preg_replace('/\s*\((?:FA|MINORS?|TBD|[1-4]\s+Years?)\)\s*$/i','',$name));if($name==='')continue;$key=mb_strtolower($name);$counts['trades'][$key]['name']=$name;$counts['trades'][$key]['count']=($counts['trades'][$key]['count']??0)+1;}}}$playerLeaders=[];foreach($counts as $type=>$rows){$list=[];foreach($rows as $row)$list[]=['team'=>$row['name'],'value'=>$row['count'],'score'=>$row['count']];usort($list,fn($a,$b)=>($b['score']<=>$a['score'])?:strnatcasecmp($a['team'],$b['team']));$playerLeaders[$type]=$list;}return view('players',compact('q','events','playerLeaders'));});
 Route::get('/rules',function(){$sections=DB::table('rules')->orderBy('rule_id')->get()->groupBy('section')->map(fn($rows)=>$rows->pluck('rule_text')->all())->all();return view('rules',compact('sections'));
 });
+
+Route::get('/ai-tips', function () {
+    $now = \Carbon\CarbonImmutable::now('America/Halifax');
+    $today = $now->toDateString();
+    $tomorrow = $now->addDay()->toDateString();
+    $date = request('date', $today);
+    abort_unless(is_string($date) && preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date), 422, 'Use a valid game date.');
+    $parts = array_map('intval', explode('-', $date));
+    abort_unless(checkdate($parts[1], $parts[2], $parts[0]), 422, 'Use a valid game date.');
+    $selectedDate = \Carbon\CarbonImmutable::createFromFormat('!Y-m-d', $date, 'America/Halifax');
+    $directory = database_path('data/ai-tips');
+    $availableDates = array_map(fn($file) => basename($file, '.json'), glob($directory.'/*.json') ?: []);
+    rsort($availableDates);
+    $path = $directory.'/'.$date.'.json';
+    $snapshot = is_file($path) ? json_decode(file_get_contents($path), true) : null;
+    if (($snapshot['date'] ?? null) !== $date) $snapshot = null;
+    $groups = \App\Support\AiTips::groups($snapshot ?? [], $date);
+    return view('ai-tips', compact('date', 'today', 'tomorrow', 'selectedDate', 'availableDates', 'snapshot', 'groups'));
+});
