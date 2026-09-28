@@ -35,7 +35,7 @@
         </div>
         <div class="header-actions"><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div>
         <nav class="main-nav">
-            @foreach (['/'=>'Overview','/seasons'=>'Seasons','/teams'=>'Franchises','/prizes'=>'Prizes','/trades'=>'Trades','/draft'=>'Draft','/players'=>'Players','/ai-tips'=>'AI Tips','/rules'=>'Rules'] as $url=>$label)
+            @foreach (['/'=>'Overview','/ai-tips'=>'AI Tips','/seasons'=>'Seasons','/teams'=>'Franchises','/prizes'=>'Prizes','/trades'=>'Trades','/draft'=>'Draft','/players'=>'Players','/rules'=>'Rules'] as $url=>$label)
                 <a href="{{ $url }}" class="{{ request()->is(ltrim($url,'/')) || ($url==='/' && request()->is('/')) ? 'active' : '' }}" @if($url==='/draft') onclick="if(location.pathname==='/draft'){event.preventDefault();history.replaceState(null,'','/draft');window.scrollTo({top:0,left:0,behavior:'auto'});}" @endif>{{ $label }}</a>
             @endforeach
         </nav>
