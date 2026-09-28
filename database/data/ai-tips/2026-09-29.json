@@ -1,10 +1,10 @@
 {
   "date": "2026-09-29",
-  "checked_at": "2026-09-28T17:47:37-00:00",
+  "checked_at": "2026-09-28T14:55:21-03:00",
   "fantrax_url": "https://www.fantrax.com/fantasy/league/092zcn40molvao69/players;positionOrGroup=ALL;pageNumber=1;datePlaying=2026-09-29;seasonOrProjection=PROJECTION_0_31n_SEASON;timeframeTypeCode=PROJECTED_SEASON",
   "players": [
     {"name":"Kevin Lankinen","team":"VAN","opponent":"@EDM","position":"G","game_date":"2026-09-29","status":"W (Tue)","starting_status":"Unconfirmed","projected_points":35,"source_rank":44},
-    {"name":"Tristan Jarry","team":"EDM","opponent":"VAN","position":"G","game_date":"2026-09-29","status":"W (Tue)","starting_status":"Unconfirmed","projected_points":30,"source_rank":49},
+    {"name":"Tristan Jarry","team":"EDM","opponent":"VAN","position":"G","game_date":"2026-09-29","status":"W (Tue)","starting_status":"Confirmed","projected_points":30,"source_rank":49},
     {"name":"Akira Schmid","team":"FLA","opponent":"@CAR","position":"G","game_date":"2026-09-29","status":"W (Tue)","projected_points":47,"source_rank":237},
     {"name":"Pyotr Kochetkov","team":"CAR","opponent":"FLA","position":"G","game_date":"2026-09-29","status":"W (Tue)","projected_points":46,"source_rank":241},
     {"name":"Frederik Andersen","team":"EDM","opponent":"VAN","position":"G","game_date":"2026-09-29","status":"W (Tue)","projected_points":41,"source_rank":273,"injury_status":"IR"},
