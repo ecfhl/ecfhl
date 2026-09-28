@@ -34,23 +34,23 @@
   @endif
 
   <section class="section" style="padding-top:0"><div class="season-links-grid season-rank-cards">
-    <div class="season-rank-card">
-      <div class="season-rank-head"><span class="season-rank-icon">🔄</span><h2>Trades</h2></div>
+    <div class="card leader-card">
+      <div class="leader-card-head"><h3 class="leader-card-title">🔄 Trades</h3></div>
       <div class="season-rank-body">
         @foreach($tradeLeaders as $i=>$r)
-          <div class="season-rank-row"><span class="season-rank-number">{{ $i+1 }}</span><strong class="season-rank-name">{{ $r['team'] }}</strong><strong class="season-rank-value">{{ $r['value'] }}</strong></div>
+          <div class="leader-rank"><span>{{ $i+1 }}</span><strong>{{ $r['team'] }}</strong><b>{{ $r['value'] }}</b></div>
         @endforeach
       </div>
       <a class="season-rank-footer" href="/trades?season={{ urlencode($season['season']) }}">▶ <span>View all {{ $tradeCount }} trades</span></a>
     </div>
 
-    <div class="season-rank-card">
-      <div class="season-rank-head"><span class="season-rank-icon">🏒</span><h2>1st Round Draft Picks</h2></div>
+    <div class="card leader-card">
+      <div class="leader-card-head"><h3 class="leader-card-title">🏒 1st Round Draft Picks</h3></div>
       <div class="season-rank-body">
         @forelse($topPicks as $i=>$pick)
-          <div class="season-rank-row draft-rank-row"><span class="season-rank-number">{{ $pick['overall'] ?? $i+1 }}</span><span class="season-rank-name"><strong>@include('partials.player-link',['name'=>$pick['player'] ?? ''])</strong><small>{{ $pick['team'] ?? '' }}</small></span></div>
+          <div class="leader-rank"><span>{{ $pick['overall'] ?? $i+1 }}</span><strong>@include('partials.player-link',['name'=>$pick['player'] ?? ''])<small>{{ $pick['team'] ?? '' }}</small></strong></div>
         @empty
-          <div class="season-rank-empty">No first-round draft data</div>
+          <div class="empty">No first-round draft data</div>
         @endforelse
       </div>
       <a class="season-rank-footer" href="/draft?season={{ urlencode($season['season']) }}">▶ <span>View all draft picks</span></a>
@@ -60,10 +60,7 @@
 <style>
 .season-result-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:12px;min-height:205px;margin:0 0 28px;padding:24px 22px 0;background:var(--panel,#fff);border:1px solid var(--border,#d9e0ea);border-radius:20px;box-shadow:0 8px 24px rgba(18,38,63,.06);overflow:hidden}
 .season-result-entry{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}.season-result-team{font-size:17px;text-align:center;margin-bottom:9px;line-height:1.2;overflow-wrap:anywhere}.season-result-podium .podium-place{width:100%;justify-content:center;padding:10px 8px}.season-result-podium .podium-second{height:112px}.season-result-podium .podium-first{height:145px}.season-result-podium .podium-third{height:90px}.season-result-podium .podium-medal{margin-bottom:7px}
-.season-rank-cards{align-items:start}.season-rank-card{overflow:hidden;border:1px solid var(--border,#d9e0ea);border-radius:20px;background:var(--card,#fff);box-shadow:0 8px 24px rgba(18,38,63,.06)}
-.season-rank-head{display:flex;align-items:center;gap:10px;padding:22px 26px;background:rgba(225,232,242,.45);border-bottom:1px solid var(--border,#d9e0ea)}.season-rank-head h2{margin:0;font-size:1.65rem}.season-rank-icon{font-size:1.5rem}
-.season-rank-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:16px;padding:20px 26px;border-bottom:1px solid var(--border,#e2e7ee)}.season-rank-row:last-child{border-bottom:0}.season-rank-number{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:rgba(225,232,242,.55);font-weight:800}.season-rank-name{min-width:0}.season-rank-value{font-size:1.2rem}.draft-rank-row{grid-template-columns:44px minmax(0,1fr)}.draft-rank-row small{display:block;margin-top:3px;color:var(--muted,#758092);font-weight:400}.season-rank-empty{padding:24px 26px;color:var(--muted,#758092)}
-.season-rank-footer{display:block;padding:20px 26px;border-top:1px solid var(--border,#e2e7ee);font-weight:700;text-decoration:none}.season-rank-footer span{text-decoration:underline;text-underline-offset:3px}
-@media(max-width:700px){.season-result-podium{gap:8px;padding:20px 10px 0;min-height:185px}.season-result-team{font-size:13px}.season-result-podium .podium-second{height:95px}.season-result-podium .podium-first{height:125px}.season-result-podium .podium-third{height:78px}.season-rank-head{padding:18px 20px}.season-rank-head h2{font-size:1.35rem}.season-rank-row{padding:16px 20px;grid-template-columns:38px minmax(0,1fr) auto;gap:12px}.draft-rank-row{grid-template-columns:38px minmax(0,1fr)}.season-rank-number{width:36px;height:36px}.season-rank-footer{padding:18px 20px}}
+.season-rank-cards{align-items:start}.season-rank-footer{display:block;padding:15px 18px;border-top:1px solid var(--line);font-weight:700;text-decoration:none}
+@media(max-width:700px){.season-result-podium{gap:8px;padding:20px 10px 0;min-height:185px}.season-result-team{font-size:13px}.season-result-podium .podium-second{height:95px}.season-result-podium .podium-first{height:125px}.season-result-podium .podium-third{height:78px}}
 </style>
 @endsection
