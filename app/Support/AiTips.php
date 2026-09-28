@@ -31,7 +31,19 @@ class AiTips
         $dailyFaceoff = array_values(array_filter($groups['G'], fn($p) => !empty($p['starting_status'])));
         $fantrax = array_values(array_filter($groups['G'], fn($p) => empty($p['starting_status']) && array_key_exists('projected_points', $p)));
 
-        usort($dailyFaceoff, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+        $startingPriority = function ($player): int {
+            return match (strtolower(trim($player['starting_status'] ?? ''))) {
+                'confirmed' => 0,
+                'probable' => 1,
+                'unconfirmed' => 2,
+                default => 3,
+            };
+        };
+
+        usort($dailyFaceoff, fn($a, $b) =>
+            ($startingPriority($a) <=> $startingPriority($b))
+            ?: (($b['projected_points'] ?? 0) <=> ($a['projected_points'] ?? 0))
+            ?: strcasecmp($a['name'], $b['name']));
         usort($fantrax, fn($a, $b) =>
             (($b['projected_points'] ?? 0) <=> ($a['projected_points'] ?? 0))
             ?: (($a['source_rank'] ?? PHP_INT_MAX) <=> ($b['source_rank'] ?? PHP_INT_MAX))
@@ -46,6 +58,13 @@ class AiTips
             $goalies[] = $player;
             if (count($goalies) >= 10) break;
         }
+
+        // Final display order: Confirmed, Probable, Unconfirmed, then blank.
+        usort($goalies, fn($a, $b) =>
+            ($startingPriority($a) <=> $startingPriority($b))
+            ?: (($b['projected_points'] ?? 0) <=> ($a['projected_points'] ?? 0))
+            ?: strcasecmp($a['name'], $b['name']));
+
         $groups['G'] = $goalies;
 
         return $groups;
