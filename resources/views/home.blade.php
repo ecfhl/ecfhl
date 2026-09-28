@@ -5,7 +5,7 @@
 $prizeTotals = app(\App\Support\Archive::class)->prizeTotals();
 
 @endphp
-<section class="hero"><div class="shell"><div class="eyebrow">Established in 2007</div><h1>East Coast Fantasy Hockey League</h1><p>A complete record of champions, franchise identities, seasons, trades, and draft history.</p><div class="hero-actions"><a class="button primary" href="/seasons">Seasons</a><a class="button secondary" href="/teams">Franchises</a><a class="button secondary" href="/ai-tips">AI Tips</a></div></div></section>
+<section class="hero"><div class="shell"><div class="eyebrow">Established in 2007</div><h1>East Coast Fantasy Hockey League</h1><p>A complete record of champions, franchise identities, seasons, trades, and draft history.</p><div class="hero-actions home-hero-actions"><a class="button home-nav-button" href="/seasons">Seasons</a><a class="button home-nav-button" href="/teams">Franchises</a><a class="button home-nav-button ai-tips-button" href="/ai-tips">AI Tips</a></div></div></section>
 <div class="stats-strip"><div class="shell stats-grid" style="grid-template-columns:repeat(4,minmax(0,1fr))">
 <div class="stat"><strong>{{ count($seasons) }}</strong><span>Seasons</span></div>
 <div class="stat"><strong>{{ $championships }}</strong><span>Champions</span></div>
@@ -23,4 +23,12 @@ $leaders['winnings'] = collect($prizeTotals)->map(fn($r) => [
 <section class="section" style="padding-top:0"><div class="shell"><div class="section-title"><h2>All-time leaders</h2><a href="/teams">Full franchise ledger →</a></div>@include('partials.leaders',['leaderRows'=>$leaders,'limit'=>3,'cards'=>['championships'=>'🏆 Championships','winning_pct'=>'📈 Winning %','trades'=>'🔄 Trades','winnings'=>'💵 Winnings','first_picks'=>'1️⃣ #1 overall picks','awards'=>'🏅 Awards']])</div></section>
 <section class="section" style="padding-top:0"><div class="shell"><div class="section-title"><h2>Recent seasons</h2><a href="/seasons">All seasons →</a></div><div class="grid-3">@foreach(array_slice($seasons,0,6) as $season)<a class="feature-link" href="/seasons/{{ rawurlencode($season['season']) }}"><strong>{{ $season['season'] }}</strong><span>🏆 {{ $season['champion'] ?: 'No champion' }}</span><br><span>{{ $season['format'] ?? '' }}</span></a>@endforeach</div></div></section>
 <section class="section" style="padding-top:0"><div class="shell feature-links"><a class="feature-link" href="/seasons"><strong>Seasons</strong><span>Standings, finishes and playoff results →</span></a><a class="feature-link" href="/teams"><strong>Teams</strong><span>Franchise history, awards and records →</span></a><a class="feature-link" href="/trades"><strong>Trades</strong><span>Search every recorded transaction →</span></a><a class="feature-link" href="/draft"><strong>Draft</strong><span>Browse picks by year and franchise →</span></a></div></section>
+<style>
+.home-hero-actions{position:relative;z-index:3}
+.home-hero-actions .home-nav-button{background:#1769aa;color:#fff;border-color:#2f7fbd;cursor:pointer;touch-action:manipulation;position:relative;z-index:4}
+.home-hero-actions .home-nav-button:hover{background:#1e78bd;color:#fff}
+.home-hero-actions .ai-tips-button{background:#f2c94c;color:#1f1a0d;border-color:#f2c94c}
+.home-hero-actions .ai-tips-button:hover{background:#ffd75e;color:#1f1a0d}
+@media(max-width:850px){.home-hero-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:8px}.home-hero-actions .home-nav-button{width:100%;min-height:44px;padding:10px 8px}}
+</style>
 @endsection
