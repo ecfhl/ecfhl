@@ -10,7 +10,7 @@ foreach (['F', 'D', 'G'] as $position) {
     for ($i = 1; $i <= 12; $i++) {
         $rows[] = ['name'=>"Player $position $i", 'team'=>'MTL', 'opponent'=>'@TOR',
             'position'=>$position, 'game_date'=>$date, 'status'=>'FA',
-            'projected_points'=>$i, 'starting_status'=>'Unconfirmed'];
+            'projected_points'=>$i, 'ir'=>true];
     }
 }
 $rows[] = array_replace($rows[0], ['name'=>'Rostered', 'status'=>'Orcas', 'projected_points'=>999]);
@@ -32,6 +32,7 @@ $snapshot = json_decode(file_get_contents(__DIR__.'/../database/data/ai-tips/'.$
 $groups = AiTips::groups($snapshot, $date);
 $html = view('ai-tips', ['date'=>$date, 'today'=>'2026-09-28', 'tomorrow'=>$date,
     'selectedDate'=>Carbon\CarbonImmutable::parse($date), 'availableDates'=>[$date], 'snapshot'=>$snapshot, 'groups'=>$groups])->render();
+verifyTips(str_contains($html, 'tips-ir') && str_contains($html, 'Frederik Andersen (EDM)'), 'Render injured reserve badges and other goalies.');
 verifyTips(str_contains($html, 'Kevin Lankinen (VAN)') && str_contains($html, 'Top 10 available forwards'), 'Render populated page.');
 $html = view('ai-tips', ['date'=>$date, 'today'=>'2026-09-28', 'tomorrow'=>$date,
     'selectedDate'=>Carbon\CarbonImmutable::parse($date), 'availableDates'=>[], 'snapshot'=>null, 'groups'=>[]])->render();

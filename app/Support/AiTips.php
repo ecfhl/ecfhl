@@ -14,10 +14,9 @@ class AiTips
             if (!isset($groups[$position]) || ($player['game_date'] ?? '') !== $date) continue;
             if (!preg_match('/^(FA|W(?:\s*\([^)]+\))?)$/', $status)) continue;
             if (empty($player['opponent']) || empty($player['team']) || empty($player['name'])) continue;
-            if ($position === 'G' && empty($player['starting_status'])) continue;
             $groups[$position][] = $player;
         }
-        foreach (['F' => 10, 'D' => 5] as $position => $limit) {
+        foreach (['G' => PHP_INT_MAX, 'F' => 10, 'D' => 5] as $position => $limit) {
             usort($groups[$position], fn($a, $b) =>
                 (($b['projected_points'] ?? 0) <=> ($a['projected_points'] ?? 0))
                 ?: (($a['source_rank'] ?? PHP_INT_MAX) <=> ($b['source_rank'] ?? PHP_INT_MAX))
