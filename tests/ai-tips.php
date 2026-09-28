@@ -20,7 +20,7 @@ $rows[] = array_replace($rows[0], ['name'=>'Waiver player', 'status'=>'W (Tue)',
 $groups = AiTips::groups(['date'=>$date, 'players'=>$rows], $date);
 function verifyTips(bool $condition, string $message): void { if (!$condition) throw new RuntimeException($message); }
 verifyTips(count($groups['F']) === 10 && count($groups['D']) === 5, 'Skater limits must apply.');
-verifyTips(count($groups['G']) === 12, 'Goalies must not be capped.');
+verifyTips(count($groups['G']) === 10, 'Goalies must be capped at 10.');
 verifyTips($groups['F'][0]['name'] === 'Waiver player', 'Include waivers and rank by projected points.');
 verifyTips($groups['D'][0]['projected_points'] === 12, 'Sort defensemen descending.');
 verifyTips(!array_intersect(['Rostered','Wrong day','No game'], array_column($groups['F'], 'name')), 'Exclude unavailable players and other dates.');
