@@ -7,7 +7,7 @@
     {"name":"Tristan Jarry","team":"EDM","opponent":"VAN","position":"G","game_date":"2026-09-29","status":"W (Tue)","starting_status":"Unconfirmed","projected_points":30,"source_rank":49},
     {"name":"Akira Schmid","team":"FLA","opponent":"@CAR","position":"G","game_date":"2026-09-29","status":"W (Tue)","projected_points":47,"source_rank":32},
     {"name":"Pyotr Kochetkov","team":"CAR","opponent":"FLA","position":"G","game_date":"2026-09-29","status":"W (Tue)","projected_points":46,"source_rank":34},
-    {"name":"Frederik Andersen","team":"CAR","opponent":"FLA","position":"G","game_date":"2026-09-29","status":"W (Tue)","projected_points":41,"source_rank":35,"injury_status":"IR"},
+    {"name":"Frederik Andersen","team":"EDM","opponent":"VAN","position":"G","game_date":"2026-09-29","status":"W (Tue)","projected_points":41,"source_rank":35,"injury_status":"IR"},
     {"name":"Thatcher Demko","team":"VAN","opponent":"@EDM","position":"G","game_date":"2026-09-29","status":"W (Tue)","projected_points":38,"source_rank":38,"injury_status":"IR"},
     {"name":"Adin Hill","team":"VGK","opponent":"CHI","position":"G","game_date":"2026-09-29","status":"W (Tue)","projected_points":38,"source_rank":40},
     {"name":"Jake DeBrusk","team":"VAN","opponent":"@EDM","position":"F","game_date":"2026-09-29","status":"W (Tue)","projected_points":61,"source_rank":116},
