@@ -25,21 +25,28 @@ class AiTips
             $groups[$position] = array_slice($groups[$position], 0, $limit);
         }
 
-        // Keep Daily Faceoff goalies first, then append the best other available
-        // Fantrax goalies for the date by projected fantasy points.
-        usort($groups['G'], function ($a, $b) {
-            $aStarter = !empty($a['starting_status']);
-            $bStarter = !empty($b['starting_status']);
-            if ($aStarter !== $bStarter) return $bStarter <=> $aStarter;
-            if ($aStarter && $bStarter) return strcasecmp($a['name'], $b['name']);
-            return (($b['projected_points'] ?? 0) <=> ($a['projected_points'] ?? 0))
-                ?: (($a['source_rank'] ?? PHP_INT_MAX) <=> ($b['source_rank'] ?? PHP_INT_MAX))
-                ?: strcasecmp($a['name'], $b['name']);
-        });
+        // Build exactly the top 10 goalie recommendations when enough are available:
+        // all available goalies listed by Daily Faceoff first, then fill the
+        // remaining spots with the best available Fantrax goalies playing that day.
+        $dailyFaceoff = array_values(array_filter($groups['G'], fn($p) => !empty($p['starting_status'])));
+        $fantrax = array_values(array_filter($groups['G'], fn($p) => empty($p['starting_status']) && array_key_exists('projected_points', $p)));
 
-        $starters = array_values(array_filter($groups['G'], fn($p) => !empty($p['starting_status'])));
-        $others = array_values(array_filter($groups['G'], fn($p) => empty($p['starting_status']) && array_key_exists('projected_points', $p)));
-        $groups['G'] = array_merge($starters, array_slice($others, 0, 10));
+        usort($dailyFaceoff, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+        usort($fantrax, fn($a, $b) =>
+            (($b['projected_points'] ?? 0) <=> ($a['projected_points'] ?? 0))
+            ?: (($a['source_rank'] ?? PHP_INT_MAX) <=> ($b['source_rank'] ?? PHP_INT_MAX))
+            ?: strcasecmp($a['name'], $b['name']));
+
+        $goalies = [];
+        $seen = [];
+        foreach (array_merge($dailyFaceoff, $fantrax) as $player) {
+            $key = strtolower(trim($player['name'])).'|'.strtolower(trim($player['team']));
+            if (isset($seen[$key])) continue;
+            $seen[$key] = true;
+            $goalies[] = $player;
+            if (count($goalies) >= 10) break;
+        }
+        $groups['G'] = $goalies;
 
         return $groups;
     }
