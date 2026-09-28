@@ -7,8 +7,8 @@
 </div></div>
 <div class="shell ai-tips">
     <div class="toolbar tips-toolbar" role="group" aria-label="Game date">
-        <a class="button {{ $date === $today ? 'primary' : 'secondary' }}" href="/ai-tips?date={{ $today }}">Today</a>
-        <a class="button {{ $date === $tomorrow ? 'primary' : 'secondary' }}" href="/ai-tips?date={{ $tomorrow }}">Tomorrow</a>
+        <a class="button {{ $date === $today ? 'primary' : 'tips-date-inactive' }}" href="/ai-tips?date={{ $today }}">Today</a>
+        <a class="button {{ $date === $tomorrow ? 'primary' : 'tips-date-inactive' }}" href="/ai-tips?date={{ $tomorrow }}">Tomorrow</a>
     </div>
     @if(!$snapshot)
         <div class="card"><h2>No tips published for this date</h2><p class="subtle">Availability and starting goalies have not been checked for {{ $selectedDate->format('F j') }} yet.</p></div>
@@ -57,6 +57,6 @@
     @endif
 </div>
 <style>
-.tips-toolbar{align-items:center;margin-bottom:18px}.tips-note{border-left:4px solid var(--accent);padding:16px 20px}.tips-note p{margin:5px 0 0;color:var(--muted);font-size:13px}.tips-jumps{margin:22px 0}.tips-section{margin:28px 0;scroll-margin-top:95px}.tips-section .section-title p{margin:5px 0 0;font-size:13px}.tips-waiver{background:var(--accent-soft);border-color:var(--accent)}.tips-fa{color:var(--success);font-weight:700}.tips-ir{background:#dc2626;color:#fff;border-color:#dc2626;font-weight:800;margin-left:6px}.tips-table td:first-child{white-space:normal}.tips-method{font-size:13px}.tips-sources{margin-top:18px}.tips-table .pill{white-space:nowrap}.ai-tips .table-scroll{overflow-x:auto}@media(max-width:520px){.tips-table th,.tips-table td{padding:10px 8px;font-size:12px}.tips-table .pill{padding:4px 6px;font-size:11px}.tips-section h2{font-size:21px}}@media(min-width:851px) and (max-width:1100px){.main-nav a{padding:8px 5px;font-size:12px}.nav-wrap{gap:8px}}
+.tips-toolbar{align-items:center;margin-bottom:18px}.tips-date-inactive{background:#e5e7eb!important;border-color:#d1d5db!important;color:#374151!important}.tips-date-inactive:hover{background:#d1d5db!important;color:#111827!important}.tips-note{border-left:4px solid var(--accent);padding:16px 20px}.tips-note p{margin:5px 0 0;color:var(--muted);font-size:13px}.tips-jumps{margin:22px 0}.tips-section{margin:28px 0;scroll-margin-top:95px}.tips-section .section-title p{margin:5px 0 0;font-size:13px}.tips-waiver{background:var(--accent-soft);border-color:var(--accent)}.tips-fa{color:var(--success);font-weight:700}.tips-ir{background:#dc2626;color:#fff;border-color:#dc2626;font-weight:800;margin-left:6px}.tips-table td:first-child{white-space:normal}.tips-method{font-size:13px}.tips-sources{margin-top:18px}.tips-table .pill{white-space:nowrap}.ai-tips .table-scroll{overflow-x:auto}@media(max-width:520px){.tips-table th,.tips-table td{padding:10px 8px;font-size:12px}.tips-table .pill{padding:4px 6px;font-size:11px}.tips-section h2{font-size:21px}}@media(min-width:851px) and (max-width:1100px){.main-nav a{padding:8px 5px;font-size:12px}.nav-wrap{gap:8px}}
 </style>
 @endsection
