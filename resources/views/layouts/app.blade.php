@@ -15,23 +15,21 @@
             $pageTitles = ['seasons'=>'Seasons','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','ai-tips'=>'AI Tips','rules'=>'Rules'];
             $browserTitle = 'ECFHL - '.($pageTitles[request()->segment(1)] ?? 'East Coast Fantasy Hockey League');
         }
+        $showSeasonFilter = !request()->is('rules', 'players', 'ai-tips');
+        if ($showSeasonFilter) $seasonMode = app(\App\Support\Archive::class)->mode();
     @endphp
     <title>{{ $browserTitle }}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7">
     <link rel="shortcut icon" href="/favicon.svg?v=7">
     <link rel="apple-touch-icon" href="/ecfhl-logo.png?v=7">
     <link rel="stylesheet" href="/app.css?v=5">
-    <link rel="stylesheet" href="/header-filters.css?v=2">
+    <link rel="stylesheet" href="/header-filters.css?v=3">
 </head>
 <body>
 <header class="site-header">
     <div class="shell nav-wrap">
         <div class="brand-area">
             <a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a>
-            @if(!request()->is('rules', 'players', 'ai-tips'))
-                @php($seasonMode = app(\App\Support\Archive::class)->mode())
-                <div class="header-season-filter" role="group" aria-label="Season type">@foreach(['h2h'=>'Head-to-Head','total'=>'Total Points'] as $value=>$label)<button type="button" class="header-filter-button season-type-choice {{ in_array($seasonMode,[$value,'all'])?'active':'' }}" data-value="{{ $value }}">{{ $label }}</button>@endforeach</div>
-            @endif
         </div>
         <div class="header-actions"><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div>
         <nav class="main-nav">
@@ -41,6 +39,13 @@
         </nav>
     </div>
 </header>
+@if($showSeasonFilter)
+<div class="season-filter-bar">
+    <div class="shell">
+        <div class="header-season-filter" role="group" aria-label="Season type">@foreach(['h2h'=>'Head-to-Head','total'=>'Total Points'] as $value=>$label)<button type="button" class="header-filter-button season-type-choice {{ in_array($seasonMode,[$value,'all'])?'active':'' }}" data-value="{{ $value }}">{{ $label }}</button>@endforeach</div>
+    </div>
+</div>
+@endif
 <main>@yield('content')</main>
 <footer class="site-footer"><div class="shell footer-inner"><div><strong>ECFHL HISTORY</strong><br><span>2007–08 → present</span></div><div class="footer-right">Database-backed league archive</div></div></footer>
 <script>
