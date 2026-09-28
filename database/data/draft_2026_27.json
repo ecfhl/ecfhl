@@ -1,0 +1,1321 @@
+{
+  "season": "2026-27",
+  "league_id": "092zcn40molvao69",
+  "source": "https://www.fantrax.com/fantasy/league/092zcn40molvao69/draft-results?view=ROUND",
+  "picks": [
+    {
+      "round": 1,
+      "pick_in_round": 1,
+      "overall_pick": 1,
+      "team": "Morning Sherwoods",
+      "player": "David Pastrnak",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 1,
+      "pick_in_round": 2,
+      "overall_pick": 2,
+      "team": "Multiple Scoregasms",
+      "player": "Martin Necas",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 1,
+      "pick_in_round": 3,
+      "overall_pick": 3,
+      "team": "Ammon Keys Balls",
+      "player": "Juraj Slafkovsky",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 1,
+      "pick_in_round": 4,
+      "overall_pick": 4,
+      "team": "BookHockey",
+      "player": "Mikko Rantanen",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 1,
+      "pick_in_round": 5,
+      "overall_pick": 5,
+      "team": "Formenton’s Construction Company",
+      "player": "Mark Scheifele",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 1,
+      "pick_in_round": 6,
+      "overall_pick": 6,
+      "team": "Mullet Mafia",
+      "player": "Adrian Kempe",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 1,
+      "pick_in_round": 7,
+      "overall_pick": 7,
+      "team": "Orcas",
+      "player": "Robert Thomas",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 1,
+      "pick_in_round": 8,
+      "overall_pick": 8,
+      "team": "Big Bogan Beaking",
+      "player": "Gavin McKenna",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 1,
+      "pick_in_round": 9,
+      "overall_pick": 9,
+      "team": "Mullet Mafia",
+      "player": "Moritz Seider",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 1,
+      "pick_in_round": 10,
+      "overall_pick": 10,
+      "team": "Formenton’s Construction Company",
+      "player": "Dylan Holloway",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 1,
+      "pick_in_round": 11,
+      "overall_pick": 11,
+      "team": "Young Guns",
+      "player": "Andrei Vasilevskiy",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 1,
+      "pick_in_round": 12,
+      "overall_pick": 12,
+      "team": "Orcas",
+      "player": "Darren Raddysh",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 1,
+      "pick_in_round": 13,
+      "overall_pick": 13,
+      "team": "Orcas",
+      "player": "John Carlson",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 1,
+      "pick_in_round": 14,
+      "overall_pick": 14,
+      "team": "One Man Bang 💥",
+      "player": "Travis Konecny",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 2,
+      "pick_in_round": 1,
+      "overall_pick": 15,
+      "team": "One Man Bang 💥",
+      "player": "Mark Stone",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 2,
+      "pick_in_round": 2,
+      "overall_pick": 16,
+      "team": "Multiple Scoregasms",
+      "player": "Roman Josi",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 2,
+      "pick_in_round": 3,
+      "overall_pick": 17,
+      "team": "Ammon Keys Balls",
+      "player": "Drake Batherson",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 2,
+      "pick_in_round": 4,
+      "overall_pick": 18,
+      "team": "BookHockey",
+      "player": "Charlie McAvoy",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 2,
+      "pick_in_round": 5,
+      "overall_pick": 19,
+      "team": "Formenton’s Construction Company",
+      "player": "Nikolaj Ehlers",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 2,
+      "pick_in_round": 6,
+      "overall_pick": 20,
+      "team": "Mullet Mafia",
+      "player": "Alex Tuch",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 2,
+      "pick_in_round": 7,
+      "overall_pick": 21,
+      "team": "Green Machine",
+      "player": "Pavel Dorofeyev",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 2,
+      "pick_in_round": 8,
+      "overall_pick": 22,
+      "team": "Big Bogan Beaking",
+      "player": "Shayne Gostisbehere",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 2,
+      "pick_in_round": 9,
+      "overall_pick": 23,
+      "team": "Brasse Camarade",
+      "player": "Morgan Geekie",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 2,
+      "pick_in_round": 10,
+      "overall_pick": 24,
+      "team": "Green Machine",
+      "player": "Rasmus Andersson",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 2,
+      "pick_in_round": 11,
+      "overall_pick": 25,
+      "team": "Young Guns",
+      "player": "Bowen Byram",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 2,
+      "pick_in_round": 12,
+      "overall_pick": 26,
+      "team": "Orcas",
+      "player": "Ryan O'Reilly",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 2,
+      "pick_in_round": 13,
+      "overall_pick": 27,
+      "team": "Orcas",
+      "player": "Ivar Stenberg",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 2,
+      "pick_in_round": 14,
+      "overall_pick": 28,
+      "team": "North Shore Explorers",
+      "player": "Gabriel Landeskog",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 3,
+      "pick_in_round": 1,
+      "overall_pick": 29,
+      "team": "Ꮮ૦ท૯⚡️𐌕รคг",
+      "player": "Roman Kantserov",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 3,
+      "pick_in_round": 2,
+      "overall_pick": 30,
+      "team": "Multiple Scoregasms",
+      "player": "Brock Nelson",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 3,
+      "pick_in_round": 3,
+      "overall_pick": 31,
+      "team": "Ammon Keys Balls",
+      "player": "Jackson Blake",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 3,
+      "pick_in_round": 4,
+      "overall_pick": 32,
+      "team": "BookHockey",
+      "player": "Viggo Bjorck",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 3,
+      "pick_in_round": 5,
+      "overall_pick": 33,
+      "team": "Formenton’s Construction Company",
+      "player": "Luke Evangelista",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 3,
+      "pick_in_round": 6,
+      "overall_pick": 34,
+      "team": "Mullet Mafia",
+      "player": "J.T. Miller",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 3,
+      "pick_in_round": 7,
+      "overall_pick": 35,
+      "team": "One Man Bang 💥",
+      "player": "Tom Wilson",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 3,
+      "pick_in_round": 8,
+      "overall_pick": 36,
+      "team": "BookHockey",
+      "player": "Tomas Hertl",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 3,
+      "pick_in_round": 9,
+      "overall_pick": 37,
+      "team": "Brasse Camarade",
+      "player": "Filip Hronek",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 3,
+      "pick_in_round": 10,
+      "overall_pick": 38,
+      "team": "Formenton’s Construction Company",
+      "player": "Dougie Hamilton",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 3,
+      "pick_in_round": 11,
+      "overall_pick": 39,
+      "team": "BookHockey",
+      "player": "Ilya Protas",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 3,
+      "pick_in_round": 12,
+      "overall_pick": 40,
+      "team": "Green Machine",
+      "player": "Alex Ovechkin",
+      "position": "F",
+      "type": "LA"
+    },
+    {
+      "round": 3,
+      "pick_in_round": 13,
+      "overall_pick": 41,
+      "team": "Ꮮ૦ท૯⚡️𐌕รคг",
+      "player": "Chase Reid",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 3,
+      "pick_in_round": 14,
+      "overall_pick": 42,
+      "team": "North Shore Explorers",
+      "player": "Philip Broberg",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 4,
+      "pick_in_round": 1,
+      "overall_pick": 43,
+      "team": "Formenton’s Construction Company",
+      "player": "Konsta Helenius",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 4,
+      "pick_in_round": 2,
+      "overall_pick": 44,
+      "team": "Multiple Scoregasms",
+      "player": "Thomas Chabot",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 4,
+      "pick_in_round": 3,
+      "overall_pick": 45,
+      "team": "Ammon Keys Balls",
+      "player": "Logan Thompson",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 4,
+      "pick_in_round": 4,
+      "overall_pick": 46,
+      "team": "BookHockey",
+      "player": "Evgeni Malkin",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 4,
+      "pick_in_round": 5,
+      "overall_pick": 47,
+      "team": "Formenton’s Construction Company",
+      "player": "Carter Hart",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 4,
+      "pick_in_round": 6,
+      "overall_pick": 48,
+      "team": "Mullet Mafia",
+      "player": "Ilya Sorokin",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 4,
+      "pick_in_round": 7,
+      "overall_pick": 49,
+      "team": "Orcas",
+      "player": "Jacob Markstrom",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 4,
+      "pick_in_round": 8,
+      "overall_pick": 50,
+      "team": "Big Bogan Beaking",
+      "player": "Mattias Ekholm",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 4,
+      "pick_in_round": 9,
+      "overall_pick": 51,
+      "team": "Brasse Camarade",
+      "player": "Morgan Rielly",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 4,
+      "pick_in_round": 10,
+      "overall_pick": 52,
+      "team": "One Man Bang 💥",
+      "player": "Seth Jones",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 4,
+      "pick_in_round": 11,
+      "overall_pick": 53,
+      "team": "One Man Bang 💥",
+      "player": "Brandon Bussi",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 4,
+      "pick_in_round": 12,
+      "overall_pick": 54,
+      "team": "Orcas",
+      "player": "Mathew Barzal",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 4,
+      "pick_in_round": 13,
+      "overall_pick": 55,
+      "team": "Ꮮ૦ท૯⚡️𐌕รคг",
+      "player": "Ryan Nugent-Hopkins",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 4,
+      "pick_in_round": 14,
+      "overall_pick": 56,
+      "team": "One Man Bang 💥",
+      "player": "Troy Terry",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 5,
+      "pick_in_round": 1,
+      "overall_pick": 57,
+      "team": "Morning Sherwoods",
+      "player": "Karel Vejmelka",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 5,
+      "pick_in_round": 2,
+      "overall_pick": 58,
+      "team": "Multiple Scoregasms",
+      "player": "Carson Carels",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 5,
+      "pick_in_round": 3,
+      "overall_pick": 59,
+      "team": "Ammon Keys Balls",
+      "player": "Chris Kreider",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 5,
+      "pick_in_round": 4,
+      "overall_pick": 60,
+      "team": "BookHockey",
+      "player": "Patrick Kane",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 5,
+      "pick_in_round": 5,
+      "overall_pick": 61,
+      "team": "Formenton’s Construction Company",
+      "player": "Caleb Malhotra",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 5,
+      "pick_in_round": 6,
+      "overall_pick": 62,
+      "team": "Mullet Mafia",
+      "player": "Bryan Rust",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 5,
+      "pick_in_round": 7,
+      "overall_pick": 63,
+      "team": "Orcas",
+      "player": "Keaton Verhoeff",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 5,
+      "pick_in_round": 8,
+      "overall_pick": 64,
+      "team": "Big Bogan Beaking",
+      "player": "Scott Wedgewood",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 5,
+      "pick_in_round": 9,
+      "overall_pick": 65,
+      "team": "Brasse Camarade",
+      "player": "Brad Marchand",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 5,
+      "pick_in_round": 10,
+      "overall_pick": 66,
+      "team": "One Man Bang 💥",
+      "player": "Jared McCann",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 5,
+      "pick_in_round": 11,
+      "overall_pick": 67,
+      "team": "Young Guns",
+      "player": "Jacob Fowler",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 5,
+      "pick_in_round": 12,
+      "overall_pick": 68,
+      "team": "Green Machine",
+      "player": "Tyler Bertuzzi",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 5,
+      "pick_in_round": 13,
+      "overall_pick": 69,
+      "team": "Formenton’s Construction Company",
+      "player": "Pavel Zacha",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 5,
+      "pick_in_round": 14,
+      "overall_pick": 70,
+      "team": "North Shore Explorers",
+      "player": "Connor Hellebuyck",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 6,
+      "pick_in_round": 1,
+      "overall_pick": 71,
+      "team": "Brasse Camarade",
+      "player": "Aaron Ekblad",
+      "position": "D",
+      "type": "LQE"
+    },
+    {
+      "round": 6,
+      "pick_in_round": 2,
+      "overall_pick": 72,
+      "team": "Multiple Scoregasms",
+      "player": "Tynan Lawrence",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 6,
+      "pick_in_round": 3,
+      "overall_pick": 73,
+      "team": "Ammon Keys Balls",
+      "player": "Owen Power",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 6,
+      "pick_in_round": 4,
+      "overall_pick": 74,
+      "team": "Young Guns",
+      "player": "Spencer Knight",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 6,
+      "pick_in_round": 5,
+      "overall_pick": 75,
+      "team": "Formenton’s Construction Company",
+      "player": "Ryan Ufko",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 6,
+      "pick_in_round": 6,
+      "overall_pick": 76,
+      "team": "Mullet Mafia",
+      "player": "Vincent Trocheck",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 6,
+      "pick_in_round": 7,
+      "overall_pick": 77,
+      "team": "Orcas",
+      "player": "Victor Eklund",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 6,
+      "pick_in_round": 8,
+      "overall_pick": 78,
+      "team": "Big Bogan Beaking",
+      "player": "Travis Sanheim",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 6,
+      "pick_in_round": 9,
+      "overall_pick": 79,
+      "team": "Brasse Camarade",
+      "player": "Igor Shesterkin",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 6,
+      "pick_in_round": 10,
+      "overall_pick": 80,
+      "team": "Morning Sherwoods",
+      "player": "Marco Rossi",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 6,
+      "pick_in_round": 11,
+      "overall_pick": 81,
+      "team": "Young Guns",
+      "player": "Jason Zucker",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 6,
+      "pick_in_round": 12,
+      "overall_pick": 82,
+      "team": "Green Machine",
+      "player": "Igor Chernyshov",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 6,
+      "pick_in_round": 13,
+      "overall_pick": 83,
+      "team": "Ꮮ૦ท૯⚡️𐌕รคг",
+      "player": "Jack Roslovic",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 6,
+      "pick_in_round": 14,
+      "overall_pick": 84,
+      "team": "North Shore Explorers",
+      "player": "Zach Benson",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 7,
+      "pick_in_round": 1,
+      "overall_pick": 85,
+      "team": "Morning Sherwoods",
+      "player": "Mikael Granlund",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 7,
+      "pick_in_round": 2,
+      "overall_pick": 86,
+      "team": "Multiple Scoregasms",
+      "player": "Wyatt Cullen",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 7,
+      "pick_in_round": 3,
+      "overall_pick": 87,
+      "team": "Ammon Keys Balls",
+      "player": "Lukas Dostal",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 7,
+      "pick_in_round": 4,
+      "overall_pick": 88,
+      "team": "BookHockey",
+      "player": "Nazem Kadri",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 7,
+      "pick_in_round": 5,
+      "overall_pick": 89,
+      "team": "Formenton’s Construction Company",
+      "player": "Alberts Smits",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 7,
+      "pick_in_round": 6,
+      "overall_pick": 90,
+      "team": "Mullet Mafia",
+      "player": "Mike Matheson",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 7,
+      "pick_in_round": 8,
+      "overall_pick": 92,
+      "team": "Big Bogan Beaking",
+      "player": "Anthony Mantha",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 7,
+      "pick_in_round": 9,
+      "overall_pick": 93,
+      "team": "Morning Sherwoods",
+      "player": "Owen Tippett",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 7,
+      "pick_in_round": 10,
+      "overall_pick": 94,
+      "team": "One Man Bang 💥",
+      "player": "Artturi Lehkonen",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 7,
+      "pick_in_round": 11,
+      "overall_pick": 95,
+      "team": "Young Guns",
+      "player": "MacKenzie Weegar",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 7,
+      "pick_in_round": 12,
+      "overall_pick": 96,
+      "team": "Green Machine",
+      "player": "Vladislav Gavrikov",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 7,
+      "pick_in_round": 13,
+      "overall_pick": 97,
+      "team": "Ꮮ૦ท૯⚡️𐌕รคг",
+      "player": "Kevin Fiala",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 7,
+      "pick_in_round": 14,
+      "overall_pick": 98,
+      "team": "North Shore Explorers",
+      "player": "Nikita Klepov",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 8,
+      "pick_in_round": 1,
+      "overall_pick": 99,
+      "team": "Morning Sherwoods",
+      "player": "Adam Novotny",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 8,
+      "pick_in_round": 2,
+      "overall_pick": 100,
+      "team": "Multiple Scoregasms",
+      "player": "Ukko-Pekka Luukkonen",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 8,
+      "pick_in_round": 3,
+      "overall_pick": 101,
+      "team": "Ammon Keys Balls",
+      "player": "Mason McTavish",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 8,
+      "pick_in_round": 5,
+      "overall_pick": 103,
+      "team": "Formenton’s Construction Company",
+      "player": "Daxon Rudolph",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 8,
+      "pick_in_round": 6,
+      "overall_pick": 104,
+      "team": "Mullet Mafia",
+      "player": "Mattias Samuelsson",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 8,
+      "pick_in_round": 8,
+      "overall_pick": 106,
+      "team": "Big Bogan Beaking",
+      "player": "Mats Zuccarello",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 8,
+      "pick_in_round": 9,
+      "overall_pick": 107,
+      "team": "Brasse Camarade",
+      "player": "Ethan Belchetz",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 8,
+      "pick_in_round": 10,
+      "overall_pick": 108,
+      "team": "One Man Bang 💥",
+      "player": "Luca Cagnoni",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 8,
+      "pick_in_round": 11,
+      "overall_pick": 109,
+      "team": "Young Guns",
+      "player": "Ivan Barbashev",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 8,
+      "pick_in_round": 12,
+      "overall_pick": 110,
+      "team": "Green Machine",
+      "player": "Kiefer Sherwood",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 8,
+      "pick_in_round": 13,
+      "overall_pick": 111,
+      "team": "Ꮮ૦ท૯⚡️𐌕รคг",
+      "player": "Simon Nemec",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 8,
+      "pick_in_round": 14,
+      "overall_pick": 112,
+      "team": "North Shore Explorers",
+      "player": "Matt Duchene",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 9,
+      "pick_in_round": 1,
+      "overall_pick": 113,
+      "team": "Morning Sherwoods",
+      "player": "Tristan Luneau",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 9,
+      "pick_in_round": 2,
+      "overall_pick": 114,
+      "team": "Multiple Scoregasms",
+      "player": "Justin Faulk",
+      "position": "D",
+      "type": "LQE"
+    },
+    {
+      "round": 9,
+      "pick_in_round": 5,
+      "overall_pick": 117,
+      "team": "Formenton’s Construction Company",
+      "player": "Devon Toews",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 9,
+      "pick_in_round": 6,
+      "overall_pick": 118,
+      "team": "Mullet Mafia",
+      "player": "K'Andre Miller",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 9,
+      "pick_in_round": 8,
+      "overall_pick": 120,
+      "team": "Big Bogan Beaking",
+      "player": "Jet Greaves",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 9,
+      "pick_in_round": 9,
+      "overall_pick": 121,
+      "team": "Brasse Camarade",
+      "player": "Sergei Murashov",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 9,
+      "pick_in_round": 10,
+      "overall_pick": 122,
+      "team": "One Man Bang 💥",
+      "player": "Josh Doan",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 9,
+      "pick_in_round": 11,
+      "overall_pick": 123,
+      "team": "Young Guns",
+      "player": "Denton Mateychuk",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 9,
+      "pick_in_round": 12,
+      "overall_pick": 124,
+      "team": "Green Machine",
+      "player": "Juuse Saros",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 9,
+      "pick_in_round": 13,
+      "overall_pick": 125,
+      "team": "Ꮮ૦ท૯⚡️𐌕รคг",
+      "player": "Andrew Cristall",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 9,
+      "pick_in_round": 14,
+      "overall_pick": 126,
+      "team": "North Shore Explorers",
+      "player": "Maddox Dagenais",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 10,
+      "pick_in_round": 1,
+      "overall_pick": 127,
+      "team": "Morning Sherwoods",
+      "player": "Jaxon Cover",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 10,
+      "pick_in_round": 2,
+      "overall_pick": 128,
+      "team": "Multiple Scoregasms",
+      "player": "Kris Letang",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 10,
+      "pick_in_round": 5,
+      "overall_pick": 131,
+      "team": "Formenton’s Construction Company",
+      "player": "Gustav Forsling",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 10,
+      "pick_in_round": 6,
+      "overall_pick": 132,
+      "team": "Mullet Mafia",
+      "player": "Gleb Pugachyov",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 10,
+      "pick_in_round": 8,
+      "overall_pick": 134,
+      "team": "Big Bogan Beaking",
+      "player": "Kayden Lemire",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 10,
+      "pick_in_round": 9,
+      "overall_pick": 135,
+      "team": "Brasse Camarade",
+      "player": "Elton Hermansson",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 10,
+      "pick_in_round": 10,
+      "overall_pick": 136,
+      "team": "One Man Bang 💥",
+      "player": "Mackenzie Blackwood",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 10,
+      "pick_in_round": 11,
+      "overall_pick": 137,
+      "team": "Young Guns",
+      "player": "Bobby McMann",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 10,
+      "pick_in_round": 12,
+      "overall_pick": 138,
+      "team": "Green Machine",
+      "player": "Roger McQueen",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 10,
+      "pick_in_round": 13,
+      "overall_pick": 139,
+      "team": "Ꮮ૦ท૯⚡️𐌕รคг",
+      "player": "Pierre-Luc Dubois",
+      "position": "F",
+      "type": "LQE"
+    },
+    {
+      "round": 10,
+      "pick_in_round": 14,
+      "overall_pick": 140,
+      "team": "North Shore Explorers",
+      "player": "Sean Durzi",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 11,
+      "pick_in_round": 2,
+      "overall_pick": 142,
+      "team": "Multiple Scoregasms",
+      "player": "Jacob Trouba",
+      "position": "D",
+      "type": "LA"
+    },
+    {
+      "round": 11,
+      "pick_in_round": 5,
+      "overall_pick": 145,
+      "team": "Formenton’s Construction Company",
+      "player": "Tyler Toffoli",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 11,
+      "pick_in_round": 6,
+      "overall_pick": 146,
+      "team": "Mullet Mafia",
+      "player": "Brady Martin",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 11,
+      "pick_in_round": 10,
+      "overall_pick": 150,
+      "team": "One Man Bang 💥",
+      "player": "Noah Meier",
+      "position": "D",
+      "type": "LA"
+    },
+    {
+      "round": 11,
+      "pick_in_round": 12,
+      "overall_pick": 152,
+      "team": "Green Machine",
+      "player": "Egor Chinakhov",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 11,
+      "pick_in_round": 13,
+      "overall_pick": 153,
+      "team": "Ꮮ૦ท૯⚡️𐌕รคг",
+      "player": "Mason Marchment",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 11,
+      "pick_in_round": 14,
+      "overall_pick": 154,
+      "team": "North Shore Explorers",
+      "player": "Linus Ullmark",
+      "position": "G",
+      "type": "LS"
+    },
+    {
+      "round": 12,
+      "pick_in_round": 6,
+      "overall_pick": 160,
+      "team": "Mullet Mafia",
+      "player": "Tommy Bleyl",
+      "position": "D",
+      "type": "LC"
+    },
+    {
+      "round": 12,
+      "pick_in_round": 10,
+      "overall_pick": 164,
+      "team": "One Man Bang 💥",
+      "player": "Oliver Bonk",
+      "position": "D",
+      "type": "LA"
+    },
+    {
+      "round": 12,
+      "pick_in_round": 12,
+      "overall_pick": 166,
+      "team": "Green Machine",
+      "player": "Dmitri Simashev",
+      "position": "D",
+      "type": "LS"
+    },
+    {
+      "round": 12,
+      "pick_in_round": 13,
+      "overall_pick": 167,
+      "team": "Ꮮ૦ท૯⚡️𐌕รคг",
+      "player": "Kent Johnson",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 12,
+      "pick_in_round": 14,
+      "overall_pick": 168,
+      "team": "North Shore Explorers",
+      "player": "Matty Beniers",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 13,
+      "pick_in_round": 12,
+      "overall_pick": 180,
+      "team": "Green Machine",
+      "player": "T.J. Hughes",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 13,
+      "pick_in_round": 13,
+      "overall_pick": 181,
+      "team": "Ꮮ૦ท૯⚡️𐌕รคг",
+      "player": "Jonathan Huberdeau",
+      "position": "F",
+      "type": "LS"
+    },
+    {
+      "round": 13,
+      "pick_in_round": 14,
+      "overall_pick": 182,
+      "team": "North Shore Explorers",
+      "player": "Charlie Coyle",
+      "position": "F",
+      "type": "LS"
+    }
+  ]
+}
