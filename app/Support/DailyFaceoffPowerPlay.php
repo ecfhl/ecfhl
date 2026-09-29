@@ -3,8 +3,6 @@
 namespace App\Support;
 
 use Carbon\CarbonImmutable;
-use DOMDocument;
-use DOMXPath;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -29,41 +27,38 @@ class DailyFaceoffPowerPlay
             'Accept' => 'text/html,application/xhtml+xml',
         ])->timeout(30)->retry(2, 1000)->get($url);
         $response->throw();
-
         $html = $response->body();
-        if (!preg_match('/Last updated:\s*([^<\r\n]+)/i', strip_tags($html), $match)) {
+
+        $plain = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5);
+        if (!preg_match('/Last updated:\s*(\d{4}-\d{2}-\d{2}T[^\s<]+)/i', $plain, $match)) {
             throw new RuntimeException("Could not find Daily Faceoff last-updated value for {$team}");
         }
         $lastUpdate = CarbonImmutable::parse(trim($match[1]))->utc();
 
-        libxml_use_internal_errors(true);
-        $dom = new DOMDocument();
-        $dom->loadHTML($html);
-        $xpath = new DOMXPath($dom);
-
         $players = [];
         foreach ([1 => '1st Powerplay Unit', 2 => '2nd Powerplay Unit'] as $unit => $heading) {
-            $nodes = $xpath->query("//*[contains(normalize-space(.), '{$heading}')]");
-            $anchorNames = [];
-            foreach ($nodes as $node) {
-                $container = $node;
-                for ($i = 0; $i < 4 && $container; $i++, $container = $container->parentNode) {
-                    $anchors = $xpath->query('.//a[contains(@href, "/players/")]', $container);
-                    if ($anchors && $anchors->length >= 5) {
-                        foreach ($anchors as $anchor) {
-                            $name = trim(preg_replace('/\s+/', ' ', $anchor->textContent));
-                            if ($name !== '' && !in_array($name, $anchorNames, true)) $anchorNames[] = $name;
-                            if (count($anchorNames) === 5) break;
-                        }
-                        break;
-                    }
-                }
-                if (count($anchorNames) === 5) break;
+            $start = stripos($html, $heading);
+            if ($start === false) throw new RuntimeException("Could not find {$team} PP{$unit}");
+
+            $endMarkers = $unit === 1 ? ['2nd Powerplay Unit'] : ['1st Penalty Kill Unit', 'Goalies', 'Injuries'];
+            $end = strlen($html);
+            foreach ($endMarkers as $marker) {
+                $candidate = stripos($html, $marker, $start + strlen($heading));
+                if ($candidate !== false) $end = min($end, $candidate);
             }
-            if (count($anchorNames) !== 5) {
-                throw new RuntimeException("Expected 5 players on {$team} PP{$unit}, found ".count($anchorNames));
+            $segment = substr($html, $start, $end - $start);
+
+            preg_match_all('/<a\b[^>]*href=["\'][^"\']*\/players\/[^"\']+["\'][^>]*>(.*?)<\/a>/is', $segment, $matches);
+            $names = [];
+            foreach ($matches[1] ?? [] as $label) {
+                $name = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($label), ENT_QUOTES | ENT_HTML5)));
+                if ($name !== '' && !in_array($name, $names, true)) $names[] = $name;
+                if (count($names) === 5) break;
             }
-            foreach ($anchorNames as $position => $name) {
+            if (count($names) !== 5) {
+                throw new RuntimeException("Expected 5 players on {$team} PP{$unit}, found ".count($names));
+            }
+            foreach ($names as $position => $name) {
                 $players[] = ['player_name'=>$name, 'pp_unit'=>$unit, 'unit_position'=>$position + 1];
             }
         }
