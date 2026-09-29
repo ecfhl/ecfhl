@@ -22,20 +22,20 @@
         usort($players, function($a, $b) use ($ppUnit, $lineNumber) {
             $rank = function($player) use ($ppUnit, $lineNumber) {
                 $pp = $ppUnit($player);
-                if ($pp === 1) return 1;
-                if ($pp === 2) return 2;
                 $line = $lineNumber($player);
-                return match($line) {
-                    1 => 3,
-                    2 => 4,
-                    3 => 5,
-                    4 => 6,
-                    default => 7,
-                };
+                return [
+                    match($pp) {
+                        1 => 1,
+                        2 => 2,
+                        default => 3,
+                    },
+                    in_array($line, [1, 2, 3, 4], true) ? $line : 99,
+                ];
             };
             $aRank = $rank($a);
             $bRank = $rank($b);
-            if ($aRank !== $bRank) return $aRank <=> $bRank;
+            if ($aRank[0] !== $bRank[0]) return $aRank[0] <=> $bRank[0];
+            if ($aRank[1] !== $bRank[1]) return $aRank[1] <=> $bRank[1];
             $aPoints = $a['projected_points'] ?? -PHP_FLOAT_MAX;
             $bPoints = $b['projected_points'] ?? -PHP_FLOAT_MAX;
             return ($bPoints <=> $aPoints)
