@@ -83,7 +83,6 @@ class FantraxAvailablePlayers
             // The goalie collector must validate each returned player's real position.
             if ($positionGroup === 'G' && $position !== 'G') continue;
 
-            if (strcasecmp($name, 'Kevin Lankinen') === 0) { \Illuminate\Support\Facades\Log::info('Fantrax Kevin Lankinen raw icons', ['date'=>$day,'position_group'=>$positionGroup,'icons'=>$scorer['icons'] ?? []]); }
             $injury = $this->injury($scorer['icons'] ?? []); $waiverDay = null;
             if (preg_match('/W\s*\(([^)]+)\)/i', $statusRaw, $m)) $waiverDay = trim($m[1]);
             $rows[] = ['player_name'=>$name,'team'=>$team,'position'=>$position,'opponent'=>$opp,'availability'=>str_starts_with($statusUpper,'W')?'W':'FA','waiver_day'=>$waiverDay,'injury_status'=>$injury,'projected_fpts'=>$fpts,'source_rank'=>(int)($scorer['rank']??($rank+1)),'fantrax_url'=>'https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/players;searchName='.rawurlencode($name).';positionOrGroup=ALL;'];
