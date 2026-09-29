@@ -1,6 +1,9 @@
 {
   "date": "2026-09-28",
   "checked_at": "2026-09-28T18:15:27-03:00",
+  "last_attempt_at": "2026-09-28T21:14:02-03:00",
+  "refresh_status": "failed",
+  "refresh_error": "Fantrax public player listings could not be parsed by the free public web retriever (internal retrieval error).",
   "fantrax_url": "https://www.fantrax.com/fantasy/league/092zcn40molvao69/players;positionOrGroup=ALL;pageNumber=1;datePlaying=2026-09-28;seasonOrProjection=PROJECTION_0_31n_SEASON;timeframeTypeCode=PROJECTED_SEASON",
   "players": []
 }
