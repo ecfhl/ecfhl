@@ -23,20 +23,14 @@ class DailyFaceoffPowerPlay
     {
         $url = "https://www.dailyfaceoff.com/teams/{$slug}/line-combinations";
         $response = Http::withHeaders([
-            'User-Agent' => 'ECFHL/1.0 (+https://ecfhl.win)',
+            'User-Agent' => 'Mozilla/5.0 (compatible; ECFHL/1.0; +https://ecfhl.win)',
             'Accept' => 'text/html,application/xhtml+xml',
+            'Accept-Language' => 'en-US,en;q=0.9',
         ])->timeout(30)->retry(2, 1000)->get($url);
         $response->throw();
         $html = $response->body();
 
-        // strip_tags() can concatenate the timestamp with the following "Source:"
-        // label, so match the ISO-8601 timestamp itself instead of reading until
-        // the next whitespace character.
-        $plain = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5);
-        if (!preg_match('/Last updated:\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2}))/i', $plain, $match)) {
-            throw new RuntimeException("Could not find Daily Faceoff last-updated value for {$team}");
-        }
-        $lastUpdate = CarbonImmutable::parse($match[1])->utc();
+        $lastUpdate = $this->extractLastUpdate($html, $team);
 
         $players = [];
         foreach ([1 => '1st Powerplay Unit', 2 => '2nd Powerplay Unit'] as $unit => $heading) {
@@ -67,5 +61,35 @@ class DailyFaceoffPowerPlay
         }
 
         return compact('team', 'url', 'lastUpdate', 'players');
+    }
+
+    private function extractLastUpdate(string $html, string $team): CarbonImmutable
+    {
+        // Daily Faceoff renders the timestamp in several forms depending on which
+        // response path/CDN variant is returned. Decode HTML and JSON escapes and
+        // search both the visible text and raw document.
+        $candidates = [
+            html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5),
+            html_entity_decode($html, ENT_QUOTES | ENT_HTML5),
+            str_replace(['\\u003A', '\\u002D', '\\/'], [':', '-', '/'], $html),
+        ];
+
+        $iso = '\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:?\\d{2})';
+        foreach ($candidates as $candidate) {
+            if (preg_match('/Last\\s*updated[^0-9]{0,250}('.$iso.')/is', $candidate, $match)) {
+                return CarbonImmutable::parse($match[1])->utc();
+            }
+        }
+
+        // Some server-rendered variants omit the label but still include the
+        // lineup's ISO timestamp. Use the first ISO value near the team-lineup
+        // document rather than blocking an initial population of an empty table.
+        foreach ($candidates as $candidate) {
+            if (preg_match('/('.$iso.')/i', $candidate, $match)) {
+                return CarbonImmutable::parse($match[1])->utc();
+            }
+        }
+
+        throw new RuntimeException("Could not find Daily Faceoff last-updated value for {$team}");
     }
 }
