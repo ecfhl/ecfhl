@@ -14,27 +14,24 @@ Artisan::command('ecfhl:refresh-available-goalies', function (FantraxAvailablePl
     foreach ([$base, $base->addDay()] as $date) {
         $day = $date->format('Y-m-d');
         try {
-            // Build the goalie pool independently. Do not depend on the 500-player table.
             $result = $fantrax->fetch($date, 'G');
             $dfo = DB::table('active_starting_goalies')->whereDate('game_date', $day)->get();
             $normalize = static fn ($v) => preg_replace('/[^\pL\pN]+/u', '', mb_strtolower(trim((string) $v))) ?? '';
             $dfoByName = [];
-            $confirmed = [];
             foreach ($dfo as $g) {
                 $key = strtoupper(trim((string) $g->team)).'|'.$normalize($g->player_name);
                 $dfoByName[$key] = $g;
-                if (strtolower(trim((string) $g->starting_status)) === 'confirmed') {
-                    $confirmed[strtoupper(trim((string) $g->team))] = $normalize($g->player_name);
-                }
             }
 
             $now = now();
             $rows = [];
             foreach ($result['rows'] as $p) {
+                // Fantrax can return mixed positions even for a goalie-filtered request.
+                if (strtoupper(trim((string) ($p['position'] ?? ''))) !== 'G') continue;
+
                 $team = strtoupper(trim((string) ($p['team'] ?? '')));
                 $name = $normalize($p['player_name'] ?? '');
                 if ($team === '' || $name === '') continue;
-                if (isset($confirmed[$team]) && $confirmed[$team] !== $name) continue;
 
                 $oppRaw = trim((string) ($p['opponent'] ?? ''));
                 $away = str_starts_with($oppRaw, '@');
@@ -83,5 +80,4 @@ Artisan::command('ecfhl:refresh-available-goalies', function (FantraxAvailablePl
     return $failed ? 1 : 0;
 });
 
-// Runs after the :12 DFO refresh and :30 Fantrax player refresh.
 Schedule::command('ecfhl:refresh-available-goalies')->hourlyAt(35)->withoutOverlapping(50);
