@@ -68,12 +68,13 @@ class AiTips
             $groups[$position][] = $player;
         }
 
-        foreach (['F' => 10, 'D' => 5] as $position => $limit) {
+        // Keep every available forward and defenseman, ranked by projected season FPts.
+        // The AI Tips UI reveals these in batches of 10.
+        foreach (['F', 'D'] as $position) {
             usort($groups[$position], fn($a, $b) =>
                 (($b['projected_points'] ?? 0) <=> ($a['projected_points'] ?? 0))
                 ?: (($a['source_rank'] ?? PHP_INT_MAX) <=> ($b['source_rank'] ?? PHP_INT_MAX))
                 ?: strcasecmp($a['name'], $b['name']));
-            $groups[$position] = array_slice($groups[$position], 0, $limit);
         }
 
         // Available Daily Faceoff goalies first, then fill to 10 from Fantrax.
