@@ -48,9 +48,49 @@ document.addEventListener('DOMContentLoaded',()=>{
  setup('goalies','Available goalies');
  setup('forwards','Available forwards',true);
  setup('defensemen','Available defensemen',true);
+
+ const refreshForm=document.querySelector('.tips-run-all');
+ if(refreshForm){
+   refreshForm.addEventListener('submit',async event=>{
+     event.preventDefault();
+     const button=refreshForm.querySelector('button');
+     const token=refreshForm.querySelector('input[name="_token"]').value;
+     button.disabled=true;button.textContent='Refreshing…';
+     let box=document.getElementById('live-refresh-progress');
+     if(!box){box=document.createElement('div');box.id='live-refresh-progress';box.className='job-message job-message-ok live-refresh-progress';refreshForm.closest('.tips-toolbar').insertAdjacentElement('afterend',box);}
+     const lines=[];const draw=()=>box.textContent=lines.join('\n');
+     const run=async job=>{
+       const response=await fetch('/job-status/run/'+job,{method:'POST',headers:{'X-CSRF-TOKEN':token,'Accept':'application/json','Content-Type':'application/x-www-form-urlencoded'},body:'return_to=ai-tips'});
+       const data=await response.json();
+       if(!response.ok)throw new Error(data.message||'Refresh failed');
+       return data.details[job]?.output||'';
+     };
+     try{
+       lines.push('Getting available players in Fantrax...');draw();
+       const playerOutput=await run('players');
+       const playerMatches=[...playerOutput.matchAll(/\d{4}-\d{2}-\d{2}:\s+(\d+) Fantrax players refreshed/g)];
+       const playerCount=playerMatches.reduce((sum,m)=>sum+Number(m[1]),0);
+       lines.push(playerCount+' records updated','');draw();
+
+       lines.push('Getting goalie information from Daily Faceoff...');draw();
+       const goalieOutput=await run('goalies');
+       const goalieMatches=[...goalieOutput.matchAll(/(\d{4}-\d{2}-\d{2}):\s+(\d+) DFO goalies refreshed/g)];
+       goalieMatches.forEach(m=>lines.push(m[2]+' Goalies for '+m[1]));
+       lines.push('');draw();
+
+       lines.push('Getting Lines information from Daily Faceoff...');draw();
+       const lineOutput=await run('lines');
+       const teams=[...lineOutput.matchAll(/^([A-Z]{2,3}): updated$/gm)].map(m=>m[1]);
+       lines.push(teams.length+' Lines updated'+(teams.length?' ('+teams.join(', ')+')':''));draw();
+       button.textContent='Refresh Data';button.disabled=false;
+     }catch(error){
+       box.classList.remove('job-message-ok');box.classList.add('job-message-error');lines.push('Refresh failed: '+error.message);draw();button.textContent='Refresh Data';button.disabled=false;
+     }
+   });
+ }
 });
 </script>
-<style>.tips-see-more{display:block;margin:14px auto 0;min-width:180px;cursor:pointer}.tips-show-more{display:none!important}.tips-pp-filters{display:flex;align-items:center;gap:8px;margin:10px 0 12px}.tips-pp-filter{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:8px 15px;font-weight:800;font-size:12px;cursor:pointer;transition:.15s ease}.tips-pp-filter:hover{border-color:#8b5cf6}.tips-pp-filter[data-pp="1"].active{background:#7c3aed;color:#fff;border-color:#6d28d9;box-shadow:0 2px 8px rgba(124,58,237,.22)}.tips-pp-filter[data-pp="2"].active{background:#ddd6fe;color:#4c1d95;border-color:#a78bfa;box-shadow:0 2px 8px rgba(124,58,237,.14)}@media(max-width:600px){.tips-pp-filters{margin:10px 0 12px}}</style>
+<style>.tips-see-more{display:block;margin:14px auto 0;min-width:180px;cursor:pointer}.tips-show-more{display:none!important}.tips-pp-filters{display:flex;align-items:center;gap:8px;margin:10px 0 12px}.tips-pp-filter{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:8px 15px;font-weight:800;font-size:12px;cursor:pointer;transition:.15s ease}.tips-pp-filter:hover{border-color:#8b5cf6}.tips-pp-filter[data-pp="1"].active{background:#7c3aed;color:#fff;border-color:#6d28d9;box-shadow:0 2px 8px rgba(124,58,237,.22)}.tips-pp-filter[data-pp="2"].active{background:#ddd6fe;color:#4c1d95;border-color:#a78bfa;box-shadow:0 2px 8px rgba(124,58,237,.14)}.live-refresh-progress{margin:0 0 18px;white-space:pre-line;line-height:1.55}@media(max-width:600px){.tips-pp-filters{margin:10px 0 12px}}</style>
 @endif
 <style>.header-actions{display:flex;align-items:center;gap:8px;margin-left:auto}.header-theme-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}@media(min-width:901px){.header-actions{order:3}.main-nav{order:2}.header-theme-toggle{margin-left:6px}}</style>
 @stack('scripts')
