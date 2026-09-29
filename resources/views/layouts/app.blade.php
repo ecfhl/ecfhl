@@ -30,7 +30,8 @@ document.addEventListener('DOMContentLoaded',()=>{
    const rows=[...section.querySelectorAll('tbody tr')].filter(row=>!row.querySelector('.empty'));
    let visible=5;
    let searchTerm='';
-   const selectedLines=new Set(withSkaterFilters?['1','2','3','4']:[]);
+   const availableLines=withSkaterFilters?['1','2','3','4'].filter(line=>rows.some(row=>row.querySelector('.tips-line-'+line))):[];
+   const selectedLines=new Set(availableLines);
    const selectedPp=new Set();
    const selectedGoalies=new Set(withGoalieFilters?['1','2']:[]);
 
@@ -119,10 +120,7 @@ document.addEventListener('DOMContentLoaded',()=>{
      filterWrap.setAttribute('aria-label',title+' line and power play filters');
      filterWrap.innerHTML=
        '<div class="tips-filter-row tips-line-filter-row">'+
-       '<button type="button" class="tips-filter-button tips-line-filter" data-line="1" aria-pressed="false">L1</button>'+
-       '<button type="button" class="tips-filter-button tips-line-filter" data-line="2" aria-pressed="false">L2</button>'+
-       '<button type="button" class="tips-filter-button tips-line-filter" data-line="3" aria-pressed="false">L3</button>'+
-       '<button type="button" class="tips-filter-button tips-line-filter" data-line="4" aria-pressed="false">L4</button>'+
+       availableLines.map(line=>'<button type="button" class="tips-filter-button tips-line-filter" data-line="'+line+'" aria-pressed="true">L'+line+'</button>').join('')+
        '</div>'+
        '<div class="tips-filter-row tips-pp-filter-row">'+
        '<button type="button" class="tips-filter-button tips-pp-filter" data-pp="1" aria-pressed="false">PP1</button>'+
