@@ -24,11 +24,20 @@
 @if(request()->is('ai-tips'))
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
- const setup=(id,title)=>{const section=document.getElementById(id);if(!section)return;const heading=section.querySelector('h2');if(heading)heading.textContent=title;const rows=[...section.querySelectorAll('tbody tr')].filter(row=>!row.querySelector('.empty'));if(rows.length<=10)return;let visible=10;rows.forEach((row,index)=>{if(index>=visible)row.style.display='none';});const button=document.createElement('button');button.type='button';button.className='button primary tips-see-more';button.textContent='See more results';button.addEventListener('click',()=>{const next=Math.min(visible+10,rows.length);for(let i=visible;i<next;i++)rows[i].style.display='';visible=next;if(visible>=rows.length)button.remove();});const card=section.querySelector('.table-card');if(card)card.insertAdjacentElement('afterend',button);};
+ const skaterSections=['forwards','defensemen'].map(id=>document.getElementById(id)).filter(Boolean);
+ if(skaterSections.length){
+   const filters=document.createElement('div');filters.className='tips-pp-filters';filters.setAttribute('role','group');filters.setAttribute('aria-label','Power play unit');filters.innerHTML='<span class="tips-filter-label">Power Play</span><button type="button" class="tips-pp-filter" data-pp="1" aria-pressed="false">PP1</button><button type="button" class="tips-pp-filter" data-pp="2" aria-pressed="false">PP2</button>';
+   skaterSections[0].insertAdjacentElement('beforebegin',filters);
+ }
+ const selectedPp=new Set();
+ const matchesPp=row=>{if(!selectedPp.size)return true;const pill=row.querySelector('.tips-pp1,.tips-pp2');if(!pill)return false;return selectedPp.has(pill.classList.contains('tips-pp1')?'1':'2');};
+ const setups=[];
+ const setup=(id,title)=>{const section=document.getElementById(id);if(!section)return;const heading=section.querySelector('h2');if(heading)heading.textContent=title;const rows=[...section.querySelectorAll('tbody tr')].filter(row=>!row.querySelector('.empty'));let visible=10;const button=document.createElement('button');button.type='button';button.className='button primary tips-see-more';button.textContent='See more results';const render=()=>{const eligible=rows.filter(matchesPp);rows.forEach(row=>row.style.display='none');eligible.slice(0,visible).forEach(row=>row.style.display='');button.style.display=eligible.length>visible?'block':'none';};button.addEventListener('click',()=>{visible+=10;render();});const card=section.querySelector('.table-card');if(card)card.insertAdjacentElement('afterend',button);setups.push({id,render,reset:()=>{visible=10;render();}});render();};
  setup('goalies','Available goalies');setup('forwards','Available forwards');setup('defensemen','Available defensemen');
+ document.querySelectorAll('.tips-pp-filter').forEach(button=>button.addEventListener('click',()=>{const pp=button.dataset.pp;if(selectedPp.has(pp)){selectedPp.delete(pp);button.classList.remove('active');button.setAttribute('aria-pressed','false');}else{selectedPp.add(pp);button.classList.add('active');button.setAttribute('aria-pressed','true');}setups.filter(x=>x.id!=='goalies').forEach(x=>x.reset());}));
 });
 </script>
-<style>.tips-see-more{display:block;margin:14px auto 0;min-width:180px;cursor:pointer}</style>
+<style>.tips-see-more{display:block;margin:14px auto 0;min-width:180px;cursor:pointer}.tips-pp-filters{display:flex;align-items:center;gap:8px;margin:22px 0 4px}.tips-filter-label{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-right:2px}.tips-pp-filter{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:8px 15px;font-weight:800;font-size:12px;cursor:pointer;transition:.15s ease}.tips-pp-filter:hover{border-color:#8b5cf6}.tips-pp-filter[data-pp="1"].active{background:#7c3aed;color:#fff;border-color:#6d28d9;box-shadow:0 2px 8px rgba(124,58,237,.22)}.tips-pp-filter[data-pp="2"].active{background:#ddd6fe;color:#4c1d95;border-color:#a78bfa;box-shadow:0 2px 8px rgba(124,58,237,.14)}@media(max-width:600px){.tips-pp-filters{margin-top:18px}.tips-filter-label{margin-right:auto}}</style>
 @endif
 <style>.header-actions{display:flex;align-items:center;gap:8px;margin-left:auto}.header-theme-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}@media(min-width:901px){.header-actions{order:3}.main-nav{order:2}.header-theme-toggle{margin-left:6px}}</style>
 @stack('scripts')
