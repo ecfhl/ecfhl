@@ -32,13 +32,12 @@ Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayer
     foreach([$base,$base->addDay()] as $date){try{
         Log::info('Fantrax daily players refresh started',['date'=>$date->format('Y-m-d'),'url'=>$fantrax->url($date)]);
         $all=$fantrax->fetch($date,'ALL');
-        // The all-player first page can exclude goalies. Always collect Fantrax's first
-        // goalie page too, then merge it into the same daily table.
         try{$goalies=$fantrax->fetch($date,'G');}catch(\Throwable $e){Log::warning('Dedicated Fantrax goalie fetch failed',['date'=>$date->format('Y-m-d'),'error'=>$e->getMessage()]);$goalies=['rows'=>[]];}
         $merged=[];foreach(array_merge($all['rows'],$goalies['rows']) as $p){$key=mb_strtolower(trim($p['player_name'])).'|'.strtoupper(trim($p['team']));$merged[$key]=$p;}
         $now=now();$rows=array_map(function($p)use($date,$now){$opp=trim((string)($p['opponent']??''));$away=str_starts_with($opp,'@');return ['game_date'=>$date->format('Y-m-d'),'player_name'=>$p['player_name'],'team'=>$p['team'],'position'=>$p['position'],'opponent'=>ltrim($opp,'@'),'home_away'=>$opp===''?null:($away?'AWAY':'HOME'),'availability'=>$p['availability'],'waiver_day'=>$p['waiver_day'],'injury_status'=>$p['injury_status'],'projected_fpts'=>$p['projected_fpts'],'fantrax_url'=>$p['fantrax_url'],'source_rank'=>$p['source_rank'],'last_update'=>$now,'created_at'=>$now,'updated_at'=>$now];},array_values($merged));
         DB::transaction(function()use($date,$rows){DB::table('active_daily_players')->whereDate('game_date',$date->format('Y-m-d'))->delete();if($rows)DB::table('active_daily_players')->insert($rows);});$count=count($rows);$gcount=count(array_filter($rows,fn($r)=>$r['position']==='G'));$this->info($date->format('Y-m-d').': '.$count.' Fantrax players refreshed ('.$gcount.' goalies)');Log::info('Fantrax daily players refresh completed',['date'=>$date->format('Y-m-d'),'rows'=>$count,'goalies'=>$gcount]);
     }catch(\Throwable $e){$failed=true;Log::error('Fantrax daily players refresh failed',['date'=>$date->format('Y-m-d'),'url'=>$fantrax->url($date),'error'=>$e->getMessage(),'exception'=>get_class($e)]);$this->error($date->format('Y-m-d').': '.$e->getMessage());}}
+    if(!$failed){try{Artisan::call('ecfhl:refresh-available-goalies');$this->line(trim(Artisan::output()));}catch(\Throwable $e){$failed=true;$this->error('Available goalies: '.$e->getMessage());}}
     return $failed?1:0;
 });
 
@@ -49,3 +48,5 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
 Schedule::command('ecfhl:refresh-daily-players')->hourlyAt(30)->withoutOverlapping(55);
 Schedule::command('ecfhl:refresh-starting-goalies')->hourlyAt(12)->withoutOverlapping(55)->runInBackground();
 Schedule::command('ecfhl:refresh-pp-lines')->cron('17 */4 * * *')->withoutOverlapping(240)->runInBackground();
+
+require __DIR__.'/available-goalies.php';
