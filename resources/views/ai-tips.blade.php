@@ -18,6 +18,33 @@
         $key=strtoupper(trim($player['team']??'')).'|'.mb_strtolower(trim($player['name']??'')).'|'.$position;
         return isset($evenStrengthLines[$key])?(int)$evenStrengthLines[$key]->line_number:null;
     };
+    $sortSkaters = function(array &$players) use ($ppUnit, $lineNumber) {
+        usort($players, function($a, $b) use ($ppUnit, $lineNumber) {
+            $rank = function($player) use ($ppUnit, $lineNumber) {
+                $pp = $ppUnit($player);
+                if ($pp === 1) return 1;
+                if ($pp === 2) return 2;
+                $line = $lineNumber($player);
+                return match($line) {
+                    1 => 3,
+                    2 => 4,
+                    3 => 5,
+                    4 => 6,
+                    default => 7,
+                };
+            };
+            $aRank = $rank($a);
+            $bRank = $rank($b);
+            if ($aRank !== $bRank) return $aRank <=> $bRank;
+            $aPoints = $a['projected_points'] ?? -PHP_FLOAT_MAX;
+            $bPoints = $b['projected_points'] ?? -PHP_FLOAT_MAX;
+            return ($bPoints <=> $aPoints)
+                ?: (($a['source_rank'] ?? PHP_INT_MAX) <=> ($b['source_rank'] ?? PHP_INT_MAX))
+                ?: strcasecmp($a['name'] ?? '', $b['name'] ?? '');
+        });
+    };
+    $sortSkaters($groups['F']);
+    $sortSkaters($groups['D']);
     $hasTips = count($groups['G']) + count($groups['F']) + count($groups['D']) > 0;
     $fantraxUpdated = \Illuminate\Support\Facades\DB::table('active_daily_players')->whereDate('game_date',$date)->max('last_update');
     $goaliesUpdated = \Illuminate\Support\Facades\DB::table('active_starting_goalies')->whereDate('game_date',$date)->max('checked_at');
