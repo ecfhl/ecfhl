@@ -102,7 +102,7 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
     return $failed?1:0;
 });
 Schedule::command('ecfhl:refresh-daily-players')->hourlyAt(0)->withoutOverlapping(55);
-Schedule::command('ecfhl:refresh-starting-goalies')->hourlyAt(1)->withoutOverlapping(55)->runInBackground();
+Schedule::command('ecfhl:refresh-starting-goalies')->everyThirtyMinutes()->withoutOverlapping(25)->runInBackground();
 Schedule::command('ecfhl:refresh-pp-lines')->cron('2 */4 * * *')->withoutOverlapping(240)->runInBackground();
 
 require __DIR__.'/available-goalies.php';
