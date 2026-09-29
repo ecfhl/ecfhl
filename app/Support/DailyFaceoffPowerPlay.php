@@ -72,6 +72,26 @@ class DailyFaceoffPowerPlay
             ];
         }
 
+        $goalieStart = stripos($html, 'Goalies');
+        if ($goalieStart === false) {
+            throw new RuntimeException("Could not find {$team} goalies");
+        }
+        $goalieEnd = stripos($html, 'Injuries', $goalieStart);
+        if ($goalieEnd === false) $goalieEnd = strlen($html);
+        $goalieSegment = substr($html, $goalieStart, $goalieEnd - $goalieStart);
+        $goalieNames = $this->playerNames($goalieSegment);
+        if (count($goalieNames) < 2) {
+            throw new RuntimeException("Expected 2 goalies for {$team}, found ".count($goalieNames));
+        }
+        foreach (array_slice($goalieNames, 0, 2) as $position => $name) {
+            $lines[] = [
+                'player_name'=>$name,
+                'position_group'=>'G',
+                'line_number'=>$position + 1,
+                'unit_position'=>$position + 1,
+            ];
+        }
+
         $players = [];
         foreach ([1 => '1st Powerplay Unit', 2 => '2nd Powerplay Unit'] as $unit => $heading) {
             $start = stripos($html, $heading);
