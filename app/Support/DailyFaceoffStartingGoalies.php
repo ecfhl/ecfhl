@@ -18,87 +18,95 @@ class DailyFaceoffStartingGoalies
             'Accept' => 'text/html,application/xhtml+xml',
         ])->get($url)->throw()->body();
 
-        $rows = $this->parsePageText($html);
-        if (!$rows) $rows = $this->parseCards($html);
+        $text = $this->toLines($html);
+        $matchups = $this->matchups($text);
+        $rows = [];
 
-        $plain = $this->clean(strip_tags($html));
-        if (!$rows && !preg_match('/0\s+of\s+0\s+confirmed|no games scheduled/i', $plain)) {
-            throw new RuntimeException('Could not parse Daily Faceoff starting goalies: no matchup/goalie records found.');
+        foreach ($matchups as $matchup) {
+            $goalies = $this->goalies($matchup['segment']);
+            if (count($goalies) !== 2) {
+                throw new RuntimeException('Daily Faceoff validation failed for '.$matchup['away'].' at '.$matchup['home'].': expected exactly 2 goalies, found '.count($goalies).'. Existing data preserved.');
+            }
+            $rows = array_merge($rows, $this->matchupRows($matchup['away'], $matchup['home'], $goalies[0], $goalies[1]));
         }
-        return ['url'=>$url, 'rows'=>$rows];
+
+        if (!$matchups) {
+            if (preg_match('/0\s+of\s+0\s+confirmed|no games scheduled/i', $text)) {
+                return ['url'=>$url, 'rows'=>[]];
+            }
+            throw new RuntimeException('Could not parse Daily Faceoff starting goalies: no matchup records found. Existing data preserved.');
+        }
+
+        if (count($rows) !== count($matchups) * 2) {
+            throw new RuntimeException('Daily Faceoff validation failed: incomplete goalie data. Existing data preserved.');
+        }
+
+        foreach ($rows as $row) {
+            if (!in_array($row['starting_status'], ['Confirmed','Probable','Unconfirmed'], true)) {
+                throw new RuntimeException('Daily Faceoff validation failed: invalid starting status. Existing data preserved.');
+            }
+        }
+
+        return ['url'=>$url, 'rows'=>$this->unique($rows)];
     }
 
-    private function parsePageText(string $html): array
+    private function toLines(string $html): string
     {
         $text = html_entity_decode($html, ENT_QUOTES | ENT_HTML5);
-        $text = str_replace(['\\u0026','\\u003c','\\u003e','\\u0027','\\u0022'], ['&','<','>','\'','"'], $text);
-        $text = preg_replace('/<(?:br|\/p|\/div|\/section|\/article|\/h[1-6]|\/li|\/span)>/i', "\n", $text);
+        $text = str_replace(['\\n','\\r','\\t'], ["\n","\n"," "], $text);
+        $text = preg_replace('/<(?:br\s*\/?>|\/p>|\/div>|\/section>|\/article>|\/h[1-6]>|\/li>)/i', "\n", $text) ?? $text;
         $text = strip_tags($text);
-        $text = str_replace(['\\n','\\r','\\t'], "\n", $text);
-        $text = preg_replace('/[\t\r ]+/u', ' ', $text);
-        $text = preg_replace('/\n+/u', "\n", $text);
+        $text = preg_replace('/[\t\r ]+/u', ' ', $text) ?? $text;
+        $text = preg_replace('/ *\n */u', "\n", $text) ?? $text;
+        $text = preg_replace('/\n{2,}/u', "\n", $text) ?? $text;
+        return trim($text);
+    }
 
+    private function matchups(string $text): array
+    {
         $teamPattern = implode('|', array_map(fn($t)=>preg_quote($t,'/'), self::TEAMS));
-        preg_match_all('/('.$teamPattern.')\s+at\s+('.$teamPattern.')/iu', $text, $matches, PREG_OFFSET_CAPTURE);
+        preg_match_all('/^('.$teamPattern.')\s+at\s+('.$teamPattern.')$/imu', $text, $matches, PREG_OFFSET_CAPTURE);
         if (empty($matches[0])) return [];
 
-        $rows=[];
-        $count=count($matches[0]);
-        for($i=0;$i<$count;$i++){
-            $away=$matches[1][$i][0]; $home=$matches[2][$i][0];
+        $out=[];
+        for ($i=0; $i<count($matches[0]); $i++) {
             $start=$matches[0][$i][1]+strlen($matches[0][$i][0]);
-            $end=$i+1<$count ? $matches[0][$i+1][1] : strlen($text);
-            $segment=substr($text,$start,$end-$start);
-            $goalies=$this->goaliesFromText($segment);
-            if(count($goalies)>=2) $rows=array_merge($rows,$this->matchupRows($away,$home,$goalies[0],$goalies[1]));
+            $end=$i+1<count($matches[0]) ? $matches[0][$i+1][1] : strlen($text);
+            $out[]=[
+                'away'=>$matches[1][$i][0],
+                'home'=>$matches[2][$i][0],
+                'segment'=>substr($text,$start,$end-$start),
+            ];
         }
-        return $this->unique($rows);
+        return $out;
     }
 
-    private function goaliesFromText(string $segment): array
+    private function goalies(string $segment): array
     {
+        $lines=array_values(array_filter(array_map('trim', preg_split('/\n/u',$segment) ?: []), fn($v)=>$v!==''));
         $goalies=[];
-        // Keep punctuation outside character classes. The previous separator class
-        // contained an incorrectly escaped bracket/backslash combination which PCRE
-        // interpreted as an invalid range.
-        $separator='(?:\\s|["\' :,{}]|\\[|\\]|\\\\)*?';
-        $pattern='/([\p{L}][\p{L} .\'’\-]{2,68}?)'.$separator.'\b(Confirmed|Unconfirmed|Probable)\b(?:'.$separator.'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?))?/imu';
-        preg_match_all($pattern, $segment, $gm, PREG_SET_ORDER);
-        foreach($gm as $g){
-            $name=$this->clean($g[1]);
-            $name=preg_replace('/^.*\b(?:Image|Goalie|Starter)\s*:?\s*/iu','',$name) ?? $name;
-            if(!$this->looksLikeName($name)) continue;
+
+        for ($i=0; $i<count($lines); $i++) {
+            if (!in_array($lines[$i], ['Confirmed','Probable','Unconfirmed'], true)) continue;
+
+            $name=null;
+            for ($j=$i-1; $j>=0 && $j>=$i-4; $j--) {
+                if ($this->looksLikeName($lines[$j])) { $name=$lines[$j]; break; }
+            }
+            if (!$name) continue;
+
             $updated=null;
-            if(!empty($g[3])) { try{$updated=CarbonImmutable::parse(trim($g[3]));}catch(\Throwable){} }
-            $goalies[]=['name'=>$name,'status'=>ucfirst(strtolower($g[2])),'updated'=>$updated];
-            if(count($goalies)===2) break;
+            for ($j=$i+1; $j<count($lines) && $j<=$i+3; $j++) {
+                if (preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/', $lines[$j])) {
+                    try { $updated=CarbonImmutable::parse($lines[$j]); } catch (\Throwable) {}
+                    break;
+                }
+            }
+
+            $goalies[]=['name'=>$name,'status'=>$lines[$i],'updated'=>$updated];
+            if (count($goalies)===2) break;
         }
         return $goalies;
-    }
-
-    private function parseCards(string $html): array
-    {
-        if (!class_exists(\DOMDocument::class)) return [];
-        $doc = new \DOMDocument();
-        @$doc->loadHTML('<?xml encoding="utf-8" ?>'.$html, LIBXML_NOERROR | LIBXML_NOWARNING);
-        $xpath = new \DOMXPath($doc);
-        $rows = [];
-        foreach ($xpath->query('//article|//section') as $article) {
-            $articleText = $this->clean($article->textContent);
-            [$away,$home] = $this->matchTeams($articleText);
-            if (!$away || !$home) continue;
-            $goalies=$this->goaliesFromText($article->textContent);
-            if(count($goalies)>=2) $rows=array_merge($rows,$this->matchupRows($away,$home,$goalies[0],$goalies[1]));
-        }
-        return $this->unique($rows);
-    }
-
-    private function matchTeams(string $text): array
-    {
-        foreach(self::TEAMS as $away) foreach(self::TEAMS as $home) {
-            if($away!==$home && preg_match('/'.preg_quote($away,'/').'\s+at\s+'.preg_quote($home,'/').'/i',$text)) return [$away,$home];
-        }
-        return [null,null];
     }
 
     private function matchupRows(string $away,string $home,array $awayGoalie,array $homeGoalie): array
@@ -111,14 +119,11 @@ class DailyFaceoffStartingGoalies
 
     private function looksLikeName(string $value): bool
     {
-        if (strlen($value) < 4 || strlen($value) > 70) return false;
-        if (preg_match('/starting goalies|projected|confirmed|unconfirmed|probable|stats|season|previous|show more|line combos|schedule|length|expires|cap\$|source|image/i',$value)) return false;
+        if (mb_strlen($value) < 4 || mb_strlen($value) > 70) return false;
+        if (preg_match('/^(Confirmed|Probable|Unconfirmed|Show More)$/i',$value)) return false;
+        if (preg_match('/starting goalies|projected|stats|season|previous|line combos|schedule|length|expires|cap\$|source|image|W-L-OTL|GAA|SV%|SO:/i',$value)) return false;
+        if (preg_match('/^\d{4}-\d{2}-\d{2}T/', $value)) return false;
         return (bool)preg_match('/^[\p{L} .\'’\-]+$/u',$value);
-    }
-
-    private function clean(string $value): string
-    {
-        return trim(preg_replace('/\s+/u',' ',html_entity_decode($value,ENT_QUOTES|ENT_HTML5)));
     }
 
     private function unique(array $rows): array
