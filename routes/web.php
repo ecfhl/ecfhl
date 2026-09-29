@@ -46,9 +46,6 @@ Route::get('/rules',function(){$sections=DB::table('rules')->orderBy('rule_id')-
 Route::get('/job-status', function () {
     $tz = 'America/Halifax';
     $now = \Carbon\CarbonImmutable::now($tz);
-    // Collector timestamps are written with Laravel's app timezone (Atlantic).
-    // MySQL DATETIME has no timezone metadata, so interpret the stored wall-clock
-    // value as Atlantic rather than UTC to avoid shifting it three/four hours.
     $dbTime = fn($value) => $value ? \Carbon\CarbonImmutable::createFromFormat('Y-m-d H:i:s', (string)$value, $tz) : null;
     $format = fn($value) => ($dt=$dbTime($value)) ? $dt->setTimezone($tz)->format('M j, Y · g:i a T') : null;
     $state = function ($value, int $minutes) use ($now, $dbTime, $tz) {
@@ -69,14 +66,11 @@ Route::get('/job-status', function () {
     };
     $fantraxLast = DB::table('active_daily_players')->max('last_update');
     $goaliesLast = DB::table('active_starting_goalies')->max('checked_at');
-    // PP source last_update is Daily Faceoff's source timestamp and may legitimately
-    // differ from when our collector ran. Show checked_at here, consistent with the
-    // other cards, so Job Status reports the actual refresh time.
     $linesLast = DB::table('active_pp_lines')->max('checked_at');
     $jobs = [
-        ['name'=>'Fantrax Available Players','schedule'=>'Every hour at :30','last_update'=>$format($fantraxLast),'records'=>DB::table('active_daily_players')->count(),'next_run'=>$nextHourly(30),'state'=>$state($fantraxLast,90),'description'=>'Available players playing today and tomorrow, including projected fantasy points.'],
-        ['name'=>'Daily Faceoff Goalies','schedule'=>'Every hour at :12','last_update'=>$format($goaliesLast),'records'=>DB::table('active_starting_goalies')->count(),'next_run'=>$nextHourly(12),'state'=>$state($goaliesLast,90),'description'=>'Starting-goalie status for today and tomorrow.'],
-        ['name'=>'Daily Faceoff Lines','schedule'=>'Every 4 hours at :17','last_update'=>$format($linesLast),'records'=>DB::table('active_pp_lines')->count(),'next_run'=>$nextFourHourly(17),'state'=>$state($linesLast,300),'description'=>'Current PP1 and PP2 assignments for all NHL teams.'],
+        ['name'=>'Fantrax Available Players','schedule'=>'Every hour at :00','last_update'=>$format($fantraxLast),'records'=>DB::table('active_daily_players')->count(),'next_run'=>$nextHourly(0),'state'=>$state($fantraxLast,90),'description'=>'Available players playing today and tomorrow, including projected fantasy points.'],
+        ['name'=>'Daily Faceoff Goalies','schedule'=>'Every hour at :01','last_update'=>$format($goaliesLast),'records'=>DB::table('active_starting_goalies')->count(),'next_run'=>$nextHourly(1),'state'=>$state($goaliesLast,90),'description'=>'Starting-goalie status for today and tomorrow.'],
+        ['name'=>'Daily Faceoff Lines','schedule'=>'Every 4 hours at :02','last_update'=>$format($linesLast),'records'=>DB::table('active_pp_lines')->count(),'next_run'=>$nextFourHourly(2),'state'=>$state($linesLast,300),'description'=>'Current PP1 and PP2 assignments for all NHL teams.'],
     ];
     return view('job-status', compact('jobs'));
 });
