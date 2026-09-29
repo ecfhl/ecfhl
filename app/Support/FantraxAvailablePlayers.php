@@ -9,6 +9,7 @@ use RuntimeException;
 class FantraxAvailablePlayers
 {
     public const LEAGUE_ID = '092zcn40molvao69';
+    private const API_VERSION = '186.1.9';
 
     public function url(CarbonImmutable $date): string
     {
@@ -18,70 +19,130 @@ class FantraxAvailablePlayers
 
     public function fetch(CarbonImmutable $date): array
     {
+        $day = $date->format('Y-m-d');
         $url = $this->url($date);
+        $payload = [
+            'msgs' => [[
+                'method' => 'getPlayerStats',
+                'data' => [
+                    'statusOrTeamFilter' => 'ALL_AVAILABLE',
+                    'maxResultsPerPage' => 500,
+                    'pageNumber' => '1',
+                    'seasonOrProjection' => 'PROJECTION_0_31n_SEASON',
+                    'timeframeTypeCode' => 'PROJECTED_SEASON',
+                    'startDate' => $day,
+                    'endDate' => $day,
+                    'datePlaying' => $day,
+                ],
+            ]],
+            'uiv' => 3,
+            'refUrl' => $url,
+            'dt' => 0,
+            'at' => 0,
+            'av' => '0.0',
+            'tz' => 'America/Halifax',
+            'v' => self::API_VERSION,
+        ];
+
         $response = Http::timeout(60)->retry(2, 1500)->withHeaders([
             'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153 Safari/537.36',
-            'Accept' => 'text/html,application/xhtml+xml,application/json',
-        ])->get($url)->throw();
-        $body = $response->body();
+            'Accept' => 'application/json',
+            'Content-Type' => 'application/json',
+            'Referer' => $url,
+        ])->post('https://www.fantrax.com/fxpa/req?leagueId='.self::LEAGUE_ID, $payload);
+        $response->throw();
+        $json = $response->json();
+        if (!is_array($json)) throw new RuntimeException('Fantrax player pool returned invalid JSON.');
+        if (!empty($json['pageError']['code'])) throw new RuntimeException('Fantrax API error '.$json['pageError']['code'].': '.($json['pageError']['text'] ?? 'unknown error'));
 
-        // Fantrax may expose the rendered player grid as JSON embedded in the page.
-        // Recursively walk decoded JSON objects and normalize player-looking records.
-        $objects = [];
-        if (preg_match_all('/<script[^>]*>(.*?)<\/script>/is', $body, $scripts)) {
-            foreach ($scripts[1] as $script) {
-                $script = html_entity_decode(trim($script));
-                if ($script === '' || (!str_starts_with($script, '{') && !str_starts_with($script, '['))) continue;
-                $decoded = json_decode($script, true);
-                if (is_array($decoded)) $this->collectPlayerObjects($decoded, $objects);
-            }
+        $data = $json['responses'][0]['data'] ?? null;
+        if (!is_array($data)) throw new RuntimeException('Fantrax player pool returned no response data.');
+        $stats = $data['statsTable'] ?? [];
+        if (!$stats) {
+            $total = $data['paginatedResultSet']['totalNumResults'] ?? $data['paginatedResultSet']['totalResults'] ?? null;
+            if ((int)$total === 0) return ['url'=>$url, 'rows'=>[]];
+            throw new RuntimeException('Fantrax player pool returned no player rows.');
         }
 
+        $columns = [];
+        foreach (($data['tableHeader']['cells'] ?? []) as $i => $col) {
+            foreach (['key','sortType','shortName'] as $field) {
+                $key = trim((string)($col[$field] ?? ''));
+                if ($key !== '' && !isset($columns[$key])) $columns[$key] = $i;
+            }
+        }
+        $cell = function(array $entry, array $ids) use ($columns): ?array {
+            foreach ($ids as $id) if (isset($columns[$id])) return $entry['cells'][$columns[$id]] ?? null;
+            return null;
+        };
+
         $rows = [];
-        foreach ($objects as $rank => $p) {
-            $name = $this->first($p, ['name','playerName','player_name','displayName']);
-            $team = $this->first($p, ['team','teamAbbreviation','teamShortName','proTeam']);
-            if (!$name || !$team) continue;
-            $status = strtoupper((string)$this->first($p, ['status','rosterStatus','availability','fantasyStatus']));
-            if ($status !== '' && !str_contains($status, 'FA') && !str_contains($status, 'WAIVER') && $status !== 'W') continue;
+        foreach ($stats as $rank => $entry) {
+            $scorer = $entry['scorer'] ?? [];
+            $name = trim((string)($scorer['name'] ?? ''));
+            $team = strtoupper(trim((string)($scorer['teamShortName'] ?? '')));
+            if ($name === '' || $team === '') continue;
+
+            $statusCell = $cell($entry, ['status','STATUS','Sta']);
+            $statusRaw = trim(html_entity_decode(strip_tags((string)($statusCell['content'] ?? ''))));
+            $statusUpper = strtoupper($statusRaw);
+            if ($statusUpper !== 'FA' && !str_starts_with($statusUpper, 'W')) continue;
+
+            $oppCell = $cell($entry, ['opponent','Opp']);
+            $opp = trim(html_entity_decode(strip_tags(str_replace(['<br>','<br/>','<br />'], ' ', (string)($oppCell['content'] ?? '')))));
+            if ($opp !== '') $opp = preg_split('/\s+/', $opp)[0];
+            $fptsCell = $cell($entry, ['fpts','SCORE','FPts']);
+            $fpts = $this->numeric($fptsCell['content'] ?? null);
+
+            $posText = html_entity_decode(strip_tags((string)($scorer['posShortNames'] ?? $entry['multiPositions'] ?? '')));
+            $position = $this->position($posText);
+            $injury = $this->injury($scorer['icons'] ?? []);
+            $waiverDay = null;
+            if (preg_match('/W\s*\(([^)]+)\)/i', $statusRaw, $m)) $waiverDay = trim($m[1]);
+
             $rows[] = [
                 'player_name' => $name,
-                'team' => strtoupper($team),
-                'position' => $this->first($p, ['position','pos','positions']),
-                'opponent' => $this->first($p, ['opponent','opp']),
-                'availability' => str_contains($status, 'WAIVER') || $status === 'W' ? 'W' : 'FA',
-                'waiver_day' => $this->first($p, ['waiverDay','waiver_day','waiverDate']),
-                'injury_status' => $this->first($p, ['injuryStatus','injury_status']),
-                'projected_fpts' => $this->numeric($this->first($p, ['projectedFantasyPoints','projectedFpts','projected_fpts','fpts','fantasyPoints'])),
-                'source_rank' => $rank + 1,
+                'team' => $team,
+                'position' => $position,
+                'opponent' => $opp,
+                'availability' => str_starts_with($statusUpper, 'W') ? 'W' : 'FA',
+                'waiver_day' => $waiverDay,
+                'injury_status' => $injury,
+                'projected_fpts' => $fpts,
+                'source_rank' => (int)($scorer['rank'] ?? ($rank + 1)),
                 'fantrax_url' => 'https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/players;searchName='.rawurlencode($name).';positionOrGroup=ALL;',
             ];
         }
 
-        $rows = array_values(array_unique($rows, SORT_REGULAR));
-        if (!$rows) {
-            if (preg_match('/no players|no results|0 results/i', strip_tags($body))) return ['url'=>$url, 'rows'=>[]];
-            throw new RuntimeException('Fantrax returned no parseable player records; existing daily data preserved.');
-        }
+        if (!$rows) throw new RuntimeException('Fantrax returned player rows but none were parseable as available players.');
         return ['url'=>$url, 'rows'=>$rows];
     }
 
-    private function collectPlayerObjects(array $node, array &$out): void
+    private function position(string $value): ?string
     {
-        if ($this->first($node, ['name','playerName','player_name','displayName']) && $this->first($node, ['team','teamAbbreviation','teamShortName','proTeam'])) $out[] = $node;
-        foreach ($node as $value) if (is_array($value)) $this->collectPlayerObjects($value, $out);
+        $v = strtoupper($value);
+        if (preg_match('/(^|[,\/ ])G($|[,\/ ])/',$v)) return 'G';
+        if (preg_match('/(^|[,\/ ])D($|[,\/ ])/',$v)) return 'D';
+        if (preg_match('/\b(C|LW|RW|F)\b/',$v)) return 'F';
+        return $value !== '' ? $value : null;
     }
 
-    private function first(array $p, array $keys): mixed
+    private function injury(array $icons): ?string
     {
-        foreach ($keys as $key) if (array_key_exists($key, $p) && $p[$key] !== null && $p[$key] !== '') return is_array($p[$key]) ? implode('/', $p[$key]) : $p[$key];
+        foreach ($icons as $icon) {
+            $type = (string)($icon['typeId'] ?? '');
+            $tip = trim((string)($icon['tooltip'] ?? ''));
+            if (in_array($type, ['1','2','30'], true) || preg_match('/injur|IR|day-to-day|out indefinitely/i',$tip)) {
+                return preg_match('/injured reserve|injured list|\bIR\b/i',$tip) ? 'IR' : ($tip !== '' ? $tip : 'INJ');
+            }
+        }
         return null;
     }
 
     private function numeric(mixed $value): ?float
     {
         if ($value === null || $value === '') return null;
-        $value = preg_replace('/[^0-9.\-]/', '', (string)$value);
+        $value = preg_replace('/[^0-9.\-]/', '', html_entity_decode(strip_tags((string)$value)));
         return is_numeric($value) ? (float)$value : null;
     }
 }
