@@ -25,7 +25,25 @@ Artisan::command('ecfhl:validate-drafts', function () { $plan=(new \Database\See
 Artisan::command('ecfhl:refresh-pp-lines {--team=}', function (DailyFaceoffPowerPlay $scraper) {
     $only=strtoupper((string)$this->option('team')); $teams=DailyFaceoffPowerPlay::TEAMS;if($only!==''){if(!isset($teams[$only])){$this->error("Unknown NHL team: {$only}");return 1;}$teams=[$only=>$teams[$only]];}
     $failed=false;
-    foreach($teams as $team=>$slug){try{$data=$scraper->fetch($team,$slug);$stored=DB::table('active_pp_lines')->where('team',$team)->max('last_update');if($stored&&$data['lastUpdate']->lessThanOrEqualTo(CarbonImmutable::parse($stored)))continue;DB::transaction(function()use($data,$team){DB::table('active_pp_lines')->where('team',$team)->delete();$now=now();$rows=array_map(fn($p)=>['team'=>$team,'player_name'=>$p['player_name'],'pp_unit'=>$p['pp_unit'],'unit_position'=>$p['unit_position'],'source_url'=>$data['url'],'last_update'=>$data['lastUpdate'],'checked_at'=>$now,'created_at'=>$now,'updated_at'=>$now],$data['players']);DB::table('active_pp_lines')->insert($rows);});$this->info("{$team}: updated");}catch(\Throwable $e){$failed=true;Log::error('Daily Faceoff PP refresh failed',['team'=>$team,'error'=>$e->getMessage()]);$this->error("{$team}: {$e->getMessage()}");}}return $failed?1:0;
+    foreach($teams as $team=>$slug){try{
+        $data=$scraper->fetch($team,$slug);
+        $storedPp=DB::table('active_pp_lines')->where('team',$team)->max('last_update');
+        $storedLines=DB::table('active_line_combinations')->where('team',$team)->max('last_update');
+        $ppCurrent=$storedPp&&$data['lastUpdate']->lessThanOrEqualTo(CarbonImmutable::parse($storedPp));
+        $linesCurrent=$storedLines&&$data['lastUpdate']->lessThanOrEqualTo(CarbonImmutable::parse($storedLines));
+        if($ppCurrent&&$linesCurrent)continue;
+        DB::transaction(function()use($data,$team){
+            $now=now();
+            DB::table('active_pp_lines')->where('team',$team)->delete();
+            $ppRows=array_map(fn($p)=>['team'=>$team,'player_name'=>$p['player_name'],'pp_unit'=>$p['pp_unit'],'unit_position'=>$p['unit_position'],'source_url'=>$data['url'],'last_update'=>$data['lastUpdate'],'checked_at'=>$now,'created_at'=>$now,'updated_at'=>$now],$data['players']);
+            if($ppRows)DB::table('active_pp_lines')->insert($ppRows);
+            DB::table('active_line_combinations')->where('team',$team)->delete();
+            $lineRows=array_map(fn($p)=>['team'=>$team,'player_name'=>$p['player_name'],'position_group'=>$p['position_group'],'line_number'=>$p['line_number'],'unit_position'=>$p['unit_position'],'source_url'=>$data['url'],'last_update'=>$data['lastUpdate'],'checked_at'=>$now,'created_at'=>$now,'updated_at'=>$now],$data['lines']);
+            if($lineRows)DB::table('active_line_combinations')->insert($lineRows);
+        });
+        $this->info("{$team}: updated");
+    }catch(\Throwable $e){$failed=true;Log::error('Daily Faceoff lines refresh failed',['team'=>$team,'error'=>$e->getMessage()]);$this->error("{$team}: {$e->getMessage()}");}}
+    return $failed?1:0;
 });
 
 Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayers $fantrax) {
