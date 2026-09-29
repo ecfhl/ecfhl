@@ -1,7 +1,7 @@
 {
   "date": "2026-09-30",
   "checked_at": null,
-  "last_attempt_at": "2026-09-29T03:16:48-03:00",
+  "last_attempt_at": "2026-09-29T04:19:07-03:00",
   "refresh_status": "failed",
   "refresh_error": "Fantrax public player listings for goalies, forwards, and defensemen returned internal retrieval errors through the free public web reader. Daily Faceoff was retrieved successfully and shows 0 of 6 goalies confirmed for September 30. No Fantrax player data was available to publish without inference.",
   "fantrax_url": "https://www.fantrax.com/fantasy/league/092zcn40molvao69/players;positionOrGroup=ALL;pageNumber=1;datePlaying=2026-09-30;seasonOrProjection=PROJECTION_0_31n_SEASON;timeframeTypeCode=PROJECTED_SEASON",
