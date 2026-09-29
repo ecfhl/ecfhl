@@ -75,7 +75,7 @@ class DailyFaceoffStartingGoalies
                 }
                 // The page renders null NewsStrengthName as Unconfirmed (verified in browser).
                 $status = $game[$side.'NewsStrengthName'] ?? 'Unconfirmed';
-                if (! in_array($status, ['Confirmed', 'Probable', 'Unconfirmed'], true)) {
+                if (! in_array($status, ['Confirmed', 'Likely', 'Unconfirmed'], true)) {
                     throw new RuntimeException('Unknown goalie starting status');
                 }
                 $key = $team.'|'.mb_strtolower(trim($name));
