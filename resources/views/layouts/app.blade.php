@@ -55,6 +55,33 @@ function toggleTheme(){const next=document.documentElement.dataset.theme==='dark
 <script>
 document.querySelectorAll('.season-type-choice').forEach(button=>button.addEventListener('click',()=>{const value=button.dataset.value;const buttons=[...document.querySelectorAll('.season-type-choice')];const selected=buttons.filter(x=>x.classList.contains('active')).map(x=>x.dataset.value);const next=selected.includes(value)?selected.filter(x=>x!==value):[...selected,value];const mode=next.length===2?'all':(next[0]||'none');document.cookie='ecfhl-season-type='+mode+'; Path=/; Max-Age=31536000; SameSite=Lax';const url=new URL(location.href);url.searchParams.set('type',mode);if(/^\/seasons\//.test(url.pathname))url.pathname='/seasons';url.searchParams.delete('season');location.assign(url);}));
 </script>
+@if(request()->is('ai-tips'))
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+    const setup=(id,title)=>{
+        const section=document.getElementById(id); if(!section)return;
+        const heading=section.querySelector('h2'); if(heading)heading.textContent=title;
+        const rows=[...section.querySelectorAll('tbody tr')].filter(row=>!row.querySelector('.empty'));
+        if(rows.length<=10)return;
+        let visible=10;
+        rows.forEach((row,index)=>{if(index>=visible)row.style.display='none';});
+        const button=document.createElement('button');
+        button.type='button'; button.className='button primary tips-see-more'; button.textContent='See more results';
+        button.addEventListener('click',()=>{
+            const next=Math.min(visible+10,rows.length);
+            for(let i=visible;i<next;i++)rows[i].style.display='';
+            visible=next;
+            if(visible>=rows.length)button.remove();
+        });
+        const card=section.querySelector('.table-card');
+        if(card)card.insertAdjacentElement('afterend',button);
+    };
+    setup('forwards','Available forwards');
+    setup('defensemen','Available defensemen');
+});
+</script>
+<style>.tips-see-more{display:block;margin:14px auto 0;min-width:180px;cursor:pointer}</style>
+@endif
 <style>.header-actions{display:flex;align-items:center;gap:8px;margin-left:auto}.header-theme-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}@media(min-width:901px){.header-actions{order:3}.main-nav{order:2}.header-theme-toggle{margin-left:6px}}</style>
 @stack('scripts')
 </body>
