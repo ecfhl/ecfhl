@@ -1,9 +1,9 @@
 {
   "date": "2026-09-29",
   "checked_at": "2026-09-28T18:20:00-03:00",
-  "last_attempt_at": "2026-09-29T04:19:07-03:00",
+  "last_attempt_at": "2026-09-29T05:15:29-03:00",
   "refresh_status": "failed",
-  "refresh_error": "Fantrax public player listings for goalies, forwards, and defensemen returned internal retrieval errors through the free public web reader. Daily Faceoff was retrieved successfully: September 29 shows 1 of 10 confirmed, with Tristan Jarry confirmed and the other nine displayed goalies unconfirmed. Existing player data and the last successful checked_at were preserved; stale starting statuses were not treated as refreshed.",
+  "refresh_error": "Fantrax public player listing returned an internal retrieval error through the free public web reader. Daily Faceoff was retrieved successfully: September 29 shows 1 of 10 confirmed. Existing player data and the last successful checked_at were preserved; stale starting statuses were not treated as refreshed.",
   "fantrax_url": "https://www.fantrax.com/fantasy/league/092zcn40molvao69/players;positionOrGroup=ALL;pageNumber=1;datePlaying=2026-09-29;seasonOrProjection=PROJECTION_0_31n_SEASON;timeframeTypeCode=PROJECTED_SEASON",
   "players": [
     {"name":"Kevin Lankinen","team":"VAN","opponent":"@EDM","position":"G","game_date":"2026-09-29","status":"W (Tue)","starting_status":"Unconfirmed","projected_points":35,"source_rank":7},
