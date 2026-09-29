@@ -27,20 +27,37 @@ class AiTips
             );
         }
 
+        // Always join the latest Daily Faceoff table at page render time. This avoids
+        // waiting for the separate available-goalie collector to copy a newer DFO status.
+        $normalize = static fn ($v) => preg_replace('/[^\pL\pN]+/u', '', mb_strtolower(trim((string) $v))) ?? '';
+        $dfoRows = DB::table('active_starting_goalies')->whereDate('game_date', $date)->get();
+        $dfoByPlayer = [];
+        $confirmedByTeam = [];
+        foreach ($dfoRows as $dfo) {
+            $team = strtoupper(trim((string) $dfo->team));
+            $key = $team.'|'.$normalize($dfo->player_name);
+            $dfoByPlayer[$key] = $dfo;
+            if (strtolower(trim((string) $dfo->starting_status)) === 'confirmed') {
+                $confirmedByTeam[$team] = $normalize($dfo->player_name);
+            }
+        }
+
         $goalies = DB::table('active_available_goalies')->whereDate('game_date', $date)->get();
         foreach ($goalies as $row) {
             $status = self::availability($row);
             if ($status === null || ! $row->team || ! $row->player_name) continue;
             $player = self::player($row, 'G', $date, $status);
-            $player['starting_status'] = $row->starting_status;
+            $team = strtoupper(trim((string) $row->team));
+            $name = $normalize($row->player_name);
+            $dfo = $dfoByPlayer[$team.'|'.$name] ?? null;
+            $player['starting_status'] = $dfo?->starting_status ?? $row->starting_status;
+            $player['not_starting'] = isset($confirmedByTeam[$team]) && $confirmedByTeam[$team] !== $name;
             $groups['G'][] = $player;
         }
 
-        // Starting status is the primary goalie ranking. Projected points only sort
-        // goalies within the same status bucket.
         $priority = static function ($player): int {
-            $status = strtolower(trim((string) ($player['starting_status'] ?? '')));
-            return match ($status) {
+            if (!empty($player['not_starting'])) return 4;
+            return match (strtolower(trim((string) ($player['starting_status'] ?? '')))) {
                 'confirmed' => 0,
                 'probable' => 1,
                 'unconfirmed' => 2,
@@ -81,6 +98,7 @@ class AiTips
             'source_rank' => (int) ($row->source_rank ?? PHP_INT_MAX),
             'game_date' => $date,
             'starting_status' => null,
+            'not_starting' => false,
         ];
     }
 }
