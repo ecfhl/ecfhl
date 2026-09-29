@@ -16,6 +16,7 @@ Route::post('/job-status/run/{job}', function (string $job) {
     $jobsToRun = $job === 'all' ? $commands : [$job => $commands[$job]];
     $labels = ['players' => 'Fantrax players', 'goalies' => 'Starting goalies', 'lines' => 'Power-play lines'];
     $results = [];
+    $details = [];
     $anyFailed = false;
 
     foreach ($jobsToRun as $jobKey => $command) {
@@ -28,16 +29,27 @@ Route::post('/job-status/run/{job}', function (string $job) {
             $result = $labels[$jobKey].': '.($failed ? 'Failed' : 'Completed');
             if ($output !== '') $result .= "\n".$output;
             $results[] = $result;
+            $details[$jobKey] = ['failed'=>$failed, 'output'=>$output];
         } catch (\Throwable $e) {
             report($e);
             $anyFailed = true;
             $results[] = $labels[$jobKey].': Failed' . "\n" . $e->getMessage();
+            $details[$jobKey] = ['failed'=>true, 'output'=>$e->getMessage()];
         }
     }
 
     $message = implode("\n\n", $results);
     if ($job === 'all') $message .= "\n\n".($anyFailed ? 'One or more jobs failed.' : 'All 3 jobs completed.');
     else $message .= "\n".($anyFailed ? 'Job failed.' : 'Job completed.');
+
+    if (request()->expectsJson()) {
+        return response()->json([
+            'ok' => ! $anyFailed,
+            'job' => $job,
+            'message' => $message,
+            'details' => $details,
+        ], $anyFailed ? 500 : 200);
+    }
 
     return redirect($returnTo)->with($anyFailed ? 'job_error' : 'job_success', $message);
 })->whereIn('job', ['players', 'goalies', 'lines', 'all']);
