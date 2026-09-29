@@ -61,7 +61,6 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
                     'created_at'=>$now, 'updated_at'=>$now,
                 ];
             }
-            // Validate the entire date before deleting anything. Insert failures roll back.
             DB::transaction(function () use ($day, $rows) {
                 DB::table('active_starting_goalies')->whereDate('game_date', $day)->delete();
                 if ($rows) DB::table('active_starting_goalies')->insert($rows);
@@ -80,8 +79,8 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
     }
     return $failed?1:0;
 });
-Schedule::command('ecfhl:refresh-daily-players')->hourlyAt(30)->withoutOverlapping(55);
-Schedule::command('ecfhl:refresh-starting-goalies')->hourlyAt(12)->withoutOverlapping(55)->runInBackground();
-Schedule::command('ecfhl:refresh-pp-lines')->cron('17 */4 * * *')->withoutOverlapping(240)->runInBackground();
+Schedule::command('ecfhl:refresh-daily-players')->hourlyAt(0)->withoutOverlapping(55);
+Schedule::command('ecfhl:refresh-starting-goalies')->hourlyAt(1)->withoutOverlapping(55)->runInBackground();
+Schedule::command('ecfhl:refresh-pp-lines')->cron('2 */4 * * *')->withoutOverlapping(240)->runInBackground();
 
 require __DIR__.'/available-goalies.php';
