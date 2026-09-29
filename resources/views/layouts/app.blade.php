@@ -30,9 +30,9 @@ document.addEventListener('DOMContentLoaded',()=>{
    const rows=[...section.querySelectorAll('tbody tr')].filter(row=>!row.querySelector('.empty'));
    let visible=5;
    let searchTerm='';
-   const selectedLines=new Set();
+   const selectedLines=new Set(withSkaterFilters?['1','2','3','4']:[]);
    const selectedPp=new Set();
-   const selectedGoalies=new Set();
+   const selectedGoalies=new Set(withGoalieFilters?['1','2']:[]);
 
    const searchWrap=document.createElement('div');
    searchWrap.className='tips-search-wrap';
@@ -100,12 +100,16 @@ document.addEventListener('DOMContentLoaded',()=>{
      filterWrap.setAttribute('aria-label',title+' goalie depth filters');
      filterWrap.innerHTML='<div class="tips-filter-row tips-goalie-filter-row"><button type="button" class="tips-filter-button tips-goalie-filter" data-goalie="1" aria-pressed="false">G1</button><button type="button" class="tips-filter-button tips-goalie-filter" data-goalie="2" aria-pressed="false">G2</button></div>';
      searchWrap.insertAdjacentElement('afterend',filterWrap);
-     filterWrap.querySelectorAll('.tips-goalie-filter').forEach(filter=>filter.addEventListener('click',()=>{
+     filterWrap.querySelectorAll('.tips-goalie-filter').forEach(filter=>{
+       filter.classList.add('active');
+       filter.setAttribute('aria-pressed','true');
+       filter.addEventListener('click',()=>{
        const value=filter.dataset.goalie;
        if(selectedGoalies.has(value)){selectedGoalies.delete(value);filter.classList.remove('active');filter.setAttribute('aria-pressed','false');}
        else{selectedGoalies.add(value);filter.classList.add('active');filter.setAttribute('aria-pressed','true');}
        visible=5;render();
-     }));
+       });
+     });
    }
 
    if(withSkaterFilters){
@@ -126,12 +130,16 @@ document.addEventListener('DOMContentLoaded',()=>{
        '</div>';
      searchWrap.insertAdjacentElement('afterend',filterWrap);
 
-     filterWrap.querySelectorAll('.tips-line-filter').forEach(filter=>filter.addEventListener('click',()=>{
+     filterWrap.querySelectorAll('.tips-line-filter').forEach(filter=>{
+       filter.classList.add('active');
+       filter.setAttribute('aria-pressed','true');
+       filter.addEventListener('click',()=>{
        const value=filter.dataset.line;
        if(selectedLines.has(value)){selectedLines.delete(value);filter.classList.remove('active');filter.setAttribute('aria-pressed','false');}
        else{selectedLines.add(value);filter.classList.add('active');filter.setAttribute('aria-pressed','true');}
        visible=5;render();
-     }));
+       });
+     });
 
      filterWrap.querySelectorAll('.tips-pp-filter').forEach(filter=>filter.addEventListener('click',()=>{
        const value=filter.dataset.pp;
