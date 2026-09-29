@@ -29,8 +29,9 @@ Artisan::command('ecfhl:refresh-pp-lines {--team=}', function (DailyFaceoffPower
         $data=$scraper->fetch($team,$slug);
         $storedPp=DB::table('active_pp_lines')->where('team',$team)->max('last_update');
         $storedLines=DB::table('active_line_combinations')->where('team',$team)->max('last_update');
+        $storedGoalieDepth=DB::table('active_line_combinations')->where('team',$team)->where('position_group','G')->count();
         $ppCurrent=$storedPp&&$data['lastUpdate']->lessThanOrEqualTo(CarbonImmutable::parse($storedPp));
-        $linesCurrent=$storedLines&&$data['lastUpdate']->lessThanOrEqualTo(CarbonImmutable::parse($storedLines));
+        $linesCurrent=$storedLines&&$storedGoalieDepth>=2&&$data['lastUpdate']->lessThanOrEqualTo(CarbonImmutable::parse($storedLines));
         if($ppCurrent&&$linesCurrent)continue;
         DB::transaction(function()use($data,$team){
             $now=now();
