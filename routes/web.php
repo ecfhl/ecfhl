@@ -58,6 +58,10 @@ Route::get('/job-status', function () {
         if ($next->lte($now)) $next = $next->addHour();
         return $next->format('M j · g:i a T');
     };
+    $nextHalfHourly = function () use ($now) {
+        $next = $now->minute < 30 ? $now->startOfHour()->minute(30) : $now->addHour()->startOfHour();
+        return $next->format('M j · g:i a T');
+    };
     $nextFourHourly = function (int $minute) use ($now) {
         $hour = (int)$now->format('G'); $nextHour = $hour - ($hour % 4);
         $next = $now->startOfDay()->addHours($nextHour)->minute($minute);
@@ -69,7 +73,7 @@ Route::get('/job-status', function () {
     $linesLast = DB::table('active_pp_lines')->max('checked_at');
     $jobs = [
         ['name'=>'Fantrax Available Players','schedule'=>'Every hour at :00','last_update'=>$format($fantraxLast),'records'=>DB::table('active_daily_players')->count(),'next_run'=>$nextHourly(0),'state'=>$state($fantraxLast,90),'description'=>'Available players playing today and tomorrow, including projected fantasy points.'],
-        ['name'=>'Daily Faceoff Goalies','schedule'=>'Every hour at :01','last_update'=>$format($goaliesLast),'records'=>DB::table('active_starting_goalies')->count(),'next_run'=>$nextHourly(1),'state'=>$state($goaliesLast,90),'description'=>'Starting-goalie status for today and tomorrow.'],
+        ['name'=>'Daily Faceoff Goalies','schedule'=>'Every 30 minutes','last_update'=>$format($goaliesLast),'records'=>DB::table('active_starting_goalies')->count(),'next_run'=>$nextHalfHourly(),'state'=>$state($goaliesLast,60),'description'=>'Starting-goalie status for today and tomorrow.'],
         ['name'=>'Daily Faceoff Lines','schedule'=>'Every 4 hours at :02','last_update'=>$format($linesLast),'records'=>DB::table('active_pp_lines')->count(),'next_run'=>$nextFourHourly(2),'state'=>$state($linesLast,300),'description'=>'Current PP1 and PP2 assignments for all NHL teams.'],
     ];
     return view('job-status', compact('jobs'));
