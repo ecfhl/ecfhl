@@ -1,0 +1,43 @@
+{
+  "page": "/starting-goalies/[[...date]]",
+  "props": {
+    "pageProps": {
+      "date": "2026-09-30",
+      "data": [
+        {
+          "date": "2026-09-30",
+          "awayTeamName": "New York Islanders",
+          "awayGoalieName": "Ilya Sorokin",
+          "awayNewsStrengthName": null,
+          "awayNewsCreatedAt": null,
+          "homeTeamName": "Toronto Maple Leafs",
+          "homeGoalieName": "Sergei Bobrovsky",
+          "homeNewsStrengthName": null,
+          "homeNewsCreatedAt": null
+        },
+        {
+          "date": "2026-09-30",
+          "awayTeamName": "Pittsburgh Penguins",
+          "awayGoalieName": "Arturs Silovs",
+          "awayNewsStrengthName": null,
+          "awayNewsCreatedAt": null,
+          "homeTeamName": "Philadelphia Flyers",
+          "homeGoalieName": "Dan Vladar",
+          "homeNewsStrengthName": null,
+          "homeNewsCreatedAt": null
+        },
+        {
+          "date": "2026-09-30",
+          "awayTeamName": "Los Angeles Kings",
+          "awayGoalieName": "Darcy Kuemper",
+          "awayNewsStrengthName": null,
+          "awayNewsCreatedAt": null,
+          "homeTeamName": "Colorado Avalanche",
+          "homeGoalieName": "Scott Wedgewood",
+          "homeNewsStrengthName": null,
+          "homeNewsCreatedAt": null
+        }
+      ]
+    }
+  }
+}

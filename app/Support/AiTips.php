@@ -40,7 +40,10 @@ class AiTips
             $team = strtoupper(trim((string) $row->team));
             $name = $normalize($row->player_name);
             $dfo = $dfoByPlayer[$team.'|'.$name] ?? null;
-            $player['starting_status'] = $dfo?->starting_status ?? $row->starting_status;
+            $player['starting_status'] = $dfo?->starting_status;
+            if ($dfo) {
+                $player['opponent'] = ($dfo->home_away === 'AWAY' ? '@' : '').$dfo->opponent;
+            }
             $player['not_starting'] = isset($confirmedByTeam[$team]) && $confirmedByTeam[$team] !== $name;
             if ($player['not_starting']) $player['starting_status'] = 'Not starting';
             $groups['G'][] = $player;

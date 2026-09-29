@@ -1,0 +1,9 @@
+{
+  "page": "/starting-goalies/[[...date]]",
+  "props": {
+    "pageProps": {
+      "date": "2026-09-28",
+      "data": []
+    }
+  }
+}

@@ -43,7 +43,41 @@ Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayer
 
 Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartingGoalies $dfo) {
     $abbr=['Anaheim Ducks'=>'ANA','Boston Bruins'=>'BOS','Buffalo Sabres'=>'BUF','Calgary Flames'=>'CGY','Carolina Hurricanes'=>'CAR','Chicago Blackhawks'=>'CHI','Colorado Avalanche'=>'COL','Columbus Blue Jackets'=>'CBJ','Dallas Stars'=>'DAL','Detroit Red Wings'=>'DET','Edmonton Oilers'=>'EDM','Florida Panthers'=>'FLA','Los Angeles Kings'=>'LAK','Minnesota Wild'=>'MIN','Montreal Canadiens'=>'MTL','Nashville Predators'=>'NSH','New Jersey Devils'=>'NJD','New York Islanders'=>'NYI','New York Rangers'=>'NYR','Ottawa Senators'=>'OTT','Philadelphia Flyers'=>'PHI','Pittsburgh Penguins'=>'PIT','San Jose Sharks'=>'SJS','Seattle Kraken'=>'SEA','St. Louis Blues'=>'STL','Tampa Bay Lightning'=>'TBL','Toronto Maple Leafs'=>'TOR','Utah Mammoth'=>'UTA','Vancouver Canucks'=>'VAN','Vegas Golden Knights'=>'VGK','Washington Capitals'=>'WSH','Winnipeg Jets'=>'WPG'];$base=CarbonImmutable::now('America/Halifax')->startOfDay();$failed=false;
-    foreach([$base,$base->addDay()] as $date){try{$data=$dfo->fetch($date);$now=now();$rows=[];foreach($data['rows'] as $g){$team=$abbr[$g['team_name']]??null;$opp=$abbr[$g['opponent_name']]??null;if(!$team)continue;$rows[]=['game_date'=>$date->format('Y-m-d'),'team'=>$team,'opponent'=>$opp,'home_away'=>$g['home_away'],'player_name'=>$g['player_name'],'starting_status'=>$g['starting_status'],'source_url'=>$data['url'],'source_updated_at'=>$g['source_updated_at'],'checked_at'=>$now,'created_at'=>$now,'updated_at'=>$now];}DB::transaction(function()use($date,$rows){DB::table('active_starting_goalies')->whereDate('game_date',$date->format('Y-m-d'))->delete();if($rows)DB::table('active_starting_goalies')->insert($rows);});$this->info($date->format('Y-m-d').': '.count($rows).' DFO goalies refreshed');}catch(\Throwable $e){$failed=true;Log::error('Daily Faceoff goalie refresh failed',['date'=>$date->format('Y-m-d'),'error'=>$e->getMessage()]);$this->error($date->format('Y-m-d').': '.$e->getMessage());}}
+    foreach ([$base, $base->addDay()] as $date) {
+        $day = $date->format('Y-m-d');
+        try {
+            $data = $dfo->fetch($date);
+            $now = now();
+            $rows = [];
+            foreach ($data['rows'] as $g) {
+                $team = $abbr[$g['team_name']] ?? null;
+                $opponent = $abbr[$g['opponent_name']] ?? null;
+                if (! $team || ! $opponent) throw new \RuntimeException('Unknown Daily Faceoff team. Existing data preserved.');
+                $rows[] = [
+                    'game_date'=>$day, 'team'=>$team, 'opponent'=>$opponent,
+                    'home_away'=>$g['home_away'], 'player_name'=>$g['player_name'],
+                    'starting_status'=>$g['starting_status'], 'source_url'=>$data['url'],
+                    'source_updated_at'=>$g['source_updated_at'], 'checked_at'=>$now,
+                    'created_at'=>$now, 'updated_at'=>$now,
+                ];
+            }
+            // Validate the entire date before deleting anything. Insert failures roll back.
+            DB::transaction(function () use ($day, $rows) {
+                DB::table('active_starting_goalies')->whereDate('game_date', $day)->delete();
+                if ($rows) DB::table('active_starting_goalies')->insert($rows);
+            });
+            $stored = DB::table('active_starting_goalies')->whereDate('game_date', $day)
+                ->get(['player_name','team','opponent','home_away','starting_status']);
+            $this->info($day.': '.$stored->count().' DFO goalies refreshed ('.$data['source'].')');
+            Log::info('Daily Faceoff goalie refresh completed', [
+                'date'=>$day, 'source'=>$data['source'], 'rows'=>$stored->count(), 'goalies'=>$stored->all(),
+            ]);
+        } catch (\Throwable $e) {
+            $failed = true;
+            Log::error('Daily Faceoff goalie refresh failed', ['date'=>$day,'error'=>$e->getMessage()]);
+            $this->error($day.': '.$e->getMessage());
+        }
+    }
     return $failed?1:0;
 });
 Schedule::command('ecfhl:refresh-daily-players')->hourlyAt(30)->withoutOverlapping(55);

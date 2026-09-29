@@ -1,0 +1,65 @@
+{
+  "page": "/starting-goalies/[[...date]]",
+  "props": {
+    "pageProps": {
+      "date": "2026-09-29",
+      "data": [
+        {
+          "date": "2026-09-29",
+          "awayTeamName": "Florida Panthers",
+          "awayGoalieName": "Jacob Markstrom",
+          "awayNewsStrengthName": null,
+          "awayNewsCreatedAt": null,
+          "homeTeamName": "Carolina Hurricanes",
+          "homeGoalieName": "Brandon Bussi",
+          "homeNewsStrengthName": null,
+          "homeNewsCreatedAt": null
+        },
+        {
+          "date": "2026-09-29",
+          "awayTeamName": "Montreal Canadiens",
+          "awayGoalieName": "Jakub Dobes",
+          "awayNewsStrengthName": null,
+          "awayNewsCreatedAt": null,
+          "homeTeamName": "Toronto Maple Leafs",
+          "homeGoalieName": "Sergei Bobrovsky",
+          "homeNewsStrengthName": null,
+          "homeNewsCreatedAt": null
+        },
+        {
+          "date": "2026-09-29",
+          "awayTeamName": "New York Rangers",
+          "awayGoalieName": "Igor Shesterkin",
+          "awayNewsStrengthName": null,
+          "awayNewsCreatedAt": null,
+          "homeTeamName": "Boston Bruins",
+          "homeGoalieName": "Jeremy Swayman",
+          "homeNewsStrengthName": null,
+          "homeNewsCreatedAt": null
+        },
+        {
+          "date": "2026-09-29",
+          "awayTeamName": "Vancouver Canucks",
+          "awayGoalieName": "Kevin Lankinen",
+          "awayNewsStrengthName": null,
+          "awayNewsCreatedAt": null,
+          "homeTeamName": "Edmonton Oilers",
+          "homeGoalieName": "Tristan Jarry",
+          "homeNewsStrengthName": "Confirmed",
+          "homeNewsCreatedAt": "2026-09-28T17:42:37.590Z"
+        },
+        {
+          "date": "2026-09-29",
+          "awayTeamName": "Chicago Blackhawks",
+          "awayGoalieName": "Spencer Knight",
+          "awayNewsStrengthName": null,
+          "awayNewsCreatedAt": null,
+          "homeTeamName": "Vegas Golden Knights",
+          "homeGoalieName": "Carter Hart",
+          "homeNewsStrengthName": null,
+          "homeNewsCreatedAt": null
+        }
+      ]
+    }
+  }
+}
