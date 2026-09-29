@@ -94,6 +94,6 @@ $html = view('ai-tips', [
     'snapshot'=>['date'=>$date],
     'groups'=>$groups,
 ])->render();
-verifyTips(str_contains($html, 'Top 10 available forwards') && str_contains($html, 'Top 5 available defensemen') && str_contains($html, 'Top 10 available goalies'), 'Render database-backed AI Tips sections.');
+verifyTips(str_contains($html, 'Available forwards') && str_contains($html, 'Available defensemen') && str_contains($html, 'Available goalies'), 'Render database-backed AI Tips sections.');
 
 echo "AI Tips checks passed.\n";
