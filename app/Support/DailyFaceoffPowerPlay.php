@@ -29,11 +29,14 @@ class DailyFaceoffPowerPlay
         $response->throw();
         $html = $response->body();
 
+        // strip_tags() can concatenate the timestamp with the following "Source:"
+        // label, so match the ISO-8601 timestamp itself instead of reading until
+        // the next whitespace character.
         $plain = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5);
-        if (!preg_match('/Last updated:\s*(\d{4}-\d{2}-\d{2}T[^\s<]+)/i', $plain, $match)) {
+        if (!preg_match('/Last updated:\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2}))/i', $plain, $match)) {
             throw new RuntimeException("Could not find Daily Faceoff last-updated value for {$team}");
         }
-        $lastUpdate = CarbonImmutable::parse(trim($match[1]))->utc();
+        $lastUpdate = CarbonImmutable::parse($match[1])->utc();
 
         $players = [];
         foreach ([1 => '1st Powerplay Unit', 2 => '2nd Powerplay Unit'] as $unit => $heading) {
