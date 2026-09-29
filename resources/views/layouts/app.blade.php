@@ -24,7 +24,7 @@
 @if(request()->is('ai-tips'))
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
- const setup=(id,title,withFilters=false,withGoalieFilters=false)=>{
+ const setup=(id,title,withSkaterFilters=false,withGoalieFilters=false)=>{
    const section=document.getElementById(id);if(!section)return;
    const heading=section.querySelector('h2');if(heading)heading.textContent=title;
    const rows=[...section.querySelectorAll('tbody tr')].filter(row=>!row.querySelector('.empty'));
@@ -34,54 +34,45 @@ document.addEventListener('DOMContentLoaded',()=>{
    const selectedPp=new Set();
    const selectedGoalies=new Set();
 
-   const matchesSearch=row=>{
-     if(!searchTerm)return true;
-     const playerCell=row.querySelector('[data-label="Goalie"],[data-label="Player"]');
-     const text=(playerCell?.textContent||'').toLowerCase();
-     return text.includes(searchTerm);
-   };
-
-   const matchesFilters=row=>{
-     const searchWrap=document.createElement('div');
+   const searchWrap=document.createElement('div');
    searchWrap.className='tips-search-wrap';
    searchWrap.innerHTML='<input type="search" class="tips-search" placeholder="Search '+title.replace('Available ','').toLowerCase()+'..." aria-label="Search '+title+'">';
    const sectionTitle=section.querySelector('.section-title');
    if(sectionTitle)sectionTitle.insertAdjacentElement('afterend',searchWrap);
    else if(heading)heading.insertAdjacentElement('afterend',searchWrap);
-   const searchInput=searchWrap.querySelector('.tips-search');
-   searchInput.addEventListener('input',()=>{
-     searchTerm=searchInput.value.trim().toLowerCase();
-     visible=5;
-     render();
-   });
 
-   if(withGoalieFilters){
-       if(!selectedGoalies.size)return true;
+   const matchesSearch=row=>{
+     if(!searchTerm)return true;
+     const playerCell=row.querySelector('[data-label="Goalie"],[data-label="Player"]');
+     return (playerCell?.textContent||'').toLowerCase().includes(searchTerm);
+   };
+
+   const matchesFilters=row=>{
+     if(withGoalieFilters&&selectedGoalies.size){
        const goaliePill=row.querySelector('.tips-g1,.tips-g2');
        if(!goaliePill)return false;
-       return selectedGoalies.has(goaliePill.classList.contains('tips-g1')?'1':'2');
+       const depth=goaliePill.classList.contains('tips-g1')?'1':'2';
+       if(!selectedGoalies.has(depth))return false;
      }
-     if(!withFilters)return true;
 
-     let lineMatch=true;
-     if(selectedLines.size){
-       const linePill=row.querySelector('.tips-line');
-       if(!linePill)lineMatch=false;
-       else{
+     if(withSkaterFilters){
+       if(selectedLines.size){
+         const linePill=row.querySelector('.tips-line');
+         if(!linePill)return false;
          const match=[...linePill.classList].find(x=>/^tips-line-[1-4]$/.test(x));
          const line=match?match.replace('tips-line-',''):null;
-         lineMatch=!!line&&selectedLines.has(line);
+         if(!line||!selectedLines.has(line))return false;
+       }
+
+       if(selectedPp.size){
+         const ppPill=row.querySelector('.tips-pp1,.tips-pp2');
+         if(!ppPill)return false;
+         const pp=ppPill.classList.contains('tips-pp1')?'1':'2';
+         if(!selectedPp.has(pp))return false;
        }
      }
 
-     let ppMatch=true;
-     if(selectedPp.size){
-       const ppPill=row.querySelector('.tips-pp1,.tips-pp2');
-       if(!ppPill)ppMatch=false;
-       else ppMatch=selectedPp.has(ppPill.classList.contains('tips-pp1')?'1':'2');
-     }
-
-     return lineMatch&&ppMatch;
+     return true;
    };
 
    const moreButton=document.createElement('button');
@@ -96,37 +87,28 @@ document.addEventListener('DOMContentLoaded',()=>{
      moreButton.style.display=eligible.length>visible?'block':'none';
    };
 
-   moreButton.addEventListener('click',()=>{visible+=10;render();});
+   searchWrap.querySelector('.tips-search').addEventListener('input',event=>{
+     searchTerm=event.target.value.trim().toLowerCase();
+     visible=5;
+     render();
+   });
 
    if(withGoalieFilters){
      const filterWrap=document.createElement('div');
      filterWrap.className='tips-line-pp-filters';
      filterWrap.setAttribute('role','group');
      filterWrap.setAttribute('aria-label',title+' goalie depth filters');
-     filterWrap.innerHTML=
-       '<div class="tips-filter-row tips-goalie-filter-row">'+
-       '<button type="button" class="tips-filter-button tips-goalie-filter" data-goalie="1" aria-pressed="false">G1</button>'+
-       '<button type="button" class="tips-filter-button tips-goalie-filter" data-goalie="2" aria-pressed="false">G2</button>'+
-       '</div>';
-
+     filterWrap.innerHTML='<div class="tips-filter-row tips-goalie-filter-row"><button type="button" class="tips-filter-button tips-goalie-filter" data-goalie="1" aria-pressed="false">G1</button><button type="button" class="tips-filter-button tips-goalie-filter" data-goalie="2" aria-pressed="false">G2</button></div>';
      searchWrap.insertAdjacentElement('afterend',filterWrap);
-
      filterWrap.querySelectorAll('.tips-goalie-filter').forEach(filter=>filter.addEventListener('click',()=>{
-       const goalie=filter.dataset.goalie;
-       if(selectedGoalies.has(goalie)){
-         selectedGoalies.delete(goalie);
-         filter.classList.remove('active');
-         filter.setAttribute('aria-pressed','false');
-       }else{
-         selectedGoalies.add(goalie);
-         filter.classList.add('active');
-         filter.setAttribute('aria-pressed','true');
-       }
+       const value=filter.dataset.goalie;
+       if(selectedGoalies.has(value)){selectedGoalies.delete(value);filter.classList.remove('active');filter.setAttribute('aria-pressed','false');}
+       else{selectedGoalies.add(value);filter.classList.add('active');filter.setAttribute('aria-pressed','true');}
        visible=5;render();
      }));
    }
 
-   if(withFilters){
+   if(withSkaterFilters){
      const filterWrap=document.createElement('div');
      filterWrap.className='tips-line-pp-filters';
      filterWrap.setAttribute('role','group');
@@ -142,46 +124,31 @@ document.addEventListener('DOMContentLoaded',()=>{
        '<button type="button" class="tips-filter-button tips-pp-filter" data-pp="1" aria-pressed="false">PP1</button>'+
        '<button type="button" class="tips-filter-button tips-pp-filter" data-pp="2" aria-pressed="false">PP2</button>'+
        '</div>';
-
      searchWrap.insertAdjacentElement('afterend',filterWrap);
 
      filterWrap.querySelectorAll('.tips-line-filter').forEach(filter=>filter.addEventListener('click',()=>{
-       const line=filter.dataset.line;
-       if(selectedLines.has(line)){
-         selectedLines.delete(line);
-         filter.classList.remove('active');
-         filter.setAttribute('aria-pressed','false');
-       }else{
-         selectedLines.add(line);
-         filter.classList.add('active');
-         filter.setAttribute('aria-pressed','true');
-       }
+       const value=filter.dataset.line;
+       if(selectedLines.has(value)){selectedLines.delete(value);filter.classList.remove('active');filter.setAttribute('aria-pressed','false');}
+       else{selectedLines.add(value);filter.classList.add('active');filter.setAttribute('aria-pressed','true');}
        visible=5;render();
      }));
 
      filterWrap.querySelectorAll('.tips-pp-filter').forEach(filter=>filter.addEventListener('click',()=>{
-       const pp=filter.dataset.pp;
-       if(selectedPp.has(pp)){
-         selectedPp.delete(pp);
-         filter.classList.remove('active');
-         filter.setAttribute('aria-pressed','false');
-       }else{
-         selectedPp.add(pp);
-         filter.classList.add('active');
-         filter.setAttribute('aria-pressed','true');
-       }
+       const value=filter.dataset.pp;
+       if(selectedPp.has(value)){selectedPp.delete(value);filter.classList.remove('active');filter.setAttribute('aria-pressed','false');}
+       else{selectedPp.add(value);filter.classList.add('active');filter.setAttribute('aria-pressed','true');}
        visible=5;render();
      }));
    }
 
-   const card=section.querySelector('.table-card');
-   if(card)card.insertAdjacentElement('afterend',moreButton);
+   moreButton.addEventListener('click',()=>{visible+=10;render();});
+   const card=section.querySelector('.table-card');if(card)card.insertAdjacentElement('afterend',moreButton);
    render();
  };
 
  setup('goalies','Available goalies',false,true);
- setup('forwards','Available forwards',true);
- setup('defensemen','Available defensemen',true);
+ setup('forwards','Available forwards',true,false);
+ setup('defensemen','Available defensemen',true,false);
 });
 </script>
 <style>
