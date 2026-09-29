@@ -55,6 +55,6 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
     }catch(\Throwable $e){Log::error('Daily Faceoff goalie refresh failed',['date'=>$date->format('Y-m-d'),'error'=>$e->getMessage()]);$this->error($date->format('Y-m-d').': '.$e->getMessage());}}
 });
 
-Schedule::command('ecfhl:refresh-daily-players')->hourlyAt(7)->withoutOverlapping(55);
+Schedule::command('ecfhl:refresh-daily-players')->hourlyAt(30)->withoutOverlapping(55);
 Schedule::command('ecfhl:refresh-starting-goalies')->hourlyAt(12)->withoutOverlapping(55)->runInBackground();
 Schedule::command('ecfhl:refresh-pp-lines')->cron('17 */4 * * *')->withoutOverlapping(240)->runInBackground();
