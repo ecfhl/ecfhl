@@ -13,8 +13,7 @@ class FantraxAvailablePlayers
     public function url(CarbonImmutable $date): string
     {
         $day = $date->format('Y-m-d');
-        $previous = $date->subDay()->format('Y-m-d');
-        return 'https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/players;maxResultsPerPage=500;pageNumber=1;seasonOrProjection=PROJECTION_0_31n_SEASON;timeframeTypeCode=PROJECTED_SEASON;startDate='.$day.';endDate='.$previous.';datePlaying='.$day;
+        return 'https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/players;maxResultsPerPage=500;pageNumber=1;seasonOrProjection=PROJECTION_0_31n_SEASON;timeframeTypeCode=PROJECTED_SEASON;startDate='.$day.';endDate='.$day.';datePlaying='.$day;
     }
 
     public function fetch(CarbonImmutable $date): array
@@ -61,7 +60,6 @@ class FantraxAvailablePlayers
 
         $rows = array_values(array_unique($rows, SORT_REGULAR));
         if (!$rows) {
-            // An actual no-games day is valid only when the page itself clearly has no player rows.
             if (preg_match('/no players|no results|0 results/i', strip_tags($body))) return ['url'=>$url, 'rows'=>[]];
             throw new RuntimeException('Fantrax returned no parseable player records; existing daily data preserved.');
         }
