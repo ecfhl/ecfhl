@@ -43,6 +43,35 @@ Route::get('/players',function(EcfhlData $data){$q=trim((string)request('q',''))
 Route::get('/rules',function(){$sections=DB::table('rules')->orderBy('rule_id')->get()->groupBy('section')->map(fn($rows)=>$rows->pluck('rule_text')->all())->all();return view('rules',compact('sections'));
 });
 
+Route::get('/job-status', function () {
+    $now = \Carbon\CarbonImmutable::now('America/Halifax');
+    $format = fn($value) => $value ? \Carbon\CarbonImmutable::parse($value)->setTimezone('America/Halifax')->format('M j, Y · g:i a T') : null;
+    $state = function ($value, int $minutes) use ($now) {
+        if (!$value) return 'No data';
+        return \Carbon\CarbonImmutable::parse($value)->setTimezone('America/Halifax')->gte($now->subMinutes($minutes)) ? 'Current' : 'Stale';
+    };
+    $nextHourly = function (int $minute) use ($now) {
+        $next = $now->startOfHour()->minute($minute);
+        if ($next->lte($now)) $next = $next->addHour();
+        return $next->format('M j · g:i a T');
+    };
+    $nextFourHourly = function (int $minute) use ($now) {
+        $hour = (int)$now->format('G'); $nextHour = $hour - ($hour % 4);
+        $next = $now->startOfDay()->addHours($nextHour)->minute($minute);
+        if ($next->lte($now)) $next = $next->addHours(4);
+        return $next->format('M j · g:i a T');
+    };
+    $fantraxLast = DB::table('active_daily_players')->max('last_update');
+    $goaliesLast = DB::table('active_starting_goalies')->max('checked_at');
+    $linesLast = DB::table('active_pp_lines')->max('last_update');
+    $jobs = [
+        ['name'=>'Fantrax Available Players','schedule'=>'Every hour at :07','last_update'=>$format($fantraxLast),'records'=>DB::table('active_daily_players')->count(),'next_run'=>$nextHourly(7),'state'=>$state($fantraxLast,90),'description'=>'Available players playing today and tomorrow, including projected fantasy points.'],
+        ['name'=>'Daily Faceoff Goalies','schedule'=>'Every hour at :12','last_update'=>$format($goaliesLast),'records'=>DB::table('active_starting_goalies')->count(),'next_run'=>$nextHourly(12),'state'=>$state($goaliesLast,90),'description'=>'Starting-goalie status for today and tomorrow.'],
+        ['name'=>'Daily Faceoff Lines','schedule'=>'Every 4 hours at :17','last_update'=>$format($linesLast),'records'=>DB::table('active_pp_lines')->count(),'next_run'=>$nextFourHourly(17),'state'=>$state($linesLast,300),'description'=>'Current PP1 and PP2 assignments for all NHL teams.'],
+    ];
+    return view('job-status', compact('jobs'));
+});
+
 Route::get('/ai-tips', function () {
     $now = \Carbon\CarbonImmutable::now('America/Halifax');
     $today = $now->toDateString();
