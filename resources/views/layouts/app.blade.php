@@ -29,12 +29,33 @@ document.addEventListener('DOMContentLoaded',()=>{
    const heading=section.querySelector('h2');if(heading)heading.textContent=title;
    const rows=[...section.querySelectorAll('tbody tr')].filter(row=>!row.querySelector('.empty'));
    let visible=5;
+   let searchTerm='';
    const selectedLines=new Set();
    const selectedPp=new Set();
    const selectedGoalies=new Set();
 
+   const matchesSearch=row=>{
+     if(!searchTerm)return true;
+     const playerCell=row.querySelector('[data-label="Goalie"],[data-label="Player"]');
+     const text=(playerCell?.textContent||'').toLowerCase();
+     return text.includes(searchTerm);
+   };
+
    const matchesFilters=row=>{
-     if(withGoalieFilters){
+     const searchWrap=document.createElement('div');
+   searchWrap.className='tips-search-wrap';
+   searchWrap.innerHTML='<input type="search" class="tips-search" placeholder="Search '+title.replace('Available ','').toLowerCase()+'..." aria-label="Search '+title+'">';
+   const sectionTitle=section.querySelector('.section-title');
+   if(sectionTitle)sectionTitle.insertAdjacentElement('afterend',searchWrap);
+   else if(heading)heading.insertAdjacentElement('afterend',searchWrap);
+   const searchInput=searchWrap.querySelector('.tips-search');
+   searchInput.addEventListener('input',()=>{
+     searchTerm=searchInput.value.trim().toLowerCase();
+     visible=5;
+     render();
+   });
+
+   if(withGoalieFilters){
        if(!selectedGoalies.size)return true;
        const goaliePill=row.querySelector('.tips-g1,.tips-g2');
        if(!goaliePill)return false;
@@ -69,7 +90,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    moreButton.textContent='See more results';
 
    const render=()=>{
-     const eligible=rows.filter(matchesFilters);
+     const eligible=rows.filter(row=>matchesSearch(row)&&matchesFilters(row));
      rows.forEach(row=>row.style.display='none');
      eligible.slice(0,visible).forEach(row=>row.style.display='');
      moreButton.style.display=eligible.length>visible?'block':'none';
@@ -88,9 +109,7 @@ document.addEventListener('DOMContentLoaded',()=>{
        '<button type="button" class="tips-filter-button tips-goalie-filter" data-goalie="2" aria-pressed="false">G2</button>'+
        '</div>';
 
-     const sectionTitle=section.querySelector('.section-title');
-     if(sectionTitle)sectionTitle.insertAdjacentElement('afterend',filterWrap);
-     else if(heading)heading.insertAdjacentElement('afterend',filterWrap);
+     searchWrap.insertAdjacentElement('afterend',filterWrap);
 
      filterWrap.querySelectorAll('.tips-goalie-filter').forEach(filter=>filter.addEventListener('click',()=>{
        const goalie=filter.dataset.goalie;
@@ -124,9 +143,7 @@ document.addEventListener('DOMContentLoaded',()=>{
        '<button type="button" class="tips-filter-button tips-pp-filter" data-pp="2" aria-pressed="false">PP2</button>'+
        '</div>';
 
-     const sectionTitle=section.querySelector('.section-title');
-     if(sectionTitle)sectionTitle.insertAdjacentElement('afterend',filterWrap);
-     else if(heading)heading.insertAdjacentElement('afterend',filterWrap);
+     searchWrap.insertAdjacentElement('afterend',filterWrap);
 
      filterWrap.querySelectorAll('.tips-line-filter').forEach(filter=>filter.addEventListener('click',()=>{
        const line=filter.dataset.line;
@@ -170,6 +187,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 <style>
 .tips-see-more{display:block;margin:14px auto 0;min-width:180px;cursor:pointer}
 .tips-show-more{display:none!important}
+.tips-search-wrap{margin:10px 0 8px}
+.tips-search{width:min(360px,100%);border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;outline:none}
+.tips-search:focus{border-color:#64748b;box-shadow:0 0 0 3px rgba(100,116,139,.12)}
 .tips-line-pp-filters{display:flex;flex-direction:column;align-items:flex-start;gap:7px;margin:10px 0 12px}
 .tips-filter-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .tips-filter-button{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:7px 13px;font-weight:800;font-size:12px;cursor:pointer;transition:.15s ease}
