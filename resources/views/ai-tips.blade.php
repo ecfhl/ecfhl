@@ -33,7 +33,8 @@
                 <thead><tr><th scope="col">Goalie</th><th scope="col">Opponent</th><th scope="col">Status</th><th scope="col">Starting status</th><th scope="col">Proj. season FPts</th><th scope="col">Fantrax</th></tr></thead>
                 <tbody>@forelse($groups['G'] as $player)<tr>
                     @php($isAway = str_starts_with(trim($player['opponent'] ?? ''), '@'))
-                    <td data-label="Goalie" data-opponent="{{ $player['opponent'] }}" class="tips-player-cell {{ $isAway ? 'tips-away' : 'tips-home' }}"><strong>@if(!empty($player['injury_status']) && preg_match('/IR/i', $player['injury_status']))<span class="pill tips-ir">IR</span>@endif<span class="tips-player-name">{{ $player['name'] }} ({{ $player['team'] }})</span></strong></td>
+                    @php($mobileOpponent = $isAway ? $player['opponent'] : 'vs '.trim($player['opponent'] ?? ''))
+                    <td data-label="Goalie" data-opponent="{{ $mobileOpponent }}" class="tips-player-cell {{ $isAway ? 'tips-away' : 'tips-home' }}"><strong>@if(!empty($player['injury_status']) && preg_match('/IR/i', $player['injury_status']))<span class="pill tips-ir">IR</span>@endif<span class="tips-player-name">{{ $player['name'] }} ({{ $player['team'] }})</span></strong></td>
                     <td data-label="Opponent">{{ $player['opponent'] }}</td>
                     <td data-label="Status"><span class="pill {{ $player['status']==='FA'?'tips-fa':'tips-waiver' }}">{{ $player['status'] }}</span></td>
                     <td data-label="Starting">@if(!empty($player['starting_status']))@php($startingClass = match(strtolower($player['starting_status'])) {'confirmed' => 'tips-start-confirmed', 'probable' => 'tips-start-probable', default => 'tips-start-unconfirmed'})<span class="pill {{ $startingClass }}">{{ $player['starting_status'] }}</span>@else<span class="pill tips-start-na">NA</span>@endif</td>
@@ -50,9 +51,10 @@
                 <thead><tr><th scope="col">#</th><th scope="col">Player</th><th scope="col">Opponent</th><th scope="col">Status</th><th scope="col">Proj. season FPts</th><th scope="col">Fantrax</th></tr></thead>
                 <tbody>@forelse($groups[$position] as $player)<tr>
                     @php($isAway = str_starts_with(trim($player['opponent'] ?? ''), '@'))
+                    @php($mobileOpponent = $isAway ? $player['opponent'] : 'vs '.trim($player['opponent'] ?? ''))
                     @php($playerPpUnit = $ppUnit($player))
                     <td data-label="#">{{ $loop->iteration }}</td>
-                    <td data-label="Player" data-opponent="{{ $player['opponent'] }}" class="tips-player-cell {{ $isAway ? 'tips-away' : 'tips-home' }}"><strong>@if(!empty($player['injury_status']) && preg_match('/IR/i', $player['injury_status']))<span class="pill tips-ir">IR</span>@endif<span class="tips-player-with-pp"><span class="tips-player-name">{{ $player['name'] }} ({{ $player['team'] }})</span>@if($playerPpUnit === 1)<span class="pill tips-pp tips-pp1">PP1</span>@elseif($playerPpUnit === 2)<span class="pill tips-pp tips-pp2">PP2</span>@endif</span></strong></td>
+                    <td data-label="Player" data-opponent="{{ $mobileOpponent }}" class="tips-player-cell {{ $isAway ? 'tips-away' : 'tips-home' }}"><strong>@if(!empty($player['injury_status']) && preg_match('/IR/i', $player['injury_status']))<span class="pill tips-ir">IR</span>@endif<span class="tips-player-with-pp"><span class="tips-player-name">{{ $player['name'] }} ({{ $player['team'] }})</span>@if($playerPpUnit === 1)<span class="pill tips-pp tips-pp1">PP1</span>@elseif($playerPpUnit === 2)<span class="pill tips-pp tips-pp2">PP2</span>@endif</span></strong></td>
                     <td data-label="Opponent">{{ $player['opponent'] }}</td>
                     <td data-label="Status"><span class="pill {{ $player['status']==='FA'?'tips-fa':'tips-waiver' }}">{{ $player['status'] }}</span></td>
                     <td data-label="Proj. FPts"><span class="tips-proj-value">{{ number_format($player['projected_points'], 0) }}</span></td>
