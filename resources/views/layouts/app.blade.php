@@ -24,73 +24,124 @@
 @if(request()->is('ai-tips'))
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
- const setups=[];
- const setup=(id,title,withPpFilters=false)=>{
+ const setup=(id,title,withFilters=false)=>{
    const section=document.getElementById(id);if(!section)return;
    const heading=section.querySelector('h2');if(heading)heading.textContent=title;
    const rows=[...section.querySelectorAll('tbody tr')].filter(row=>!row.querySelector('.empty'));
    let visible=5;
+   const selectedLines=new Set();
    const selectedPp=new Set();
-   let filterWrap=null;
-   const matchesPp=row=>{if(!withPpFilters||!selectedPp.size)return true;const pill=row.querySelector('.tips-pp1,.tips-pp2');if(!pill)return false;return selectedPp.has(pill.classList.contains('tips-pp1')?'1':'2');};
-   const button=document.createElement('button');button.type='button';button.className='button primary tips-see-more';button.textContent='See more results';
-   const render=()=>{const eligible=rows.filter(matchesPp);rows.forEach(row=>row.style.display='none');eligible.slice(0,visible).forEach(row=>row.style.display='');button.style.display=eligible.length>visible?'block':'none';};
-   button.addEventListener('click',()=>{visible+=10;render();});
-   if(withPpFilters){
-     filterWrap=document.createElement('div');filterWrap.className='tips-pp-filters';filterWrap.setAttribute('role','group');filterWrap.setAttribute('aria-label',title+' power play unit');filterWrap.innerHTML='<button type="button" class="tips-pp-filter" data-pp="1" aria-pressed="false">PP1</button><button type="button" class="tips-pp-filter" data-pp="2" aria-pressed="false">PP2</button>';
+
+   const matchesFilters=row=>{
+     if(!withFilters)return true;
+
+     let lineMatch=true;
+     if(selectedLines.size){
+       const linePill=row.querySelector('.tips-line');
+       if(!linePill)lineMatch=false;
+       else{
+         const match=[...linePill.classList].find(x=>/^tips-line-[1-4]$/.test(x));
+         const line=match?match.replace('tips-line-',''):null;
+         lineMatch=!!line&&selectedLines.has(line);
+       }
+     }
+
+     let ppMatch=true;
+     if(selectedPp.size){
+       const ppPill=row.querySelector('.tips-pp1,.tips-pp2');
+       if(!ppPill)ppMatch=false;
+       else ppMatch=selectedPp.has(ppPill.classList.contains('tips-pp1')?'1':'2');
+     }
+
+     return lineMatch&&ppMatch;
+   };
+
+   const moreButton=document.createElement('button');
+   moreButton.type='button';
+   moreButton.className='button primary tips-see-more';
+   moreButton.textContent='See more results';
+
+   const render=()=>{
+     const eligible=rows.filter(matchesFilters);
+     rows.forEach(row=>row.style.display='none');
+     eligible.slice(0,visible).forEach(row=>row.style.display='');
+     moreButton.style.display=eligible.length>visible?'block':'none';
+   };
+
+   moreButton.addEventListener('click',()=>{visible+=10;render();});
+
+   if(withFilters){
+     const filterWrap=document.createElement('div');
+     filterWrap.className='tips-line-pp-filters';
+     filterWrap.setAttribute('role','group');
+     filterWrap.setAttribute('aria-label',title+' line and power play filters');
+     filterWrap.innerHTML=
+       '<div class="tips-filter-row tips-line-filter-row">'+
+       '<button type="button" class="tips-filter-button tips-line-filter" data-line="1" aria-pressed="false">L1</button>'+
+       '<button type="button" class="tips-filter-button tips-line-filter" data-line="2" aria-pressed="false">L2</button>'+
+       '<button type="button" class="tips-filter-button tips-line-filter" data-line="3" aria-pressed="false">L3</button>'+
+       '<button type="button" class="tips-filter-button tips-line-filter" data-line="4" aria-pressed="false">L4</button>'+
+       '</div>'+
+       '<div class="tips-filter-row tips-pp-filter-row">'+
+       '<button type="button" class="tips-filter-button tips-pp-filter" data-pp="1" aria-pressed="false">PP1</button>'+
+       '<button type="button" class="tips-filter-button tips-pp-filter" data-pp="2" aria-pressed="false">PP2</button>'+
+       '</div>';
+
      const sectionTitle=section.querySelector('.section-title');
-     if(sectionTitle)sectionTitle.insertAdjacentElement('afterend',filterWrap);else if(heading)heading.insertAdjacentElement('afterend',filterWrap);
-     filterWrap.querySelectorAll('.tips-pp-filter').forEach(filter=>filter.addEventListener('click',()=>{const pp=filter.dataset.pp;if(selectedPp.has(pp)){selectedPp.delete(pp);filter.classList.remove('active');filter.setAttribute('aria-pressed','false');}else{selectedPp.add(pp);filter.classList.add('active');filter.setAttribute('aria-pressed','true');}visible=5;render();}));
+     if(sectionTitle)sectionTitle.insertAdjacentElement('afterend',filterWrap);
+     else if(heading)heading.insertAdjacentElement('afterend',filterWrap);
+
+     filterWrap.querySelectorAll('.tips-line-filter').forEach(filter=>filter.addEventListener('click',()=>{
+       const line=filter.dataset.line;
+       if(selectedLines.has(line)){
+         selectedLines.delete(line);
+         filter.classList.remove('active');
+         filter.setAttribute('aria-pressed','false');
+       }else{
+         selectedLines.add(line);
+         filter.classList.add('active');
+         filter.setAttribute('aria-pressed','true');
+       }
+       visible=5;render();
+     }));
+
+     filterWrap.querySelectorAll('.tips-pp-filter').forEach(filter=>filter.addEventListener('click',()=>{
+       const pp=filter.dataset.pp;
+       if(selectedPp.has(pp)){
+         selectedPp.delete(pp);
+         filter.classList.remove('active');
+         filter.setAttribute('aria-pressed','false');
+       }else{
+         selectedPp.add(pp);
+         filter.classList.add('active');
+         filter.setAttribute('aria-pressed','true');
+       }
+       visible=5;render();
+     }));
    }
-   const card=section.querySelector('.table-card');if(card)card.insertAdjacentElement('afterend',button);
-   setups.push({id,render});render();
+
+   const card=section.querySelector('.table-card');
+   if(card)card.insertAdjacentElement('afterend',moreButton);
+   render();
  };
+
  setup('goalies','Available goalies');
  setup('forwards','Available forwards',true);
  setup('defensemen','Available defensemen',true);
-
- const refreshForm=document.querySelector('.tips-run-all');
- if(refreshForm){
-   refreshForm.addEventListener('submit',async event=>{
-     event.preventDefault();
-     const button=refreshForm.querySelector('button');
-     const token=refreshForm.querySelector('input[name="_token"]').value;
-     button.disabled=true;button.textContent='Refreshing…';
-     let box=document.getElementById('live-refresh-progress');
-     if(!box){box=document.createElement('div');box.id='live-refresh-progress';box.className='job-message job-message-ok live-refresh-progress';refreshForm.closest('.tips-toolbar').insertAdjacentElement('afterend',box);}
-     const lines=[];const draw=()=>box.textContent=lines.join('\n');
-     const run=async job=>{
-       const response=await fetch('/job-status/run/'+job,{method:'POST',headers:{'X-CSRF-TOKEN':token,'Accept':'application/json','Content-Type':'application/x-www-form-urlencoded'},body:'return_to=ai-tips'});
-       const data=await response.json();
-       if(!response.ok)throw new Error(data.message||'Refresh failed');
-       return data.details[job]?.output||'';
-     };
-     try{
-       lines.push('Getting available players in Fantrax...');draw();
-       const playerOutput=await run('players');
-       const playerMatches=[...playerOutput.matchAll(/\d{4}-\d{2}-\d{2}:\s+(\d+) Fantrax players refreshed/g)];
-       const playerCount=playerMatches.reduce((sum,m)=>sum+Number(m[1]),0);
-       lines.push(playerCount+' records updated','');draw();
-
-       lines.push('Getting goalie information from Daily Faceoff...');draw();
-       const goalieOutput=await run('goalies');
-       const goalieMatches=[...goalieOutput.matchAll(/(\d{4}-\d{2}-\d{2}):\s+(\d+) DFO goalies refreshed/g)];
-       goalieMatches.forEach(m=>lines.push(m[2]+' Goalies for '+m[1]));
-       lines.push('');draw();
-
-       lines.push('Getting Lines information from Daily Faceoff...');draw();
-       const lineOutput=await run('lines');
-       const teams=[...lineOutput.matchAll(/^([A-Z]{2,3}): updated$/gm)].map(m=>m[1]);
-       lines.push(teams.length+' Lines updated'+(teams.length?' ('+teams.join(', ')+')':''));draw();
-       button.textContent='Refresh Data';button.disabled=false;
-     }catch(error){
-       box.classList.remove('job-message-ok');box.classList.add('job-message-error');lines.push('Refresh failed: '+error.message);draw();button.textContent='Refresh Data';button.disabled=false;
-     }
-   });
- }
 });
 </script>
-<style>.tips-see-more{display:block;margin:14px auto 0;min-width:180px;cursor:pointer}.tips-show-more{display:none!important}.tips-pp-filters{display:flex;align-items:center;gap:8px;margin:10px 0 12px}.tips-pp-filter{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:8px 15px;font-weight:800;font-size:12px;cursor:pointer;transition:.15s ease}.tips-pp-filter:hover{border-color:#8b5cf6}.tips-pp-filter[data-pp="1"].active{background:#7c3aed;color:#fff;border-color:#6d28d9;box-shadow:0 2px 8px rgba(124,58,237,.22)}.tips-pp-filter[data-pp="2"].active{background:#ddd6fe;color:#4c1d95;border-color:#a78bfa;box-shadow:0 2px 8px rgba(124,58,237,.14)}.live-refresh-progress{margin:0 0 18px;white-space:pre-line;line-height:1.55}@media(max-width:600px){.tips-pp-filters{margin:10px 0 12px}}</style>
+<style>
+.tips-see-more{display:block;margin:14px auto 0;min-width:180px;cursor:pointer}
+.tips-show-more{display:none!important}
+.tips-line-pp-filters{display:flex;flex-direction:column;align-items:flex-start;gap:7px;margin:10px 0 12px}
+.tips-filter-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tips-filter-button{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:7px 13px;font-weight:800;font-size:12px;cursor:pointer;transition:.15s ease}
+.tips-filter-button:hover{border-color:#64748b}
+.tips-line-filter.active{background:#2563eb;color:#fff;border-color:#1d4ed8;box-shadow:0 2px 8px rgba(37,99,235,.18)}
+.tips-pp-filter[data-pp="1"].active{background:#7c3aed;color:#fff;border-color:#6d28d9;box-shadow:0 2px 8px rgba(124,58,237,.22)}
+.tips-pp-filter[data-pp="2"].active{background:#ddd6fe;color:#4c1d95;border-color:#a78bfa;box-shadow:0 2px 8px rgba(124,58,237,.14)}
+@media(max-width:600px){.tips-line-pp-filters{margin:10px 0 12px}.tips-filter-button{padding:7px 12px}}
+</style>
 @endif
 <style>.header-actions{display:flex;align-items:center;gap:8px;margin-left:auto}.header-theme-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}@media(min-width:901px){.header-actions{order:3}.main-nav{order:2}.header-theme-toggle{margin-left:6px}}</style>
 @stack('scripts')
