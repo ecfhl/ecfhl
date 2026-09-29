@@ -42,14 +42,14 @@ class DailyFaceoffPowerPlay
 
         $forwardSegment = substr($html, $forwardStart, $defenseStart - $forwardStart);
         $forwardNames = $this->playerNames($forwardSegment);
-        if (count($forwardNames) < 12) {
-            throw new RuntimeException("Expected 12 forwards for {$team}, found ".count($forwardNames));
+        if (count($forwardNames) < 9) {
+            throw new RuntimeException("Expected at least 9 forwards for {$team}, found ".count($forwardNames));
         }
         foreach (array_slice($forwardNames, 0, 12) as $position => $name) {
             $lines[] = [
                 'player_name'=>$name,
                 'position_group'=>'F',
-                'line_number'=>intdiv($position, 3) + 1,
+                'line_number'=>min(4, intdiv($position, 3) + 1),
                 'unit_position'=>($position % 3) + 1,
             ];
         }
@@ -61,13 +61,13 @@ class DailyFaceoffPowerPlay
         $defenseSegment = substr($html, $defenseStart, $defenseEnd - $defenseStart);
         $defenseNames = $this->playerNames($defenseSegment);
         if (count($defenseNames) < 6) {
-            throw new RuntimeException("Expected 6 defensemen for {$team}, found ".count($defenseNames));
+            throw new RuntimeException("Expected at least 6 defensemen for {$team}, found ".count($defenseNames));
         }
-        foreach (array_slice($defenseNames, 0, 6) as $position => $name) {
+        foreach (array_slice($defenseNames, 0, 7) as $position => $name) {
             $lines[] = [
                 'player_name'=>$name,
                 'position_group'=>'D',
-                'line_number'=>intdiv($position, 2) + 1,
+                'line_number'=>min(3, intdiv($position, 2) + 1),
                 'unit_position'=>($position % 2) + 1,
             ];
         }
