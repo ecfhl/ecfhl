@@ -27,9 +27,6 @@ class AiTips
             );
         }
 
-        // Goalies are intentionally independent of active_daily_players. The dedicated
-        // collector fetches Fantrax's goalie pool and joins Daily Faceoff status before
-        // writing active_available_goalies.
         $goalies = DB::table('active_available_goalies')->whereDate('game_date', $date)->get();
         foreach ($goalies as $row) {
             $status = self::availability($row);
@@ -39,12 +36,19 @@ class AiTips
             $groups['G'][] = $player;
         }
 
-        $priority = fn ($p) => match (strtolower(trim($p['starting_status'] ?? ''))) {
-            'confirmed' => 0,
-            'probable' => 1,
-            'unconfirmed' => 2,
-            default => 3,
+        // Starting status is the primary goalie ranking. Projected points only sort
+        // goalies within the same status bucket.
+        $priority = static function ($player): int {
+            $status = strtolower(trim((string) ($player['starting_status'] ?? '')));
+            return match ($status) {
+                'confirmed' => 0,
+                'probable' => 1,
+                'unconfirmed' => 2,
+                '', 'na', 'n/a' => 3,
+                default => 3,
+            };
         };
+
         usort($groups['G'], fn ($a, $b) =>
             ($priority($a) <=> $priority($b))
             ?: (($b['projected_points'] ?? 0) <=> ($a['projected_points'] ?? 0))
