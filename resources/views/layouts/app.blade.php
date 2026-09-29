@@ -24,15 +24,22 @@
 @if(request()->is('ai-tips'))
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
- const setup=(id,title,withFilters=false)=>{
+ const setup=(id,title,withFilters=false,withGoalieFilters=false)=>{
    const section=document.getElementById(id);if(!section)return;
    const heading=section.querySelector('h2');if(heading)heading.textContent=title;
    const rows=[...section.querySelectorAll('tbody tr')].filter(row=>!row.querySelector('.empty'));
    let visible=5;
    const selectedLines=new Set();
    const selectedPp=new Set();
+   const selectedGoalies=new Set();
 
    const matchesFilters=row=>{
+     if(withGoalieFilters){
+       if(!selectedGoalies.size)return true;
+       const goaliePill=row.querySelector('.tips-g1,.tips-g2');
+       if(!goaliePill)return false;
+       return selectedGoalies.has(goaliePill.classList.contains('tips-g1')?'1':'2');
+     }
      if(!withFilters)return true;
 
      let lineMatch=true;
@@ -69,6 +76,36 @@ document.addEventListener('DOMContentLoaded',()=>{
    };
 
    moreButton.addEventListener('click',()=>{visible+=10;render();});
+
+   if(withGoalieFilters){
+     const filterWrap=document.createElement('div');
+     filterWrap.className='tips-line-pp-filters';
+     filterWrap.setAttribute('role','group');
+     filterWrap.setAttribute('aria-label',title+' goalie depth filters');
+     filterWrap.innerHTML=
+       '<div class="tips-filter-row tips-goalie-filter-row">'+
+       '<button type="button" class="tips-filter-button tips-goalie-filter" data-goalie="1" aria-pressed="false">G1</button>'+
+       '<button type="button" class="tips-filter-button tips-goalie-filter" data-goalie="2" aria-pressed="false">G2</button>'+
+       '</div>';
+
+     const sectionTitle=section.querySelector('.section-title');
+     if(sectionTitle)sectionTitle.insertAdjacentElement('afterend',filterWrap);
+     else if(heading)heading.insertAdjacentElement('afterend',filterWrap);
+
+     filterWrap.querySelectorAll('.tips-goalie-filter').forEach(filter=>filter.addEventListener('click',()=>{
+       const goalie=filter.dataset.goalie;
+       if(selectedGoalies.has(goalie)){
+         selectedGoalies.delete(goalie);
+         filter.classList.remove('active');
+         filter.setAttribute('aria-pressed','false');
+       }else{
+         selectedGoalies.add(goalie);
+         filter.classList.add('active');
+         filter.setAttribute('aria-pressed','true');
+       }
+       visible=5;render();
+     }));
+   }
 
    if(withFilters){
      const filterWrap=document.createElement('div');
@@ -125,7 +162,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    render();
  };
 
- setup('goalies','Available goalies');
+ setup('goalies','Available goalies',false,true);
  setup('forwards','Available forwards',true);
  setup('defensemen','Available defensemen',true);
 });
@@ -138,6 +175,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 .tips-filter-button{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:7px 13px;font-weight:800;font-size:12px;cursor:pointer;transition:.15s ease}
 .tips-filter-button:hover{border-color:#64748b}
 .tips-line-filter.active{background:#2563eb;color:#fff;border-color:#1d4ed8;box-shadow:0 2px 8px rgba(37,99,235,.18)}
+.tips-goalie-filter[data-goalie="1"].active{background:#dcfce7;color:#166534;border-color:#86efac;box-shadow:0 2px 8px rgba(22,163,74,.14)}
+.tips-goalie-filter[data-goalie="2"].active{background:#fef3c7;color:#92400e;border-color:#fcd34d;box-shadow:0 2px 8px rgba(234,179,8,.14)}
 .tips-pp-filter[data-pp="1"].active{background:#7c3aed;color:#fff;border-color:#6d28d9;box-shadow:0 2px 8px rgba(124,58,237,.22)}
 .tips-pp-filter[data-pp="2"].active{background:#ddd6fe;color:#4c1d95;border-color:#a78bfa;box-shadow:0 2px 8px rgba(124,58,237,.14)}
 @media(max-width:600px){.tips-line-pp-filters{margin:10px 0 12px}.tips-filter-button{padding:7px 12px}}
