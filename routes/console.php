@@ -29,9 +29,11 @@ Artisan::command('ecfhl:refresh-pp-lines {--team=}', function (DailyFaceoffPower
         $data=$scraper->fetch($team,$slug);
         $storedPp=DB::table('active_pp_lines')->where('team',$team)->max('last_update');
         $storedLines=DB::table('active_line_combinations')->where('team',$team)->max('last_update');
-        $storedGoalieDepth=DB::table('active_line_combinations')->where('team',$team)->where('position_group','G')->count();
+        $storedGoalies=DB::table('active_line_combinations')->where('team',$team)->where('position_group','G')->orderBy('line_number')->pluck('player_name')->map(fn($name)=>mb_strtolower(trim($name)))->values()->all();
+        $expectedGoalies=collect($data['lines'])->where('position_group','G')->sortBy('line_number')->pluck('player_name')->map(fn($name)=>mb_strtolower(trim($name)))->values()->all();
+        $goalieDepthCurrent=count($storedGoalies)>=2&&$storedGoalies===$expectedGoalies;
         $ppCurrent=$storedPp&&$data['lastUpdate']->lessThanOrEqualTo(CarbonImmutable::parse($storedPp));
-        $linesCurrent=$storedLines&&$storedGoalieDepth>=2&&$data['lastUpdate']->lessThanOrEqualTo(CarbonImmutable::parse($storedLines));
+        $linesCurrent=$storedLines&&$goalieDepthCurrent&&$data['lastUpdate']->lessThanOrEqualTo(CarbonImmutable::parse($storedLines));
         if($ppCurrent&&$linesCurrent)continue;
         DB::transaction(function()use($data,$team){
             $now=now();
