@@ -45,10 +45,15 @@ Route::get('/rules',function(){$sections=DB::table('rules')->orderBy('rule_id')-
 
 Route::get('/job-status', function () {
     $now = \Carbon\CarbonImmutable::now('America/Halifax');
-    $format = fn($value) => $value ? \Carbon\CarbonImmutable::parse($value)->setTimezone('America/Halifax')->format('M j, Y · g:i a T') : null;
-    $state = function ($value, int $minutes) use ($now) {
+    // MySQL DATETIME values are written by Laravel in UTC. Carbon::parse() would
+    // otherwise interpret the zone-less value using the app timezone and shift it
+    // incorrectly. Treat DB collector timestamps as UTC, then convert for display.
+    $dbTime = fn($value) => $value ? \Carbon\CarbonImmutable::createFromFormat('Y-m-d H:i:s', (string)$value, 'UTC') : null;
+    $format = fn($value) => ($dt=$dbTime($value)) ? $dt->setTimezone('America/Halifax')->format('M j, Y · g:i a T') : null;
+    $state = function ($value, int $minutes) use ($now, $dbTime) {
         if (!$value) return 'No data';
-        return \Carbon\CarbonImmutable::parse($value)->setTimezone('America/Halifax')->gte($now->subMinutes($minutes)) ? 'Current' : 'Stale';
+        $dt=$dbTime($value); if(!$dt) return 'No data';
+        return $dt->setTimezone('America/Halifax')->gte($now->subMinutes($minutes)) ? 'Current' : 'Stale';
     };
     $nextHourly = function (int $minute) use ($now) {
         $next = $now->startOfHour()->minute($minute);
@@ -63,9 +68,12 @@ Route::get('/job-status', function () {
     };
     $fantraxLast = DB::table('active_daily_players')->max('last_update');
     $goaliesLast = DB::table('active_starting_goalies')->max('checked_at');
-    $linesLast = DB::table('active_pp_lines')->max('last_update');
+    // PP source last_update is Daily Faceoff's source timestamp and may legitimately
+    // differ from when our collector ran. Show checked_at here, consistent with the
+    // other cards, so Job Status reports the actual refresh time.
+    $linesLast = DB::table('active_pp_lines')->max('checked_at');
     $jobs = [
-        ['name'=>'Fantrax Available Players','schedule'=>'Every hour at :07','last_update'=>$format($fantraxLast),'records'=>DB::table('active_daily_players')->count(),'next_run'=>$nextHourly(7),'state'=>$state($fantraxLast,90),'description'=>'Available players playing today and tomorrow, including projected fantasy points.'],
+        ['name'=>'Fantrax Available Players','schedule'=>'Every hour at :30','last_update'=>$format($fantraxLast),'records'=>DB::table('active_daily_players')->count(),'next_run'=>$nextHourly(30),'state'=>$state($fantraxLast,90),'description'=>'Available players playing today and tomorrow, including projected fantasy points.'],
         ['name'=>'Daily Faceoff Goalies','schedule'=>'Every hour at :12','last_update'=>$format($goaliesLast),'records'=>DB::table('active_starting_goalies')->count(),'next_run'=>$nextHourly(12),'state'=>$state($goaliesLast,90),'description'=>'Starting-goalie status for today and tomorrow.'],
         ['name'=>'Daily Faceoff Lines','schedule'=>'Every 4 hours at :17','last_update'=>$format($linesLast),'records'=>DB::table('active_pp_lines')->count(),'next_run'=>$nextFourHourly(17),'state'=>$state($linesLast,300),'description'=>'Current PP1 and PP2 assignments for all NHL teams.'],
     ];
@@ -78,15 +86,21 @@ Route::get('/ai-tips', function () {
     $tomorrow = $now->addDay()->toDateString();
     $date = request('date', $today);
     abort_unless(is_string($date) && preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date), 422, 'Use a valid game date.');
-    $parts = array_map('intval', explode('-', $date));
-    abort_unless(checkdate($parts[1], $parts[2], $parts[0]), 422, 'Use a valid game date.');
-    $selectedDate = \Carbon\CarbonImmutable::createFromFormat('!Y-m-d', $date, 'America/Halifax');
-    $directory = database_path('data/ai-tips');
-    $availableDates = array_map(fn($file) => basename($file, '.json'), glob($directory.'/*.json') ?: []);
-    rsort($availableDates);
-    $path = $directory.'/'.$date.'.json';
-    $snapshot = is_file($path) ? json_decode(file_get_contents($path), true) : null;
-    if (($snapshot['date'] ?? null) !== $date) $snapshot = null;
-    $groups = \App\Support\AiTips::groups($snapshot ?? [], $date);
-    return view('ai-tips', compact('date', 'today', 'tomorrow', 'selectedDate', 'availableDates', 'snapshot', 'groups'));
+    if (!in_array($date, [$today, $tomorrow], true)) $date = $today;
+    $selected = $date === $tomorrow ? 'tomorrow' : 'today';
+    $fantraxRows = DB::table('active_daily_players')->whereDate('game_date',$date)->orderByRaw('projected_fpts IS NULL')->orderByDesc('projected_fpts')->orderBy('source_rank')->get();
+    $norm = fn($v)=>preg_replace('/[^\pL\pN]+/u','',mb_strtolower(trim((string)$v)))??'';
+    $ppRows = DB::table('active_pp_lines')->get();
+    $ppByTeam=[]; foreach($ppRows as $p){$ppByTeam[strtoupper($p->team)][$norm($p->player_name)] = 'PP'.(int)$p->pp_unit;}
+    $decorate=function($rows)use($ppByTeam,$norm){return $rows->map(function($p)use($ppByTeam,$norm){$p->pp_unit=$ppByTeam[strtoupper($p->team)][$norm($p->player_name)]??null;return $p;});};
+    $forwards=$decorate($fantraxRows->filter(fn($p)=>strtoupper(trim((string)$p->position))==='F')->values());
+    $defensemen=$decorate($fantraxRows->filter(fn($p)=>strtoupper(trim((string)$p->position))==='D')->values());
+    $dfo = DB::table('active_starting_goalies')->whereDate('game_date',$date)->get();
+    $dfoByTeam=[];$confirmedByTeam=[];foreach($dfo as $g){$team=strtoupper(trim((string)$g->team));$dfoByTeam[$team][$norm($g->player_name)]=$g;if(strtolower(trim((string)$g->starting_status))==='confirmed')$confirmedByTeam[$team]=$norm($g->player_name);}
+    $goalies=$fantraxRows->filter(fn($p)=>strtoupper(trim((string)$p->position))==='G')->map(function($p)use($dfoByTeam,$confirmedByTeam,$norm){$team=strtoupper(trim((string)$p->team));$name=$norm($p->player_name);$g=$dfoByTeam[$team][$name]??null;$p->starting_status=$g?ucfirst(strtolower(trim((string)$g->starting_status))):'NA';$p->not_starting=isset($confirmedByTeam[$team])&&$confirmedByTeam[$team]!==$name;if($p->not_starting)$p->starting_status='Not starting';return $p;})->values();
+    $rank=['Confirmed'=>0,'Probable'=>1,'Unconfirmed'=>2,'NA'=>3,'Not starting'=>4];$goalies=$goalies->sort(function($a,$b)use($rank){$ra=$rank[$a->starting_status]??3;$rb=$rank[$b->starting_status]??3;return $ra===$rb?((float)($b->projected_fpts??-INF)<=>(float)($a->projected_fpts??-INF)):($ra<=>$rb);})->values();
+    return view('ai-tips', compact('date','today','tomorrow','selected','goalies','forwards','defensemen'));
 });
+
+require __DIR__.'/ai-tips-db.php';
+require __DIR__.'/jobs.php';
