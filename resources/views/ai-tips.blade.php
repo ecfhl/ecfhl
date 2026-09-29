@@ -42,7 +42,4 @@
 @media(min-width:851px) and (max-width:1100px){.main-nav a{padding:8px 5px;font-size:12px}.nav-wrap{gap:8px}}
 .tips-table tr.tips-not-starting{opacity:.55;filter:grayscale(1)}.tips-add-button.tips-add-disabled{background:#6b7280;border-color:#6b7280;cursor:not-allowed}
 </style>
-<script>
-document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.tips-section').forEach(section=>{const rows=[...section.querySelectorAll('.tips-result-row')];const button=section.querySelector('.tips-show-more');if(!button||rows.length<=5)return;let visible=5;const render=()=>{rows.forEach((row,index)=>row.hidden=index>=visible);button.hidden=visible>=rows.length;};button.addEventListener('click',()=>{visible=Math.min(visible+10,rows.length);render();});render();});});
-</script>
 @endsection
