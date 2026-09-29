@@ -43,6 +43,31 @@
                 ?: strcasecmp($a['name'] ?? '', $b['name'] ?? '');
         });
     };
+    $sortGoalies = function(array &$players) {
+        usort($players, function($a, $b) {
+            $rank = function($player) {
+                if (!empty($player['not_starting'])) return 5;
+                $status = strtolower(trim($player['starting_status'] ?? ''));
+                return match($status) {
+                    'starting', 'confirmed' => 1,
+                    'likely', 'probable' => 2,
+                    'unconfirmed' => 3,
+                    '', 'na', 'n/a' => 4,
+                    'not starting', 'not_starting' => 5,
+                    default => 4,
+                };
+            };
+            $aRank = $rank($a);
+            $bRank = $rank($b);
+            if ($aRank !== $bRank) return $aRank <=> $bRank;
+            $aPoints = $a['projected_points'] ?? -PHP_FLOAT_MAX;
+            $bPoints = $b['projected_points'] ?? -PHP_FLOAT_MAX;
+            return ($bPoints <=> $aPoints)
+                ?: (($a['source_rank'] ?? PHP_INT_MAX) <=> ($b['source_rank'] ?? PHP_INT_MAX))
+                ?: strcasecmp($a['name'] ?? '', $b['name'] ?? '');
+        });
+    };
+    $sortGoalies($groups['G']);
     $sortSkaters($groups['F']);
     $sortSkaters($groups['D']);
     $hasTips = count($groups['G']) + count($groups['F']) + count($groups['D']) > 0;
