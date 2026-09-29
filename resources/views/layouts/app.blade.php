@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    const section=document.getElementById(id);if(!section)return;
    const heading=section.querySelector('h2');if(heading)heading.textContent=title;
    const rows=[...section.querySelectorAll('tbody tr')].filter(row=>!row.querySelector('.empty'));
-   let visible=10;
+   let visible=5;
    const selectedPp=new Set();
    let filterWrap=null;
    const matchesPp=row=>{if(!withPpFilters||!selectedPp.size)return true;const pill=row.querySelector('.tips-pp1,.tips-pp2');if(!pill)return false;return selectedPp.has(pill.classList.contains('tips-pp1')?'1':'2');};
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded',()=>{
      filterWrap=document.createElement('div');filterWrap.className='tips-pp-filters';filterWrap.setAttribute('role','group');filterWrap.setAttribute('aria-label',title+' power play unit');filterWrap.innerHTML='<button type="button" class="tips-pp-filter" data-pp="1" aria-pressed="false">PP1</button><button type="button" class="tips-pp-filter" data-pp="2" aria-pressed="false">PP2</button>';
      const sectionTitle=section.querySelector('.section-title');
      if(sectionTitle)sectionTitle.insertAdjacentElement('afterend',filterWrap);else if(heading)heading.insertAdjacentElement('afterend',filterWrap);
-     filterWrap.querySelectorAll('.tips-pp-filter').forEach(filter=>filter.addEventListener('click',()=>{const pp=filter.dataset.pp;if(selectedPp.has(pp)){selectedPp.delete(pp);filter.classList.remove('active');filter.setAttribute('aria-pressed','false');}else{selectedPp.add(pp);filter.classList.add('active');filter.setAttribute('aria-pressed','true');}visible=10;render();}));
+     filterWrap.querySelectorAll('.tips-pp-filter').forEach(filter=>filter.addEventListener('click',()=>{const pp=filter.dataset.pp;if(selectedPp.has(pp)){selectedPp.delete(pp);filter.classList.remove('active');filter.setAttribute('aria-pressed','false');}else{selectedPp.add(pp);filter.classList.add('active');filter.setAttribute('aria-pressed','true');}visible=5;render();}));
    }
    const card=section.querySelector('.table-card');if(card)card.insertAdjacentElement('afterend',button);
    setups.push({id,render});render();
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  setup('defensemen','Available defensemen',true);
 });
 </script>
-<style>.tips-see-more{display:block;margin:14px auto 0;min-width:180px;cursor:pointer}.tips-pp-filters{display:flex;align-items:center;gap:8px;margin:10px 0 12px}.tips-pp-filter{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:8px 15px;font-weight:800;font-size:12px;cursor:pointer;transition:.15s ease}.tips-pp-filter:hover{border-color:#8b5cf6}.tips-pp-filter[data-pp="1"].active{background:#7c3aed;color:#fff;border-color:#6d28d9;box-shadow:0 2px 8px rgba(124,58,237,.22)}.tips-pp-filter[data-pp="2"].active{background:#ddd6fe;color:#4c1d95;border-color:#a78bfa;box-shadow:0 2px 8px rgba(124,58,237,.14)}@media(max-width:600px){.tips-pp-filters{margin:10px 0 12px}}</style>
+<style>.tips-see-more{display:block;margin:14px auto 0;min-width:180px;cursor:pointer}.tips-show-more{display:none!important}.tips-pp-filters{display:flex;align-items:center;gap:8px;margin:10px 0 12px}.tips-pp-filter{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:8px 15px;font-weight:800;font-size:12px;cursor:pointer;transition:.15s ease}.tips-pp-filter:hover{border-color:#8b5cf6}.tips-pp-filter[data-pp="1"].active{background:#7c3aed;color:#fff;border-color:#6d28d9;box-shadow:0 2px 8px rgba(124,58,237,.22)}.tips-pp-filter[data-pp="2"].active{background:#ddd6fe;color:#4c1d95;border-color:#a78bfa;box-shadow:0 2px 8px rgba(124,58,237,.14)}@media(max-width:600px){.tips-pp-filters{margin:10px 0 12px}}</style>
 @endif
 <style>.header-actions{display:flex;align-items:center;gap:8px;margin-left:auto}.header-theme-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}@media(min-width:901px){.header-actions{order:3}.main-nav{order:2}.header-theme-toggle{margin-left:6px}}</style>
 @stack('scripts')
