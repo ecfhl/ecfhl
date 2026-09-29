@@ -72,9 +72,10 @@ class DailyFaceoffPowerPlay
             ];
         }
 
-        $goalieStart = stripos($html, 'Goalies');
+        $goalieAnchor = stripos($html, '2nd Penalty Kill Unit');
+        $goalieStart = $goalieAnchor === false ? false : stripos($html, 'Goalies', $goalieAnchor);
         if ($goalieStart === false) {
-            throw new RuntimeException("Could not find {$team} goalies");
+            throw new RuntimeException("Could not find {$team} goalie depth chart");
         }
         $goalieEnd = stripos($html, 'Injuries', $goalieStart);
         if ($goalieEnd === false) $goalieEnd = strlen($html);
