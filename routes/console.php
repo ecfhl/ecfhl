@@ -36,10 +36,15 @@ Artisan::command('ecfhl:refresh-pp-lines {--team=}', function (DailyFaceoffPower
 
 Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayers $fantrax) {
     $base=CarbonImmutable::now('America/Halifax')->startOfDay();
-    foreach([$base,$base->addDay()] as $date){try{$data=$fantrax->fetch($date);$now=now();$rows=array_map(function($p)use($date,$now){$opp=trim((string)($p['opponent']??''));$away=str_starts_with($opp,'@');return ['game_date'=>$date->format('Y-m-d'),'player_name'=>$p['player_name'],'team'=>$p['team'],'position'=>$p['position'],'opponent'=>ltrim($opp,'@'),'home_away'=>$opp===''?null:($away?'AWAY':'HOME'),'availability'=>$p['availability'],'waiver_day'=>$p['waiver_day'],'injury_status'=>$p['injury_status'],'projected_fpts'=>$p['projected_fpts'],'fantrax_url'=>$p['fantrax_url'],'source_rank'=>$p['source_rank'],'last_update'=>$now,'created_at'=>$now,'updated_at'=>$now];},$data['rows']);
+    $failed=false;
+    foreach([$base,$base->addDay()] as $date){try{
+        $url=$fantrax->url($date);
+        Log::info('Fantrax daily players refresh started',['date'=>$date->format('Y-m-d'),'url'=>$url]);
+        $data=$fantrax->fetch($date);$now=now();$rows=array_map(function($p)use($date,$now){$opp=trim((string)($p['opponent']??''));$away=str_starts_with($opp,'@');return ['game_date'=>$date->format('Y-m-d'),'player_name'=>$p['player_name'],'team'=>$p['team'],'position'=>$p['position'],'opponent'=>ltrim($opp,'@'),'home_away'=>$opp===''?null:($away?'AWAY':'HOME'),'availability'=>$p['availability'],'waiver_day'=>$p['waiver_day'],'injury_status'=>$p['injury_status'],'projected_fpts'=>$p['projected_fpts'],'fantrax_url'=>$p['fantrax_url'],'source_rank'=>$p['source_rank'],'last_update'=>$now,'created_at'=>$now,'updated_at'=>$now];},$data['rows']);
         DB::transaction(function()use($date,$rows){DB::table('active_daily_players')->whereDate('game_date',$date->format('Y-m-d'))->delete();if($rows)DB::table('active_daily_players')->insert($rows);});
-        $this->info($date->format('Y-m-d').': '.count($rows).' Fantrax players refreshed');
-    }catch(\Throwable $e){Log::error('Fantrax daily players refresh failed',['date'=>$date->format('Y-m-d'),'error'=>$e->getMessage()]);$this->error($date->format('Y-m-d').': '.$e->getMessage());}}
+        $count=count($rows);$this->info($date->format('Y-m-d').': '.$count.' Fantrax players refreshed');Log::info('Fantrax daily players refresh completed',['date'=>$date->format('Y-m-d'),'rows'=>$count,'url'=>$data['url']]);
+    }catch(\Throwable $e){$failed=true;Log::error('Fantrax daily players refresh failed',['date'=>$date->format('Y-m-d'),'url'=>$fantrax->url($date),'error'=>$e->getMessage(),'exception'=>get_class($e)]);$this->error($date->format('Y-m-d').': '.$e->getMessage());}}
+    return $failed ? 1 : 0;
 });
 
 Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartingGoalies $dfo) {
@@ -50,6 +55,6 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
     }catch(\Throwable $e){Log::error('Daily Faceoff goalie refresh failed',['date'=>$date->format('Y-m-d'),'error'=>$e->getMessage()]);$this->error($date->format('Y-m-d').': '.$e->getMessage());}}
 });
 
-Schedule::command('ecfhl:refresh-daily-players')->hourlyAt(7)->withoutOverlapping(55)->runInBackground();
+Schedule::command('ecfhl:refresh-daily-players')->hourlyAt(7)->withoutOverlapping(55);
 Schedule::command('ecfhl:refresh-starting-goalies')->hourlyAt(12)->withoutOverlapping(55)->runInBackground();
 Schedule::command('ecfhl:refresh-pp-lines')->cron('17 */4 * * *')->withoutOverlapping(240)->runInBackground();
