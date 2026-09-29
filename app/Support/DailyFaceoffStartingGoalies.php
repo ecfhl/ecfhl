@@ -18,9 +18,6 @@ class DailyFaceoffStartingGoalies
             'Accept' => 'text/html,application/xhtml+xml',
         ])->get($url)->throw()->body();
 
-        // The rendered DFO page can change its card markup, while the goalie names and
-        // statuses are still present in the HTML/embedded page data. Parse the complete
-        // page text first instead of depending on <article> wrappers.
         $rows = $this->parsePageText($html);
         if (!$rows) $rows = $this->parseCards($html);
 
@@ -33,7 +30,6 @@ class DailyFaceoffStartingGoalies
 
     private function parsePageText(string $html): array
     {
-        // Convert both rendered markup and escaped/embedded markup into searchable text.
         $text = html_entity_decode($html, ENT_QUOTES | ENT_HTML5);
         $text = str_replace(['\\u0026','\\u003c','\\u003e','\\u0027','\\u0022'], ['&','<','>','\'','"'], $text);
         $text = preg_replace('/<(?:br|\/p|\/div|\/section|\/article|\/h[1-6]|\/li|\/span)>/i', "\n", $text);
@@ -53,11 +49,8 @@ class DailyFaceoffStartingGoalies
             $start=$matches[0][$i][1]+strlen($matches[0][$i][0]);
             $end=$i+1<$count ? $matches[0][$i+1][1] : strlen($text);
             $segment=substr($text,$start,$end-$start);
-
             $goalies=$this->goaliesFromText($segment);
-            if(count($goalies)>=2) {
-                $rows=array_merge($rows,$this->matchupRows($away,$home,$goalies[0],$goalies[1]));
-            }
+            if(count($goalies)>=2) $rows=array_merge($rows,$this->matchupRows($away,$home,$goalies[0],$goalies[1]));
         }
         return $this->unique($rows);
     }
@@ -65,13 +58,14 @@ class DailyFaceoffStartingGoalies
     private function goaliesFromText(string $segment): array
     {
         $goalies=[];
-        // DFO displays: goalie name -> Confirmed/Probable/Unconfirmed -> optional ISO timestamp.
-        // Allow whitespace OR page-data punctuation between these fields.
-        preg_match_all('/([\p{L}][\p{L} .\'’\-]{2,68}?)\s*(?:["\' :,{}\[\]\\]*?)\b(Confirmed|Unconfirmed|Probable)\b(?:\s*(?:["\' :,{}\[\]\\]*?)(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?))?/imu', $segment, $gm, PREG_SET_ORDER);
+        // Keep punctuation outside character classes. The previous separator class
+        // contained an incorrectly escaped bracket/backslash combination which PCRE
+        // interpreted as an invalid range.
+        $separator='(?:\\s|["\' :,{}]|\\[|\\]|\\\\)*?';
+        $pattern='/([\p{L}][\p{L} .\'’\-]{2,68}?)'.$separator.'\b(Confirmed|Unconfirmed|Probable)\b(?:'.$separator.'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?))?/imu';
+        preg_match_all($pattern, $segment, $gm, PREG_SET_ORDER);
         foreach($gm as $g){
             $name=$this->clean($g[1]);
-            // If page-data punctuation caused us to capture a preceding label, keep the
-            // final plausible person-name line.
             $name=preg_replace('/^.*\b(?:Image|Goalie|Starter)\s*:?\s*/iu','',$name) ?? $name;
             if(!$this->looksLikeName($name)) continue;
             $updated=null;
