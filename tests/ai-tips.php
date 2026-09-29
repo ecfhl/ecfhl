@@ -2,38 +2,84 @@
 
 require __DIR__.'/../vendor/autoload.php';
 
-use App\Support\AiTips;
-
-$date = '2026-09-29';
-$rows = [];
-foreach (['F', 'D', 'G'] as $position) {
-    for ($i = 1; $i <= 12; $i++) {
-        $rows[] = ['name'=>"Player $position $i", 'team'=>'MTL', 'opponent'=>'@TOR',
-            'position'=>$position, 'game_date'=>$date, 'status'=>'FA',
-            'projected_points'=>$i, 'starting_status'=>'Unconfirmed'];
+function verifyTips(bool $condition, string $message): void
+{
+    if (! $condition) {
+        throw new RuntimeException($message);
     }
 }
-$rows[] = array_replace($rows[0], ['name'=>'Rostered', 'status'=>'Orcas', 'projected_points'=>999]);
-$rows[] = array_replace($rows[0], ['name'=>'Wrong day', 'game_date'=>'2026-09-30', 'projected_points'=>999]);
-$rows[] = array_replace($rows[0], ['name'=>'No game', 'opponent'=>'', 'projected_points'=>999]);
-$rows[] = array_replace($rows[0], ['name'=>'Waiver player', 'status'=>'W (Tue)', 'projected_points'=>50]);
-$groups = AiTips::groups(['date'=>$date, 'players'=>$rows], $date);
-function verifyTips(bool $condition, string $message): void { if (!$condition) throw new RuntimeException($message); }
-verifyTips(count($groups['F']) === 10 && count($groups['D']) === 5, 'Skater limits must apply.');
-verifyTips(count($groups['G']) === 10, 'Goalies must be capped at 10.');
-verifyTips($groups['F'][0]['name'] === 'Waiver player', 'Include waivers and rank by projected points.');
-verifyTips($groups['D'][0]['projected_points'] === 12, 'Sort defensemen descending.');
-verifyTips(!array_intersect(['Rostered','Wrong day','No game'], array_column($groups['F'], 'name')), 'Exclude unavailable players and other dates.');
-verifyTips(AiTips::groups(['date'=>$date,'players'=>$rows], '2026-09-30') === ['G'=>[],'F'=>[],'D'=>[]], 'Never reuse another date.');
 
 $app = require __DIR__.'/../bootstrap/app.php';
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
-$snapshot = json_decode(file_get_contents(__DIR__.'/../database/data/ai-tips/'.$date.'.json'), true, 512, JSON_THROW_ON_ERROR);
-$groups = AiTips::groups($snapshot, $date);
-$html = view('ai-tips', ['date'=>$date, 'today'=>'2026-09-28', 'tomorrow'=>$date,
-    'selectedDate'=>Carbon\CarbonImmutable::parse($date), 'availableDates'=>[$date], 'snapshot'=>$snapshot, 'groups'=>$groups])->render();
-verifyTips(str_contains($html, 'Kevin Lankinen (VAN)') && str_contains($html, 'Top 10 available forwards'), 'Render populated page.');
-$html = view('ai-tips', ['date'=>$date, 'today'=>'2026-09-28', 'tomorrow'=>$date,
-    'selectedDate'=>Carbon\CarbonImmutable::parse($date), 'availableDates'=>[], 'snapshot'=>null, 'groups'=>[]])->render();
-verifyTips(str_contains($html, 'No tips published'), 'Render missing-date page.');
+
+use App\Support\AiTips;
+use Illuminate\Support\Facades\DB;
+
+$date = '2026-09-29';
+
+DB::table('active_daily_players')->delete();
+DB::table('active_starting_goalies')->delete();
+
+$now = now();
+$rows = [];
+foreach (['F', 'D', 'G'] as $position) {
+    for ($i = 1; $i <= 12; $i++) {
+        $rows[] = [
+            'game_date' => $date,
+            'player_name' => "Player $position $i",
+            'team' => 'MTL',
+            'position' => $position,
+            'opponent' => 'TOR',
+            'home_away' => 'AWAY',
+            'availability' => 'FA',
+            'waiver_day' => null,
+            'injury_status' => null,
+            'projected_fpts' => $i,
+            'source_rank' => $i,
+            'fantrax_url' => null,
+            'last_update' => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
+    }
+}
+$rows[] = array_replace($rows[0], ['player_name'=>'Waiver player', 'availability'=>'W', 'waiver_day'=>'Tue', 'projected_fpts'=>50, 'source_rank'=>99]);
+$rows[] = array_replace($rows[0], ['player_name'=>'Rostered', 'availability'=>'Orcas', 'projected_fpts'=>999, 'source_rank'=>100]);
+$rows[] = array_replace($rows[0], ['player_name'=>'Wrong day', 'game_date'=>'2026-09-30', 'projected_fpts'=>999, 'source_rank'=>101]);
+$rows[] = array_replace($rows[0], ['player_name'=>'No game', 'opponent'=>'', 'projected_fpts'=>999, 'source_rank'=>102]);
+DB::table('active_daily_players')->insert($rows);
+
+DB::table('active_starting_goalies')->insert([
+    'game_date'=>$date,
+    'player_name'=>'Player G 12',
+    'team'=>'MTL',
+    'opponent'=>'TOR',
+    'home_away'=>'AWAY',
+    'starting_status'=>'Confirmed',
+    'source_updated_at'=>$now,
+    'last_update'=>$now,
+    'created_at'=>$now,
+    'updated_at'=>$now,
+]);
+
+$groups = AiTips::groups([], $date);
+verifyTips(count($groups['F']) === 13, 'All available forwards should be returned for incremental display.');
+verifyTips(count($groups['D']) === 12, 'All available defensemen should be returned for incremental display.');
+verifyTips(count($groups['G']) === 1, 'Confirmed goalie should suppress other goalies on the same team.');
+verifyTips($groups['F'][0]['name'] === 'Waiver player', 'Include waivers and rank by projected points.');
+verifyTips($groups['D'][0]['projected_points'] === 12.0, 'Sort defensemen descending.');
+verifyTips(! array_intersect(['Rostered','Wrong day','No game'], array_column($groups['F'], 'name')), 'Exclude unavailable players, other dates and players without games.');
+verifyTips(AiTips::groups([], '2026-09-30')['F'] === [], 'Do not reuse another date.');
+
+$html = view('ai-tips', [
+    'date'=>$date,
+    'today'=>'2026-09-28',
+    'tomorrow'=>$date,
+    'selectedDate'=>Carbon\CarbonImmutable::parse($date),
+    'availableDates'=>[$date],
+    'snapshot'=>['date'=>$date],
+    'groups'=>$groups,
+])->render();
+verifyTips(str_contains($html, 'Available forwards') && str_contains($html, 'Available defensemen') && str_contains($html, 'Available goalies'), 'Render database-backed AI Tips sections.');
+
 echo "AI Tips checks passed.\n";
