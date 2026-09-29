@@ -1,9 +1,11 @@
 <?php
 
+use App\Support\DailyFaceoffPowerPlay;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('ecfhl:sync', function () {
     $sources = [
@@ -33,13 +35,7 @@ Artisan::command('ecfhl:sync', function () {
 
         DB::table('source_cache')->updateOrInsert(
             ['source_key' => $key],
-            [
-                'source_url' => $url,
-                'payload' => $payload,
-                'retrieved_at' => now(),
-                'updated_at' => now(),
-                'created_at' => now(),
-            ]
+            ['source_url' => $url, 'payload' => $payload, 'retrieved_at' => now(), 'updated_at' => now(), 'created_at' => now()]
         );
 
         if ($key === 'history') {
@@ -61,7 +57,6 @@ Artisan::command('ecfhl:sync', function () {
                 'sample' => array_slice($decoded ?? [], 0, 1, true),
             ]);
         }
-
         $this->info("Synced {$key}");
     }
 
@@ -72,3 +67,55 @@ Artisan::command('ecfhl:validate-drafts', function () {
     $plan = (new \Database\Seeders\DraftsOnlySeeder)->plan();
     $this->info('READ ONLY: '.count($plan['draft_picks']).' picks validated; season counts: '.json_encode($plan['counts']));
 });
+
+Artisan::command('ecfhl:refresh-pp-lines {--team=}', function (DailyFaceoffPowerPlay $scraper) {
+    $only = strtoupper((string) $this->option('team'));
+    $teams = DailyFaceoffPowerPlay::TEAMS;
+    if ($only !== '') {
+        if (!isset($teams[$only])) {
+            $this->error("Unknown NHL team: {$only}");
+            return 1;
+        }
+        $teams = [$only => $teams[$only]];
+    }
+
+    foreach ($teams as $team => $slug) {
+        try {
+            $data = $scraper->fetch($team, $slug);
+            $storedUpdate = DB::table('active_pp_lines')->where('team', $team)->max('last_update');
+
+            if ($storedUpdate && $data['lastUpdate']->lessThanOrEqualTo(\Carbon\CarbonImmutable::parse($storedUpdate))) {
+                $this->line("{$team}: unchanged");
+                continue;
+            }
+
+            DB::transaction(function () use ($data, $team) {
+                DB::table('active_pp_lines')->where('team', $team)->delete();
+                $now = now();
+                $rows = array_map(fn ($player) => [
+                    'team' => $team,
+                    'player_name' => $player['player_name'],
+                    'pp_unit' => $player['pp_unit'],
+                    'unit_position' => $player['unit_position'],
+                    'source_url' => $data['url'],
+                    'last_update' => $data['lastUpdate'],
+                    'checked_at' => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ], $data['players']);
+                DB::table('active_pp_lines')->insert($rows);
+            });
+            $this->info("{$team}: refreshed PP1/PP2");
+        } catch (\Throwable $e) {
+            Log::error('Daily Faceoff PP refresh failed', ['team'=>$team, 'error'=>$e->getMessage()]);
+            $this->error("{$team}: {$e->getMessage()}");
+        }
+    }
+
+    return 0;
+})->purpose('Refresh active PP1/PP2 lines from Daily Faceoff when the source page is newer');
+
+Schedule::command('ecfhl:refresh-pp-lines')
+    ->cron('17 */4 * * *')
+    ->withoutOverlapping(240)
+    ->runInBackground();
