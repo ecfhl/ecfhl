@@ -5,7 +5,14 @@
     $fantraxPlayerUrl = function ($player) use ($fantraxLeagueId) { return 'https://www.fantrax.com/fantasy/league/'.$fantraxLeagueId.'/players;searchName='.rawurlencode($player['name']).';positionOrGroup=ALL;'; };
     $fantraxListingUrl = 'https://www.fantrax.com/fantasy/league/'.$fantraxLeagueId.'/players;maxResultsPerPage=500;pageNumber=1;seasonOrProjection=PROJECTION_0_31n_SEASON;timeframeTypeCode=PROJECTED_SEASON;datePlaying='.$date;
     $ppLines = \Illuminate\Support\Facades\DB::table('active_pp_lines')->select('team','player_name','pp_unit')->get()->keyBy(fn($row)=>strtoupper(trim($row->team)).'|'.mb_strtolower(trim($row->player_name)));
-    $ppUnit = function($player)use($ppLines){$key=strtoupper(trim($player['team']??'')).'|'.mb_strtolower(trim($player['name']??''));return isset($ppLines[$key])?(int)$ppLines[$key]->pp_unit:null;};
+    // Rare same-team/name collisions need explicit disambiguation because Daily Faceoff's
+    // PP slot is not the player's actual position (a forward may play the point on a PP).
+    $ppCollisionPositions = ['VAN|elias pettersson' => 'F'];
+    $ppUnit = function($player)use($ppLines,$ppCollisionPositions){
+        $key=strtoupper(trim($player['team']??'')).'|'.mb_strtolower(trim($player['name']??''));
+        if(isset($ppCollisionPositions[$key]) && strtoupper(trim($player['position']??''))!==$ppCollisionPositions[$key]) return null;
+        return isset($ppLines[$key])?(int)$ppLines[$key]->pp_unit:null;
+    };
     $hasTips = count($groups['G']) + count($groups['F']) + count($groups['D']) > 0;
     $fantraxUpdated = \Illuminate\Support\Facades\DB::table('active_daily_players')->whereDate('game_date',$date)->max('last_update');
     $goaliesUpdated = \Illuminate\Support\Facades\DB::table('active_starting_goalies')->whereDate('game_date',$date)->max('checked_at');
