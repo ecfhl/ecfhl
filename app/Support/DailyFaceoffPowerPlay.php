@@ -67,7 +67,7 @@ class DailyFaceoffPowerPlay
             $lines[] = [
                 'player_name'=>$name,
                 'position_group'=>'D',
-                'line_number'=>min(3, intdiv($position, 2) + 1),
+                'line_number'=>min(4, intdiv($position, 2) + 1),
                 'unit_position'=>($position % 2) + 1,
             ];
         }
