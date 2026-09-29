@@ -18,7 +18,7 @@
     $updatedValues = array_values(array_filter([$fantraxUpdated,$goaliesUpdated,$linesUpdated]));
     $latestUpdated = $updatedValues ? max($updatedValues) : null;
 @endphp
-<div class="page-head"><div class="shell"><div class="eyebrow">Daily pickup watch</div><h1>AI Tips</h1><p>Available ECFHL players with a game on {{ $selectedDate->format('F j, Y') }}.</p>@if($latestUpdated)<p class="tips-last-refreshed">Data last refreshed {{ \Carbon\CarbonImmutable::parse($latestUpdated)->diffInMinutes(\Carbon\CarbonImmutable::now()) }} minutes ago.</p>@endif</div></div>
+<div class="page-head"><div class="shell"><div class="eyebrow">Daily pickup watch</div><h1>AI Tips</h1><p>Available ECFHL players with a game on {{ $selectedDate->format('F j, Y') }}.</p>@if($latestUpdated)<p class="tips-last-refreshed">Data last refreshed {{ (int) floor(\Carbon\CarbonImmutable::parse($latestUpdated)->diffInSeconds(\Carbon\CarbonImmutable::now()) / 60) }} minutes ago.</p>@endif</div></div>
 <div class="shell ai-tips">
 <div class="toolbar tips-toolbar" role="group" aria-label="Game date"><div class="tips-date-buttons"><a class="button {{ $date===$today?'primary':'tips-date-inactive' }}" href="/ai-tips?date={{ $today }}">Today</a><a class="button {{ $date===$tomorrow?'primary':'tips-date-inactive' }}" href="/ai-tips?date={{ $tomorrow }}">Tomorrow</a></div></div>
 @if(session('job_success') || session('job_error'))<section class="job-results" aria-live="polite">@if(session('job_success'))<div class="job-message job-message-ok">{{ session('job_success') }}</div>@endif @if(session('job_error'))<div class="job-message job-message-error">{{ session('job_error') }}</div>@endif</section>@endif
