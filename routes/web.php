@@ -44,16 +44,17 @@ Route::get('/rules',function(){$sections=DB::table('rules')->orderBy('rule_id')-
 });
 
 Route::get('/job-status', function () {
-    $now = \Carbon\CarbonImmutable::now('America/Halifax');
-    // MySQL DATETIME values are written by Laravel in UTC. Carbon::parse() would
-    // otherwise interpret the zone-less value using the app timezone and shift it
-    // incorrectly. Treat DB collector timestamps as UTC, then convert for display.
-    $dbTime = fn($value) => $value ? \Carbon\CarbonImmutable::createFromFormat('Y-m-d H:i:s', (string)$value, 'UTC') : null;
-    $format = fn($value) => ($dt=$dbTime($value)) ? $dt->setTimezone('America/Halifax')->format('M j, Y · g:i a T') : null;
-    $state = function ($value, int $minutes) use ($now, $dbTime) {
+    $tz = 'America/Halifax';
+    $now = \Carbon\CarbonImmutable::now($tz);
+    // Collector timestamps are written with Laravel's app timezone (Atlantic).
+    // MySQL DATETIME has no timezone metadata, so interpret the stored wall-clock
+    // value as Atlantic rather than UTC to avoid shifting it three/four hours.
+    $dbTime = fn($value) => $value ? \Carbon\CarbonImmutable::createFromFormat('Y-m-d H:i:s', (string)$value, $tz) : null;
+    $format = fn($value) => ($dt=$dbTime($value)) ? $dt->setTimezone($tz)->format('M j, Y · g:i a T') : null;
+    $state = function ($value, int $minutes) use ($now, $dbTime, $tz) {
         if (!$value) return 'No data';
         $dt=$dbTime($value); if(!$dt) return 'No data';
-        return $dt->setTimezone('America/Halifax')->gte($now->subMinutes($minutes)) ? 'Current' : 'Stale';
+        return $dt->setTimezone($tz)->gte($now->subMinutes($minutes)) ? 'Current' : 'Stale';
     };
     $nextHourly = function (int $minute) use ($now) {
         $next = $now->startOfHour()->minute($minute);
