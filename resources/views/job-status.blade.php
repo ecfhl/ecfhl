@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('content')
-<div class="page-head"><div class="shell"><div class="eyebrow">Data collectors</div><h1>Job Status</h1><p>Current status of the automated data used by AI Tips.</p></div></div>
+<div class="page-head"><div class="shell"><div class="eyebrow">Data collectors</div><h1>Collector Status</h1><p>Current status of the automated data used by AI Tips.</p></div></div>
 <div class="shell job-status">
     <div class="status-actions">
         <a class="button status-back" href="/ai-tips">← Back to AI Tips</a>
