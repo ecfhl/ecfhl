@@ -29,15 +29,12 @@
         <div class="table-card"><div class="table-scroll"><table class="data-table team-roster-table">
           <thead><tr><th>Player</th><th>Opponent</th><th>Contract</th><th class="num">Proj.</th></tr></thead>
           <tbody>
-          @foreach(['playing'=>'Playing','active'=>'Not Playing','injured'=>'Injured'] as $groupKey=>$groupLabel)
+          @foreach(['playing'=>'Playing','active'=>'Not Playing'] as $groupKey=>$groupLabel)
             @php($statusRows=$group['rows']->filter(function($p)use($groupKey){
-              $injured=(bool)$p->is_ir;
-              $bench=(bool)$p->is_bench;
               $playing=(bool)$p->is_playing;
               return match($groupKey){
-                'playing'=>$playing && !$injured,
-                'active'=>!$playing && !$injured,
-                'injured'=>$injured,
+                'playing'=>$playing,
+                'active'=>!$playing,
                 default=>false,
               };
             }))
