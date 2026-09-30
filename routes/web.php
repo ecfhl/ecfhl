@@ -77,6 +77,14 @@ Route::get('/teams/current', function() {
         $power=$pp[$team.'|'.$name]??null;
         $p->line_number=$line?(int)$line->line_number:null;
         $p->pp_unit=$power?(int)$power->pp_unit:null;
+        $contractLabel=strtoupper((string)$p->roster_status)==='MINORS'?'Minors':trim((string)$p->contract);
+        $contractKey=strtoupper($contractLabel);
+        $p->contract_label=$contractLabel;
+        $p->contract_class=in_array($contractKey,['FA','1 YEAR','1 YEAR(S)','1 YR'],true)
+            ? 'contract-green'
+            : (in_array($contractKey,['TBD','MINORS'],true)
+                ? 'contract-yellow'
+                : (preg_match('/^[234]\s*(?:YEAR|YEARS|YR|YRS)/',$contractKey)?'contract-red':''));
         return $p;
     });
 
@@ -162,6 +170,14 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         $power=$pp[$team.'|'.$name]??null;
         $p->line_number=$line?(int)$line->line_number:null;
         $p->pp_unit=$power?(int)$power->pp_unit:null;
+        $contractLabel=strtoupper((string)$p->roster_status)==='MINORS'?'Minors':trim((string)$p->contract);
+        $contractKey=strtoupper($contractLabel);
+        $p->contract_label=$contractLabel;
+        $p->contract_class=in_array($contractKey,['FA','1 YEAR','1 YEAR(S)','1 YR'],true)
+            ? 'contract-green'
+            : (in_array($contractKey,['TBD','MINORS'],true)
+                ? 'contract-yellow'
+                : (preg_match('/^[234]\s*(?:YEAR|YEARS|YR|YRS)/',$contractKey)?'contract-red':''));
         return $p;
     };
     $rows=$rows->map($decorate);
