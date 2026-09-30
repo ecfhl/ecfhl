@@ -19,18 +19,29 @@
             @if($group['rows']->count())
               <section class="current-position-group">
                 <h3>{{ $group['label'] }}</h3>
-                @foreach([1=>'Playing',0=>'Not Playing'] as $playingFlag=>$playingLabel)
-                  @php($statusRows=$group['rows']->filter(fn($p)=>(!empty($p->opponent)?1:0)===$playingFlag))
+                @foreach(['playing'=>'Playing','active'=>'Active','bench'=>'Bench','injured'=>'Injured'] as $groupKey=>$groupLabel)
+                  @php($statusRows=$group['rows']->filter(function($p)use($groupKey){
+                    $injured=(bool)$p->is_ir;
+                    $bench=(bool)$p->is_bench;
+                    $playing=!empty($p->opponent);
+                    return match($groupKey){
+                      'playing'=>$playing && !$injured && !$bench,
+                      'active'=>!$playing && !$injured && !$bench,
+                      'bench'=>$bench && !$injured,
+                      'injured'=>$injured,
+                      default=>false,
+                    };
+                  }))
                   @if($statusRows->count())
-                    <div class="current-playing-label">{{ $playingLabel }}</div>
+                    <div class="current-playing-label">{{ $groupLabel }}</div>
                     @foreach($statusRows as $player)
-                      <div class="current-player-row {{ !$playingFlag?'not-playing':'' }}">
+                      <div class="current-player-row {{ $groupKey!=='playing'?'not-playing':'' }}">
                         <div class="current-player-main">
                           <div class="current-player-name">
                             <strong>{{ $player->player_name }} @if($player->nhl_team)({{ $player->nhl_team }})@endif</strong>
                             <span class="current-badges">
                               @if($player->is_ir)<span class="pill team-ir">IR</span>@endif
-                              @if($player->is_bench)<span class="pill team-bench">BE</span>@endif
+                              @if($player->is_bench)<span class="pill team-bench">Bench</span>@endif
                               @if(strtoupper((string)$player->roster_status)==='MINORS')<span class="pill team-minors">MIN</span>@endif
                               @if($player->line_number && $player->line_number>=1 && $player->line_number<=4)<span class="pill line-{{ $player->line_number }}">L{{ $player->line_number }}</span>@endif
                               @if($player->pp_unit===1)<span class="pill pp1">PP1</span>@elseif($player->pp_unit===2)<span class="pill pp2">PP2</span>@endif
