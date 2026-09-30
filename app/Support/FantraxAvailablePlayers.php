@@ -92,6 +92,6 @@ class FantraxAvailablePlayers
     }
 
     private function position(string $value): ?string { $v=strtoupper($value); if(preg_match('/(^|[,\/ ])G($|[,\/ ])/',$v))return 'G'; if(preg_match('/(^|[,\/ ])D($|[,\/ ])/',$v))return 'D'; if(preg_match('/\b(C|LW|RW|F)\b/',$v))return 'F'; return $value!==''?$value:null; }
-    private function injury(array $icons): ?string { foreach($icons as $icon){$type=(string)($icon['typeId']??'');$tip=trim((string)($icon['tooltip']??''));if(in_array($type,['1','2','30'],true)||preg_match('/injur|IR|day-to-day|out indefinitely/i',$tip))return preg_match('/injured reserve|injured list|\bIR\b/i',$tip)?'IR':($tip!==''?$tip:'INJ');}return null; }
+    private function injury(array $icons): ?string { foreach($icons as $icon){$type=(string)($icon['typeId']??'');$tip=trim((string)($icon['tooltip']??''));if(in_array($type,['1','2','30'],true)||preg_match('/injur|\bIR\b|day-to-day|out indefinitely/i',$tip))return preg_match('/injured reserve|injured list|\bIR\b/i',$tip)?'IR':($tip!==''?$tip:'INJ');}return null; }
     private function numeric(mixed $value): ?float { if($value===null||$value==='')return null;$value=preg_replace('/[^0-9.\-]/','',html_entity_decode(strip_tags((string)$value)));return is_numeric($value)?(float)$value:null; }
 }
