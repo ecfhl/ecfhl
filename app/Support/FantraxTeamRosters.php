@@ -71,6 +71,7 @@ class FantraxTeamRosters
                     'is_bench'=>in_array($status, ['RESERVE','BENCH'], true),
                     'is_ir'=>$status === 'INJURED_RESERVE' || !empty($stat['injury_status']),
                     'injury_status'=>$stat['injury_status'] ?? null,
+                    'is_playing'=>(bool)($stat['is_playing'] ?? false),
                     'opponent'=>$opponent !== '' ? $opponent : null,
                     'home_away'=>$opponent !== '' ? ($away ? 'AWAY' : 'HOME') : null,
                     'projected_fpts'=>$stat['projected_fpts'] ?? null,
@@ -122,13 +123,16 @@ class FantraxTeamRosters
 
         $projectionByKey = [];
         foreach ($projections as $row) {
+            $row['is_playing'] = false;
             $projectionByKey[$this->key($row['player_name'] ?? '', $row['nhl_team'] ?? '')] = $row;
         }
 
         $rows = $projectionByKey;
         foreach ($playing as $row) {
+            $row['is_playing'] = true;
             $key = $this->key($row['player_name'] ?? '', $row['nhl_team'] ?? '');
             $base = $rows[$key] ?? $row;
+            $base['is_playing'] = true;
             $base['opponent'] = $row['opponent'] ?? null;
             $base['injury_status'] = $row['injury_status'] ?? ($base['injury_status'] ?? null);
             if (($base['projected_fpts'] ?? null) === null && ($row['projected_fpts'] ?? null) !== null) {
@@ -190,6 +194,7 @@ class FantraxTeamRosters
                 'opponent'=>$opp !== '' ? $opp : null,
                 'projected_fpts'=>$this->numeric($fptsCell['content'] ?? null),
                 'injury_status'=>$this->injury($scorer['icons'] ?? []),
+                'is_playing'=>false,
             ];
         }
         return $rows;
