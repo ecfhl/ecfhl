@@ -10,7 +10,7 @@
             <button type="submit" class="button primary run-all">Refresh Data</button>
         </form>
     </div>
-    <div id="job-live-results" class="job-live-results" hidden aria-live="polite"></div>
+    <div id="job-live-results" class="job-live-results" hidden aria-live="polite"><button type="button" class="job-live-close" aria-label="Close message">×</button><pre class="job-live-text"></pre></div>
     <div class="status-grid">
         @foreach($jobs as $job)
         @php
@@ -42,11 +42,14 @@
     <p class="subtle status-footer">Times shown in Atlantic time. “Current” is based on the expected refresh interval; source data itself may not change on every check.</p>
 </div>
 <style>
-.status-actions{margin:20px 0 0;display:flex;align-items:center;justify-content:space-between;gap:12px}.status-back{text-decoration:none}.run-all-form{margin:0}.run-all{cursor:pointer;padding:7px 12px;font-size:12px}.run-all:disabled,.run-now:disabled{opacity:.65;cursor:wait}.status-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:18px 0 24px}.status-card{padding:20px}.status-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.status-head h2{margin:0;font-size:19px}.status-head p{margin:4px 0 0}.status-card dl{margin:20px 0 0}.status-card dl div{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-top:1px solid var(--line)}.status-card dt{color:var(--muted);font-size:13px}.status-card dd{margin:0;text-align:right;font-weight:800}.status-ok{background:#dcfce7;color:#166534;border-color:#86efac}.status-stale{background:#fef3c7;color:#92400e;border-color:#fcd34d}.status-empty{background:#e5e7eb;color:#4b5563;border-color:#d1d5db}.status-note{font-size:12px;margin:14px 0 0}.status-footer{font-size:12px;margin-bottom:28px}.run-form{margin-top:16px}.run-now{width:100%;cursor:pointer}.job-results{margin:0 0 22px}.job-results h2{font-size:17px;margin:0 0 10px}.job-message,.job-live-results{padding:12px 14px;border-radius:10px;font-weight:700;white-space:pre-wrap}.job-message+.job-message{margin-top:10px}.job-message-ok,.job-live-results.ok{background:#dcfce7;color:#166534;border:1px solid #86efac}.job-message-error,.job-live-results.error{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}.job-live-results{margin:18px 0 0;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;line-height:1.55}@media(max-width:800px){.status-actions{align-items:flex-start}.status-grid{grid-template-columns:1fr}.status-card{padding:16px}}
+.status-actions{margin:20px 0 0;display:flex;align-items:center;justify-content:space-between;gap:12px}.status-back{text-decoration:none}.run-all-form{margin:0}.run-all{cursor:pointer;padding:7px 12px;font-size:12px}.run-all:disabled,.run-now:disabled{opacity:.65;cursor:wait}.status-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:18px 0 24px}.status-card{padding:20px}.status-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.status-head h2{margin:0;font-size:19px}.status-head p{margin:4px 0 0}.status-card dl{margin:20px 0 0}.status-card dl div{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-top:1px solid var(--line)}.status-card dt{color:var(--muted);font-size:13px}.status-card dd{margin:0;text-align:right;font-weight:800}.status-ok{background:#dcfce7;color:#166534;border-color:#86efac}.status-stale{background:#fef3c7;color:#92400e;border-color:#fcd34d}.status-empty{background:#e5e7eb;color:#4b5563;border-color:#d1d5db}.status-note{font-size:12px;margin:14px 0 0}.status-footer{font-size:12px;margin-bottom:28px}.run-form{margin-top:16px}.run-now{width:100%;cursor:pointer}.job-results{margin:0 0 22px}.job-results h2{font-size:17px;margin:0 0 10px}.job-message,.job-live-results{padding:12px 14px;border-radius:10px;font-weight:700;white-space:pre-wrap}.job-live-results{position:relative;padding-right:42px}.job-live-text{margin:0;font:inherit;white-space:pre-wrap}.job-live-close{position:absolute;top:7px;right:9px;width:26px;height:26px;border:0;border-radius:999px;background:transparent;color:inherit;font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}.job-live-close:hover{background:rgba(0,0,0,.08)}.job-message+.job-message{margin-top:10px}.job-message-ok,.job-live-results.ok{background:#dcfce7;color:#166534;border:1px solid #86efac}.job-message-error,.job-live-results.error{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}.job-live-results{margin:18px 0 0;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;line-height:1.55}@media(max-width:800px){.status-actions{align-items:flex-start}.status-grid{grid-template-columns:1fr}.status-card{padding:16px}}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
  const box=document.getElementById('job-live-results');
+ const boxText=box.querySelector('.job-live-text');
+ const closeButton=box.querySelector('.job-live-close');
+ closeButton.addEventListener('click',()=>{box.hidden=true;box.className='job-live-results';boxText.textContent='';});
  const csrf=document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('.job-ajax-form input[name="_token"]')?.value;
  const headings={players:'Getting available players in Fantrax...',goalies:'Getting goalie information from Daily Faceoff...',lines:'Getting Lines information from Daily Faceoff...',odds:'Getting NHL moneyline odds...',teams:'Getting current fantasy team rosters from Fantrax...'};
  const parse=(job,output)=>{
@@ -73,7 +76,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    return output;
  };
  const runOne=async(job,lines)=>{
-   lines.push(headings[job]);box.textContent=lines.join('\n');
+   lines.push(headings[job]);boxText.textContent=lines.join('\n');
    const response=await fetch('/job-status/run/'+job,{
      method:'POST',
      credentials:'same-origin',
@@ -83,13 +86,13 @@ document.addEventListener('DOMContentLoaded',()=>{
    let data;try{data=await response.json();}catch(e){throw new Error('The '+job+' job did not return a valid response.');}
    const detail=data.details?.[job];
    if(!response.ok||detail?.failed)throw new Error(detail?.output||data.message||'Job failed.');
-   lines.push(parse(job,detail?.output||''),'');box.textContent=lines.join('\n');
+   lines.push(parse(job,detail?.output||''),'');boxText.textContent=lines.join('\n');
  };
  document.querySelectorAll('.job-ajax-form').forEach(form=>form.addEventListener('submit',async e=>{
    e.preventDefault();const requested=form.dataset.job;const jobs=requested==='all'?['players','goalies','lines','odds','teams']:[requested];const button=form.querySelector('button');const original=button.textContent;const lines=[];
-   document.querySelectorAll('.job-ajax-form button').forEach(b=>b.disabled=true);button.textContent=requested==='all'?'Refreshing…':'Running…';box.hidden=false;box.className='job-live-results';box.textContent='';
-   try{for(const job of jobs)await runOne(job,lines);box.classList.add('ok');if(requested==='all')lines.push('All 5 jobs completed.');else lines.push('Job completed.');box.textContent=lines.join('\n');setTimeout(()=>location.reload(),1200);}
-   catch(err){box.classList.add('error');lines.push('Failed: '+err.message);box.textContent=lines.join('\n');document.querySelectorAll('.job-ajax-form button').forEach(b=>b.disabled=false);button.textContent=original;}
+   document.querySelectorAll('.job-ajax-form button').forEach(b=>b.disabled=true);button.textContent=requested==='all'?'Refreshing…':'Running…';box.hidden=false;box.className='job-live-results';boxText.textContent='';
+   try{for(const job of jobs)await runOne(job,lines);box.classList.add('ok');if(requested==='all')lines.push('All 5 jobs completed.');else lines.push('Job completed.');boxText.textContent=lines.join('\n');setTimeout(()=>location.reload(),1200);}
+   catch(err){box.classList.add('error');lines.push('Failed: '+err.message);boxText.textContent=lines.join('\n');document.querySelectorAll('.job-ajax-form button').forEach(b=>b.disabled=false);button.textContent=original;}
  }));
 });
 </script>
