@@ -21,7 +21,7 @@
             <tr class="{{ empty($player->opponent)?'team-not-playing':'' }}">
               <td data-label="Player"><strong>{{ $player->player_name }} @if($player->nhl_team)({{ $player->nhl_team }})@endif</strong>@if($player->is_ir)<span class="pill team-ir">IR</span>@endif</td>
               <td data-label="Opponent">@if($player->opponent)<span class="{{ $player->home_away==='AWAY'?'team-away':'team-home' }}">{{ $player->home_away==='AWAY'?'@':'vs' }} {{ $player->opponent }}</span>@else<span class="subtle">Not playing</span>@endif</td>
-              <td data-label="Roster">@if($player->is_bench)<span class="pill team-bench">BE</span>@elseif(strtoupper((string)$player->roster_status)==='MINORS')<span class="pill team-minors">MIN</span>@else<span class="pill team-active">Active</span>@endif</td>
+              <td data-label="Roster">@if($player->is_bench)<span class="pill team-bench">Bench</span>@elseif(strtoupper((string)$player->roster_status)==='MINORS')<span class="pill team-minors">MIN</span>@else<span class="pill team-active">Active</span>@endif</td>
               <td data-label="Line">@if($player->line_number)<span class="pill line-{{ $player->line_number }}">L{{ $player->line_number }}</span>@else<span class="subtle">—</span>@endif</td>
               <td data-label="PP">@if($player->pp_unit===1)<span class="pill pp1">PP1</span>@elseif($player->pp_unit===2)<span class="pill pp2">PP2</span>@else<span class="subtle">—</span>@endif</td>
               <td data-label="Proj. FPts" class="num"><strong>{{ $player->projected_fpts!==null?number_format($player->projected_fpts,0):'—' }}</strong></td>
