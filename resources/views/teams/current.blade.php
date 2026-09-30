@@ -163,9 +163,9 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
 .team-roster-table td[data-label="Player"]{grid-column:1;min-width:0}
 .team-player-name-wrap{min-width:0;max-width:100%}
 .team-player-name-wrap strong{min-width:0;overflow-wrap:anywhere}
-.team-roster-table td[data-label="Proj."]{grid-column:2;grid-row:1;text-align:right;white-space:nowrap}
-.team-roster-table td[data-label="Opponent"]{grid-column:1;min-width:0;white-space:normal;font-size:11px;line-height:1.2}
-.team-roster-table .num{text-align:right}.team-proj-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:4px}.team-proj-badges{display:flex;justify-content:flex-end;gap:3px;flex-wrap:wrap}.team-proj-badges .pill{padding:1px 4px!important;font-size:9px!important;line-height:1.05}
+.team-roster-table td[data-label="Proj."]{grid-column:2;grid-row:1 / span 2;text-align:right;white-space:nowrap;align-self:center}
+.team-roster-table td[data-label="Opponent"]{grid-column:1;grid-row:2;align-self:center;min-width:0;white-space:normal;font-size:11px;line-height:1.2;margin-top:0}
+.team-roster-table .num{text-align:right}.team-proj-wrap{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:4px}.team-proj-badges{display:flex;justify-content:flex-end;gap:3px;flex-wrap:wrap}.team-proj-badges .pill{padding:1px 4px!important;font-size:9px!important;line-height:1.05}
 .team-roster-table tr.team-roster-group{display:block;width:100%;padding:0;overflow:hidden}
 .team-roster-table tr.team-roster-group td{display:block!important;width:100%;max-width:100%;padding:5px 8px!important}
 }
