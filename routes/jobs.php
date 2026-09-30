@@ -12,7 +12,7 @@ Route::post('/job-status/run/{job}', function (string $job) {
 
     abort_unless(isset($commands[$job]) || $job === 'all', 404);
 
-    $returnTo = request('return_to') === 'ai-tips' ? '/ai-tips' : '/job-status';
+    $returnTo = in_array(request('return_to'), ['daily-targets','ai-tips'], true) ? '/daily-targets' : '/job-status';
     $jobsToRun = $job === 'all' ? $commands : [$job => $commands[$job]];
     $labels = ['players' => 'Fantrax players', 'goalies' => 'Starting goalies', 'lines' => 'Power-play lines'];
     $results = [];
