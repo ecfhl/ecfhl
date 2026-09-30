@@ -152,13 +152,13 @@ document.addEventListener('DOMContentLoaded',()=>{
    render();
  };
 
- setup('goalies','Available goalies',false,true);
- setup('forwards','Available forwards',true,false);
- setup('defensemen','Available defensemen',true,false);
+ setup('goalies','Goaltenders',false,true);
+ setup('forwards','Forwards',true,false);
+ setup('defensemen','Defensemen',true,false);
 });
 </script>
 <style>
-.tips-see-more{display:block;margin:14px auto 0;min-width:180px;cursor:pointer}
+.tips-see-more{display:block;margin:9px auto 0;min-width:0;padding:6px 10px;font-size:11px;line-height:1.1;cursor:pointer}
 .tips-show-more{display:none!important}
 .tips-search-wrap{margin:10px 0 8px}
 .tips-search{width:min(360px,100%);border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;outline:none}
