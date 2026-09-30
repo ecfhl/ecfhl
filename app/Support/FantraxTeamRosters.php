@@ -76,6 +76,7 @@ class FantraxTeamRosters
                     'home_away'=>$opponent !== '' ? ($away ? 'AWAY' : 'HOME') : null,
                     'game_time'=>$stat['game_time'] ?? null,
                     'projected_fpts'=>$stat['projected_fpts'] ?? null,
+                    'contract'=>$stat['contract'] ?? null,
                 ];
             }
         }
@@ -111,6 +112,7 @@ class FantraxTeamRosters
             'sortType'=>'STATUS',
             'maxResultsPerPage'=>500,
             'positionOrGroup'=>'ALL',
+            'miscDisplayType'=>'1',
         ]);
 
         $projections = $this->fetchStatsPage([
@@ -202,6 +204,8 @@ class FantraxTeamRosters
             }
 
             $fptsCell = $cell($entry, ['fpts','SCORE','FPts']);
+            $contractCell = $cell($entry, ['contract','CONTRACT','Contract']);
+            $contract = trim(html_entity_decode(strip_tags((string)($contractCell['content'] ?? ''))));
             $rows[] = [
                 'player_name'=>$name,
                 'nhl_team'=>$team,
@@ -209,6 +213,7 @@ class FantraxTeamRosters
                 'home_away'=>$homeAway,
                 'game_time'=>$gameTime,
                 'projected_fpts'=>$this->numeric($fptsCell['content'] ?? null),
+                'contract'=>$contract !== '' ? $contract : null,
                 'injury_status'=>$this->injury($scorer['icons'] ?? []),
                 'is_playing'=>false,
             ];
