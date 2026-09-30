@@ -5,8 +5,9 @@
     $fantraxPlayerUrl = function ($player) use ($fantraxLeagueId) { return 'https://www.fantrax.com/fantasy/league/'.$fantraxLeagueId.'/players;searchName='.rawurlencode($player['name']).';positionOrGroup=ALL;'; };
     $fantraxListingUrl = 'https://www.fantrax.com/fantasy/league/'.$fantraxLeagueId.'/players;maxResultsPerPage=500;pageNumber=1;seasonOrProjection=PROJECTION_0_31n_SEASON;timeframeTypeCode=PROJECTED_SEASON;datePlaying='.$date;
     $fantraxPool = app(\App\Support\FantraxAvailablePlayers::class);
-    $fantraxGoaliesUrl = $fantraxPool->url($selectedDate, 'G').';statusOrTeamFilter=ALL_AVAILABLE';
-    $fantraxForwardsUrl = $fantraxPool->url($selectedDate, 'F').';statusOrTeamFilter=ALL_AVAILABLE';
+    $fantraxGoaliesUrl = $fantraxPool->url($selectedDate, 'G').';statusOrTeamFilter=ALL_AVAILABLE;positionOrGroup=POS_201';
+    $fantraxForwardsUrl = $fantraxPool->url($selectedDate, 'F').';statusOrTeamFilter=ALL_AVAILABLE;positionOrGroup=POS_207';
+    $fantraxDefenseUrl = $fantraxPool->url($selectedDate, 'D').';statusOrTeamFilter=ALL_AVAILABLE;positionOrGroup=POS_202';
     $dfoTeamSlugs = [
         'ANA'=>'anaheim-ducks','BOS'=>'boston-bruins','BUF'=>'buffalo-sabres','CAR'=>'carolina-hurricanes',
         'CBJ'=>'columbus-blue-jackets','CGY'=>'calgary-flames','CHI'=>'chicago-blackhawks','COL'=>'colorado-avalanche',
