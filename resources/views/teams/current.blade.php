@@ -129,7 +129,7 @@
 @media(max-width:700px){
 .current-team-page{width:100%;min-width:0;max-width:100%;overflow-x:hidden;contain:inline-size}
 .team-position-section,.table-card,.table-scroll{width:100%;min-width:0;max-width:100%;overflow-x:hidden;contain:inline-size}
-.team-page-controls{align-items:stretch;flex-direction:column}
+.team-page-controls{align-items:stretch;flex-direction:column;padding:0 14px}
 .team-switcher{min-width:0;width:100%;max-width:100%}.team-switcher select{display:block;width:100%;min-width:0;max-width:100%}
 .team-roster-table,.team-roster-table tbody{display:block!important;width:100%!important;min-width:0!important;max-width:100%!important}
 .team-roster-table thead{display:none}
