@@ -57,8 +57,8 @@ class FantraxTeamRosters
                 $status = strtoupper(trim((string)($item['status'] ?? 'ACTIVE')));
                 $stat = $statsByKey[$this->key($name, $nhlTeam)] ?? ($statsByName[$this->nameKey($name)] ?? null);
                 $oppRaw = trim((string)($stat['opponent'] ?? ''));
-                $away = str_starts_with($oppRaw, '@');
-                $opponent = ltrim($oppRaw, '@');
+                $away = strtoupper((string)($stat['home_away'] ?? '')) === 'AWAY' || str_starts_with($oppRaw, '@');
+                $opponent = trim((string)($stat['opponent'] ?? ''));
 
                 $rows[] = [
                     'fantasy_team_id'=>(string)$teamId,
@@ -74,6 +74,7 @@ class FantraxTeamRosters
                     'is_playing'=>(bool)($stat['is_playing'] ?? false),
                     'opponent'=>$opponent !== '' ? $opponent : null,
                     'home_away'=>$opponent !== '' ? ($away ? 'AWAY' : 'HOME') : null,
+                    'game_time'=>$stat['game_time'] ?? null,
                     'projected_fpts'=>$stat['projected_fpts'] ?? null,
                 ];
             }
@@ -134,6 +135,8 @@ class FantraxTeamRosters
             $base = $rows[$key] ?? $row;
             $base['is_playing'] = true;
             $base['opponent'] = $row['opponent'] ?? null;
+            $base['home_away'] = $row['home_away'] ?? null;
+            $base['game_time'] = $row['game_time'] ?? null;
             $base['injury_status'] = $row['injury_status'] ?? ($base['injury_status'] ?? null);
             if (($base['projected_fpts'] ?? null) === null && ($row['projected_fpts'] ?? null) !== null) {
                 $base['projected_fpts'] = $row['projected_fpts'];
@@ -184,14 +187,27 @@ class FantraxTeamRosters
             if ($name === '' || $team === '') continue;
 
             $oppCell = $cell($entry, ['opponent','Opp']);
-            $opp = trim(html_entity_decode(strip_tags(str_replace(['<br>','<br/>','<br />'], ' ', (string)($oppCell['content'] ?? '')))));
-            if ($opp !== '') $opp = preg_split('/\s+/', $opp)[0];
+            $oppText = trim(preg_replace('/\s+/',' ',html_entity_decode(strip_tags(str_replace(['<br>','<br/>','<br />'], ' ', (string)($oppCell['content'] ?? ''))))));
+            $opponent = null;
+            $homeAway = null;
+            $gameTime = null;
+            if ($oppText !== '') {
+                if (preg_match('/^(?:vs\.?\s*)?@?([A-Z]{2,4})\b\s*(.*)$/i', $oppText, $m)) {
+                    $opponent = strtoupper($m[1]);
+                    $homeAway = str_contains($oppText, '@') ? 'AWAY' : 'HOME';
+                    $gameTime = trim($m[2]) !== '' ? trim($m[2]) : null;
+                } else {
+                    $opponent = $oppText;
+                }
+            }
 
             $fptsCell = $cell($entry, ['fpts','SCORE','FPts']);
             $rows[] = [
                 'player_name'=>$name,
                 'nhl_team'=>$team,
-                'opponent'=>$opp !== '' ? $opp : null,
+                'opponent'=>$opponent,
+                'home_away'=>$homeAway,
+                'game_time'=>$gameTime,
                 'projected_fpts'=>$this->numeric($fptsCell['content'] ?? null),
                 'injury_status'=>$this->injury($scorer['icons'] ?? []),
                 'is_playing'=>false,
