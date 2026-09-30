@@ -25,7 +25,6 @@
   @else
     @foreach($positions as $code=>$group)
       <section class="team-position-section">
-        <div class="section-title"><h2>{{ $group['label'] }}</h2><span class="subtle">{{ $group['rows']->count() }} players</span></div>
         <div class="table-card"><div class="table-scroll"><table class="data-table team-roster-table">
           <thead><tr><th>Player</th><th>Opponent</th><th>Contract</th><th class="num">Proj.</th></tr></thead>
           <tbody>
@@ -42,9 +41,9 @@
               <tr class="team-roster-group {{ $groupKey==='active'?'team-not-playing-toggle':'' }}" data-status="{{ $groupKey }}">
                 <td colspan="4">
                   @if($groupKey==='active')
-                    <button type="button" class="team-not-playing-button" aria-expanded="false">Not Playing <span class="team-not-playing-chevron">▾</span></button>
+                    <button type="button" class="team-not-playing-button" aria-expanded="false">{{ $group['label'] }} Not Playing <span class="team-not-playing-chevron">▾</span></button>
                   @else
-                    {{ $groupLabel }}
+                    {{ $group['label'] }} {{ $groupLabel }}
                   @endif
                 </td>
               </tr>
