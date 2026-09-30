@@ -15,6 +15,7 @@ class AiTips
             if (! in_array($position, ['F', 'D'], true)) continue;
             $status = self::availability($row);
             if ($status === null || trim((string) $row->opponent) === '' || ! $row->team || ! $row->player_name) continue;
+            if (self::gameHasStarted($row, $date)) continue;
             $groups[$position][] = self::player($row, $position, $date, $status);
         }
         foreach (['F', 'D'] as $position) {
@@ -59,6 +60,24 @@ class AiTips
         return $groups;
     }
 
+    private static function gameHasStarted(object $row, string $date): bool
+    {
+        if ($date !== now('America/Halifax')->toDateString()) return false;
+        $gameTime = trim((string)($row->game_time ?? ''));
+        if ($gameTime === '') return false;
+        if (!preg_match('/(\d{1,2}:\d{2}\s*(?:AM|PM))/i', $gameTime, $m)) return false;
+        try {
+            $starts = \Carbon\CarbonImmutable::createFromFormat(
+                '!Y-m-d g:i A',
+                $date.' '.strtoupper(preg_replace('/\s+/', ' ', trim($m[1]))),
+                'America/Halifax'
+            );
+            return $starts ? $starts->lte(now('America/Halifax')) : false;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     private static function availability(object $row): ?string
     {
         $status = strtoupper(trim((string) $row->availability));
@@ -70,6 +89,6 @@ class AiTips
     {
         $opponent = trim((string) ($row->opponent ?? ''));
         $opponent = strtoupper((string) ($row->home_away ?? '')) === 'AWAY' && $opponent !== '' ? '@'.$opponent : $opponent;
-        return ['name'=>$row->player_name,'team'=>$row->team,'position'=>$position,'opponent'=>$opponent,'status'=>$status,'injury_status'=>$row->injury_status,'projected_points'=>$row->projected_fpts===null?null:(float)$row->projected_fpts,'source_rank'=>(int)($row->source_rank??PHP_INT_MAX),'game_date'=>$date,'starting_status'=>null,'not_starting'=>false];
+        return ['name'=>$row->player_name,'team'=>$row->team,'position'=>$position,'opponent'=>$opponent,'game_time'=>$row->game_time??null,'status'=>$status,'injury_status'=>$row->injury_status,'projected_points'=>$row->projected_fpts===null?null:(float)$row->projected_fpts,'source_rank'=>(int)($row->source_rank??PHP_INT_MAX),'game_date'=>$date,'starting_status'=>null,'not_starting'=>false];
     }
 }
