@@ -113,7 +113,7 @@
 @endphp
 <div class="page-head"><div class="shell"><div class="eyebrow">Daily pickup watch</div><h1>Daily Targets</h1><p>Players to target on {{ $selectedDate->format('M j, Y') }}</p>@if($refreshAge)<p class="tips-last-refreshed">Data last refreshed {{ $refreshAge }} ago.</p>@endif</div></div>
 <div class="shell ai-tips">
-<div class="toolbar tips-toolbar" role="group" aria-label="Game date"><div class="tips-date-buttons"><a class="button {{ $date===$today?'primary':'tips-date-inactive' }}" href="/ai-tips?date={{ $today }}">Today</a><a class="button {{ $date===$tomorrow?'primary':'tips-date-inactive' }}" href="/ai-tips?date={{ $tomorrow }}">Tomorrow</a></div></div>
+<div class="toolbar tips-toolbar" role="group" aria-label="Game date"><div class="tips-date-buttons"><a class="button {{ $date===$today?'primary':'tips-date-inactive' }}" href="/daily-targets?date={{ $today }}">Today</a><a class="button {{ $date===$tomorrow?'primary':'tips-date-inactive' }}" href="/daily-targets?date={{ $tomorrow }}">Tomorrow</a></div></div>
 @if(session('job_success') || session('job_error'))<section class="job-results" aria-live="polite">@if(session('job_success'))<div class="job-message job-message-ok">{{ session('job_success') }}</div>@endif @if(session('job_error'))<div class="job-message job-message-error">{{ session('job_error') }}</div>@endif</section>@endif
 @if(!$hasTips)<div class="card"><h2>No tips available for this date</h2><p class="subtle">The collector tables do not currently contain qualifying available players for {{ $selectedDate->format('F j') }}.</p></div>
 @else
