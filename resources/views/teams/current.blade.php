@@ -53,28 +53,31 @@
                       @if(!empty($player->contract_label))
                         <span class="pill team-contract-sticker {{ $player->contract_class }}">{{ $player->contract_label }}</span>
                       @endif
-                      @if($player->line_number)
-                        @if(strtoupper((string)$player->position)==='G' && $player->line_number<=2)
-                          <span class="pill goalie-{{ $player->line_number }}">G{{ $player->line_number }}</span>
-                          @if($player->vegas_odds!==null)
-                            <span class="pill goalie-vegas-odds {{ $player->vegas_odds_class }}">{{ $player->vegas_odds>0?'+':'' }}{{ $player->vegas_odds }}</span>
-                          @endif
-                        @elseif($player->line_number<=4)
-                          <span class="pill line-{{ $player->line_number }}">L{{ $player->line_number }}</span>
-                        @endif
-                      @endif
-                      @if(strtoupper((string)$player->position)==='G' && !$player->line_number && $player->vegas_odds!==null)
+                      @if(strtoupper((string)$player->position)==='G' && $player->vegas_odds!==null)
                         <span class="pill goalie-vegas-odds {{ $player->vegas_odds_class }}">{{ $player->vegas_odds>0?'+':'' }}{{ $player->vegas_odds }}</span>
-                      @endif
-                      @if($player->pp_unit===1)
-                        <span class="pill pp1">PP1</span>
-                      @elseif($player->pp_unit===2)
-                        <span class="pill pp2">PP2</span>
                       @endif
                     </div>
                   </td>
                   <td data-label="Opponent">@if($player->opponent)<span class="{{ $player->home_away==='AWAY'?'team-away':'team-home' }}">{{ $player->home_away==='AWAY'?'@':'vs' }} {{ $player->opponent }}@if($player->game_time) · {{ $player->game_time }}@endif</span>@elseif($player->is_playing)<span class="team-playing-text">Playing</span>@endif</td>
-                  <td data-label="Proj." class="num"><strong>{{ $player->projected_fpts!==null?number_format($player->projected_fpts,0):'—' }}</strong></td>
+                  <td data-label="Proj." class="num">
+                    <div class="team-proj-wrap">
+                      <strong>{{ $player->projected_fpts!==null?number_format($player->projected_fpts,0):'—' }}</strong>
+                      <div class="team-proj-badges">
+                        @if($player->line_number)
+                          @if(strtoupper((string)$player->position)==='G' && $player->line_number<=2)
+                            <span class="pill goalie-{{ $player->line_number }}">G{{ $player->line_number }}</span>
+                          @elseif($player->line_number<=4)
+                            <span class="pill line-{{ $player->line_number }}">L{{ $player->line_number }}</span>
+                          @endif
+                        @endif
+                        @if($player->pp_unit===1)
+                          <span class="pill pp1">PP1</span>
+                        @elseif($player->pp_unit===2)
+                          <span class="pill pp2">PP2</span>
+                        @endif
+                      </div>
+                    </div>
+                  </td>
                 </tr>
               @endforeach
             @endif
@@ -162,7 +165,7 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
 .team-player-name-wrap strong{min-width:0;overflow-wrap:anywhere}
 .team-roster-table td[data-label="Proj."]{grid-column:2;grid-row:1;text-align:right;white-space:nowrap}
 .team-roster-table td[data-label="Opponent"]{grid-column:1;min-width:0;white-space:normal;font-size:11px;line-height:1.2}
-.team-roster-table .num{text-align:right}
+.team-roster-table .num{text-align:right}.team-proj-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:4px}.team-proj-badges{display:flex;justify-content:flex-end;gap:3px;flex-wrap:wrap}.team-proj-badges .pill{padding:1px 4px!important;font-size:9px!important;line-height:1.05}
 .team-roster-table tr.team-roster-group{display:block;width:100%;padding:0;overflow:hidden}
 .team-roster-table tr.team-roster-group td{display:block!important;width:100%;max-width:100%;padding:5px 8px!important}
 }
