@@ -3,6 +3,7 @@
 use App\Support\DailyFaceoffPowerPlay;
 use App\Support\DailyFaceoffStartingGoalies;
 use App\Support\FantraxAvailablePlayers;
+use App\Support\FantraxDailyScores;
 use App\Support\FantraxTeamRosters;
 use App\Support\NhlOdds;
 use Carbon\CarbonImmutable;
@@ -63,6 +64,36 @@ Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayer
     }catch(\Throwable $e){$failed=true;Log::error('Fantrax daily players refresh failed',['date'=>$date->format('Y-m-d'),'url'=>$fantrax->url($date),'error'=>$e->getMessage(),'exception'=>get_class($e)]);$this->error($date->format('Y-m-d').': '.$e->getMessage());}}
     if(!$failed){try{Artisan::call('ecfhl:refresh-available-goalies');$this->line(trim(Artisan::output()));}catch(\Throwable $e){$failed=true;$this->error('Available goalies: '.$e->getMessage());}}
     return $failed?1:0;
+});
+
+Artisan::command('ecfhl:refresh-daily-scores', function (FantraxDailyScores $fantrax) {
+    $date=CarbonImmutable::now('America/Halifax')->startOfDay();
+    try {
+        $data=$fantrax->fetch($date);
+        $now=now();
+        $rows=array_map(fn($r)=>[
+            'game_date'=>$date->toDateString(),
+            'player_name'=>$r['player_name'],
+            'nhl_team'=>$r['nhl_team'],
+            'position'=>$r['position'],
+            'fantasy_status'=>$r['fantasy_status'],
+            'today_fpts'=>$r['today_fpts'],
+            'source_url'=>$data['url'],
+            'checked_at'=>$now,
+            'created_at'=>$now,
+            'updated_at'=>$now,
+        ],$data['rows']);
+        DB::transaction(function()use($date,$rows){
+            DB::table('active_daily_scores')->whereDate('game_date',$date->toDateString())->delete();
+            if($rows)DB::table('active_daily_scores')->insert($rows);
+        });
+        $this->info($date->toDateString().': '.count($rows).' live Fantrax scores refreshed');
+        return 0;
+    } catch (\Throwable $e) {
+        Log::error('Fantrax live score refresh failed',['date'=>$date->toDateString(),'error'=>$e->getMessage()]);
+        $this->error($date->toDateString().': '.$e->getMessage().'. Existing live scores preserved.');
+        return 1;
+    }
 });
 
 Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $fantrax) {
@@ -165,6 +196,31 @@ Artisan::command('ecfhl:refresh-odds', function (NhlOdds $odds) {
     }
 });
 
+Schedule::command('ecfhl:refresh-daily-scores')->cron('*/2 * * * *')->withoutOverlapping(2)->runInBackground()->when(function () {
+    $tz='America/Halifax';
+    $now=CarbonImmutable::now($tz);
+    $today=$now->toDateString();
+    $times=DB::table('active_fantasy_rosters')
+        ->whereDate('game_date',$today)
+        ->whereNotNull('game_time')
+        ->pluck('game_time')
+        ->filter()
+        ->unique();
+
+    $starts=$times->map(function($value)use($today,$tz){
+        if(!preg_match('/(\\d{1,2}:\\d{2}\\s*(?:AM|PM))/i',(string)$value,$m))return null;
+        try {
+            return CarbonImmutable::createFromFormat('!Y-m-d g:i A',$today.' '.strtoupper(preg_replace('/\\s+/',' ',trim($m[1]))),$tz);
+        } catch (\Throwable) {
+            return null;
+        }
+    })->filter();
+
+    if($starts->isEmpty())return false;
+    $first=$starts->sort()->first();
+    $last=$starts->sortDesc()->first();
+    return $now->betweenIncluded($first,$last->addHours(4));
+});
 Schedule::command('ecfhl:refresh-daily-players')->hourlyAt(0)->withoutOverlapping(55);
 Schedule::command('ecfhl:refresh-fantasy-rosters')->hourlyAt(10)->withoutOverlapping(45)->runInBackground();
 Schedule::command('ecfhl:refresh-starting-goalies')->everyThirtyMinutes()->withoutOverlapping(25)->runInBackground();
