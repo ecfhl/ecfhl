@@ -111,7 +111,7 @@
                       @if(($target['pp_unit']??null)===1)<span class="pill pp1">PP1</span>@elseif(($target['pp_unit']??null)===2)<span class="pill pp2">PP2</span>@endif
                     </div>
                     <div class="team-target-opponent">
-                      @if(!empty($target['opponent']))<span>{{ $target['opponent'] }}</span>@endif
+                      @if(!empty($target['opponent']))<span>{{ $target['opponent'] }}@if(!empty($target['game_time'])) · {{ $target['game_time'] }}@endif</span>@endif
                       @if($code==='G')
                         @if(!empty($target['starting_status']))
                           <span class="pill goalie-status {{ $target['starting_status_class'] ?? 'goalie-status-na' }}">{{ $target['starting_status'] }}</span>
