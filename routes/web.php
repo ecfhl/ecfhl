@@ -68,8 +68,9 @@ Route::get('/teams/current', function() {
     $normTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
     $pp=DB::table('active_pp_lines')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name));
     $lines=DB::table('active_line_combinations')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name).'|'.strtoupper(trim($r->position_group)));
+    $oddsByTeam=DB::table('todays_odds')->whereDate('game_date',$date)->get()->keyBy(fn($r)=>$normTeam($r->team));
 
-    $rows=$rows->map(function($p)use($pp,$lines,$normName,$normTeam){
+    $rows=$rows->map(function($p)use($pp,$lines,$normName,$normTeam,$oddsByTeam){
         $team=$normTeam($p->nhl_team);
         $name=$normName($p->player_name);
         $pos=strtoupper(trim((string)$p->position));
@@ -77,6 +78,12 @@ Route::get('/teams/current', function() {
         $power=$pp[$team.'|'.$name]??null;
         $p->line_number=$line?(int)$line->line_number:null;
         $p->pp_unit=$power?(int)$power->pp_unit:null;
+        $p->vegas_odds=null;
+        $p->vegas_odds_class=null;
+        if($pos==='G' && isset($oddsByTeam[$team]) && $oddsByTeam[$team]->american_odds!==null){
+            $p->vegas_odds=(int)$oddsByTeam[$team]->american_odds;
+            $p->vegas_odds_class=$p->vegas_odds<=-130?'vegas-odds-good':($p->vegas_odds>=130?'vegas-odds-bad':'vegas-odds-even');
+        }
         $contractLabel=strtoupper((string)$p->roster_status)==='MINORS'?'Minors':trim((string)$p->contract);
         $contractKey=strtoupper($contractLabel);
         $p->contract_label=$contractLabel;
@@ -161,8 +168,9 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $normTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
     $pp=DB::table('active_pp_lines')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name));
     $lines=DB::table('active_line_combinations')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name).'|'.strtoupper(trim($r->position_group)));
+    $oddsByTeam=DB::table('todays_odds')->whereDate('game_date',$date)->get()->keyBy(fn($r)=>$normTeam($r->team));
 
-    $decorate=function($p)use($pp,$lines,$normName,$normTeam){
+    $decorate=function($p)use($pp,$lines,$normName,$normTeam,$oddsByTeam){
         $team=$normTeam($p->nhl_team);
         $name=$normName($p->player_name);
         $pos=strtoupper(trim((string)$p->position));
@@ -170,6 +178,12 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         $power=$pp[$team.'|'.$name]??null;
         $p->line_number=$line?(int)$line->line_number:null;
         $p->pp_unit=$power?(int)$power->pp_unit:null;
+        $p->vegas_odds=null;
+        $p->vegas_odds_class=null;
+        if($pos==='G' && isset($oddsByTeam[$team]) && $oddsByTeam[$team]->american_odds!==null){
+            $p->vegas_odds=(int)$oddsByTeam[$team]->american_odds;
+            $p->vegas_odds_class=$p->vegas_odds<=-130?'vegas-odds-good':($p->vegas_odds>=130?'vegas-odds-bad':'vegas-odds-even');
+        }
         $contractLabel=strtoupper((string)$p->roster_status)==='MINORS'?'Minors':trim((string)$p->contract);
         $contractKey=strtoupper($contractLabel);
         $p->contract_label=$contractLabel;
