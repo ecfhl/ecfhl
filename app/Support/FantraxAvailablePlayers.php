@@ -71,8 +71,16 @@ class FantraxAvailablePlayers
             $statusRaw = trim(html_entity_decode(strip_tags((string)($statusCell['content'] ?? '')))); $statusUpper = strtoupper($statusRaw);
             if ($statusUpper !== 'FA' && !str_starts_with($statusUpper, 'W')) continue;
             $oppCell = $cell($entry, ['opponent','Opp']);
-            $opp = trim(html_entity_decode(strip_tags(str_replace(['<br>','<br/>','<br />'], ' ', (string)($oppCell['content'] ?? '')))));
-            if ($opp !== '') $opp = preg_split('/\s+/', $opp)[0];
+            $oppText = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags(str_replace(['<br>','<br/>','<br />'], ' ', (string)($oppCell['content'] ?? ''))))));
+            $opp = '';
+            $gameTime = null;
+            if ($oppText !== '') {
+                $parts = preg_split('/\s+/', $oppText);
+                $opp = (string)($parts[0] ?? '');
+                if (preg_match('/(?:(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+)?(\d{1,2}:\d{2}\s*(?:AM|PM))/i', $oppText, $m)) {
+                    $gameTime = $this->atlanticGameTime($m[1], $day);
+                }
+            }
             $fptsCell = $cell($entry, ['fpts','SCORE','FPts']); $fpts = $this->numeric($fptsCell['content'] ?? null);
             $posValue = $scorer['posShortNames'] ?? $entry['multiPositions'] ?? '';
             $posText = is_array($posValue) ? implode(',', $posValue) : html_entity_decode(strip_tags((string)$posValue));
@@ -85,7 +93,7 @@ class FantraxAvailablePlayers
 
             $injury = $this->injury($scorer['icons'] ?? []); $waiverDay = null;
             if (preg_match('/W\s*\(([^)]+)\)/i', $statusRaw, $m)) $waiverDay = trim($m[1]);
-            $rows[] = ['player_name'=>$name,'team'=>$team,'position'=>$position,'opponent'=>$opp,'availability'=>str_starts_with($statusUpper,'W')?'W':'FA','waiver_day'=>$waiverDay,'injury_status'=>$injury,'projected_fpts'=>$fpts,'source_rank'=>(int)($scorer['rank']??($rank+1)),'fantrax_url'=>'https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/players;searchName='.rawurlencode($name).';positionOrGroup=ALL;'];
+            $rows[] = ['player_name'=>$name,'team'=>$team,'position'=>$position,'opponent'=>$opp,'game_time'=>$gameTime,'availability'=>str_starts_with($statusUpper,'W')?'W':'FA','waiver_day'=>$waiverDay,'injury_status'=>$injury,'projected_fpts'=>$fpts,'source_rank'=>(int)($scorer['rank']??($rank+1)),'fantrax_url'=>'https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/players;searchName='.rawurlencode($name).';positionOrGroup=ALL;'];
         }
         if (!$rows && $positionGroup !== 'G') throw new RuntimeException('Fantrax returned player rows but none were parseable as available players.');
         return ['url'=>$url, 'rows'=>$rows];
@@ -93,5 +101,18 @@ class FantraxAvailablePlayers
 
     private function position(string $value): ?string { $v=strtoupper($value); if(preg_match('/(^|[,\/ ])G($|[,\/ ])/',$v))return 'G'; if(preg_match('/(^|[,\/ ])D($|[,\/ ])/',$v))return 'D'; if(preg_match('/\b(C|LW|RW|F)\b/',$v))return 'F'; return $value!==''?$value:null; }
     private function injury(array $icons): ?string { foreach($icons as $icon){$type=(string)($icon['typeId']??'');$tip=trim((string)($icon['tooltip']??''));if(in_array($type,['1','2','30'],true)||preg_match('/injur|\bIR\b|day-to-day|out indefinitely/i',$tip))return preg_match('/injured reserve|injured list|\bIR\b/i',$tip)?'IR':($tip!==''?$tip:'INJ');}return null; }
+    private function atlanticGameTime(string $value, string $date): ?string
+    {
+        $value = trim($value);
+        if ($value === '' || $date === '') return null;
+        try {
+            $eastern = CarbonImmutable::createFromFormat('!Y-m-d g:i A', $date.' '.strtoupper(preg_replace('/\s+/', ' ', $value)), 'America/New_York');
+            if (!$eastern) return null;
+            return $eastern->setTimezone('America/Halifax')->format('D g:iA');
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     private function numeric(mixed $value): ?float { if($value===null||$value==='')return null;$value=preg_replace('/[^0-9.\-]/','',html_entity_decode(strip_tags((string)$value)));return is_numeric($value)?(float)$value:null; }
 }
