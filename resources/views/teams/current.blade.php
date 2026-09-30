@@ -56,9 +56,15 @@
                       @if($player->line_number)
                         @if(strtoupper((string)$player->position)==='G' && $player->line_number<=2)
                           <span class="pill goalie-{{ $player->line_number }}">G{{ $player->line_number }}</span>
+                          @if($player->vegas_odds!==null)
+                            <span class="pill goalie-vegas-odds {{ $player->vegas_odds_class }}">{{ $player->vegas_odds>0?'+':'' }}{{ $player->vegas_odds }}</span>
+                          @endif
                         @elseif($player->line_number<=4)
                           <span class="pill line-{{ $player->line_number }}">L{{ $player->line_number }}</span>
                         @endif
+                      @endif
+                      @if(strtoupper((string)$player->position)==='G' && !$player->line_number && $player->vegas_odds!==null)
+                        <span class="pill goalie-vegas-odds {{ $player->vegas_odds_class }}">{{ $player->vegas_odds>0?'+':'' }}{{ $player->vegas_odds }}</span>
                       @endif
                       @if($player->pp_unit===1)
                         <span class="pill pp1">PP1</span>
