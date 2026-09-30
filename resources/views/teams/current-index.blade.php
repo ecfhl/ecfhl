@@ -8,7 +8,7 @@
       <a class="button team-date-button {{ $date===$tomorrow?'primary':'team-date-inactive' }}" href="/teams/current?date={{ $tomorrow }}">Tomorrow</a>
     </div>
     <div class="team-status-slicer" role="group" aria-label="Roster status filter">
-      @foreach(['playing'=>'Playing','active'=>'Active','bench'=>'Bench','injured'=>'Injured'] as $filterKey=>$filterLabel)
+      @foreach(['playing'=>'Playing','active'=>'Not Playing','bench'=>'Bench','injured'=>'Injured'] as $filterKey=>$filterLabel)
         <button type="button" class="team-status-button {{ $filterKey==='playing'?'active':'' }}" data-status-filter="{{ $filterKey }}" aria-pressed="{{ $filterKey==='playing'?'true':'false' }}">{{ $filterLabel }}</button>
       @endforeach
     </div>
@@ -26,7 +26,7 @@
             @if($group['rows']->count())
               <section class="current-position-group">
                 <h3>{{ $group['label'] }}</h3>
-                @foreach(['playing'=>'Playing','active'=>'Active','bench'=>'Bench','injured'=>'Injured'] as $groupKey=>$groupLabel)
+                @foreach(['playing'=>'Playing','active'=>'Not Playing','bench'=>'Bench','injured'=>'Injured'] as $groupKey=>$groupLabel)
                   @php($statusRows=$group['rows']->filter(function($p)use($groupKey){
                     $injured=(bool)$p->is_ir;
                     $bench=(bool)$p->is_bench;
@@ -83,8 +83,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   const statusButtons=[...document.querySelectorAll('.team-status-button')];
   const selected=new Set(['playing']);
   const renderStatusFilter=()=>{
+    const showAll=selected.size===0;
     document.querySelectorAll('[data-status]').forEach(el=>{
-      el.style.display=selected.has(el.dataset.status)?'':'none';
+      el.style.display=(showAll||selected.has(el.dataset.status))?'':'none';
     });
     document.querySelectorAll('.team-position-section,.current-position-group').forEach(section=>{
       const visible=[...section.querySelectorAll('.team-player-data-row,.current-player-row')].some(row=>row.style.display!=='none');
@@ -99,7 +100,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   statusButtons.forEach(button=>button.addEventListener('click',()=>{
     const key=button.dataset.statusFilter;
     if(selected.has(key)) selected.delete(key); else selected.add(key);
-    if(selected.size===0) selected.add('playing');
     renderStatusFilter();
   }));
   renderStatusFilter();
