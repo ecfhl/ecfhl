@@ -48,6 +48,38 @@ Route::get('/teams/current', function() {
         ->whereIn('fantasy_team_name',$currentNames)
         ->get();
 
+    $scheduleByTeam=DB::table('active_starting_goalies')
+        ->whereDate('game_date',$date)
+        ->get()
+        ->keyBy(fn($g)=>strtoupper(trim((string)$g->team)));
+
+    $rows=$rows->map(function($p)use($scheduleByTeam){
+        $team=strtoupper(trim((string)$p->nhl_team));
+        if($team!=='' && isset($scheduleByTeam[$team])){
+            $game=$scheduleByTeam[$team];
+            $p->is_playing=true;
+            if(empty($p->opponent))$p->opponent=$game->opponent;
+            if(empty($p->home_away))$p->home_away=$game->home_away;
+        }
+        return $p;
+    });
+
+    $scheduleByTeam=DB::table('active_starting_goalies')
+        ->whereDate('game_date',$date)
+        ->get()
+        ->keyBy(fn($g)=>strtoupper(trim((string)$g->team)));
+
+    $rows=$rows->map(function($p)use($scheduleByTeam){
+        $team=strtoupper(trim((string)$p->nhl_team));
+        if($team!=='' && isset($scheduleByTeam[$team])){
+            $game=$scheduleByTeam[$team];
+            $p->is_playing=true;
+            if(empty($p->opponent))$p->opponent=$game->opponent;
+            if(empty($p->home_away))$p->home_away=$game->home_away;
+        }
+        return $p;
+    });
+
     $normName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\pL\pN]+/u','',mb_strtolower($name))??'';};
     $normTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
     $pp=DB::table('active_pp_lines')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name));
