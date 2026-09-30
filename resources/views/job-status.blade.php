@@ -1,9 +1,9 @@
 @extends('layouts.app')
 @section('content')
-<div class="page-head"><div class="shell"><div class="eyebrow">Data collectors</div><h1>Collector Status</h1><p>Current status of the automated data used by AI Tips.</p></div></div>
+<div class="page-head"><div class="shell"><div class="eyebrow">Data collectors</div><h1>Collector Status</h1><p>Current status of the automated data used by Daily Targets.</p></div></div>
 <div class="shell job-status">
     <div class="status-actions">
-        <a class="button status-back" href="/ai-tips">← Back to AI Tips</a>
+        <a class="button status-back" href="/ai-tips">← Back to Daily Targets</a>
         <form method="POST" action="/job-status/run/all" class="run-all-form job-ajax-form" data-job="all">
             @csrf
             <input type="hidden" name="return_to" value="job-status">
