@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    const selectedLines=new Set(availableLines);
    const selectedPp=new Set();
    const selectedGoalies=new Set(withGoalieFilters?['1','2']:[]);
+   let includeInjured=true;
 
    const searchWrap=document.createElement('div');
    searchWrap.className='tips-search-wrap';
@@ -49,6 +50,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    };
 
    const matchesFilters=row=>{
+     if(!includeInjured && row.dataset.injured==='1') return false;
      if(withGoalieFilters&&selectedGoalies.size){
        const goaliePill=row.querySelector('.tips-g1,.tips-g2');
        if(!goaliePill)return false;
@@ -94,13 +96,26 @@ document.addEventListener('DOMContentLoaded',()=>{
      render();
    });
 
+   const injuryWrap=document.createElement('div');
+   injuryWrap.className='tips-injury-filter-wrap';
+   injuryWrap.innerHTML='<button type="button" class="tips-filter-button tips-injury-filter active" aria-pressed="true">Include injured</button>';
+   searchWrap.insertAdjacentElement('afterend',injuryWrap);
+   const injuryButton=injuryWrap.querySelector('.tips-injury-filter');
+   injuryButton.addEventListener('click',()=>{
+     includeInjured=!includeInjured;
+     injuryButton.classList.toggle('active',includeInjured);
+     injuryButton.setAttribute('aria-pressed',includeInjured?'true':'false');
+     visible=5;
+     render();
+   });
+
    if(withGoalieFilters){
      const filterWrap=document.createElement('div');
      filterWrap.className='tips-line-pp-filters';
      filterWrap.setAttribute('role','group');
      filterWrap.setAttribute('aria-label',title+' goalie depth filters');
      filterWrap.innerHTML='<div class="tips-filter-row tips-goalie-filter-row"><button type="button" class="tips-filter-button tips-goalie-filter" data-goalie="1" aria-pressed="false">G1</button><button type="button" class="tips-filter-button tips-goalie-filter" data-goalie="2" aria-pressed="false">G2</button></div>';
-     searchWrap.insertAdjacentElement('afterend',filterWrap);
+     injuryWrap.insertAdjacentElement('afterend',filterWrap);
      filterWrap.querySelectorAll('.tips-goalie-filter').forEach(filter=>{
        filter.classList.add('active');
        filter.setAttribute('aria-pressed','true');
@@ -126,7 +141,7 @@ document.addEventListener('DOMContentLoaded',()=>{
        '<button type="button" class="tips-filter-button tips-pp-filter" data-pp="1" aria-pressed="false">PP1</button>'+
        '<button type="button" class="tips-filter-button tips-pp-filter" data-pp="2" aria-pressed="false">PP2</button>'+
        '</div>';
-     searchWrap.insertAdjacentElement('afterend',filterWrap);
+     injuryWrap.insertAdjacentElement('afterend',filterWrap);
 
      filterWrap.querySelectorAll('.tips-line-filter').forEach(filter=>{
        filter.classList.add('active');
@@ -167,6 +182,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 .tips-filter-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .tips-filter-button{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:7px 13px;font-weight:800;font-size:12px;cursor:pointer;transition:.15s ease}
 .tips-filter-button:hover{border-color:#64748b}
+.tips-injury-filter-wrap{margin:7px 0 2px}
+.tips-injury-filter.active{background:#fee2e2;color:#b91c1c;border-color:#fca5a5;box-shadow:0 2px 8px rgba(220,38,38,.12)}
 .tips-line-filter[data-line="1"].active{background:#dcfce7;color:#166534;border-color:#86efac;box-shadow:0 2px 8px rgba(22,163,74,.14)}
 .tips-line-filter[data-line="2"].active{background:#fef3c7;color:#92400e;border-color:#fcd34d;box-shadow:0 2px 8px rgba(234,179,8,.14)}
 .tips-line-filter[data-line="3"].active{background:#ffedd5;color:#9a3412;border-color:#fdba74;box-shadow:0 2px 8px rgba(234,88,12,.14)}
