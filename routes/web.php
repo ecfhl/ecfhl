@@ -64,6 +64,15 @@ Route::get('/teams/current', function() {
         return $p;
     });
 
+    $scoreName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower($name))??'';};
+    $scoreTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
+    $dailyScores=DB::table('active_daily_scores')->whereDate('game_date',$date)->get()->keyBy(fn($r)=>$scoreTeam($r->nhl_team).'|'.$scoreName($r->player_name));
+    $rows=$rows->map(function($p)use($dailyScores,$scoreName,$scoreTeam){
+        $score=$dailyScores[$scoreTeam($p->nhl_team).'|'.$scoreName($p->player_name)]??null;
+        $p->today_fpts=$score?(float)$score->today_fpts:0.0;
+        return $p;
+    });
+
     $normName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\pL\pN]+/u','',mb_strtolower($name))??'';};
     $normTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
     $pp=DB::table('active_pp_lines')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name));
@@ -115,6 +124,9 @@ Route::get('/teams/current', function() {
             'slug'=>\Illuminate\Support\Str::slug($teamName),
             'positions'=>$positions,
             'count'=>$teamRows->count(),
+            'today_fpts'=>$teamRows
+                ->reject(fn($p)=>(bool)$p->is_bench || (bool)$p->is_ir || strtoupper((string)$p->roster_status)==='MINORS')
+                ->sum(fn($p)=>(float)($p->today_fpts??0)),
         ];
     }
 
@@ -164,6 +176,15 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         return $p;
     });
 
+    $scoreName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower($name))??'';};
+    $scoreTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
+    $dailyScores=DB::table('active_daily_scores')->whereDate('game_date',$date)->get()->keyBy(fn($r)=>$scoreTeam($r->nhl_team).'|'.$scoreName($r->player_name));
+    $rows=$rows->map(function($p)use($dailyScores,$scoreName,$scoreTeam){
+        $score=$dailyScores[$scoreTeam($p->nhl_team).'|'.$scoreName($p->player_name)]??null;
+        $p->today_fpts=$score?(float)$score->today_fpts:0.0;
+        return $p;
+    });
+
     $normName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\pL\pN]+/u','',mb_strtolower($name))??'';};
     $normTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
     $pp=DB::table('active_pp_lines')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name));
@@ -208,6 +229,9 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     }
     $minorRows=$rows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){$ar=(bool)$a->is_ir?3:(!empty($a->opponent)?0:1);$br=(bool)$b->is_ir?3:(!empty($b->opponent)?0:1);return $ar!==$br?$ar<=>$br:strnatcasecmp((string)$a->player_name,(string)$b->player_name);})->values();
     $positions['M']=['label'=>'Minors','rows'=>$minorRows];
+    $teamTodayFpts=$rows
+        ->reject(fn($p)=>(bool)$p->is_bench || (bool)$p->is_ir || strtoupper((string)$p->roster_status)==='MINORS')
+        ->sum(fn($p)=>(float)($p->today_fpts??0));
 
     $targetGroups=\App\Support\AiTips::groups([], $date);
     $targetGroups=collect($targetGroups)->map(function($players,$position)use($pp,$lines,$normName,$normTeam,$date){
@@ -298,7 +322,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $fantasyTeamId=$rows->first()->fantasy_team_id??null;
     $fantraxTeamUrl=$fantasyTeamId?'https://www.fantrax.com/fantasy/league/092zcn40molvao69/team/roster;teamId='.$fantasyTeamId:null;
     $teamChoices=array_map(fn($name)=>['name'=>$name,'slug'=>\Illuminate\Support\Str::slug($name)],$currentNames);
-    return view('teams.current',compact('teamName','slug','date','today','tomorrow','positions','targetGroups','lastUpdate','fantraxTeamUrl','teamChoices'));
+    return view('teams.current',compact('teamName','slug','date','today','tomorrow','positions','targetGroups','lastUpdate','fantraxTeamUrl','teamChoices','teamTodayFpts'));
 });
 
 Route::get('/teams/{slug}', function(string $slug,EcfhlData $data){
