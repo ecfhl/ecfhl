@@ -96,11 +96,13 @@ Route::get('/teams/current', function() {
         $contractLabel=strtoupper((string)$p->roster_status)==='MINORS'?'Minors':trim((string)$p->contract);
         $contractKey=strtoupper($contractLabel);
         $p->contract_label=$contractLabel;
-        $p->contract_class=in_array($contractKey,['FA','1 YEAR','1 YEAR(S)','1 YR'],true)
-            ? 'contract-green'
-            : (in_array($contractKey,['TBD','MINORS'],true)
-                ? 'contract-yellow'
-                : (preg_match('/^[234]\s*(?:YEAR|YEARS|YR|YRS)/',$contractKey)?'contract-red':''));
+        $p->contract_class=$contractKey==='MINORS'
+            ? 'team-minors'
+            : (in_array($contractKey,['FA','1 YEAR','1 YEAR(S)','1 YR'],true)
+                ? 'contract-green'
+                : ($contractKey==='TBD'
+                    ? 'contract-yellow'
+                    : (preg_match('/^[234]\s*(?:YEAR|YEARS|YR|YRS)/',$contractKey)?'contract-red':'')));
         return $p;
     });
 
@@ -233,11 +235,13 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         $contractLabel=strtoupper((string)$p->roster_status)==='MINORS'?'Minors':trim((string)$p->contract);
         $contractKey=strtoupper($contractLabel);
         $p->contract_label=$contractLabel;
-        $p->contract_class=in_array($contractKey,['FA','1 YEAR','1 YEAR(S)','1 YR'],true)
-            ? 'contract-green'
-            : (in_array($contractKey,['TBD','MINORS'],true)
-                ? 'contract-yellow'
-                : (preg_match('/^[234]\s*(?:YEAR|YEARS|YR|YRS)/',$contractKey)?'contract-red':''));
+        $p->contract_class=$contractKey==='MINORS'
+            ? 'team-minors'
+            : (in_array($contractKey,['FA','1 YEAR','1 YEAR(S)','1 YR'],true)
+                ? 'contract-green'
+                : ($contractKey==='TBD'
+                    ? 'contract-yellow'
+                    : (preg_match('/^[234]\s*(?:YEAR|YEARS|YR|YRS)/',$contractKey)?'contract-red':'')));
         return $p;
     };
     $rows=$rows->map($decorate);
