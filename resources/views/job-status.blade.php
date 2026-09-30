@@ -70,7 +70,12 @@ document.addEventListener('DOMContentLoaded',()=>{
  };
  const runOne=async(job,lines)=>{
    lines.push(headings[job]);box.textContent=lines.join('\n');
-   const response=await fetch('/job-status/run/'+job,{method:'POST',headers:{'X-CSRF-TOKEN':csrf,'Accept':'application/json','X-Requested-With':'XMLHttpRequest'}});
+   const response=await fetch('/job-status/run/'+job,{
+     method:'POST',
+     credentials:'same-origin',
+     headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest','Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+     body:new URLSearchParams({_token:csrf,return_to:'job-status'}).toString()
+   });
    let data;try{data=await response.json();}catch(e){throw new Error('The '+job+' job did not return a valid response.');}
    const detail=data.details?.[job];
    if(!response.ok||detail?.failed)throw new Error(detail?.output||data.message||'Job failed.');
