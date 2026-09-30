@@ -6,16 +6,40 @@
     <meta name="color-scheme" content="light dark">
     @php
         if (request()->is('/')) {$browserTitle='East Coast Fantasy Hockey League';}
+        elseif(request()->is('teams/current/*')&&isset($teamName)){$browserTitle='ECFHL - '.$teamName;}
         elseif(request()->is('teams/*')&&isset($team)){$browserTitle='ECFHL - '.($team['team']??'Franchise');}
         elseif(request()->is('seasons/*')&&isset($season)){$browserTitle='ECFHL - '.($season['season']??'Season');}
         else{$pageTitles=['seasons'=>'Seasons','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','daily-targets'=>'Daily Targets','job-status'=>'Collector Status','rules'=>'Rules'];$browserTitle='ECFHL - '.($pageTitles[request()->segment(1)]??'East Coast Fantasy Hockey League');}
-        $showSeasonFilter=!request()->is('rules','players','daily-targets','job-status');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
+        $showSeasonFilter=!request()->is('rules','players','daily-targets','job-status','teams/current/*');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
+        $currentTeamMenu=\Illuminate\Support\Facades\DB::table('team_seasons as ts')->join('seasons as s','s.season_id','=','ts.season_id')->where('s.season_name','2026-27')->orderBy('ts.original_name')->pluck('ts.original_name')->all();
     @endphp
     <title>{{ $browserTitle }}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7"><link rel="shortcut icon" href="/favicon.svg?v=7"><link rel="apple-touch-icon" href="/ecfhl-logo.png?v=7"><link rel="stylesheet" href="/app.css?v=5"><link rel="stylesheet" href="/header-filters.css?v=3">
+<style>
+.nav-dropdown{position:relative;display:flex;align-items:center}.nav-dropdown-toggle{appearance:none;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;padding:8px 7px;cursor:pointer;border-radius:7px}.nav-dropdown.active>.nav-dropdown-toggle,.nav-dropdown-toggle:hover{background:var(--surface-2,rgba(255,255,255,.08))}.nav-dropdown-menu{display:none;position:absolute;top:100%;left:0;z-index:1000;min-width:430px;grid-template-columns:repeat(2,minmax(190px,1fr));gap:2px;padding:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,.18)}.nav-dropdown:hover .nav-dropdown-menu,.nav-dropdown.open .nav-dropdown-menu{display:grid}.nav-dropdown-menu a{display:block;padding:8px 10px!important;border-radius:7px;white-space:nowrap;text-decoration:none}.nav-dropdown-menu a:hover{background:var(--surface-2,#f1f5f9)}.nav-dropdown-menu .nav-history-link{grid-column:1/-1;border-top:1px solid var(--line);margin-top:4px;padding-top:9px!important;font-weight:800}
+@media(max-width:900px){.nav-dropdown{display:block;width:100%}.nav-dropdown-toggle{width:100%;text-align:left;padding:10px 0}.nav-dropdown:hover .nav-dropdown-menu{display:none}.nav-dropdown.open .nav-dropdown-menu{display:grid;position:static;min-width:0;width:100%;grid-template-columns:1fr;background:transparent;border:0;box-shadow:none;padding:4px 0 8px 12px}.nav-dropdown-menu a{padding:8px 0!important}.nav-dropdown-menu .nav-history-link{border-top:1px solid var(--line);padding-top:10px!important}}
+</style>
 </head>
 <body>
-<header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a></div><div class="header-actions"><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav">@foreach(['/'=>'Overview','/daily-targets'=>'Daily Targets','/seasons'=>'Seasons','/teams'=>'Franchises','/prizes'=>'Prizes','/trades'=>'Trades','/draft'=>'Draft','/players'=>'Players','/rules'=>'Rules'] as $url=>$label)<a href="{{ $url }}" class="{{ request()->is(ltrim($url,'/'))||($url==='/'&&request()->is('/'))?'active':'' }}" @if($url==='/draft') onclick="if(location.pathname==='/draft'){event.preventDefault();history.replaceState(null,'','/draft');window.scrollTo({top:0,left:0,behavior:'auto'});}" @endif>{{ $label }}</a>@endforeach</nav></div></header>
+<header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a></div><div class="header-actions"><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav">
+<a href="/" class="{{ request()->is('/')?'active':'' }}">Overview</a>
+<a href="/daily-targets" class="{{ request()->is('daily-targets')?'active':'' }}">Daily Targets</a>
+<a href="/seasons" class="{{ request()->is('seasons*')?'active':'' }}">Seasons</a>
+<div class="nav-dropdown {{ request()->is('teams*')?'active':'' }}">
+  <button type="button" class="nav-dropdown-toggle" onclick="this.parentElement.classList.toggle('open')" aria-label="Open Teams menu">Teams <span aria-hidden="true">▾</span></button>
+  <div class="nav-dropdown-menu">
+    @foreach($currentTeamMenu as $currentTeamName)
+      <a href="/teams/current/{{ \Illuminate\Support\Str::slug($currentTeamName) }}">{{ $currentTeamName }}</a>
+    @endforeach
+    <a class="nav-history-link" href="/teams">Franchise History</a>
+  </div>
+</div>
+<a href="/prizes" class="{{ request()->is('prizes')?'active':'' }}">Prizes</a>
+<a href="/trades" class="{{ request()->is('trades')?'active':'' }}">Trades</a>
+<a href="/draft" class="{{ request()->is('draft')?'active':'' }}" onclick="if(location.pathname==='/draft'){event.preventDefault();history.replaceState(null,'','/draft');window.scrollTo({top:0,left:0,behavior:'auto'});}">Draft</a>
+<a href="/players" class="{{ request()->is('players')?'active':'' }}">Players</a>
+<a href="/rules" class="{{ request()->is('rules')?'active':'' }}">Rules</a>
+</nav></div></header>
 @if($showSeasonFilter)<div class="season-filter-bar"><div class="shell"><div class="header-season-filter" role="group" aria-label="Season type">@foreach(['h2h'=>'Head-to-Head','total'=>'Total Points'] as $value=>$label)<button type="button" class="header-filter-button season-type-choice {{ in_array($seasonMode,[$value,'all'])?'active':'' }}" data-value="{{ $value }}">{{ $label }}</button>@endforeach</div></div></div>@endif
 <main>@yield('content')</main>
 <footer class="site-footer"><div class="shell footer-inner"><div><strong>ECFHL HISTORY</strong><br><span>2007–08 → present</span></div><div class="footer-right">Database-backed league archive</div></div></footer>
