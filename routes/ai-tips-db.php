@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/ai-tips', function () {
+Route::get('/daily-targets', function () {
     $now = \Carbon\CarbonImmutable::now('America/Halifax');
     $today = $now->toDateString();
     $tomorrow = $now->addDay()->toDateString();
@@ -30,4 +30,9 @@ Route::get('/ai-tips', function () {
         'snapshot',
         'groups'
     ));
+});
+
+Route::get('/ai-tips', function () {
+    $query = request()->getQueryString();
+    return redirect('/daily-targets'.($query ? '?'.$query : ''), 301);
 });
