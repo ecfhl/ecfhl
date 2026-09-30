@@ -33,7 +33,7 @@
               <tr class="team-roster-group {{ $groupKey==='playing'?'team-playing-group':'' }} {{ $groupKey==='active'?'team-not-playing-toggle':'' }}" data-status="{{ $groupKey }}">
                 <td colspan="3">
                   @if($groupKey==='active')
-                    <button type="button" class="team-not-playing-button" aria-expanded="false">{{ $group['label'] }} Not Playing <span class="team-not-playing-chevron">▾</span></button>
+                    <button type="button" class="team-not-playing-button" aria-expanded="false">{{ $group['label'] }} Not Playing ({{ $statusRows->reject(fn($p)=>(bool)$p->is_ir)->count() }}) <span class="team-not-playing-chevron">▾</span></button>
                   @else
                     {{ $group['label'] }} {{ $groupLabel }} ({{ $statusRows->reject(fn($p)=>(bool)$p->is_ir)->count() }})
                   @endif
