@@ -23,8 +23,6 @@
 <body>
 <header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a></div><div class="header-actions"><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav">
 <a href="/" class="{{ request()->is('/')?'active':'' }}">Overview</a>
-<a href="/daily-targets" class="{{ request()->is('daily-targets')?'active':'' }}">Daily Targets</a>
-<a href="/seasons" class="{{ request()->is('seasons*')?'active':'' }}">Seasons</a>
 <div class="nav-dropdown {{ request()->is('teams*')?'active':'' }}">
   <button type="button" class="nav-dropdown-toggle" onclick="this.parentElement.classList.toggle('open')" aria-label="Open Teams menu">Teams <span aria-hidden="true">▾</span></button>
   <div class="nav-dropdown-menu">
@@ -35,6 +33,8 @@
     <a class="nav-history-link" href="/teams">Franchise History</a>
   </div>
 </div>
+<a href="/daily-targets" class="{{ request()->is('daily-targets')?'active':'' }}">Daily Targets</a>
+<a href="/seasons" class="{{ request()->is('seasons*')?'active':'' }}">Seasons</a>
 <a href="/prizes" class="{{ request()->is('prizes')?'active':'' }}">Prizes</a>
 <a href="/trades" class="{{ request()->is('trades')?'active':'' }}">Trades</a>
 <a href="/draft" class="{{ request()->is('draft')?'active':'' }}" onclick="if(location.pathname==='/draft'){event.preventDefault();history.replaceState(null,'','/draft');window.scrollTo({top:0,left:0,behavior:'auto'});}">Draft</a>
