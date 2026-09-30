@@ -18,6 +18,15 @@ Route::get('/daily-targets', function () {
     // active_starting_goalies directly; PP badges are read from active_pp_lines
     // by the view. No JSON snapshot is used by this route.
     $groups = \App\Support\AiTips::groups([], $date);
+    $fantasyRosterRows = \Illuminate\Support\Facades\DB::table('active_fantasy_rosters')
+        ->whereDate('game_date', $date)
+        ->orderBy('fantasy_team_name')
+        ->orderByRaw("FIELD(position, 'F', 'D', 'G')")
+        ->orderBy('is_bench')
+        ->orderByRaw('opponent IS NULL')
+        ->orderByDesc('projected_fpts')
+        ->get();
+    $fantasyTeams = $fantasyRosterRows->groupBy('fantasy_team_id');
     $availableDates = [$today, $tomorrow];
     $snapshot = null;
 
@@ -28,7 +37,8 @@ Route::get('/daily-targets', function () {
         'selectedDate',
         'availableDates',
         'snapshot',
-        'groups'
+        'groups',
+        'fantasyTeams'
     ));
 });
 
