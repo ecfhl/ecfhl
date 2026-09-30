@@ -73,11 +73,11 @@ Route::get('/teams/current', function() {
                 $rank=fn($p)=>(bool)$p->is_ir?3:((bool)$p->is_bench?2:(!empty($p->opponent)?0:1));
                 $ar=$rank($a);$br=$rank($b);
                 if($ar!==$br)return $ar<=>$br;
-                return ((float)($b->projected_fpts??-INF)<=>(float)($a->projected_fpts??-INF));
+                return strnatcasecmp((string)$a->player_name,(string)$b->player_name);
             })->values();
             $positions[$code]=['label'=>$label,'rows'=>$positionRows];
         }
-        $minorRows=$teamRows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){$ar=(bool)$a->is_ir?3:(!empty($a->opponent)?0:1);$br=(bool)$b->is_ir?3:(!empty($b->opponent)?0:1);return $ar!==$br?$ar<=>$br:((float)($b->projected_fpts??-INF)<=>(float)($a->projected_fpts??-INF));})->values();
+        $minorRows=$teamRows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){$ar=(bool)$a->is_ir?3:(!empty($a->opponent)?0:1);$br=(bool)$b->is_ir?3:(!empty($b->opponent)?0:1);return $ar!==$br?$ar<=>$br:strnatcasecmp((string)$a->player_name,(string)$b->player_name);})->values();
         $positions['M']=['label'=>'Minors','rows'=>$minorRows];
         $teams[]=[
             'name'=>$teamName,
@@ -139,11 +139,11 @@ Route::get('/teams/current/{slug}', function(string $slug) {
             $rank=fn($p)=>(bool)$p->is_ir?3:((bool)$p->is_bench?2:(!empty($p->opponent)?0:1));
             $ar=$rank($a);$br=$rank($b);
             if($ar!==$br)return $ar<=>$br;
-            return ((float)($b->projected_fpts??-INF)<=>(float)($a->projected_fpts??-INF));
+            return strnatcasecmp((string)$a->player_name,(string)$b->player_name);
         })->values();
         $positions[$code]=['label'=>$label,'rows'=>$positionRows];
     }
-    $minorRows=$rows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){$ar=(bool)$a->is_ir?3:(!empty($a->opponent)?0:1);$br=(bool)$b->is_ir?3:(!empty($b->opponent)?0:1);return $ar!==$br?$ar<=>$br:((float)($b->projected_fpts??-INF)<=>(float)($a->projected_fpts??-INF));})->values();
+    $minorRows=$rows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){$ar=(bool)$a->is_ir?3:(!empty($a->opponent)?0:1);$br=(bool)$b->is_ir?3:(!empty($b->opponent)?0:1);return $ar!==$br?$ar<=>$br:strnatcasecmp((string)$a->player_name,(string)$b->player_name);})->values();
     $positions['M']=['label'=>'Minors','rows'=>$minorRows];
 
     $lastUpdate=$rows->max('last_update');
