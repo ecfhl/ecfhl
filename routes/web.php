@@ -101,16 +101,5 @@ Route::get('/ai-tips', function () {
     return view('ai-tips', compact('date','today','tomorrow','selected','goalies','forwards','defensemen'));
 });
 
-Route::get('/debug-lankinen', function (\App\Support\FantraxAvailablePlayers $fantrax) {
-    $date = \Carbon\CarbonImmutable::now('America/Halifax')->startOfDay();
-    $fresh = collect($fantrax->fetch($date, 'G')['rows'] ?? [])->first(fn($p) => strcasecmp($p['player_name'] ?? '', 'Kevin Lankinen') === 0);
-    return response()->json([
-        'date' => $date->format('Y-m-d'),
-        'fresh' => $fresh,
-        'daily' => DB::table('active_daily_players')->whereDate('game_date', $date->format('Y-m-d'))->where('player_name', 'Kevin Lankinen')->get(),
-        'available_goalies' => DB::table('active_available_goalies')->whereDate('game_date', $date->format('Y-m-d'))->where('player_name', 'Kevin Lankinen')->get(),
-    ]);
-});
-
 require __DIR__.'/ai-tips-db.php';
 require __DIR__.'/jobs.php';
