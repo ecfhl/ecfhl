@@ -196,8 +196,8 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $positions['M']=['label'=>'Minors','rows'=>$minorRows];
 
     $targetGroups=\App\Support\AiTips::groups([], $date);
-    $targetGroups=collect($targetGroups)->map(function($players,$position)use($pp,$lines,$normName,$normTeam){
-        $decorated=collect($players)->map(function($player)use($position,$pp,$lines,$normName,$normTeam){
+    $targetGroups=collect($targetGroups)->map(function($players,$position)use($pp,$lines,$normName,$normTeam,$date){
+        $decorated=collect($players)->map(function($player)use($position,$pp,$lines,$normName,$normTeam,$date){
             $team=$normTeam($player['team']??'');
             $name=$normName($player['name']??'');
             $line=$lines[$team.'|'.$name.'|'.$position]??null;
@@ -214,6 +214,16 @@ Route::get('/teams/current/{slug}', function(string $slug) {
                 '', 'na', 'n/a'=>'goalie-status-na',
                 default=>'goalie-status-na',
             };
+            if($position==='G'){
+                $odds=\Illuminate\Support\Facades\DB::table('todays_odds')
+                    ->whereDate('game_date',$date)
+                    ->whereRaw('UPPER(TRIM(team)) = ?', [$team])
+                    ->first();
+                $player['vegas_odds']=$odds?->american_odds;
+                $player['vegas_odds_class']=$odds && $odds->american_odds!==null
+                    ? ($odds->american_odds<=-130?'vegas-odds-good':($odds->american_odds>=130?'vegas-odds-bad':'vegas-odds-even'))
+                    : null;
+            }
             return $player;
         });
 
