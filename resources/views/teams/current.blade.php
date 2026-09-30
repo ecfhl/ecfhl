@@ -31,7 +31,7 @@
             @php($statusRows=$group['rows']->filter(function($p)use($groupKey){
               $injured=(bool)$p->is_ir;
               $bench=(bool)$p->is_bench;
-              $playing=!empty($p->opponent);
+              $playing=(bool)$p->is_playing;
               return match($groupKey){
                 'playing'=>$playing && !$injured && !$bench,
                 'active'=>!$playing && !$injured && !$bench,
@@ -45,7 +45,7 @@
               @foreach($statusRows as $player)
                 <tr class="{{ $groupKey!=='playing'?'team-not-playing':'' }}">
                   <td data-label="Player"><div class="team-player-name-wrap">@if($player->is_ir)<span class="pill team-ir">IR</span>@endif<strong>{{ $player->player_name }} @if($player->nhl_team)({{ $player->nhl_team }})@endif</strong>@if($player->line_number)<span class="pill line-{{ $player->line_number }}">L{{ $player->line_number }}</span>@endif @if($player->pp_unit===1)<span class="pill pp1">PP1</span>@elseif($player->pp_unit===2)<span class="pill pp2">PP2</span>@endif</div></td>
-                  <td data-label="Opponent">@if($player->opponent)<span class="{{ $player->home_away==='AWAY'?'team-away':'team-home' }}">{{ $player->home_away==='AWAY'?'@':'vs' }} {{ $player->opponent }}</span>@elseif($player->is_playing)<span class="team-playing-text">Playing</span>@else<span class="subtle">Not playing</span>@endif</td>
+                  <td data-label="Opponent">@if($player->opponent)<span class="{{ $player->home_away==='AWAY'?'team-away':'team-home' }}">{{ $player->home_away==='AWAY'?'@':'vs' }} {{ $player->opponent }}@if($player->game_time) · {{ $player->game_time }}@endif</span>@elseif($player->is_playing)<span class="team-playing-text">Playing</span>@else<span class="subtle">Not playing</span>@endif</td>
                   <td data-label="Proj." class="num"><strong>{{ $player->projected_fpts!==null?number_format($player->projected_fpts,0):'—' }}</strong></td>
                 </tr>
               @endforeach
