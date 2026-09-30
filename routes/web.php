@@ -217,6 +217,14 @@ Route::get('/teams/current/{slug}', function(string $slug) {
             return $player;
         });
 
+        $decorated=$decorated->filter(function($player)use($position){
+            if(!empty($player['injury_status'])) return true;
+            $line=$player['line_number']??null;
+            return $position==='G'
+                ? in_array($line,[1,2],true)
+                : in_array($line,[1,2,3,4],true);
+        })->values();
+
         if(in_array($position,['F','D'],true)){
             $decorated=$decorated->sort(function($a,$b){
                 $rank=function($player){
