@@ -220,7 +220,7 @@ class FantraxTeamRosters
                 if (preg_match('/^(?:vs\.?\s*)?@?([A-Z]{2,4})\b\s*(.*)$/i', $oppText, $m)) {
                     $opponent = strtoupper($m[1]);
                     $homeAway = str_contains($oppText, '@') ? 'AWAY' : 'HOME';
-                    $gameTime = trim($m[2]) !== '' ? trim($m[2]) : null;
+                    $gameTime = trim($m[2]) !== '' ? $this->atlanticGameTime(trim($m[2]), (string)($requestData['datePlaying'] ?? '')) : null;
                 } else {
                     $opponent = $oppText;
                 }
@@ -243,6 +243,28 @@ class FantraxTeamRosters
             ];
         }
         return $rows;
+    }
+
+    private function atlanticGameTime(string $value, string $date): string
+    {
+        $value = trim($value);
+        if ($value === '' || $date === '') return $value;
+
+        if (!preg_match('/(?:(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+)?(\d{1,2}:\d{2}\s*(?:AM|PM))/i', $value, $m)) {
+            return $value;
+        }
+
+        try {
+            $eastern = CarbonImmutable::createFromFormat(
+                '!Y-m-d g:i A',
+                $date.' '.strtoupper(preg_replace('/\s+/', ' ', trim($m[1]))),
+                'America/New_York'
+            );
+            if (!$eastern) return $value;
+            return $eastern->setTimezone('America/Halifax')->format('D g:iA');
+        } catch (\Throwable) {
+            return $value;
+        }
     }
 
     private function key(string $name, string $team): string
