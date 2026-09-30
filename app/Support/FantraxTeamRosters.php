@@ -105,14 +105,10 @@ class FantraxTeamRosters
         // actually scheduled to play on a given day. Keep projections separate
         // so players without a game still retain their season projected FPts.
         $playing = $this->fetchStatsPage([
-            'reload'=>'1',
             'statusOrTeamFilter'=>'ALL_TAKEN',
             'pageNumber'=>'1',
             'datePlaying'=>$day,
-            'sortType'=>'STATUS',
             'maxResultsPerPage'=>500,
-            'positionOrGroup'=>'ALL',
-            'miscDisplayType'=>'1',
         ]);
 
         $projections = $this->fetchStatsPage([
@@ -122,13 +118,26 @@ class FantraxTeamRosters
             'timeframeTypeCode'=>'PROJECTED_SEASON',
             'maxResultsPerPage'=>500,
             'positionOrGroup'=>'ALL',
+        ]);
+
+        $contracts = $this->fetchStatsPage([
+            'statusOrTeamFilter'=>'ALL_TAKEN',
+            'pageNumber'=>'1',
+            'maxResultsPerPage'=>500,
+            'positionOrGroup'=>'ALL',
             'miscDisplayType'=>'1',
         ]);
+        $contractsByKey = [];
+        foreach ($contracts as $row) {
+            $contractsByKey[$this->key($row['player_name'] ?? '', $row['nhl_team'] ?? '')] = $row['contract'] ?? null;
+        }
 
         $projectionByKey = [];
         foreach ($projections as $row) {
             $row['is_playing'] = false;
-            $projectionByKey[$this->key($row['player_name'] ?? '', $row['nhl_team'] ?? '')] = $row;
+            $key = $this->key($row['player_name'] ?? '', $row['nhl_team'] ?? '');
+            $row['contract'] = $contractsByKey[$key] ?? ($row['contract'] ?? null);
+            $projectionByKey[$key] = $row;
         }
 
         $rows = $projectionByKey;
@@ -136,6 +145,7 @@ class FantraxTeamRosters
             $row['is_playing'] = true;
             $key = $this->key($row['player_name'] ?? '', $row['nhl_team'] ?? '');
             $base = $rows[$key] ?? $row;
+            $base['contract'] = $contractsByKey[$key] ?? ($base['contract'] ?? null);
             $base['is_playing'] = true;
             $base['opponent'] = $row['opponent'] ?? null;
             $base['home_away'] = $row['home_away'] ?? null;
