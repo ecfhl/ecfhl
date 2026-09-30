@@ -195,11 +195,24 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $minorRows=$rows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){$ar=(bool)$a->is_ir?3:(!empty($a->opponent)?0:1);$br=(bool)$b->is_ir?3:(!empty($b->opponent)?0:1);return $ar!==$br?$ar<=>$br:strnatcasecmp((string)$a->player_name,(string)$b->player_name);})->values();
     $positions['M']=['label'=>'Minors','rows'=>$minorRows];
 
+    $targetGroups=\App\Support\AiTips::groups([], $date);
+    $targetGroups=collect($targetGroups)->map(function($players,$position)use($pp,$lines,$normName,$normTeam){
+        return collect($players)->take(5)->map(function($player)use($position,$pp,$lines,$normName,$normTeam){
+            $team=$normTeam($player['team']??'');
+            $name=$normName($player['name']??'');
+            $line=$lines[$team.'|'.$name.'|'.$position]??null;
+            $power=$pp[$team.'|'.$name]??null;
+            $player['line_number']=$line?(int)$line->line_number:null;
+            $player['pp_unit']=$power?(int)$power->pp_unit:null;
+            return $player;
+        })->values()->all();
+    })->all();
+
     $lastUpdate=$rows->max('last_update');
     $fantasyTeamId=$rows->first()->fantasy_team_id??null;
     $fantraxTeamUrl=$fantasyTeamId?'https://www.fantrax.com/fantasy/league/092zcn40molvao69/team/roster;teamId='.$fantasyTeamId:null;
     $teamChoices=array_map(fn($name)=>['name'=>$name,'slug'=>\Illuminate\Support\Str::slug($name)],$currentNames);
-    return view('teams.current',compact('teamName','slug','date','today','tomorrow','positions','lastUpdate','fantraxTeamUrl','teamChoices'));
+    return view('teams.current',compact('teamName','slug','date','today','tomorrow','positions','targetGroups','lastUpdate','fantraxTeamUrl','teamChoices'));
 });
 
 Route::get('/teams/{slug}', function(string $slug,EcfhlData $data){
