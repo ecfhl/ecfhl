@@ -48,12 +48,14 @@ Route::get('/teams/current', function() {
         ->whereIn('fantasy_team_name',$currentNames)
         ->get();
 
-    $pp=DB::table('active_pp_lines')->get()->keyBy(fn($r)=>strtoupper(trim($r->team)).'|'.mb_strtolower(trim($r->player_name)));
-    $lines=DB::table('active_line_combinations')->get()->keyBy(fn($r)=>strtoupper(trim($r->team)).'|'.mb_strtolower(trim($r->player_name)).'|'.strtoupper(trim($r->position_group)));
+    $normName=fn($v)=>preg_replace('/[^\pL\pN]+/u','',mb_strtolower(trim((string)$v)))??'';
+    $normTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
+    $pp=DB::table('active_pp_lines')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name));
+    $lines=DB::table('active_line_combinations')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name).'|'.strtoupper(trim($r->position_group)));
 
-    $rows=$rows->map(function($p)use($pp,$lines){
-        $team=strtoupper(trim((string)$p->nhl_team));
-        $name=mb_strtolower(trim((string)$p->player_name));
+    $rows=$rows->map(function($p)use($pp,$lines,$normName,$normTeam){
+        $team=$normTeam($p->nhl_team);
+        $name=$normName($p->player_name);
         $pos=strtoupper(trim((string)$p->position));
         $line=$lines[$team.'|'.$name.'|'.$pos]??null;
         $power=$pp[$team.'|'.$name]??null;
@@ -114,12 +116,14 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         ->where('fantasy_team_name',$teamName)
         ->get();
 
-    $pp=DB::table('active_pp_lines')->get()->keyBy(fn($r)=>strtoupper(trim($r->team)).'|'.mb_strtolower(trim($r->player_name)));
-    $lines=DB::table('active_line_combinations')->get()->keyBy(fn($r)=>strtoupper(trim($r->team)).'|'.mb_strtolower(trim($r->player_name)).'|'.strtoupper(trim($r->position_group)));
+    $normName=fn($v)=>preg_replace('/[^\pL\pN]+/u','',mb_strtolower(trim((string)$v)))??'';
+    $normTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
+    $pp=DB::table('active_pp_lines')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name));
+    $lines=DB::table('active_line_combinations')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name).'|'.strtoupper(trim($r->position_group)));
 
-    $decorate=function($p)use($pp,$lines){
-        $team=strtoupper(trim((string)$p->nhl_team));
-        $name=mb_strtolower(trim((string)$p->player_name));
+    $decorate=function($p)use($pp,$lines,$normName,$normTeam){
+        $team=$normTeam($p->nhl_team);
+        $name=$normName($p->player_name);
         $pos=strtoupper(trim((string)$p->position));
         $line=$lines[$team.'|'.$name.'|'.$pos]??null;
         $power=$pp[$team.'|'.$name]??null;
