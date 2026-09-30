@@ -3,6 +3,7 @@
 use App\Support\DailyFaceoffPowerPlay;
 use App\Support\DailyFaceoffStartingGoalies;
 use App\Support\FantraxAvailablePlayers;
+use App\Support\NhlOdds;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -101,8 +102,41 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
     }
     return $failed?1:0;
 });
+
+Artisan::command('ecfhl:refresh-odds', function (NhlOdds $odds) {
+    $base = CarbonImmutable::now('America/Halifax')->startOfDay();
+    $wanted = [$base->toDateString(), $base->addDay()->toDateString()];
+    try {
+        $data = $odds->fetch();
+        $rows = array_values(array_filter($data['rows'], fn($r) => in_array($r['game_date'], $wanted, true)));
+        $now = now();
+        $sourceUpdated = $data['source_updated_at'] ? CarbonImmutable::parse($data['source_updated_at']) : null;
+        foreach ($rows as &$row) {
+            $row['source_updated_at'] = $sourceUpdated;
+            $row['checked_at'] = $now;
+            $row['created_at'] = $now;
+            $row['updated_at'] = $now;
+        }
+        unset($row);
+        DB::transaction(function () use ($wanted, $rows) {
+            DB::table('todays_odds')->whereIn('game_date', $wanted)->delete();
+            if ($rows) DB::table('todays_odds')->insert($rows);
+        });
+        foreach ($wanted as $day) {
+            $count = count(array_filter($rows, fn($r) => $r['game_date'] === $day));
+            $this->info($day.': '.$count.' NHL team odds refreshed');
+        }
+        return 0;
+    } catch (\Throwable $e) {
+        Log::error('NHL odds refresh failed', ['error'=>$e->getMessage()]);
+        $this->error($e->getMessage().'. Existing odds data preserved.');
+        return 1;
+    }
+});
+
 Schedule::command('ecfhl:refresh-daily-players')->hourlyAt(0)->withoutOverlapping(55);
 Schedule::command('ecfhl:refresh-starting-goalies')->everyThirtyMinutes()->withoutOverlapping(25)->runInBackground();
 Schedule::command('ecfhl:refresh-pp-lines')->cron('2 */4 * * *')->withoutOverlapping(240)->runInBackground();
+Schedule::command('ecfhl:refresh-odds')->cron('6 */4 * * *')->withoutOverlapping(30)->runInBackground();
 
 require __DIR__.'/available-goalies.php';
