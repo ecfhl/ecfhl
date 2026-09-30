@@ -23,7 +23,7 @@
                   @php($statusRows=$group['rows']->filter(function($p)use($groupKey){
                     $injured=(bool)$p->is_ir;
                     $bench=(bool)$p->is_bench;
-                    $playing=!empty($p->opponent);
+                    $playing=(bool)$p->is_playing;
                     return match($groupKey){
                       'playing'=>$playing && !$injured && !$bench,
                       'active'=>!$playing && !$injured && !$bench,
@@ -48,7 +48,7 @@
                             </span>
                           </div>
                           <div class="current-player-opponent">
-                            @if($player->opponent)<span class="{{ $player->home_away==='AWAY'?'team-away':'team-home' }}">{{ $player->home_away==='AWAY'?'@':'vs' }} {{ $player->opponent }}</span>@elseif($player->is_playing)<span class="team-playing-text">Playing</span>@else<span class="subtle">No game</span>@endif
+                            @if($player->opponent)<span class="{{ $player->home_away==='AWAY'?'team-away':'team-home' }}">{{ $player->home_away==='AWAY'?'@':'vs' }} {{ $player->opponent }}@if($player->game_time) · {{ $player->game_time }}@endif</span>@elseif($player->is_playing)<span class="team-playing-text">Playing</span>@else<span class="subtle">No game</span>@endif
                           </div>
                         </div>
                         <div class="current-player-points"><span>Proj.</span><strong>{{ $player->projected_fpts!==null?number_format($player->projected_fpts,0):'—' }}</strong></div>
