@@ -101,10 +101,5 @@ Route::get('/ai-tips', function () {
     return view('ai-tips', compact('date','today','tomorrow','selected','goalies','forwards','defensemen'));
 });
 
-Route::get('/maintenance/run-fantrax-b68a61c', function () {
-    $exitCode = \Illuminate\Support\Facades\Artisan::call('ecfhl:refresh-daily-players');
-    return response()->json(['exit_code'=>$exitCode,'output'=>trim(\Illuminate\Support\Facades\Artisan::output())], $exitCode === 0 ? 200 : 500);
-});
-
 require __DIR__.'/ai-tips-db.php';
 require __DIR__.'/jobs.php';
