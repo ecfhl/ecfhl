@@ -250,7 +250,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
             });
         }
 
-        return $decorated->take(5)->values()->all();
+        return $decorated->values()->all();
     })->all();
 
     $lastUpdate=$rows->max('last_update');
