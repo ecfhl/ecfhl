@@ -120,6 +120,7 @@ Route::get('/teams/current', function() {
         $minorRows=$teamRows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){$ar=(bool)$a->is_ir?3:(!empty($a->opponent)?0:1);$br=(bool)$b->is_ir?3:(!empty($b->opponent)?0:1);return $ar!==$br?$ar<=>$br:strnatcasecmp((string)$a->player_name,(string)$b->player_name);})->values();
         $positions['M']=['label'=>'Minors','rows'=>$minorRows];
         $teams[]=[
+            'id'=>(string)($teamRows->first()?->fantasy_team_id ?? ''),
             'name'=>$teamName,
             'slug'=>\Illuminate\Support\Str::slug($teamName),
             'positions'=>$positions,
@@ -130,8 +131,32 @@ Route::get('/teams/current', function() {
         ];
     }
 
+    $matchups=[];
+    $scheduleLabel=null;
+    try {
+        $schedule=app(\App\Support\FantraxSchedule::class)->forDate(\Carbon\CarbonImmutable::parse($date,$tz));
+        $scheduleLabel=trim((string)($schedule['caption']??''));
+        $teamsById=collect($teams)->filter(fn($t)=>$t['id']!=='')->keyBy('id');
+        $used=[];
+        foreach(($schedule['matchups']??[]) as $pair){
+            $away=$teamsById[$pair['away_team_id']]??null;
+            $home=$teamsById[$pair['home_team_id']]??null;
+            if(!$away || !$home)continue;
+            $matchups[]=['away'=>$away,'home'=>$home];
+            $used[$away['id']]=true;
+            $used[$home['id']]=true;
+        }
+        foreach($teams as $team){
+            if($team['id']!=='' && isset($used[$team['id']]))continue;
+            $matchups[]=['away'=>$team,'home'=>null];
+        }
+    } catch (\Throwable $e) {
+        report($e);
+        foreach($teams as $team)$matchups[]=['away'=>$team,'home'=>null];
+    }
+
     $lastUpdate=$rows->max('last_update');
-    return view('teams.current-index',compact('teams','date','today','tomorrow','lastUpdate'));
+    return view('teams.current-index',compact('teams','matchups','scheduleLabel','date','today','tomorrow','lastUpdate'));
 });
 
 Route::get('/teams/current/{slug}', function(string $slug) {
