@@ -122,6 +122,7 @@ class FantraxTeamRosters
             'timeframeTypeCode'=>'PROJECTED_SEASON',
             'maxResultsPerPage'=>500,
             'positionOrGroup'=>'ALL',
+            'miscDisplayType'=>'1',
         ]);
 
         $projectionByKey = [];
@@ -140,6 +141,9 @@ class FantraxTeamRosters
             $base['home_away'] = $row['home_away'] ?? null;
             $base['game_time'] = $row['game_time'] ?? null;
             $base['injury_status'] = $row['injury_status'] ?? ($base['injury_status'] ?? null);
+            if (($base['contract'] ?? null) === null && ($row['contract'] ?? null) !== null) {
+                $base['contract'] = $row['contract'];
+            }
             if (($base['projected_fpts'] ?? null) === null && ($row['projected_fpts'] ?? null) !== null) {
                 $base['projected_fpts'] = $row['projected_fpts'];
             }
