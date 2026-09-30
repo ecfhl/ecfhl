@@ -370,12 +370,14 @@ Route::get('/job-status', function () {
     $linesLast = DB::table('active_pp_lines')->max('checked_at');
     $oddsLast = DB::table('todays_odds')->max('checked_at');
     $teamsLast = DB::table('active_fantasy_rosters')->max('last_update');
+    $scoresLast = DB::table('active_daily_scores')->max('checked_at');
     $jobs = [
         ['key'=>'players','name'=>'Fantrax Available Players','schedule'=>'Every hour at :00','last_update'=>$format($fantraxLast),'records'=>DB::table('active_daily_players')->count(),'next_run'=>$nextHourly(0),'state'=>$state($fantraxLast,90),'description'=>'Available players playing today and tomorrow, including projected fantasy points.'],
         ['key'=>'goalies','name'=>'Daily Faceoff Goalies','schedule'=>'Every 30 minutes','last_update'=>$format($goaliesLast),'records'=>DB::table('active_starting_goalies')->count(),'next_run'=>$nextHalfHourly(),'state'=>$state($goaliesLast,60),'description'=>'Starting-goalie status for today and tomorrow.'],
         ['key'=>'lines','name'=>'Daily Faceoff Lines','schedule'=>'Every 4 hours at :02','last_update'=>$format($linesLast),'records'=>DB::table('active_pp_lines')->count(),'next_run'=>$nextFourHourly(2),'state'=>$state($linesLast,300),'description'=>'Current line combinations and PP1/PP2 assignments for all NHL teams.'],
         ['key'=>'odds','name'=>'NHL Odds','schedule'=>'Every 4 hours at :06','last_update'=>$format($oddsLast),'records'=>DB::table('todays_odds')->count(),'next_run'=>$nextFourHourly(6),'state'=>$state($oddsLast,300),'description'=>'Consensus NHL moneyline odds for today and tomorrow from The Odds API.'],
         ['key'=>'teams','name'=>'Fantasy Team Rosters','schedule'=>'Every hour at :10','last_update'=>$format($teamsLast),'records'=>DB::table('active_fantasy_rosters')->count(),'next_run'=>$nextHourly(10),'state'=>$state($teamsLast,90),'description'=>'Current Fantrax rosters for every fantasy team, enriched with projections, opponents, injuries, line and power-play assignments.'],
+        ['key'=>'scores','name'=>'Live Daily Scores','schedule'=>'Every 2 minutes during games','last_update'=>$format($scoresLast),'records'=>DB::table('active_daily_scores')->count(),'next_run'=>'During live-game window','state'=>$state($scoresLast,6),'description'=>'Fantrax player FPts for today, refreshed from the public CSV export from first game start until four hours after the last game starts.'],
     ];
     return response()
         ->view('job-status', compact('jobs'))
