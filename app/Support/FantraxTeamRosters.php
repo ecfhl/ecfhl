@@ -26,10 +26,13 @@ class FantraxTeamRosters
         }
 
         $teamInfo = is_array($league['teamInfo'] ?? null) ? $league['teamInfo'] : [];
+        $statsById = [];
         $statsByKey = [];
         $statsByName = [];
         $duplicateNames = [];
         foreach ($stats as $row) {
+            $statId = trim((string)($row['player_id'] ?? ''));
+            if ($statId !== '') $statsById[$statId] = $row;
             $key = $this->key($row['player_name'] ?? '', $row['nhl_team'] ?? '');
             if ($key !== '|') $statsByKey[$key] = $row;
             $nameKey = $this->nameKey($row['player_name'] ?? '');
@@ -55,7 +58,7 @@ class FantraxTeamRosters
 
                 $position = $this->position((string)($p['position'] ?? ($item['position'] ?? '')));
                 $status = strtoupper(trim((string)($item['status'] ?? 'ACTIVE')));
-                $stat = $statsByKey[$this->key($name, $nhlTeam)] ?? ($statsByName[$this->nameKey($name)] ?? null);
+                $stat = $statsById[$playerId] ?? $statsByKey[$this->key($name, $nhlTeam)] ?? ($statsByName[$this->nameKey($name)] ?? null);
                 $oppRaw = trim((string)($stat['opponent'] ?? ''));
                 $away = strtoupper((string)($stat['home_away'] ?? '')) === 'AWAY' || str_starts_with($oppRaw, '@');
                 $opponent = trim((string)($stat['opponent'] ?? ''));
@@ -221,6 +224,7 @@ class FantraxTeamRosters
             $contractCell = $cell($entry, ['contract','CONTRACT','Contract']);
             $contract = trim(html_entity_decode(strip_tags((string)($contractCell['content'] ?? ''))));
             $rows[] = [
+                'player_id'=>(string)($scorer['scorerId'] ?? ''),
                 'player_name'=>$name,
                 'nhl_team'=>$team,
                 'opponent'=>$opponent,
@@ -242,7 +246,12 @@ class FantraxTeamRosters
 
     private function nameKey(string $name): string
     {
-        return preg_replace('/[^\pL\pN]+/u', '', mb_strtolower(trim($name))) ?? '';
+        $name = trim($name);
+        if (str_contains($name, ',')) {
+            [$last,$first] = array_map('trim', explode(',', $name, 2));
+            if ($first !== '' && $last !== '') $name = $first.' '.$last;
+        }
+        return preg_replace('/[^\pL\pN]+/u', '', mb_strtolower($name)) ?? '';
     }
 
     private function teamKey(string $team): string
