@@ -28,6 +28,65 @@ Route::get('/seasons/{season}', function(string $season,EcfhlData $data){
     return view('seasons.show',['season'=>$row,'tradeLeaders'=>$tradeLeaders,'standings'=>$standings,'awards'=>$data->seasonAwards($season),'tradeCount'=>$data->seasonTradeCount($season),'topPicks'=>$firstRoundPicks]);
 })->where('season','.*');
 Route::get('/teams', function(EcfhlData $data){$type=$data->mode();$status=request('status','all');$allTeams=$data->teamLedger($type,'all');$teams=$data->teamLedger($type,$status);$overview=$data->overviewLeaders();$totals=[];foreach($data->teamSeasons() as $r){$id=$r['franchise_id']??null;if($id&&$r['fantasy_points_for']!==null)$totals[$id]=($totals[$id]??0)+(float)$r['fantasy_points_for'];}foreach($teams as &$t)$t['total_fpts']=$totals[$t['id']]??null;unset($t);$pres=[];foreach($allTeams as $t)if(($t['president']??0)>0)$pres[]=['team'=>$t['team'],'value'=>$t['president'],'score'=>$t['president']];usort($pres,fn($a,$b)=>$b['score']<=>$a['score']);$franchiseLeaders=['championships'=>$overview['championships'],'presidents'=>$pres,'winning_pct'=>$overview['winning_pct'],'first_picks'=>$overview['first_picks'],'trades'=>$overview['trades'],'awards'=>$overview['awards']];return view('teams.index',compact('teams','allTeams','type','status','franchiseLeaders'));});
+Route::get('/teams/current', function() {
+    $tz='America/Halifax';
+    $now=\Carbon\CarbonImmutable::now($tz);
+    $today=$now->toDateString();
+    $tomorrow=$now->addDay()->toDateString();
+    $date=(string)request('date',$today);
+    if(!in_array($date,[$today,$tomorrow],true))$date=$today;
+
+    $currentNames=DB::table('team_seasons as ts')
+        ->join('seasons as s','s.season_id','=','ts.season_id')
+        ->where('s.season_name','2026-27')
+        ->orderBy('ts.original_name')
+        ->pluck('ts.original_name')
+        ->all();
+
+    $rows=DB::table('active_fantasy_rosters')
+        ->whereDate('game_date',$date)
+        ->whereIn('fantasy_team_name',$currentNames)
+        ->get();
+
+    $pp=DB::table('active_pp_lines')->get()->keyBy(fn($r)=>strtoupper(trim($r->team)).'|'.mb_strtolower(trim($r->player_name)));
+    $lines=DB::table('active_line_combinations')->get()->keyBy(fn($r)=>strtoupper(trim($r->team)).'|'.mb_strtolower(trim($r->player_name)).'|'.strtoupper(trim($r->position_group)));
+
+    $rows=$rows->map(function($p)use($pp,$lines){
+        $team=strtoupper(trim((string)$p->nhl_team));
+        $name=mb_strtolower(trim((string)$p->player_name));
+        $pos=strtoupper(trim((string)$p->position));
+        $line=$lines[$team.'|'.$name.'|'.$pos]??null;
+        $power=$pp[$team.'|'.$name]??null;
+        $p->line_number=$line?(int)$line->line_number:null;
+        $p->pp_unit=$power?(int)$power->pp_unit:null;
+        return $p;
+    });
+
+    $teams=[];
+    foreach($currentNames as $teamName){
+        $teamRows=$rows->where('fantasy_team_name',$teamName);
+        $positions=[];
+        foreach(['F'=>'Forwards','D'=>'Defensemen','G'=>'Goalies'] as $code=>$label){
+            $positionRows=$teamRows->where('position',$code)->sort(function($a,$b){
+                $ap=!empty($a->opponent)?0:1;$bp=!empty($b->opponent)?0:1;
+                if($ap!==$bp)return $ap<=>$bp;
+                if((int)$a->is_bench!==(int)$b->is_bench)return (int)$a->is_bench<=>(int)$b->is_bench;
+                return ((float)($b->projected_fpts??-INF)<=>(float)($a->projected_fpts??-INF));
+            })->values();
+            $positions[$code]=['label'=>$label,'rows'=>$positionRows];
+        }
+        $teams[]=[
+            'name'=>$teamName,
+            'slug'=>\Illuminate\Support\Str::slug($teamName),
+            'positions'=>$positions,
+            'count'=>$teamRows->count(),
+        ];
+    }
+
+    $lastUpdate=$rows->max('last_update');
+    return view('teams.current-index',compact('teams','date','today','tomorrow','lastUpdate'));
+});
+
 Route::get('/teams/current/{slug}', function(string $slug) {
     $tz='America/Halifax';
     $now=\Carbon\CarbonImmutable::now($tz);
