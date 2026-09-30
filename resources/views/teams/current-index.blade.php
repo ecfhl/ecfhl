@@ -50,16 +50,7 @@
                             <strong>{{ $player->player_name }} @if($player->nhl_team)({{ $player->nhl_team }})@endif</strong>
                             <span class="current-badges">
                               @if($player->is_bench)<span class="pill team-bench">Bench</span>@endif
-                              @php
-                                $contractLabel = strtoupper((string)$player->roster_status)==='MINORS' ? 'Minors' : trim((string)$player->contract);
-                                $contractKey = strtoupper($contractLabel);
-                                $contractClass = in_array($contractKey,['FA','1 YEAR','1 YEAR(S)','1 YR'],true)
-                                  ? 'contract-green'
-                                  : (in_array($contractKey,['TBD','MINORS'],true)
-                                    ? 'contract-yellow'
-                                    : (preg_match('/^[234]\s*(?:YEAR|YEARS|YR|YRS)/',$contractKey) ? 'contract-red' : ''));
-                              @endphp
-                              @if($contractLabel!=='')<span class="pill team-contract-sticker {{ $contractClass }}">{{ $contractLabel }}</span>@endif
+                              @if(!empty($player->contract_label))<span class="pill team-contract-sticker {{ $player->contract_class }}">{{ $player->contract_label }}</span>@endif
                               @if($player->line_number)
                                 @if(strtoupper((string)$player->position)==='G' && $player->line_number<=2)<span class="pill goalie-{{ $player->line_number }}">G{{ $player->line_number }}</span>
                                 @elseif($player->line_number<=4)<span class="pill line-{{ $player->line_number }}">L{{ $player->line_number }}</span>@endif
