@@ -147,7 +147,9 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $positions['M']=['label'=>'Minors','rows'=>$minorRows];
 
     $lastUpdate=$rows->max('last_update');
-    return view('teams.current',compact('teamName','slug','date','today','tomorrow','positions','lastUpdate'));
+    $fantasyTeamId=$rows->first()->fantasy_team_id??null;
+    $fantraxTeamUrl=$fantasyTeamId?'https://www.fantrax.com/fantasy/league/092zcn40molvao69/team/roster;teamId='.$fantasyTeamId:null;
+    return view('teams.current',compact('teamName','slug','date','today','tomorrow','positions','lastUpdate','fantraxTeamUrl'));
 });
 
 Route::get('/teams/{slug}', function(string $slug,EcfhlData $data){
