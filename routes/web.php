@@ -205,6 +205,15 @@ Route::get('/teams/current/{slug}', function(string $slug) {
             $player['line_number']=$line?(int)$line->line_number:null;
             $player['pp_unit']=$power?(int)$power->pp_unit:null;
             $player['add_url']='https://www.fantrax.com/fantasy/league/092zcn40molvao69/players;searchName='.rawurlencode((string)($player['name']??'')).';positionOrGroup=ALL;';
+            $goalieStatus=strtolower(trim((string)($player['starting_status']??'')));
+            $player['starting_status_class']=match($goalieStatus){
+                'confirmed','starting'=>'goalie-status-confirmed',
+                'likely','probable'=>'goalie-status-likely',
+                'unconfirmed'=>'goalie-status-unconfirmed',
+                'not starting','not_starting'=>'goalie-status-not-starting',
+                '', 'na', 'n/a'=>'goalie-status-na',
+                default=>'goalie-status-na',
+            };
             return $player;
         });
 
