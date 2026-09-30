@@ -8,11 +8,6 @@
         <a class="button team-date-button {{ $date===$today?'primary':'team-date-inactive' }}" href="/teams/current/{{ $slug }}?date={{ $today }}">Today</a>
         <a class="button team-date-button {{ $date===$tomorrow?'primary':'team-date-inactive' }}" href="/teams/current/{{ $slug }}?date={{ $tomorrow }}">Tomorrow</a>
       </div>
-      <div class="team-status-slicer" role="group" aria-label="Roster status filter">
-        @foreach(['bench'=>'Bench','injured'=>'Injured'] as $filterKey=>$filterLabel)
-          <button type="button" class="team-status-button" data-status-filter="{{ $filterKey }}" aria-pressed="false">{{ $filterLabel }}</button>
-        @endforeach
-      </div>
     </div>
     <label class="team-switcher">
       <span>Team</span>
@@ -74,31 +69,11 @@
   @endif
 </div>
 <style>
-.team-updated{font-size:12px;opacity:.8;margin-top:5px}.team-left-controls{display:flex;flex-direction:column;gap:8px}.team-page-controls{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:18px 0}.team-switcher{display:flex;flex-direction:column;gap:4px;min-width:260px;font-size:12px;font-weight:800}.team-switcher select{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:9px;padding:8px 10px;font:inherit}.team-fantrax-link{display:inline-flex;align-items:center;gap:4px;margin-left:6px;font-weight:800;text-decoration:none}.team-fantrax-link img{width:15px;height:15px;object-fit:contain}.team-date-buttons{display:flex;gap:6px;margin:18px 0}.team-date-buttons .button{padding:6px 10px;font-size:12px}.team-date-inactive{background:#e5e7eb!important;border-color:#d1d5db!important;color:#374151!important}.team-date-inactive:hover{background:#d1d5db!important;color:#111827!important}.team-status-slicer{display:flex;gap:6px;flex-wrap:wrap}.team-status-button{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:6px 11px;font-size:11px;font-weight:800;cursor:pointer}.team-status-button.active{background:#0b5f95;color:#fff;border-color:#0b5f95}.team-status-button:hover{border-color:#64748b}.team-not-playing-toggle{cursor:pointer}.team-not-playing-button{appearance:none;border:0;background:transparent;color:inherit;font:inherit;font-weight:900;text-transform:uppercase;letter-spacing:.06em;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px}.team-not-playing-button:hover{text-decoration:underline}.team-not-playing-chevron{font-size:11px}.team-position-section{margin:22px 0}.team-roster-table td,.team-roster-table th{padding:8px 10px}.team-roster-table td:first-child{white-space:normal}.team-roster-group td{background:var(--surface-2,#f1f5f9);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:7px 10px!important}.team-not-playing{opacity:.62}.team-player-name-wrap{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.team-ir{background:#dc2626;color:#fff;border-color:#dc2626;margin:0;padding:2px 5px!important;font-size:9px!important;line-height:1}.team-bench{background:#e5e7eb;color:#374151;border-color:#d1d5db}.team-minors{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}.team-active{background:#dcfce7;color:#166534;border-color:#86efac}.line-1,.pp1,.goalie-1{background:#dcfce7;color:#166534;border-color:#86efac}.line-2,.pp2,.goalie-2{background:#fef3c7;color:#92400e;border-color:#fcd34d}.line-3{background:#ffedd5;color:#9a3412;border-color:#fdba74}.line-4{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}.team-contract{font-weight:800;font-size:12px}.team-away{color:#a16207;font-weight:800}.team-home{color:#15803d;font-weight:800}.team-playing-text{color:#15803d;font-weight:800}
+.team-updated{font-size:12px;opacity:.8;margin-top:5px}.team-left-controls{display:flex;flex-direction:column;gap:8px}.team-page-controls{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:18px 0}.team-switcher{display:flex;flex-direction:column;gap:4px;min-width:260px;font-size:12px;font-weight:800}.team-switcher select{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:9px;padding:8px 10px;font:inherit}.team-fantrax-link{display:inline-flex;align-items:center;gap:4px;margin-left:6px;font-weight:800;text-decoration:none}.team-fantrax-link img{width:15px;height:15px;object-fit:contain}.team-date-buttons{display:flex;gap:6px;margin:18px 0}.team-date-buttons .button{padding:6px 10px;font-size:12px}.team-date-inactive{background:#e5e7eb!important;border-color:#d1d5db!important;color:#374151!important}.team-date-inactive:hover{background:#d1d5db!important;color:#111827!important}.team-not-playing-toggle{cursor:pointer}.team-not-playing-button{appearance:none;border:0;background:transparent;color:inherit;font:inherit;font-weight:900;text-transform:uppercase;letter-spacing:.06em;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px}.team-not-playing-button:hover{text-decoration:underline}.team-not-playing-chevron{font-size:11px}.team-position-section{margin:22px 0}.team-roster-table td,.team-roster-table th{padding:8px 10px}.team-roster-table td:first-child{white-space:normal}.team-roster-group td{background:var(--surface-2,#f1f5f9);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:7px 10px!important}.team-not-playing{opacity:.62}.team-player-name-wrap{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.team-ir{background:#dc2626;color:#fff;border-color:#dc2626;margin:0;padding:2px 5px!important;font-size:9px!important;line-height:1}.team-bench{background:#e5e7eb;color:#374151;border-color:#d1d5db}.team-minors{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}.team-active{background:#dcfce7;color:#166534;border-color:#86efac}.line-1,.pp1,.goalie-1{background:#dcfce7;color:#166534;border-color:#86efac}.line-2,.pp2,.goalie-2{background:#fef3c7;color:#92400e;border-color:#fcd34d}.line-3{background:#ffedd5;color:#9a3412;border-color:#fdba74}.line-4{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}.team-contract{font-weight:800;font-size:12px}.team-away{color:#a16207;font-weight:800}.team-home{color:#15803d;font-weight:800}.team-playing-text{color:#15803d;font-weight:800}
 @media(max-width:700px){.team-page-controls{align-items:stretch;flex-direction:column}.team-switcher{min-width:0;width:100%}.team-roster-table,.team-roster-table tbody{display:block}.team-roster-table thead{display:none}.team-roster-table tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px 12px;padding:11px;border-bottom:1px solid var(--line)}.team-roster-table td{border:0!important;padding:0!important}.team-roster-table td::before{display:none}.team-roster-table td[data-label="Player"]{grid-column:1}.team-roster-table td[data-label="Proj."]{grid-column:2;grid-row:1;text-align:right}.team-roster-table td[data-label="Opponent"]{grid-column:1}.team-roster-table td[data-label="Contract"]{grid-column:2;text-align:right;font-size:11px}.team-roster-table .num{text-align:right}.team-roster-table tr.team-roster-group{display:block;padding:0}.team-roster-table tr.team-roster-group td{display:block!important;width:100%;padding:7px 10px!important}}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
-  const statusButtons=[...document.querySelectorAll('.team-status-button')];
-  const selected=new Set();
-
-  const renderOptionalGroups=()=>{
-    document.querySelectorAll('[data-status="bench"],[data-status="injured"]').forEach(el=>{
-      el.style.display=selected.has(el.dataset.status)?'':'none';
-    });
-    statusButtons.forEach(button=>{
-      const active=selected.has(button.dataset.statusFilter);
-      button.classList.toggle('active',active);
-      button.setAttribute('aria-pressed',active?'true':'false');
-    });
-  };
-
-  statusButtons.forEach(button=>button.addEventListener('click',()=>{
-    const key=button.dataset.statusFilter;
-    if(selected.has(key)) selected.delete(key); else selected.add(key);
-    renderOptionalGroups();
-  }));
-
   document.querySelectorAll('.team-not-playing-toggle').forEach(toggle=>{
     const section=toggle.closest('.team-position-section,.current-position-group');
     const button=toggle.querySelector('.team-not-playing-button');
@@ -112,8 +87,6 @@ document.addEventListener('DOMContentLoaded',()=>{
       if(chevron)chevron.textContent=expanded?'▾':'▴';
     });
   });
-
-  renderOptionalGroups();
 });
 </script>
 @endsection
