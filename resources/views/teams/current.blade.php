@@ -43,7 +43,7 @@
                   @if($groupKey==='active')
                     <button type="button" class="team-not-playing-button" aria-expanded="false">{{ $group['label'] }} Not Playing <span class="team-not-playing-chevron">▾</span></button>
                   @else
-                    {{ $group['label'] }} {{ $groupLabel }}
+                    {{ $group['label'] }} {{ $groupLabel }} ({{ $statusRows->reject(fn($p)=>(bool)$p->is_ir)->count() }})
                   @endif
                 </td>
               </tr>
