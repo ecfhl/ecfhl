@@ -206,7 +206,10 @@ Route::get('/job-status', function () {
         ['key'=>'odds','name'=>'NHL Odds','schedule'=>'Every 4 hours at :06','last_update'=>$format($oddsLast),'records'=>DB::table('todays_odds')->count(),'next_run'=>$nextFourHourly(6),'state'=>$state($oddsLast,300),'description'=>'Consensus NHL moneyline odds for today and tomorrow from The Odds API.'],
         ['key'=>'teams','name'=>'Fantasy Team Rosters','schedule'=>'Every hour at :10','last_update'=>$format($teamsLast),'records'=>DB::table('active_fantasy_rosters')->count(),'next_run'=>$nextHourly(10),'state'=>$state($teamsLast,90),'description'=>'Current Fantrax rosters for every fantasy team, enriched with projections, opponents, injuries, line and power-play assignments.'],
     ];
-    return view('job-status', compact('jobs'));
+    return response()
+        ->view('job-status', compact('jobs'))
+        ->header('Cache-Control','no-store, no-cache, must-revalidate, max-age=0')
+        ->header('Pragma','no-cache');
 });
 
 Route::get('/ai-tips', function () {
