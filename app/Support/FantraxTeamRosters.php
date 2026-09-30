@@ -89,19 +89,57 @@ class FantraxTeamRosters
     private function fetchStats(CarbonImmutable $date): array
     {
         $day = $date->format('Y-m-d');
-        $url = 'https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/players;maxResultsPerPage=500;pageNumber=1;positionOrGroup=ALL;seasonOrProjection=PROJECTION_0_31n_SEASON;timeframeTypeCode=PROJECTED_SEASON;startDate='.$day.';endDate='.$day.';datePlaying='.$day.';statusOrTeamFilter=ALL_TAKEN';
+
+        // Fantrax's datePlaying filter is the reliable way to identify players
+        // actually scheduled to play on a given day. Keep projections separate
+        // so players without a game still retain their season projected FPts.
+        $playing = $this->fetchStatsPage([
+            'reload'=>'1',
+            'statusOrTeamFilter'=>'ALL_TAKEN',
+            'pageNumber'=>'1',
+            'datePlaying'=>$day,
+            'sortType'=>'STATUS',
+            'maxResultsPerPage'=>500,
+            'positionOrGroup'=>'ALL',
+        ]);
+
+        $projections = $this->fetchStatsPage([
+            'statusOrTeamFilter'=>'ALL_TAKEN',
+            'pageNumber'=>'1',
+            'seasonOrProjection'=>'PROJECTION_0_31n_SEASON',
+            'timeframeTypeCode'=>'PROJECTED_SEASON',
+            'maxResultsPerPage'=>500,
+            'positionOrGroup'=>'ALL',
+        ]);
+
+        $projectionByKey = [];
+        foreach ($projections as $row) {
+            $projectionByKey[$this->key($row['player_name'] ?? '', $row['nhl_team'] ?? '')] = $row;
+        }
+
+        $rows = $projectionByKey;
+        foreach ($playing as $row) {
+            $key = $this->key($row['player_name'] ?? '', $row['nhl_team'] ?? '');
+            $base = $rows[$key] ?? $row;
+            $base['opponent'] = $row['opponent'] ?? null;
+            $base['injury_status'] = $row['injury_status'] ?? ($base['injury_status'] ?? null);
+            if (($base['projected_fpts'] ?? null) === null && ($row['projected_fpts'] ?? null) !== null) {
+                $base['projected_fpts'] = $row['projected_fpts'];
+            }
+            $rows[$key] = $base;
+        }
+
+        return array_values($rows);
+    }
+
+    private function fetchStatsPage(array $requestData): array
+    {
+        $segments = [];
+        foreach ($requestData as $key=>$value) $segments[] = $key.'='.rawurlencode((string)$value);
+        $url = 'https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/players;'.implode(';',$segments);
+
         $payload = [
-            'msgs'=>[['method'=>'getPlayerStats','data'=>[
-                'statusOrTeamFilter'=>'ALL_TAKEN',
-                'maxResultsPerPage'=>500,
-                'pageNumber'=>'1',
-                'seasonOrProjection'=>'PROJECTION_0_31n_SEASON',
-                'timeframeTypeCode'=>'PROJECTED_SEASON',
-                'startDate'=>$day,
-                'endDate'=>$day,
-                'datePlaying'=>$day,
-                'positionOrGroup'=>'ALL',
-            ]]],
+            'msgs'=>[['method'=>'getPlayerStats','data'=>$requestData]],
             'uiv'=>3,'refUrl'=>$url,'dt'=>0,'at'=>0,'av'=>'0.0','tz'=>'America/Halifax','v'=>self::API_VERSION,
         ];
 
@@ -132,14 +170,16 @@ class FantraxTeamRosters
             $name = trim((string)($scorer['name'] ?? ''));
             $team = strtoupper(trim((string)($scorer['teamShortName'] ?? '')));
             if ($name === '' || $team === '') continue;
+
             $oppCell = $cell($entry, ['opponent','Opp']);
             $opp = trim(html_entity_decode(strip_tags(str_replace(['<br>','<br/>','<br />'], ' ', (string)($oppCell['content'] ?? '')))));
             if ($opp !== '') $opp = preg_split('/\s+/', $opp)[0];
+
             $fptsCell = $cell($entry, ['fpts','SCORE','FPts']);
             $rows[] = [
                 'player_name'=>$name,
                 'nhl_team'=>$team,
-                'opponent'=>$opp,
+                'opponent'=>$opp !== '' ? $opp : null,
                 'projected_fpts'=>$this->numeric($fptsCell['content'] ?? null),
                 'injury_status'=>$this->injury($scorer['icons'] ?? []),
             ];
