@@ -68,14 +68,14 @@ Route::get('/teams/current', function() {
         $positions=[];
         foreach(['F'=>'Forwards','D'=>'Defensemen','G'=>'Goalies'] as $code=>$label){
             $positionRows=$teamRows->where('position',$code)->reject(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){
-                $ap=!empty($a->opponent)?0:1;$bp=!empty($b->opponent)?0:1;
-                if($ap!==$bp)return $ap<=>$bp;
-                if((int)$a->is_bench!==(int)$b->is_bench)return (int)$a->is_bench<=>(int)$b->is_bench;
+                $rank=fn($p)=>(bool)$p->is_ir?3:((bool)$p->is_bench?2:(!empty($p->opponent)?0:1));
+                $ar=$rank($a);$br=$rank($b);
+                if($ar!==$br)return $ar<=>$br;
                 return ((float)($b->projected_fpts??-INF)<=>(float)($a->projected_fpts??-INF));
             })->values();
             $positions[$code]=['label'=>$label,'rows'=>$positionRows];
         }
-        $minorRows=$teamRows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sortByDesc(fn($p)=>(float)($p->projected_fpts??-INF))->values();
+        $minorRows=$teamRows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){$ar=(bool)$a->is_ir?3:(!empty($a->opponent)?0:1);$br=(bool)$b->is_ir?3:(!empty($b->opponent)?0:1);return $ar!==$br?$ar<=>$br:((float)($b->projected_fpts??-INF)<=>(float)($a->projected_fpts??-INF));})->values();
         $positions['M']=['label'=>'Minors','rows'=>$minorRows];
         $teams[]=[
             'name'=>$teamName,
@@ -132,14 +132,14 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $positions=[];
     foreach(['F'=>'Forwards','D'=>'Defensemen','G'=>'Goalies'] as $code=>$label){
         $positionRows=$rows->where('position',$code)->reject(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){
-            $ap=!empty($a->opponent)?0:1;$bp=!empty($b->opponent)?0:1;
-            if($ap!==$bp)return $ap<=>$bp;
-            if((int)$a->is_bench!==(int)$b->is_bench)return (int)$a->is_bench<=>(int)$b->is_bench;
+            $rank=fn($p)=>(bool)$p->is_ir?3:((bool)$p->is_bench?2:(!empty($p->opponent)?0:1));
+            $ar=$rank($a);$br=$rank($b);
+            if($ar!==$br)return $ar<=>$br;
             return ((float)($b->projected_fpts??-INF)<=>(float)($a->projected_fpts??-INF));
         })->values();
         $positions[$code]=['label'=>$label,'rows'=>$positionRows];
     }
-    $minorRows=$rows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sortByDesc(fn($p)=>(float)($p->projected_fpts??-INF))->values();
+    $minorRows=$rows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){$ar=(bool)$a->is_ir?3:(!empty($a->opponent)?0:1);$br=(bool)$b->is_ir?3:(!empty($b->opponent)?0:1);return $ar!==$br?$ar<=>$br:((float)($b->projected_fpts??-INF)<=>(float)($a->projected_fpts??-INF));})->values();
     $positions['M']=['label'=>'Minors','rows'=>$minorRows];
 
     $lastUpdate=$rows->max('last_update');
