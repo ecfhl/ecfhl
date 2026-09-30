@@ -14,7 +14,7 @@ import android.widget.Toast;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 public class MainActivity extends Activity {
-    private static final String START_URL = "https://ecfhl.win/ai-tips";
+    private static final String START_URL = "https://ecfhl.win/daily-targets";
     private static final String ECFHL_HOST = "ecfhl.win";
 
     private WebView webView;
