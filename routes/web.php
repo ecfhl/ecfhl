@@ -197,15 +197,60 @@ Route::get('/teams/current/{slug}', function(string $slug) {
 
     $targetGroups=\App\Support\AiTips::groups([], $date);
     $targetGroups=collect($targetGroups)->map(function($players,$position)use($pp,$lines,$normName,$normTeam){
-        return collect($players)->take(5)->map(function($player)use($position,$pp,$lines,$normName,$normTeam){
+        $decorated=collect($players)->map(function($player)use($position,$pp,$lines,$normName,$normTeam){
             $team=$normTeam($player['team']??'');
             $name=$normName($player['name']??'');
             $line=$lines[$team.'|'.$name.'|'.$position]??null;
             $power=$pp[$team.'|'.$name]??null;
             $player['line_number']=$line?(int)$line->line_number:null;
             $player['pp_unit']=$power?(int)$power->pp_unit:null;
+            $player['add_url']='https://www.fantrax.com/fantasy/league/092zcn40molvao69/players;searchName='.rawurlencode((string)($player['name']??'')).';positionOrGroup=ALL;';
             return $player;
-        })->values()->all();
+        });
+
+        if(in_array($position,['F','D'],true)){
+            $decorated=$decorated->sort(function($a,$b){
+                $rank=function($player){
+                    $pp=$player['pp_unit']??null;
+                    $line=$player['line_number']??null;
+                    return [
+                        $pp===1?1:($pp===2?2:3),
+                        in_array($line,[1,2,3,4],true)?$line:99,
+                    ];
+                };
+                $ar=$rank($a);$br=$rank($b);
+                if($ar[0]!==$br[0])return $ar[0]<=>$br[0];
+                if($ar[1]!==$br[1])return $ar[1]<=>$br[1];
+                $ap=$a['projected_points']??-PHP_FLOAT_MAX;
+                $bp=$b['projected_points']??-PHP_FLOAT_MAX;
+                if($ap!==$bp)return $bp<=>$ap;
+                $as=$a['source_rank']??PHP_INT_MAX;
+                $bs=$b['source_rank']??PHP_INT_MAX;
+                if($as!==$bs)return $as<=>$bs;
+                return strcasecmp((string)($a['name']??''),(string)($b['name']??''));
+            });
+        }else{
+            $decorated=$decorated->sort(function($a,$b){
+                $rank=function($player){
+                    if(!empty($player['not_starting']))return 5;
+                    return match(strtolower(trim((string)($player['starting_status']??'')))){
+                        'starting','confirmed'=>1,
+                        'likely','probable'=>2,
+                        'unconfirmed'=>3,
+                        '', 'na', 'n/a'=>4,
+                        'not starting','not_starting'=>5,
+                        default=>4,
+                    };
+                };
+                $ar=$rank($a);$br=$rank($b);
+                if($ar!==$br)return $ar<=>$br;
+                return (($b['projected_points']??-PHP_FLOAT_MAX)<=>($a['projected_points']??-PHP_FLOAT_MAX))
+                    ?: (($a['source_rank']??PHP_INT_MAX)<=>($b['source_rank']??PHP_INT_MAX))
+                    ?: strcasecmp((string)($a['name']??''),(string)($b['name']??''));
+            });
+        }
+
+        return $decorated->take(5)->values()->all();
     })->all();
 
     $lastUpdate=$rows->max('last_update');
