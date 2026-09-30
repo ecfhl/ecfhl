@@ -190,7 +190,19 @@ class FantraxTeamRosters
     private function key(string $name, string $team): string
     {
         $norm = preg_replace('/[^\pL\pN]+/u', '', mb_strtolower(trim($name))) ?? '';
-        return $norm.'|'.strtoupper(trim($team));
+        return $norm.'|'.$this->teamKey($team);
+    }
+
+    private function teamKey(string $team): string
+    {
+        $team = strtoupper(trim($team));
+        return match($team) {
+            'LA' => 'LAK',
+            'NJ' => 'NJD',
+            'SJ' => 'SJS',
+            'TB' => 'TBL',
+            default => $team,
+        };
     }
 
     private function position(string $value): ?string
