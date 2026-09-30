@@ -10,13 +10,14 @@ Route::post('/job-status/run/{job}', function (string $job) {
         'lines' => 'ecfhl:refresh-pp-lines',
         'odds' => 'ecfhl:refresh-odds',
         'teams' => 'ecfhl:refresh-fantasy-rosters',
+        'scores' => 'ecfhl:refresh-daily-scores',
     ];
 
     abort_unless(isset($commands[$job]) || $job === 'all', 404);
 
     $returnTo = in_array(request('return_to'), ['daily-targets','ai-tips'], true) ? '/daily-targets' : '/job-status';
     $jobsToRun = $job === 'all' ? $commands : [$job => $commands[$job]];
-    $labels = ['players' => 'Fantrax players', 'goalies' => 'Starting goalies', 'lines' => 'Power-play lines', 'odds' => 'NHL odds', 'teams' => 'Fantasy team rosters'];
+    $labels = ['players' => 'Fantrax players', 'goalies' => 'Starting goalies', 'lines' => 'Power-play lines', 'odds' => 'NHL odds', 'teams' => 'Fantasy team rosters', 'scores' => 'Live daily scores'];
     $results = [];
     $details = [];
     $anyFailed = false;
@@ -41,7 +42,7 @@ Route::post('/job-status/run/{job}', function (string $job) {
     }
 
     $message = implode("\n\n", $results);
-    if ($job === 'all') $message .= "\n\n".($anyFailed ? 'One or more jobs failed.' : 'All 5 jobs completed.');
+    if ($job === 'all') $message .= "\n\n".($anyFailed ? 'One or more jobs failed.' : 'All 6 jobs completed.');
     else $message .= "\n".($anyFailed ? 'Job failed.' : 'Job completed.');
 
     if (request()->expectsJson()) {
@@ -54,4 +55,4 @@ Route::post('/job-status/run/{job}', function (string $job) {
     }
 
     return redirect($returnTo)->with($anyFailed ? 'job_error' : 'job_success', $message);
-})->whereIn('job', ['players', 'goalies', 'lines', 'odds', 'teams', 'all']);
+})->whereIn('job', ['players', 'goalies', 'lines', 'odds', 'teams', 'scores', 'all']);
