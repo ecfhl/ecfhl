@@ -3,7 +3,7 @@
 <div class="page-head"><div class="shell"><div class="eyebrow">Data collectors</div><h1>Collector Status</h1><p>Current status of the automated data used by Daily Targets.</p></div></div>
 <div class="shell job-status">
     <div class="status-actions">
-        <a class="button status-back" href="/ai-tips">← Back to Daily Targets</a>
+        <a class="button status-back" href="/daily-targets">← Back to Daily Targets</a>
         <form method="POST" action="/job-status/run/all" class="run-all-form job-ajax-form" data-job="all">
             @csrf
             <input type="hidden" name="return_to" value="job-status">
@@ -14,8 +14,8 @@
     <div class="status-grid">
         @foreach($jobs as $job)
         @php
-            $jobKey = str_contains($job['name'], 'Fantrax') ? 'players' : (str_contains($job['name'], 'Goalies') ? 'goalies' : 'lines');
-            $displaySchedule = $jobKey === 'players' ? 'Every hour at :30' : $job['schedule'];
+            $jobKey = $job['key'];
+            $displaySchedule = $job['schedule'];
         @endphp
         <section class="card status-card">
             <div class="status-head"><div><h2>{{ $job['name'] }}</h2><p class="subtle">{{ $displaySchedule }}</p></div><span class="pill {{ $job['state']==='Current'?'status-ok':($job['state']==='No data'?'status-empty':'status-stale') }}">{{ $job['state'] }}</span></div>
@@ -48,7 +48,7 @@
 document.addEventListener('DOMContentLoaded',()=>{
  const box=document.getElementById('job-live-results');
  const csrf=document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('.job-ajax-form input[name="_token"]')?.value;
- const headings={players:'Getting available players in Fantrax...',goalies:'Getting goalie information from Daily Faceoff...',lines:'Getting Lines information from Daily Faceoff...'};
+ const headings={players:'Getting available players in Fantrax...',goalies:'Getting goalie information from Daily Faceoff...',lines:'Getting Lines information from Daily Faceoff...',odds:'Getting NHL moneyline odds...'};
  const parse=(job,output)=>{
    if(job==='players'){
      const counts=[...output.matchAll(/\d{4}-\d{2}-\d{2}:\s*(\d+) Fantrax players refreshed/g)].map(m=>Number(m[1]));
@@ -62,6 +62,10 @@ document.addEventListener('DOMContentLoaded',()=>{
      const teams=[...output.matchAll(/^([A-Z]{2,3}): updated$/gm)].map(m=>m[1]);
      return teams.length+' Lines updated'+(teams.length?' ('+teams.join(', ')+')':'');
    }
+   if(job==='odds'){
+     const rows=[...output.matchAll(/(\d{4}-\d{2}-\d{2}):\s*(\d+) NHL team odds refreshed/g)];
+     return rows.map(m=>m[2]+' team odds for '+m[1]).join('\n') || output;
+   }
    return output;
  };
  const runOne=async(job,lines)=>{
@@ -73,9 +77,9 @@ document.addEventListener('DOMContentLoaded',()=>{
    lines.push(parse(job,detail?.output||''),'');box.textContent=lines.join('\n');
  };
  document.querySelectorAll('.job-ajax-form').forEach(form=>form.addEventListener('submit',async e=>{
-   e.preventDefault();const requested=form.dataset.job;const jobs=requested==='all'?['players','goalies','lines']:[requested];const button=form.querySelector('button');const original=button.textContent;const lines=[];
+   e.preventDefault();const requested=form.dataset.job;const jobs=requested==='all'?['players','goalies','lines','odds']:[requested];const button=form.querySelector('button');const original=button.textContent;const lines=[];
    document.querySelectorAll('.job-ajax-form button').forEach(b=>b.disabled=true);button.textContent=requested==='all'?'Refreshing…':'Running…';box.hidden=false;box.className='job-live-results';box.textContent='';
-   try{for(const job of jobs)await runOne(job,lines);box.classList.add('ok');if(requested==='all')lines.push('All 3 jobs completed.');else lines.push('Job completed.');box.textContent=lines.join('\n');setTimeout(()=>location.reload(),1200);}
+   try{for(const job of jobs)await runOne(job,lines);box.classList.add('ok');if(requested==='all')lines.push('All 4 jobs completed.');else lines.push('Job completed.');box.textContent=lines.join('\n');setTimeout(()=>location.reload(),1200);}
    catch(err){box.classList.add('error');lines.push('Failed: '+err.message);box.textContent=lines.join('\n');document.querySelectorAll('.job-ajax-form button').forEach(b=>b.disabled=false);button.textContent=original;}
  }));
 });
