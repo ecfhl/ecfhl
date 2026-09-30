@@ -5,7 +5,7 @@
 $prizeTotals = app(\App\Support\Archive::class)->prizeTotals();
 
 @endphp
-<section class="hero"><div class="shell"><div class="eyebrow">Established in 2007</div><h1>East Coast Fantasy Hockey League</h1><p>A complete record of champions, franchise identities, seasons, trades, and draft history.</p><div class="hero-actions home-hero-actions"><a class="button home-nav-button" href="/seasons">Seasons</a><a class="button home-nav-button" href="/teams">Franchises</a><a class="button home-nav-button ai-tips-button" href="/ai-tips">Daily Targets</a></div></div></section>
+<section class="hero"><div class="shell"><div class="eyebrow">Established in 2007</div><h1>East Coast Fantasy Hockey League</h1><p>A complete record of champions, franchise identities, seasons, trades, and draft history.</p><div class="hero-actions home-hero-actions"><a class="button home-nav-button" href="/seasons">Seasons</a><a class="button home-nav-button" href="/teams">Franchises</a><a class="button home-nav-button ai-tips-button" href="/daily-targets">Daily Targets</a></div></div></section>
 <div class="stats-strip"><div class="shell stats-grid" style="grid-template-columns:repeat(4,minmax(0,1fr))">
 <div class="stat"><strong>{{ count($seasons) }}</strong><span>Seasons</span></div>
 <div class="stat"><strong>{{ $championships }}</strong><span>Champions</span></div>
