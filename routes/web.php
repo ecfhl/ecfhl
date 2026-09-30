@@ -71,10 +71,12 @@ Route::get('/job-status', function () {
     $fantraxLast = DB::table('active_daily_players')->max('last_update');
     $goaliesLast = DB::table('active_starting_goalies')->max('checked_at');
     $linesLast = DB::table('active_pp_lines')->max('checked_at');
+    $oddsLast = DB::table('todays_odds')->max('checked_at');
     $jobs = [
-        ['name'=>'Fantrax Available Players','schedule'=>'Every hour at :00','last_update'=>$format($fantraxLast),'records'=>DB::table('active_daily_players')->count(),'next_run'=>$nextHourly(0),'state'=>$state($fantraxLast,90),'description'=>'Available players playing today and tomorrow, including projected fantasy points.'],
-        ['name'=>'Daily Faceoff Goalies','schedule'=>'Every 30 minutes','last_update'=>$format($goaliesLast),'records'=>DB::table('active_starting_goalies')->count(),'next_run'=>$nextHalfHourly(),'state'=>$state($goaliesLast,60),'description'=>'Starting-goalie status for today and tomorrow.'],
-        ['name'=>'Daily Faceoff Lines','schedule'=>'Every 4 hours at :02','last_update'=>$format($linesLast),'records'=>DB::table('active_pp_lines')->count(),'next_run'=>$nextFourHourly(2),'state'=>$state($linesLast,300),'description'=>'Current PP1 and PP2 assignments for all NHL teams.'],
+        ['key'=>'players','name'=>'Fantrax Available Players','schedule'=>'Every hour at :00','last_update'=>$format($fantraxLast),'records'=>DB::table('active_daily_players')->count(),'next_run'=>$nextHourly(0),'state'=>$state($fantraxLast,90),'description'=>'Available players playing today and tomorrow, including projected fantasy points.'],
+        ['key'=>'goalies','name'=>'Daily Faceoff Goalies','schedule'=>'Every 30 minutes','last_update'=>$format($goaliesLast),'records'=>DB::table('active_starting_goalies')->count(),'next_run'=>$nextHalfHourly(),'state'=>$state($goaliesLast,60),'description'=>'Starting-goalie status for today and tomorrow.'],
+        ['key'=>'lines','name'=>'Daily Faceoff Lines','schedule'=>'Every 4 hours at :02','last_update'=>$format($linesLast),'records'=>DB::table('active_pp_lines')->count(),'next_run'=>$nextFourHourly(2),'state'=>$state($linesLast,300),'description'=>'Current line combinations and PP1/PP2 assignments for all NHL teams.'],
+        ['key'=>'odds','name'=>'NHL Odds','schedule'=>'Every 4 hours at :06','last_update'=>$format($oddsLast),'records'=>DB::table('todays_odds')->count(),'next_run'=>$nextFourHourly(6),'state'=>$state($oddsLast,300),'description'=>'Consensus NHL moneyline odds for today and tomorrow from The Odds API.'],
     ];
     return view('job-status', compact('jobs'));
 });
