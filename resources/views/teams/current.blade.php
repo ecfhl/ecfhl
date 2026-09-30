@@ -84,16 +84,11 @@
           </tbody>
         </table></div></div>
 
-        @php
-          $targetPosition = in_array($code,['F','D','G'],true) ? $code : null;
-          $targetLabel = match($code){'F'=>'Forward Targets','D'=>'Defense Targets','G'=>'Goaltender Targets',default=>null};
-          $targets = $targetPosition ? ($targetGroups[$targetPosition] ?? []) : [];
-        @endphp
-        @if($targetLabel && count($targets))
+        @if(in_array($code,['F','D','G'],true) && count($targetGroups[$code] ?? []))
           <details class="team-targets">
-            <summary>{{ $targetLabel }} <span>{{ count($targets) }}</span></summary>
+            <summary>{{ $code==='F'?'Forward Targets':($code==='D'?'Defense Targets':'Goaltender Targets') }} <span>{{ count($targetGroups[$code] ?? []) }}</span></summary>
             <div class="team-target-list">
-              @foreach($targets as $target)
+              @foreach(($targetGroups[$code] ?? []) as $target)
                 <div class="team-target-row">
                   <div class="team-target-main">
                     <div class="team-target-name">
@@ -101,7 +96,7 @@
                       <strong>{{ $target['name'] }} ({{ $target['team'] }})</strong>
                       <span class="pill team-target-status {{ str_starts_with($target['status'],'FA')?'target-fa':'target-waiver' }}">{{ $target['status'] }}</span>
                       @if(!empty($target['line_number']))
-                        @if($targetPosition==='G' && $target['line_number']<=2)
+                        @if($code==='G' && $target['line_number']<=2)
                           <span class="pill goalie-{{ $target['line_number'] }}">G{{ $target['line_number'] }}</span>
                         @elseif($target['line_number']<=4)
                           <span class="pill line-{{ $target['line_number'] }}">L{{ $target['line_number'] }}</span>
@@ -109,7 +104,7 @@
                       @endif
                       @if(($target['pp_unit']??null)===1)<span class="pill pp1">PP1</span>@elseif(($target['pp_unit']??null)===2)<span class="pill pp2">PP2</span>@endif
                     </div>
-                    <div class="team-target-opponent">@if(!empty($target['opponent'])){{ $target['opponent'] }}@endif @if($targetPosition==='G' && !empty($target['starting_status']))· {{ $target['starting_status'] }}@endif</div>
+                    <div class="team-target-opponent">@if(!empty($target['opponent'])){{ $target['opponent'] }}@endif @if($code==='G' && !empty($target['starting_status']))· {{ $target['starting_status'] }}@endif</div>
                   </div>
                   <strong class="team-target-proj">{{ $target['projected_points']!==null?number_format($target['projected_points'],0):'—' }}</strong>
                 </div>
