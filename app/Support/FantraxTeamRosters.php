@@ -27,10 +27,18 @@ class FantraxTeamRosters
 
         $teamInfo = is_array($league['teamInfo'] ?? null) ? $league['teamInfo'] : [];
         $statsByKey = [];
+        $statsByName = [];
+        $duplicateNames = [];
         foreach ($stats as $row) {
             $key = $this->key($row['player_name'] ?? '', $row['nhl_team'] ?? '');
             if ($key !== '|') $statsByKey[$key] = $row;
+            $nameKey = $this->nameKey($row['player_name'] ?? '');
+            if ($nameKey !== '') {
+                if (isset($statsByName[$nameKey])) $duplicateNames[$nameKey] = true;
+                else $statsByName[$nameKey] = $row;
+            }
         }
+        foreach (array_keys($duplicateNames) as $nameKey) unset($statsByName[$nameKey]);
 
         $rows = [];
         foreach ($rosters['rosters'] as $teamId => $team) {
@@ -47,7 +55,7 @@ class FantraxTeamRosters
 
                 $position = $this->position((string)($p['position'] ?? ($item['position'] ?? '')));
                 $status = strtoupper(trim((string)($item['status'] ?? 'ACTIVE')));
-                $stat = $statsByKey[$this->key($name, $nhlTeam)] ?? null;
+                $stat = $statsByKey[$this->key($name, $nhlTeam)] ?? ($statsByName[$this->nameKey($name)] ?? null);
                 $oppRaw = trim((string)($stat['opponent'] ?? ''));
                 $away = str_starts_with($oppRaw, '@');
                 $opponent = ltrim($oppRaw, '@');
@@ -189,8 +197,12 @@ class FantraxTeamRosters
 
     private function key(string $name, string $team): string
     {
-        $norm = preg_replace('/[^\pL\pN]+/u', '', mb_strtolower(trim($name))) ?? '';
-        return $norm.'|'.$this->teamKey($team);
+        return $this->nameKey($name).'|'.$this->teamKey($team);
+    }
+
+    private function nameKey(string $name): string
+    {
+        return preg_replace('/[^\pL\pN]+/u', '', mb_strtolower(trim($name))) ?? '';
     }
 
     private function teamKey(string $team): string
