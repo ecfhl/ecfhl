@@ -138,6 +138,12 @@ class FantraxTeamRosters
         $projectionByKey = [];
         foreach ($projections as $row) {
             $row['is_playing'] = false;
+            // Projection rows can carry Fantrax's next/previous Opp value, which is
+            // not necessarily for $day. Only the datePlaying request is authoritative
+            // for whether a player plays on this specific date.
+            $row['opponent'] = null;
+            $row['home_away'] = null;
+            $row['game_time'] = null;
             $key = $this->key($row['player_name'] ?? '', $row['nhl_team'] ?? '');
             $row['contract'] = $contractsByKey[$key] ?? ($row['contract'] ?? null);
             $projectionByKey[$key] = $row;
