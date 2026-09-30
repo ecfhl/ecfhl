@@ -70,7 +70,7 @@ Route::get('/teams/current', function() {
         $positions=[];
         foreach(['F'=>'Forwards','D'=>'Defensemen','G'=>'Goalies'] as $code=>$label){
             $positionRows=$teamRows->where('position',$code)->reject(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){
-                $rank=fn($p)=>!empty($p->is_playing)?0:1;
+                $rank=fn($p)=>(!empty($p->is_playing)?0:2)+((bool)$p->is_ir?1:0);
                 $ar=$rank($a);$br=$rank($b);
                 if($ar!==$br)return $ar<=>$br;
                 return strnatcasecmp((string)$a->player_name,(string)$b->player_name);
@@ -137,7 +137,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $positions=[];
     foreach(['F'=>'Forwards','D'=>'Defensemen','G'=>'Goalies'] as $code=>$label){
         $positionRows=$rows->where('position',$code)->reject(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){
-            $rank=fn($p)=>!empty($p->is_playing)?0:1;
+            $rank=fn($p)=>(!empty($p->is_playing)?0:2)+((bool)$p->is_ir?1:0);
             $ar=$rank($a);$br=$rank($b);
             if($ar!==$br)return $ar<=>$br;
             return strnatcasecmp((string)$a->player_name,(string)$b->player_name);
