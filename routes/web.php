@@ -48,7 +48,7 @@ Route::get('/teams/current', function() {
         ->whereIn('fantasy_team_name',$currentNames)
         ->get();
 
-    $normName=fn($v)=>preg_replace('/[^\pL\pN]+/u','',mb_strtolower(trim((string)$v)))??'';
+    $normName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\pL\pN]+/u','',mb_strtolower($name))??'';};
     $normTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
     $pp=DB::table('active_pp_lines')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name));
     $lines=DB::table('active_line_combinations')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name).'|'.strtoupper(trim($r->position_group)));
@@ -117,7 +117,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         ->where('fantasy_team_name',$teamName)
         ->get();
 
-    $normName=fn($v)=>preg_replace('/[^\pL\pN]+/u','',mb_strtolower(trim((string)$v)))??'';
+    $normName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\pL\pN]+/u','',mb_strtolower($name))??'';};
     $normTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
     $pp=DB::table('active_pp_lines')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name));
     $lines=DB::table('active_line_combinations')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name).'|'.strtoupper(trim($r->position_group)));
