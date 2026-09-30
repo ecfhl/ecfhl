@@ -102,6 +102,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $currentNames=DB::table('team_seasons as ts')
         ->join('seasons as s','s.season_id','=','ts.season_id')
         ->where('s.season_name','2026-27')
+        ->orderBy('ts.original_name')
         ->pluck('ts.original_name')
         ->all();
 
@@ -149,7 +150,8 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $lastUpdate=$rows->max('last_update');
     $fantasyTeamId=$rows->first()->fantasy_team_id??null;
     $fantraxTeamUrl=$fantasyTeamId?'https://www.fantrax.com/fantasy/league/092zcn40molvao69/team/roster;teamId='.$fantasyTeamId:null;
-    return view('teams.current',compact('teamName','slug','date','today','tomorrow','positions','lastUpdate','fantraxTeamUrl'));
+    $teamChoices=array_map(fn($name)=>['name'=>$name,'slug'=>\Illuminate\Support\Str::slug($name)],$currentNames);
+    return view('teams.current',compact('teamName','slug','date','today','tomorrow','positions','lastUpdate','fantraxTeamUrl','teamChoices'));
 });
 
 Route::get('/teams/{slug}', function(string $slug,EcfhlData $data){
