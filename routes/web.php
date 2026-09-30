@@ -67,7 +67,7 @@ Route::get('/teams/current', function() {
         $teamRows=$rows->where('fantasy_team_name',$teamName);
         $positions=[];
         foreach(['F'=>'Forwards','D'=>'Defensemen','G'=>'Goalies'] as $code=>$label){
-            $positionRows=$teamRows->where('position',$code)->sort(function($a,$b){
+            $positionRows=$teamRows->where('position',$code)->reject(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){
                 $ap=!empty($a->opponent)?0:1;$bp=!empty($b->opponent)?0:1;
                 if($ap!==$bp)return $ap<=>$bp;
                 if((int)$a->is_bench!==(int)$b->is_bench)return (int)$a->is_bench<=>(int)$b->is_bench;
@@ -75,6 +75,8 @@ Route::get('/teams/current', function() {
             })->values();
             $positions[$code]=['label'=>$label,'rows'=>$positionRows];
         }
+        $minorRows=$teamRows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sortByDesc(fn($p)=>(float)($p->projected_fpts??-INF))->values();
+        $positions['M']=['label'=>'Minors','rows'=>$minorRows];
         $teams[]=[
             'name'=>$teamName,
             'slug'=>\Illuminate\Support\Str::slug($teamName),
@@ -129,7 +131,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
 
     $positions=[];
     foreach(['F'=>'Forwards','D'=>'Defensemen','G'=>'Goalies'] as $code=>$label){
-        $positionRows=$rows->where('position',$code)->sort(function($a,$b){
+        $positionRows=$rows->where('position',$code)->reject(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){
             $ap=!empty($a->opponent)?0:1;$bp=!empty($b->opponent)?0:1;
             if($ap!==$bp)return $ap<=>$bp;
             if((int)$a->is_bench!==(int)$b->is_bench)return (int)$a->is_bench<=>(int)$b->is_bench;
@@ -137,6 +139,8 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         })->values();
         $positions[$code]=['label'=>$label,'rows'=>$positionRows];
     }
+    $minorRows=$rows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sortByDesc(fn($p)=>(float)($p->projected_fpts??-INF))->values();
+    $positions['M']=['label'=>'Minors','rows'=>$minorRows];
 
     $lastUpdate=$rows->max('last_update');
     return view('teams.current',compact('teamName','slug','date','today','tomorrow','positions','lastUpdate'));
