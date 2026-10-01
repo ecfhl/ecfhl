@@ -2,7 +2,7 @@
 @section('title', $team['team'].' · ECFHL')
 @section('content')
 <div class="shell">
-<div class="page-head"><div class="eyebrow">Franchise history</div><h1>{{ $team['team'] }}</h1><p>Complete recorded franchise history.</p></div>
+<div class="page-head"><div class="eyebrow">Franchise history</div><h1>📖 {{ $team['team'] }}</h1><p>Complete recorded franchise history.</p></div>
 @php
 $archive=app(\App\Support\Archive::class);
 $franchiseOptions=$archive->teamLedger($archive->mode(),'all');
