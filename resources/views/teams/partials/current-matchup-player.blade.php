@@ -16,7 +16,12 @@
       @if($player->pp_unit===1)<span class="pill pp1">PP1</span>@elseif($player->pp_unit===2)<span class="pill pp2">PP2</span>@endif
     </div>
     <div class="matchup-player-opponent">
-      @if($player->opponent)
+      @php
+        $showLiveOpp = (($player->today_gp ?? 0) > 0) && !empty($player->live_opponent_display);
+      @endphp
+      @if($showLiveOpp)
+        <span class="team-playing-text">{{ $player->live_opponent_display }}</span>
+      @elseif($player->opponent)
         @php
           $displayGameTime = $player->game_time
             ? preg_replace('/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+/i', '', trim((string)$player->game_time))
