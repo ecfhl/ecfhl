@@ -513,7 +513,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                 $pos=strtoupper((string)$irCandidate->position);
                 $target=collect($availableGroups[$pos]??[])->first();
                 if($target){
-                    $suggestions[]='Move '.$displayPlayerName($irCandidate->player_name).' to IR and add '.$displayPlayerName($target['name']).' ('.$target['team'].')'
+                    $suggestions[]='Move '.$displayPlayerName($irCandidate->player_name).' to IR. Add '.$displayPlayerName($target['name']).' ('.$target['team'].')'
                         .(!empty($target['projected_points'])?', '.$target['projected_points'].' projected FPts':'').'.';
                 }
             }
@@ -545,8 +545,8 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                 if($targetPos){
                     $target=collect($availableGroups[$targetPos]??[])->first();
                     if($target){
-                        $suggestions[]='You already have a goalie playing tonight and have an open '.$targetPos.' spot. Consider dropping '
-                            .$displayPlayerName($surplusGoalie->player_name).' and adding '.$displayPlayerName($target['name']).' ('.$target['team'].')'
+                        $suggestions[]='Goalie is covered tonight. You have an open '.$targetPos.' spot. Drop '
+                            .$displayPlayerName($surplusGoalie->player_name).'. Add '.$displayPlayerName($target['name']).' ('.$target['team'].')'
                             .(!empty($target['projected_points'])?', '.$target['projected_points'].' projected FPts':'').'.';
                     }
                 }
@@ -562,9 +562,9 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             $target=collect($availableGroups[$pos]??[])->first();
             if($target){
                 $reason=$trailing
-                    ? 'Trailing this week'
-                    : ($isWeekend ? 'A weekend move could add another game' : 'You have a low-projection FA/1-year roster spot');
-                $suggestions[]=$reason.'. Consider adding '.$displayPlayerName($target['name']).' ('.$target['team'].') and dropping '.$displayPlayerName($drop->player_name).'.';
+                    ? 'You are trailing. Make a move'
+                    : ($isWeekend ? 'Use the weekend. Add another game' : 'This roster spot is not giving you enough');
+                $suggestions[]=$reason.'. Add '.$displayPlayerName($target['name']).' ('.$target['team'].'). Drop '.$displayPlayerName($drop->player_name).'.';
             }
         }
 
@@ -609,9 +609,9 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                     ? 'You already carry 2 goalies. '
                     : '';
                 array_unshift($suggestions,
-                    $goalieReason.'No goalie is active tonight. Consider adding '.$displayPlayerName($goalieTarget['name']).' ('.$goalieTarget['team'].')'
+                    $goalieReason.'No goalie tonight. Add '.$displayPlayerName($goalieTarget['name']).' ('.$goalieTarget['team'].')'
                     .(!empty($goalieTarget['starting_status'])?' [GOALIE_STATUS:'.$goalieTarget['starting_status'].']':'')
-                    .' and dropping '.$displayPlayerName($drop->player_name).'.'
+                    .'. Drop '.$displayPlayerName($drop->player_name).'.'
                 );
             }
         }
@@ -625,8 +625,8 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             $advice='No moves left.';
         } elseif(empty($suggestions)){
             $advice=$eligibleDrops->isEmpty()
-                ? 'No eligible FA/1-year drop below your projection thresholds.'
-                : 'No moves to suggest.';
+                ? 'Stand pat. No eligible FA or 1-year player falls below your drop thresholds.'
+                : 'Stand pat. No move improves the lineup enough right now.';
         } else {
             $advice=implode(' ', $suggestions);
         }
