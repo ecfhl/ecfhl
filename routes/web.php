@@ -31,37 +31,87 @@ Route::get('/standings', function(EcfhlData $data){
         ->where('job_name','ecfhl:refresh-current-standings')
         ->max('completed_at');
 
+    $currentPeriodNumber=null;
     $scoringPeriods=[];
-    try {
-        $today=\Carbon\CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();
-        $teamNamesById=DB::table('active_fantasy_rosters')
-            ->whereNotNull('fantasy_team_id')
-            ->whereNotNull('fantasy_team_name')
-            ->orderByDesc('game_date')
-            ->get(['fantasy_team_id','fantasy_team_name'])
-            ->unique('fantasy_team_id')
-            ->mapWithKeys(fn($r)=>[(string)$r->fantasy_team_id=>(string)$r->fantasy_team_name]);
 
-        $scoringPeriods=collect(app(\App\Support\FantraxSchedule::class)->periods())
-            ->filter(fn($period)=>\Carbon\CarbonImmutable::parse($period['start'],'America/Halifax')->lte($today))
-            ->map(function($period)use($teamNamesById){
-                $period['matchups']=collect($period['matchups']??[])->map(function($matchup)use($teamNamesById){
-                    $awayId=(string)($matchup['away_team_id']??'');
-                    $homeId=(string)($matchup['home_team_id']??'');
-                    $matchup['away_display']=$teamNamesById[$awayId]??($matchup['away_name']??'Away');
-                    $matchup['home_display']=$teamNamesById[$homeId]??($matchup['home_name']??'Home');
-                    return $matchup;
-                })->values()->all();
-                return $period;
-            })
-            ->sortByDesc('start')
-            ->values()
-            ->all();
+    try {
+        if(\Illuminate\Support\Facades\Schema::hasTable('scoring_period_matchups')){
+            $storedPeriods=DB::table('scoring_period_matchups')
+                ->where('season_id',$seasonName)
+                ->distinct()
+                ->count('period_number');
+
+            if($storedPeriods<24){
+                foreach(app(\App\Support\FantraxSchedule::class)->periods(true) as $period){
+                    $caption=trim((string)($period['caption']??''));
+                    preg_match('/(\d+)/',$caption,$m);
+                    $periodNumber=(int)($m[1]??0);
+                    if($periodNumber<1)continue;
+
+                    foreach(($period['matchups']??[]) as $matchup){
+                        DB::table('scoring_period_matchups')->updateOrInsert(
+                            [
+                                'season_id'=>$seasonName,
+                                'period_number'=>$periodNumber,
+                                'away_team_name'=>(string)($matchup['away_name']??''),
+                                'home_team_name'=>(string)($matchup['home_name']??''),
+                            ],
+                            [
+                                'start_date'=>$period['start'],
+                                'end_date'=>$period['end'],
+                                'away_team_id'=>(string)($matchup['away_team_id']??''),
+                                'away_score'=>$matchup['away_score'],
+                                'home_team_id'=>(string)($matchup['home_team_id']??''),
+                                'home_score'=>$matchup['home_score'],
+                                'created_at'=>now(),
+                                'updated_at'=>now(),
+                            ]
+                        );
+                    }
+                }
+            }
+
+            $rows=DB::table('scoring_period_matchups')
+                ->where('season_id',$seasonName)
+                ->orderBy('period_number')
+                ->orderBy('id')
+                ->get();
+
+            $scoringPeriods=$rows->groupBy('period_number')->map(function($group,$periodNumber){
+                $first=$group->first();
+                return [
+                    'caption'=>'Scoring Period '.$periodNumber,
+                    'period_number'=>(int)$periodNumber,
+                    'start'=>(string)$first->start_date,
+                    'end'=>(string)$first->end_date,
+                    'matchups'=>$group->map(fn($r)=>[
+                        'away_team_id'=>(string)($r->away_team_id??''),
+                        'away_name'=>(string)$r->away_team_name,
+                        'away_display'=>(string)$r->away_team_name,
+                        'away_score'=>$r->away_score!==null?(float)$r->away_score:null,
+                        'home_team_id'=>(string)($r->home_team_id??''),
+                        'home_name'=>(string)$r->home_team_name,
+                        'home_display'=>(string)$r->home_team_name,
+                        'home_score'=>$r->home_score!==null?(float)$r->home_score:null,
+                    ])->values()->all(),
+                ];
+            })->values()->all();
+
+            $fantasyToday=\Carbon\CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();
+            foreach($scoringPeriods as $period){
+                $start=\Carbon\CarbonImmutable::parse($period['start'],'America/Halifax')->startOfDay();
+                $end=\Carbon\CarbonImmutable::parse($period['end'],'America/Halifax')->endOfDay();
+                if($fantasyToday->betweenIncluded($start,$end)){
+                    $currentPeriodNumber=(int)$period['period_number'];
+                    break;
+                }
+            }
+        }
     } catch (\Throwable $e) {
         report($e);
     }
 
-    return view('standings',compact('season','standings','standingsLastUpdate','scoringPeriods'));
+    return view('standings',compact('season','standings','standingsLastUpdate','scoringPeriods','currentPeriodNumber'));
 });
 
 Route::get('/seasons/{season}', function(string $season,EcfhlData $data){
