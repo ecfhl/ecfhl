@@ -66,7 +66,7 @@
                 <a href="/teams/current/{{ $away['slug'] }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $away['name'] }}</a>
                 <small>AWAY</small>
               </div>
-              <strong class="matchup-summary-score">{{ number_format($away['today_fpts'] ?? 0,1) }}</strong>
+              <strong class="matchup-summary-score">{{ number_format($away['today_fpts'] ?? 0,0) }}</strong>
             @endif
           </div>
 
@@ -74,7 +74,7 @@
 
           <div class="matchup-summary-side matchup-summary-home">
             @if($home)
-              <strong class="matchup-summary-score">{{ number_format($home['today_fpts'] ?? 0,1) }}</strong>
+              <strong class="matchup-summary-score">{{ number_format($home['today_fpts'] ?? 0,0) }}</strong>
               <div class="matchup-summary-name">
                 <a href="/teams/current/{{ $home['slug'] }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $home['name'] }}</a>
                 <small>HOME</small>
@@ -93,12 +93,12 @@
                   <a href="/teams/current/{{ $away['slug'] }}?date={{ $date }}">{{ $away['name'] }}</a>
                   <small>AWAY</small>
                 </div>
-                <strong>{{ number_format($away['today_fpts'] ?? 0,1) }}</strong>
+                <strong>{{ number_format($away['today_fpts'] ?? 0,0) }}</strong>
               @endif
             </div>
             <div class="matchup-team-head matchup-team-head-home">
               @if($home)
-                <strong>{{ number_format($home['today_fpts'] ?? 0,1) }}</strong>
+                <strong>{{ number_format($home['today_fpts'] ?? 0,0) }}</strong>
                 <div>
                   <a href="/teams/current/{{ $home['slug'] }}?date={{ $date }}">{{ $home['name'] }}</a>
                   <small>HOME</small>
