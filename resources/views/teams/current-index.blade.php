@@ -384,8 +384,15 @@ document.addEventListener('DOMContentLoaded',()=>{
     },60000);
   }
 
-  document.querySelectorAll('.matchup-summary a').forEach(link=>{
-    link.addEventListener('click',event=>event.stopPropagation());
+  document.querySelectorAll('.matchup-summary-name a').forEach(link=>{
+    link.addEventListener('click',event=>{
+      const card=link.closest('.matchup-card');
+      if(!card?.open){
+        event.preventDefault();
+        return;
+      }
+      event.stopPropagation();
+    });
   });
 });
 </script>
