@@ -12,7 +12,7 @@
         elseif(request()->is('seasons/*')&&isset($season)){$browserTitle='ECFHL - '.($season['season']??'Season');}
         elseif(request()->is('teams/current')){$browserTitle='ECFHL - Live Scoring';}
         else{$pageTitles=['seasons'=>'Seasons','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','daily-targets'=>'Daily Targets','job-status'=>'Collector Status','rules'=>'Rules'];$browserTitle='ECFHL - '.($pageTitles[request()->segment(1)]??'East Coast Fantasy Hockey League');}
-        $showSeasonFilter=!request()->is('rules','players','daily-targets','job-status','teams/current','teams/current/*');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
+        $showSeasonFilter=!request()->is('rules','players','daily-targets','job-status','teams/current','teams/current/*','seasons','seasons/*');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
     @endphp
     <title>{{ $browserTitle }}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7"><link rel="shortcut icon" href="/favicon.svg?v=7"><link rel="apple-touch-icon" href="/ecfhl-logo.png?v=7"><link rel="stylesheet" href="/app.css?v=6"><link rel="stylesheet" href="/header-filters.css?v=3">
