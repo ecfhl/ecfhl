@@ -214,7 +214,7 @@ Artisan::command('ecfhl:refresh-odds', function (NhlOdds $odds) {
     }
 });
 
-Schedule::command('ecfhl:refresh-daily-scores')->cron('*/2 * * * *')->withoutOverlapping(2)->runInBackground()->when(function () {
+Schedule::command('ecfhl:refresh-daily-scores')->cron('* * * * *')->withoutOverlapping(2)->runInBackground()->when(function () {
     $tz='America/Halifax';
     $now=CarbonImmutable::now($tz);
     $today=$now->toDateString();
