@@ -195,14 +195,41 @@ class FantraxTeamRosters
         if (!is_array($data)) throw new RuntimeException('Fantrax roster player stats returned no response data.');
 
         $columns = [];
-        foreach (($data['tableHeader']['cells'] ?? []) as $i => $col) {
-            foreach (['key','sortType','shortName'] as $field) {
-                $key = trim((string)($col[$field] ?? ''));
-                if ($key !== '' && !isset($columns[$key])) $columns[$key] = $i;
+        $normalizedColumns = [];
+        $registerColumn = function(mixed $value, int $index) use (&$columns, &$normalizedColumns): void {
+            if (is_array($value)) {
+                foreach ($value as $nested) $thisValue = null;
+                array_walk_recursive($value, function($nested) use ($index, &$columns, &$normalizedColumns) {
+                    if (!is_scalar($nested)) return;
+                    $text = trim(html_entity_decode(strip_tags((string)$nested)));
+                    if ($text === '') return;
+                    if (!isset($columns[$text])) $columns[$text] = $index;
+                    $normalized = preg_replace('/[^a-z0-9]+/', '', strtolower($text));
+                    if ($normalized !== '' && !isset($normalizedColumns[$normalized])) $normalizedColumns[$normalized] = $index;
+                });
+                return;
             }
+            if (!is_scalar($value)) return;
+            $text = trim(html_entity_decode(strip_tags((string)$value)));
+            if ($text === '') return;
+            if (!isset($columns[$text])) $columns[$text] = $index;
+            $normalized = preg_replace('/[^a-z0-9]+/', '', strtolower($text));
+            if ($normalized !== '' && !isset($normalizedColumns[$normalized])) $normalizedColumns[$normalized] = $index;
+        };
+
+        foreach (($data['tableHeader']['cells'] ?? []) as $i => $col) {
+            if (!is_array($col)) continue;
+            foreach ($col as $value) $registerColumn($value, $i);
         }
-        $cell = function(array $entry, array $ids) use ($columns): ?array {
-            foreach ($ids as $id) if (isset($columns[$id])) return $entry['cells'][$columns[$id]] ?? null;
+
+        $cell = function(array $entry, array $ids) use ($columns, $normalizedColumns): ?array {
+            foreach ($ids as $id) {
+                if (isset($columns[$id])) return $entry['cells'][$columns[$id]] ?? null;
+                $normalized = preg_replace('/[^a-z0-9]+/', '', strtolower((string)$id));
+                if ($normalized !== '' && isset($normalizedColumns[$normalized])) {
+                    return $entry['cells'][$normalizedColumns[$normalized]] ?? null;
+                }
+            }
             return null;
         };
 
@@ -229,7 +256,7 @@ class FantraxTeamRosters
             }
 
             $fptsCell = $cell($entry, ['fpts','SCORE','FPts']);
-            $gpCell = $cell($entry, ['gp','GP','Games Played','GamesPlayed']);
+            $gpCell = $cell($entry, ['gp','GP','Games Played','GamesPlayed','Games','Projected GP','Proj GP']);
             $contractCell = $cell($entry, ['contract','CONTRACT','Contract']);
             $contract = trim(html_entity_decode(strip_tags((string)($contractCell['content'] ?? ''))));
             $projectedFpts=$this->numeric($fptsCell['content'] ?? null);
