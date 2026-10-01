@@ -46,11 +46,17 @@ class FantraxStandings
             array_unshift($tables,$data);
         }
 
+        $merged=[];
         foreach($tables as $table){
-            $rows=$this->parseTable($table);
-            if(count($rows)>=10){
-                return ['rows'=>$rows,'url'=>$url];
+            foreach($this->parseTable($table) as $row){
+                $key=(string)($row['team_id']??'');
+                if($key==='')$key=mb_strtolower(trim((string)($row['team_name']??'')));
+                if($key!=='')$merged[$key]=$row;
             }
+        }
+        $rows=array_values($merged);
+        if(count($rows)>=10){
+            return ['rows'=>$rows,'url'=>$url];
         }
 
         Log::warning('Fantrax standings parse diagnostic',[
@@ -96,17 +102,34 @@ class FantraxStandings
             $cells=$row['cells']??[];
             if(!is_array($cells) || !$cells)continue;
 
-            $teamIndex=null;$teamId='';$teamName='';
+            $teamIndex=null;
+            $teamId=trim((string)($row['teamId']??$row['fantasyTeamId']??''));
+            $teamName=$this->text($row['teamName']??$row['name']??'');
+
             foreach($cells as $i=>$cell){
                 if(!is_array($cell))continue;
-                $candidate=trim((string)($cell['teamId']??''));
-                if($candidate==='')continue;
-                $teamIndex=$i;
-                $teamId=$candidate;
-                $teamName=$this->text($cell['content']??$cell['name']??'');
-                break;
+                $candidate=trim((string)($cell['teamId']??$cell['fantasyTeamId']??''));
+                if($candidate!=='' || isset($cell['teamName'])){
+                    $teamIndex=$i;
+                    if($teamId==='')$teamId=$candidate;
+                    if($teamName==='')$teamName=$this->text($cell['content']??$cell['teamName']??$cell['name']??'');
+                    break;
+                }
             }
-            if($teamIndex===null || $teamName==='')continue;
+
+            if($teamIndex===null){
+                foreach($cells as $i=>$cell){
+                    $text=$this->text(is_array($cell)?($cell['content']??$cell['value']??''):$cell);
+                    if($text!=='' && !is_numeric(preg_replace('/[^0-9.\-]/','',$text))){
+                        $teamIndex=$i;
+                        if($teamName==='')$teamName=$text;
+                        break;
+                    }
+                }
+            }
+
+            if($teamName==='')continue;
+            if($teamId==='')$teamId='name:'.mb_strtolower($teamName);
 
             // Header names are preferred. Fantrax's standard standings layout is
             // rank, team, W, L, T, ... FPts; the relative fallbacks cover cases
@@ -114,9 +137,9 @@ class FantraxStandings
             $rank=$this->number($this->cellValue($cells,$rankIndex));
             if($rank===null && $teamIndex>0)$rank=$this->number($this->cellValue($cells,$teamIndex-1));
 
-            $w=$this->number($this->cellValue($cells,$wIndex));
-            $l=$this->number($this->cellValue($cells,$lIndex));
-            $t=$this->number($this->cellValue($cells,$tIndex));
+            $w=$this->number($row['w']??$row['wins']??$this->cellValue($cells,$wIndex));
+            $l=$this->number($row['l']??$row['losses']??$this->cellValue($cells,$lIndex));
+            $t=$this->number($row['t']??$row['ties']??$this->cellValue($cells,$tIndex));
 
             if($w===null || $l===null || $t===null){
                 $numeric=[];
@@ -131,20 +154,21 @@ class FantraxStandings
                 }
             }
 
-            $fpts=$this->number($this->cellValue($cells,$fptsIndex));
+            $fpts=$this->number(
+                $row['fantasyPointsFor']??$row['fantasy_points_for']??$row['fpts']??$row['fPts']
+                ??$this->cellValue($cells,$fptsIndex)
+            );
             if($fpts===null){
-                // FPts is normally the largest non-percentage numeric value after
-                // the record columns. Prefer a decimal/large value rather than
-                // guessing from W/L/T.
-                $candidates=[];
-                for($i=$teamIndex+1;$i<count($cells);$i++){
+                $numeric=[];
+                for($i=($teamIndex??0)+1;$i<count($cells);$i++){
                     $raw=$this->cellValue($cells,$i);
-                    $n=$this->number($raw);
-                    if($n===null)continue;
                     if(is_string($raw) && str_contains($raw,'%'))continue;
-                    if($n>20 || (is_string($raw) && str_contains($raw,'.')))$candidates[]=$n;
+                    $n=$this->number($raw);
+                    if($n!==null)$numeric[]=$n;
                 }
-                if($candidates)$fpts=max($candidates);
+                // Standard Fantrax H2H order after Team is W, L, T, Pts, FPts.
+                if(count($numeric)>=5)$fpts=$numeric[4];
+                elseif(count($numeric)>=4)$fpts=$numeric[count($numeric)-1];
             }
 
             if($w===null || $l===null || $t===null || $fpts===null)continue;
