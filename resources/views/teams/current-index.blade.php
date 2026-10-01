@@ -159,7 +159,7 @@
                       @if($awayPlayingCounts['G']>0)<span class="position-count-pill {{ $awayPlayingCounts['G']>=1?'full':'' }}">{{ $awayPlayingCounts['G'] }} Goaltender{{ $awayPlayingCounts['G']==1?'':'s' }}</span>@endif
                       @if($awayPlayingCounts['B']>0)<span class="position-count-pill bench-count-pill">{{ $awayPlayingCounts['B'] }} Bench</span>@endif
                     </span>
-                    @if(($away['games_in_progress'] ?? 0)>0)<span class="matchup-live-games">{{ $away['games_in_progress'] }} game{{ ($away['games_in_progress']??0)==1?'':'s' }} in progress</span>@endif
+                    @if(($away['games_in_progress'] ?? 0)>0)<span class="matchup-live-games">In progress: {{ $away['games_in_progress'] }}</span>@endif
                   </div>
                   <div class="matchup-meta-row matchup-stat-row">
                     <span class="matchup-daily-cats">@foreach(['gp'=>'GP','g'=>'G','a'=>'A','ppg'=>'PPG','shg'=>'SHG','gwg'=>'GWG','w'=>'W','so'=>'SO'] as $key=>$label)@if(($away['today_stats'][$key] ?? 0) != 0)<span>{{ $label }}: {{ $away['today_stats'][$key] }}</span>@endif @endforeach</span>
@@ -179,7 +179,7 @@
                 <a href="/teams/current/{{ $home['slug'] }}?date={{ $date }}">{{ $home['name'] }}</a>
                 <div class="matchup-summary-meta matchup-summary-meta-home">
                   <div class="matchup-meta-row matchup-meta-row-home">
-                    @if(($home['games_in_progress'] ?? 0)>0)<span class="matchup-live-games">{{ $home['games_in_progress'] }} game{{ ($home['games_in_progress']??0)==1?'':'s' }} in progress</span>@endif
+                    @if(($home['games_in_progress'] ?? 0)>0)<span class="matchup-live-games">In progress: {{ $home['games_in_progress'] }}</span>@endif
                     <span class="matchup-playing-counts">
                       @if($homePlayingCounts['F']>0)<span class="position-count-pill {{ $homePlayingCounts['F']>=8?'full':'' }}">{{ $homePlayingCounts['F'] }} Forward{{ $homePlayingCounts['F']==1?'':'s' }}</span>@endif
                       @if($homePlayingCounts['D']>0)<span class="position-count-pill {{ $homePlayingCounts['D']>=4?'full':'' }}">{{ $homePlayingCounts['D'] }} {{ $homePlayingCounts['D']==1?'Defenseman':'Defensemen' }}</span>@endif
