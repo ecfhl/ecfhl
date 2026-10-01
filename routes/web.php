@@ -33,9 +33,9 @@ Route::get('/seasons/{season}', function(string $season,EcfhlData $data){
 Route::get('/teams', function(EcfhlData $data){$type=$data->mode();$status=request('status','all');$allTeams=$data->teamLedger($type,'all');$teams=$data->teamLedger($type,$status);$overview=$data->overviewLeaders();$totals=[];foreach($data->teamSeasons() as $r){$id=$r['franchise_id']??null;if($id&&$r['fantasy_points_for']!==null)$totals[$id]=($totals[$id]??0)+(float)$r['fantasy_points_for'];}foreach($teams as &$t)$t['total_fpts']=$totals[$t['id']]??null;unset($t);$pres=[];foreach($allTeams as $t)if(($t['president']??0)>0)$pres[]=['team'=>$t['team'],'value'=>$t['president'],'score'=>$t['president']];usort($pres,fn($a,$b)=>$b['score']<=>$a['score']);$franchiseLeaders=['championships'=>$overview['championships'],'presidents'=>$pres,'winning_pct'=>$overview['winning_pct'],'first_picks'=>$overview['first_picks'],'trades'=>$overview['trades'],'awards'=>$overview['awards']];return view('teams.index',compact('teams','allTeams','type','status','franchiseLeaders'));});
 Route::get('/teams/current', function() {
     $tz='America/Halifax';
-    $now=\Carbon\CarbonImmutable::now($tz);
-    $today=$now->toDateString();
-    $tomorrow=$now->addDay()->toDateString();
+    $fantasyDay=\Carbon\CarbonImmutable::now('America/Los_Angeles')->subHours(12)->startOfDay();
+    $today=$fantasyDay->toDateString();
+    $tomorrow=$fantasyDay->addDay()->toDateString();
     $date=(string)request('date',$today);
     if(!in_array($date,[$today,$tomorrow],true))$date=$today;
 
@@ -214,9 +214,9 @@ Route::get('/teams/current', function() {
 
 Route::get('/teams/current/{slug}', function(string $slug) {
     $tz='America/Halifax';
-    $now=\Carbon\CarbonImmutable::now($tz);
-    $today=$now->toDateString();
-    $tomorrow=$now->addDay()->toDateString();
+    $fantasyDay=\Carbon\CarbonImmutable::now('America/Los_Angeles')->subHours(12)->startOfDay();
+    $today=$fantasyDay->toDateString();
+    $tomorrow=$fantasyDay->addDay()->toDateString();
     $date=(string)request('date',$today);
     if(!in_array($date,[$today,$tomorrow],true))$date=$today;
 
@@ -545,9 +545,9 @@ Route::get('/job-status', function () {
 });
 
 Route::get('/ai-tips', function () {
-    $now = \Carbon\CarbonImmutable::now('America/Halifax');
-    $today = $now->toDateString();
-    $tomorrow = $now->addDay()->toDateString();
+    $fantasyDay = \Carbon\CarbonImmutable::now('America/Los_Angeles')->subHours(12)->startOfDay();
+    $today = $fantasyDay->toDateString();
+    $tomorrow = $fantasyDay->addDay()->toDateString();
     $date = request('date', $today);
     abort_unless(is_string($date) && preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date), 422, 'Use a valid game date.');
     if (!in_array($date, [$today, $tomorrow], true)) $date = $today;
