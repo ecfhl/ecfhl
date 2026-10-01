@@ -115,7 +115,15 @@ Route::get('/teams/current', function() {
             $opp=trim((string)($r->opponent_display??''));
             return $opp!=='' && (bool)preg_match('/(?:\\bF\\b|\\bFinal\\b)\\s*$/i',$opp);
         })
-        ->map(fn($r)=>$scoreTeam($r->nhl_team))
+        ->map(fn($r)=>$scoreTeam($r->nhl_team));
+
+    $finishedNhlTeams=$finishedNhlTeams
+        ->merge(
+            $rows->filter(function($p){
+                $text=trim((string)($p->game_time??''));
+                return $text!=='' && (bool)preg_match('/(?:\\bF\\b|\\bFinal\\b)\\s*$/i',$text);
+            })->map(fn($p)=>$scoreTeam($p->nhl_team))
+        )
         ->filter()
         ->unique()
         ->flip();
