@@ -13,8 +13,8 @@
   @if($scheduleLabel)
     <div class="matchup-period-label">
       <span>{{ $scheduleLabel }}</span>
-      @if($lastUpdate)
-        <span class="matchup-period-updated">Updated {{ \Carbon\CarbonImmutable::parse($lastUpdate)->setTimezone('America/Halifax')->format('g:i:s a T') }}</span>
+      @if($scoreLastUpdate)
+        <span class="matchup-period-updated">Updated {{ \Carbon\CarbonImmutable::parse($scoreLastUpdate)->setTimezone('America/Halifax')->format('g:i:s a T') }}</span>
       @endif
     </div>
   @endif
