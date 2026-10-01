@@ -304,6 +304,54 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
     $teams=$rosters->groupBy('fantasy_team_id');
     $availableGroups=\App\Support\AiTips::groups([], $date);
 
+    // Use the same Daily Targets ranking shown on the current-team page:
+    // PP1 before PP2 before no PP unit, then L1-L4, then projected FPts.
+    $rankName=function($value){
+        $name=trim((string)$value);
+        if(str_contains($name,',')){
+            [$last,$first]=array_map('trim',explode(',',$name,2));
+            if($first!==''&&$last!=='')$name=$first.' '.$last;
+        }
+        return preg_replace('/[^\pL\pN]+/u','',mb_strtolower($name))??'';
+    };
+    $rankTeam=fn($value)=>match(strtoupper(trim((string)$value))){
+        'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>strtoupper(trim((string)$value))
+    };
+    $advisorPp=DB::table('active_pp_lines')->get()->keyBy(fn($r)=>$rankTeam($r->team).'|'.$rankName($r->player_name));
+    $advisorLines=DB::table('active_line_combinations')->get()->keyBy(fn($r)=>$rankTeam($r->team).'|'.$rankName($r->player_name).'|'.strtoupper(trim((string)$r->position_group)));
+
+    foreach(['F','D'] as $rankPosition){
+        $decorated=collect($availableGroups[$rankPosition]??[])->map(function($player)use($rankPosition,$advisorPp,$advisorLines,$rankName,$rankTeam){
+            $team=$rankTeam($player['team']??'');
+            $name=$rankName($player['name']??'');
+            $line=$advisorLines[$team.'|'.$name.'|'.$rankPosition]??null;
+            $power=$advisorPp[$team.'|'.$name]??null;
+            $player['line_number']=$line?(int)$line->line_number:null;
+            $player['pp_unit']=$power?(int)$power->pp_unit:null;
+            return $player;
+        })->sort(function($a,$b){
+            $rank=function($player){
+                $pp=$player['pp_unit']??null;
+                $line=$player['line_number']??null;
+                return [
+                    $pp===1?1:($pp===2?2:3),
+                    in_array($line,[1,2,3,4],true)?$line:99,
+                ];
+            };
+            $ar=$rank($a);$br=$rank($b);
+            if($ar[0]!==$br[0])return $ar[0]<=>$br[0];
+            if($ar[1]!==$br[1])return $ar[1]<=>$br[1];
+            $ap=$a['projected_points']??-PHP_FLOAT_MAX;
+            $bp=$b['projected_points']??-PHP_FLOAT_MAX;
+            if($ap!==$bp)return $bp<=>$ap;
+            $as=$a['source_rank']??PHP_INT_MAX;
+            $bs=$b['source_rank']??PHP_INT_MAX;
+            if($as!==$bs)return $as<=>$bs;
+            return strcasecmp((string)($a['name']??''),(string)($b['name']??''));
+        })->values()->all();
+        $availableGroups[$rankPosition]=$decorated;
+    }
+
     $scheduleScores=[];
     try {
         $schedule=app(FantraxSchedule::class)->forDate($day,true);
