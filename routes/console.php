@@ -6,6 +6,7 @@ use App\Support\FantraxAvailablePlayers;
 use App\Support\FantraxDailyScores;
 use App\Support\FantraxTeamRosters;
 use App\Support\FantraxStandings;
+use App\Support\FantraxSchedule;
 use App\Support\NhlOdds;
 use App\Support\NhlDailyStats;
 use Carbon\CarbonImmutable;
@@ -68,7 +69,7 @@ Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayer
     return $failed?1:0;
 });
 
-Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailyScores $fantrax, NhlDailyStats $nhlStats) {
+Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailyScores $fantrax, NhlDailyStats $nhlStats, FantraxSchedule $fantraxSchedule) {
     $tz='America/Halifax';
     $requested=trim((string)($this->argument('date')??''));
     if($requested!==''){
@@ -98,8 +99,13 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
             $nhlByKey=[];
             foreach($nhlRows as $stat)$nhlByKey[$normTeam($stat['nhl_team']??'').'|'.$normName($stat['player_name']??'')]=$stat;
 
+            $previousScores=DB::table('active_daily_scores')
+                ->whereDate('game_date',$date->toDateString())
+                ->get()
+                ->keyBy(fn($r)=>$normTeam($r->nhl_team).'|'.$normName($r->player_name));
+
             $now=now();
-            $rows=array_map(function($r)use($date,$now,$data,$nhlByKey,$normName,$normTeam){
+            $rows=array_map(function($r)use($date,$now,$data,$nhlByKey,$normName,$normTeam,$previousScores){
                 $stat=$nhlByKey[$normTeam($r['nhl_team']??'').'|'.$normName($r['player_name']??'')]??[];
                 return [
                     'game_date'=>$date->toDateString(),
@@ -108,6 +114,9 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
                     'position'=>$r['position'],
                     'fantasy_status'=>$r['fantasy_status'],
                     'today_fpts'=>$r['today_fpts'],
+                    'fpts_changed'=>($previous=$previousScores[$normTeam($r['nhl_team']??'').'|'.$normName($r['player_name']??'')]??null)
+                        ? abs((float)$previous->today_fpts-(float)$r['today_fpts'])>0.0001
+                        : false,
                     'gp'=>$stat['gp']??0,
                     'g'=>$stat['g']??0,
                     'a'=>$stat['a']??0,
@@ -123,9 +132,48 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
                 ];
             },$data['rows']);
 
-            DB::transaction(function()use($date,$rows){
+            $matchupRows=null;
+            try {
+                $schedule=$fantraxSchedule->forDate($date,true);
+                $previousMatchups=DB::table('active_matchup_scores')
+                    ->whereDate('game_date',$date->toDateString())
+                    ->get()
+                    ->keyBy(fn($r)=>(string)$r->fantasy_team_id);
+                $matchupRows=[];
+                foreach(($schedule['matchups']??[]) as $pair){
+                    foreach([
+                        [(string)($pair['away_team_id']??''),$pair['away_score']??null],
+                        [(string)($pair['home_team_id']??''),$pair['home_score']??null],
+                    ] as [$teamId,$score]){
+                        if($teamId==='')continue;
+                        $previous=$previousMatchups[$teamId]??null;
+                        $matchupRows[]=[
+                            'game_date'=>$date->toDateString(),
+                            'fantasy_team_id'=>$teamId,
+                            'week_fpts'=>$score,
+                            'week_fpts_changed'=>$previous && $score!==null
+                                ? abs((float)$previous->week_fpts-(float)$score)>0.0001
+                                : false,
+                            'checked_at'=>$now,
+                            'created_at'=>$now,
+                            'updated_at'=>$now,
+                        ];
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Fantrax matchup score snapshot failed',[
+                    'date'=>$date->toDateString(),
+                    'error'=>$e->getMessage(),
+                ]);
+            }
+
+            DB::transaction(function()use($date,$rows,$matchupRows){
                 DB::table('active_daily_scores')->whereDate('game_date',$date->toDateString())->delete();
                 if($rows)DB::table('active_daily_scores')->insert($rows);
+                if($matchupRows!==null){
+                    DB::table('active_matchup_scores')->whereDate('game_date',$date->toDateString())->delete();
+                    if($matchupRows)DB::table('active_matchup_scores')->insert($matchupRows);
+                }
             });
 
             DB::table('job_run_history')->insert([
