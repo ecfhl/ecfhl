@@ -70,6 +70,9 @@ Route::get('/teams/current', function() {
     $rows=$rows->map(function($p)use($dailyScores,$scoreName,$scoreTeam){
         $score=$dailyScores[$scoreTeam($p->nhl_team).'|'.$scoreName($p->player_name)]??null;
         $p->today_fpts=$score?(float)$score->today_fpts:0.0;
+        foreach(['gp','g','a','ppg','shg','gwg','w','so'] as $stat){
+            $p->{'today_'.$stat}=$score?(int)($score->{$stat}??0):0;
+        }
         return $p;
     });
 
@@ -121,15 +124,19 @@ Route::get('/teams/current', function() {
         }
         $minorRows=$teamRows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){$ar=(bool)$a->is_ir?3:(!empty($a->opponent)?0:1);$br=(bool)$b->is_ir?3:(!empty($b->opponent)?0:1);return $ar!==$br?$ar<=>$br:strnatcasecmp((string)$a->player_name,(string)$b->player_name);})->values();
         $positions['M']=['label'=>'Minors','rows'=>$minorRows];
+        $scoringRows=$teamRows->reject(fn($p)=>(bool)$p->is_bench || (bool)$p->is_ir || strtoupper((string)$p->roster_status)==='MINORS');
+        $dailyStats=[];
+        foreach(['gp','g','a','ppg','shg','gwg','w','so'] as $stat){
+            $dailyStats[$stat]=(int)$scoringRows->sum(fn($p)=>(int)($p->{'today_'.$stat}??0));
+        }
         $teams[]=[
             'id'=>(string)($teamRows->first()?->fantasy_team_id ?? ''),
             'name'=>$teamName,
             'slug'=>\Illuminate\Support\Str::slug($teamName),
             'positions'=>$positions,
             'count'=>$teamRows->count(),
-            'today_fpts'=>$teamRows
-                ->reject(fn($p)=>(bool)$p->is_bench || (bool)$p->is_ir || strtoupper((string)$p->roster_status)==='MINORS')
-                ->sum(fn($p)=>(float)($p->today_fpts??0)),
+            'today_stats'=>$dailyStats,
+            'today_fpts'=>$scoringRows->sum(fn($p)=>(float)($p->today_fpts??0)),
         ];
     }
 
