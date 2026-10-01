@@ -667,6 +667,19 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         report($e);
     }
 
+    $movesLeftToday=null;
+    try {
+        if(\Illuminate\Support\Facades\Schema::hasTable('team_daily_moves')){
+            $movesLeftToday=DB::table('team_daily_moves')
+                ->whereDate('move_date',$today)
+                ->where('fantasy_team_id',(string)($rows->first()->fantasy_team_id??''))
+                ->value('moves_left');
+            $movesLeftToday=$movesLeftToday!==null?(int)$movesLeftToday:null;
+        }
+    } catch (\Throwable $e) {
+        report($e);
+    }
+
     $lineupAdvice=null;
     try {
         if(\Illuminate\Support\Facades\Schema::hasTable('lineup_advice')){
@@ -686,7 +699,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $fantasyTeamId=$rows->first()->fantasy_team_id??null;
     $fantraxTeamUrl=$fantasyTeamId?'https://www.fantrax.com/fantasy/league/092zcn40molvao69/team/roster;teamId='.$fantasyTeamId:null;
     $teamChoices=array_map(fn($name)=>['name'=>$name,'slug'=>\Illuminate\Support\Str::slug($name)],$currentNames);
-    return view('teams.current',compact('teamName','slug','date','yesterday','today','tomorrow','positions','targetGroups','lastUpdate','scoreLastUpdate','fantraxTeamUrl','teamChoices','teamTodayFpts','liveMatchup','nextWeekOpponent','lineupAdvice'));
+    return view('teams.current',compact('teamName','slug','date','yesterday','today','tomorrow','positions','targetGroups','lastUpdate','scoreLastUpdate','fantraxTeamUrl','teamChoices','teamTodayFpts','liveMatchup','nextWeekOpponent','lineupAdvice','movesLeftToday'));
 });
 
 Route::get('/teams/{slug}', function(string $slug,EcfhlData $data){
