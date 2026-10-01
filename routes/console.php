@@ -66,34 +66,52 @@ Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayer
     return $failed?1:0;
 });
 
-Artisan::command('ecfhl:refresh-daily-scores', function (FantraxDailyScores $fantrax) {
-    $date=CarbonImmutable::now('America/Halifax')->startOfDay();
-    try {
-        $data=$fantrax->fetch($date);
-        $now=now();
-        $rows=array_map(fn($r)=>[
-            'game_date'=>$date->toDateString(),
-            'player_name'=>$r['player_name'],
-            'nhl_team'=>$r['nhl_team'],
-            'position'=>$r['position'],
-            'fantasy_status'=>$r['fantasy_status'],
-            'today_fpts'=>$r['today_fpts'],
-            'source_url'=>$data['url'],
-            'checked_at'=>$now,
-            'created_at'=>$now,
-            'updated_at'=>$now,
-        ],$data['rows']);
-        DB::transaction(function()use($date,$rows){
-            DB::table('active_daily_scores')->whereDate('game_date',$date->toDateString())->delete();
-            if($rows)DB::table('active_daily_scores')->insert($rows);
-        });
-        $this->info($date->toDateString().': '.count($rows).' live Fantrax scores refreshed');
-        return 0;
-    } catch (\Throwable $e) {
-        Log::error('Fantrax live score refresh failed',['date'=>$date->toDateString(),'error'=>$e->getMessage()]);
-        $this->error($date->toDateString().': '.$e->getMessage().'. Existing live scores preserved.');
-        return 1;
+Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailyScores $fantrax) {
+    $tz='America/Halifax';
+    $requested=trim((string)($this->argument('date')??''));
+    if($requested!==''){
+        try{$dates=[CarbonImmutable::createFromFormat('!Y-m-d',$requested,$tz)];}
+        catch(\Throwable){$this->error('Use date format YYYY-MM-DD.');return 1;}
+    }else{
+        $today=CarbonImmutable::now($tz)->startOfDay();
+        $dates=[$today];
+        $yesterday=$today->subDay();
+        $hasYesterday=DB::table('active_daily_scores')->whereDate('game_date',$yesterday->toDateString())->exists();
+        if(!$hasYesterday)$dates=array_merge([$yesterday],$dates);
     }
+
+    $failed=false;
+    foreach($dates as $date){
+        try {
+            $data=$fantrax->fetch($date);
+            $now=now();
+            $rows=array_map(fn($r)=>[
+                'game_date'=>$date->toDateString(),
+                'player_name'=>$r['player_name'],
+                'nhl_team'=>$r['nhl_team'],
+                'position'=>$r['position'],
+                'fantasy_status'=>$r['fantasy_status'],
+                'today_fpts'=>$r['today_fpts'],
+                'source_url'=>$data['url'],
+                'checked_at'=>$now,
+                'created_at'=>$now,
+                'updated_at'=>$now,
+            ],$data['rows']);
+
+            DB::transaction(function()use($date,$rows){
+                DB::table('active_daily_scores')->whereDate('game_date',$date->toDateString())->delete();
+                if($rows)DB::table('active_daily_scores')->insert($rows);
+            });
+
+            $this->info($date->toDateString().': '.count($rows).' Fantrax daily scores refreshed');
+        } catch (\Throwable $e) {
+            $failed=true;
+            Log::error('Fantrax daily score refresh failed',['date'=>$date->toDateString(),'error'=>$e->getMessage()]);
+            $this->error($date->toDateString().': '.$e->getMessage().'. Existing scores preserved.');
+        }
+    }
+
+    return $failed?1:0;
 });
 
 Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $fantrax) {
