@@ -110,13 +110,24 @@ Route::get('/teams/current', function() {
         ->whereDate('target_date',$date)
         ->max('completed_at');
     $dailyScores=$dailyScoreRows->keyBy(fn($r)=>$scoreTeam($r->nhl_team).'|'.$scoreName($r->player_name));
-    $rows=$rows->map(function($p)use($dailyScores,$scoreName,$scoreTeam){
+    $finishedNhlTeams=$dailyScoreRows
+        ->filter(function($r){
+            $opp=trim((string)($r->opponent_display??''));
+            return $opp!=='' && (bool)preg_match('/(?:\\bF\\b|\\bFinal\\b)\\s*$/i',$opp);
+        })
+        ->map(fn($r)=>$scoreTeam($r->nhl_team))
+        ->filter()
+        ->unique()
+        ->flip();
+
+    $rows=$rows->map(function($p)use($dailyScores,$scoreName,$scoreTeam,$finishedNhlTeams){
         $score=$dailyScores[$scoreTeam($p->nhl_team).'|'.$scoreName($p->player_name)]??null;
         $p->today_fpts=$score?(float)$score->today_fpts:0.0;
         $p->today_fpts_changed=$score?(bool)($score->fpts_changed??false):false;
         $p->live_opponent_display=$score?($score->opponent_display??null):null;
         $liveOpp=trim((string)($p->live_opponent_display??''));
-        $p->game_finished=$liveOpp!=='' && (bool)preg_match('/(?:\\bF\\b|\\bFinal\\b)\\s*$/i',$liveOpp);
+        $p->game_finished=isset($finishedNhlTeams[$scoreTeam($p->nhl_team)])
+            || ($liveOpp!=='' && (bool)preg_match('/(?:\\bF\\b|\\bFinal\\b)\\s*$/i',$liveOpp));
         $p->game_in_progress=$liveOpp!=='' && !$p->game_finished
             && (bool)preg_match('/\\b\\d+\\s+@?[A-Z]{2,4}\\s+\\d+\\b/i',$liveOpp);
         foreach(['gp','g','a','ppg','shg','gwg','w','so'] as $stat){
