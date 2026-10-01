@@ -41,7 +41,7 @@
             @endphp
             <tr>
               <td class="num">{{ $r['rank'] ?? '—' }}</td>
-              <td><strong>{{ $r['team'] }}</strong></td>
+              <td><strong><a href="/teams/current/{{ \Illuminate\Support\Str::slug($r['team']) }}" class="standings-team-link">{{ $r['team'] }}</a></strong></td>
               <td class="num">{{ $r['w'] ?? '—' }}</td>
               <td class="num">{{ $r['l'] ?? '—' }}</td>
               <td class="num">{{ $r['t'] ?? '—' }}</td>
@@ -57,6 +57,6 @@
 </div>
 <style>
 .standings-page{padding-bottom:26px}
-.standings-title{margin-top:8px}
+.standings-title{margin-top:8px}.standings-team-link{color:inherit;text-decoration:none}.standings-team-link:hover{text-decoration:underline}
 </style>
 @endsection
