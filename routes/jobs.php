@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/job-status/run/{job}', function (string $job) {
+    abort_unless(request()->ajax() && request()->headers->get('X-Requested-With') === 'XMLHttpRequest', 403);
     $commands = [
         'players' => 'ecfhl:refresh-daily-players',
         'goalies' => 'ecfhl:refresh-starting-goalies',
