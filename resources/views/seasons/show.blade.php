@@ -30,7 +30,7 @@
     <span class="subtle">
       {{ count($standings) }} teams
       @if(!empty($standingsLastUpdate))
-        · Updated {{ \Carbon\CarbonImmutable::parse($standingsLastUpdate)->setTimezone('America/Halifax')->format('g:i a T') }}
+        · Updated {{ \Carbon\CarbonImmutable::parse($standingsLastUpdate)->setTimezone('America/Halifax')->format('M j, Y · g:i:s a T') }}
       @endif
     </span>
   </div>
