@@ -32,6 +32,7 @@ html,body,main{max-width:100%;overflow-x:clip}
 <header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a></div><div class="header-actions"><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav">
 <a href="/" class="{{ request()->is('/')?'active':'' }}">Overview</a>
 <a href="/teams/current" class="{{ request()->is('teams/current','teams/current/*')?'active':'' }}">Live Scoring</a>
+<a href="/standings" class="{{ request()->is('standings')?'active':'' }}">Standings</a>
 <a href="/daily-targets" class="{{ request()->is('daily-targets')?'active':'' }}">Daily Targets</a>
 <div class="nav-dropdown {{ request()->is('teams')||request()->is('teams/*')&&!request()->is('teams/current','teams/current/*')?'active':'' }}">
   <div class="nav-dropdown-row">
@@ -45,7 +46,6 @@ html,body,main{max-width:100%;overflow-x:clip}
     <a class="nav-history-link" href="/teams">Franchise History</a>
   </div>
 </div>
-<a href="/standings" class="{{ request()->is('standings')?'active':'' }}">Standings</a>
 <div class="nav-dropdown {{ request()->is('seasons','seasons/*','prizes','trades','draft','players')?'active':'' }}">
   <div class="nav-dropdown-row">
     <a class="nav-dropdown-main-link" href="/prizes">Archive</a>
@@ -53,11 +53,11 @@ html,body,main{max-width:100%;overflow-x:clip}
   </div>
   <div class="nav-dropdown-menu archive-menu">
     <a href="/teams">Franchise History</a>
-    <a href="/seasons">Seasons</a>
-    <a href="/prizes">Prizes</a>
-    <a href="/trades">Trades</a>
-    <a href="/draft" onclick="if(location.pathname==='/draft'){event.preventDefault();history.replaceState(null,'','/draft');window.scrollTo({top:0,left:0,behavior:'auto'});}">Draft</a>
-    <a href="/players">Players</a>
+    <a href="/seasons">Seasons History</a>
+    <a href="/prizes">Prizes History</a>
+    <a href="/trades">Trades History</a>
+    <a href="/draft" onclick="if(location.pathname==='/draft'){event.preventDefault();history.replaceState(null,'','/draft');window.scrollTo({top:0,left:0,behavior:'auto'});}">Draft History</a>
+    <a href="/players">Players History</a>
   </div>
 </div>
 <a href="/rules" class="{{ request()->is('rules')?'active':'' }}">Rules</a>
