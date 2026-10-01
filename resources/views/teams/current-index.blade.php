@@ -66,7 +66,7 @@
                 <a href="/teams/current/{{ $away['slug'] }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $away['name'] }}</a>
                 <small>AWAY</small>
               </div>
-              <span class="matchup-summary-score-wrap"><small>Week</small><strong class="matchup-summary-score">{{ number_format($away['week_fpts'] ?? 0,0) }}</strong><span>Today {{ number_format($away['today_fpts'] ?? 0,0) }}</span></span>
+              <strong class="matchup-summary-score matchup-summary-score-green">{{ number_format($away['week_fpts'] ?? 0,0) }} +{{ number_format($away['today_fpts'] ?? 0,0) }}</strong>
             @endif
           </div>
 
@@ -74,7 +74,7 @@
 
           <div class="matchup-summary-side matchup-summary-home">
             @if($home)
-              <span class="matchup-summary-score-wrap"><small>Week</small><strong class="matchup-summary-score">{{ number_format($home['week_fpts'] ?? 0,0) }}</strong><span>Today {{ number_format($home['today_fpts'] ?? 0,0) }}</span></span>
+              <strong class="matchup-summary-score matchup-summary-score-green">{{ number_format($home['week_fpts'] ?? 0,0) }} +{{ number_format($home['today_fpts'] ?? 0,0) }}</strong>
               <div class="matchup-summary-name">
                 <a href="/teams/current/{{ $home['slug'] }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $home['name'] }}</a>
                 <small>HOME</small>
@@ -156,9 +156,9 @@
 .team-date-inactive{background:#e5e7eb!important;border-color:#d1d5db!important;color:#374151!important}
 .team-date-inactive:hover{background:#d1d5db!important;color:#111827!important}
 .matchup-period-label{margin:4px 0 10px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-.current-matchup-list{display:flex;flex-direction:column;gap:16px;margin-bottom:28px}
+.current-matchup-list{display:flex;flex-direction:column;gap:7px;margin-bottom:20px}
 .matchup-card{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}
-.matchup-summary{display:grid;grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr);align-items:center;gap:8px;padding:12px 14px;cursor:pointer;list-style:none;background:#fff}
+.matchup-summary{display:grid;grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr);align-items:center;gap:8px;padding:9px 14px;cursor:pointer;list-style:none;background:#fff}
 .matchup-summary::-webkit-details-marker{display:none}
 .matchup-summary-side{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}
 .matchup-summary-home{text-align:right}
@@ -166,7 +166,7 @@
 .matchup-summary-name a{font-weight:900;color:var(--text);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .matchup-summary-name a:hover{text-decoration:underline}
 .matchup-summary-name small{font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.05em}
-.matchup-summary-score-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:46px;line-height:1.05}.matchup-summary-score-wrap small{font-size:8px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.04em}.matchup-summary-score-wrap span{font-size:8px;color:var(--muted);font-weight:800;margin-top:2px;white-space:nowrap}.matchup-summary-score{font-size:22px;line-height:1;font-weight:900}
+.matchup-summary-score{font-size:20px;line-height:1;font-weight:900;white-space:nowrap}.matchup-summary-score-green{color:#16a34a}
 .matchup-summary-vs{text-align:center;font-size:10px;font-weight:900;color:var(--muted)}
 .matchup-bye{font-size:11px;font-weight:900;color:var(--muted)}
 .matchup-expanded{border-top:1px solid var(--line);background:#fff}
@@ -217,7 +217,7 @@ html[data-theme="dark"] .team-minors-row{background:#17263a}
 html[data-theme="dark"] .team-home{color:#4ade80}
 html[data-theme="dark"] .team-away{color:#fbbf24}
 @media(max-width:800px){
-  .matchup-summary{grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr);padding:10px}
+  .matchup-summary{grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr);padding:8px 10px}
   .matchup-summary-score{font-size:18px}
   .matchup-summary-name a{font-size:12px}
   .matchup-roster-grid{grid-template-columns:1fr 1fr}
