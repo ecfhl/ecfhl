@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('content')
-<div class="page-head"><div class="shell"><div class="eyebrow">2026-27 roster</div><label class="team-title-switcher"><span class="sr-only">Team</span><select aria-label="Team" onchange="if(this.value) location.href='/teams/current/'+this.value+'?date={{ $date }}'">@foreach($teamChoices as $choice)<option value="{{ $choice['slug'] }}" {{ $choice['slug']===$slug?'selected':'' }}>{{ $choice['name'] }}</option>@endforeach</select></label><p>Current Fantrax roster for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}. <strong class="team-today-total">Today: {{ number_format($teamTodayFpts ?? 0, 1) }} FPts</strong> @if($fantraxTeamUrl)<a class="team-fantrax-link" href="{{ $fantraxTeamUrl }}" target="_blank" rel="noopener noreferrer"><img src="/fantrax-icon.png" alt="">Fantrax ↗</a>@endif</p>@if($lastUpdate)<p class="team-updated">Updated {{ \Carbon\CarbonImmutable::parse($lastUpdate)->setTimezone('America/Halifax')->format('g:i a T') }}</p>@endif</div></div>
+<div class="page-head"><div class="shell"><div class="eyebrow">2026-27 roster</div><label class="team-title-switcher"><span class="sr-only">Team</span><select aria-label="Team" onchange="if(this.value) location.href='/teams/current/'+this.value+'?date={{ $date }}'">@foreach($teamChoices as $choice)<option value="{{ $choice['slug'] }}" {{ $choice['slug']===$slug?'selected':'' }}>{{ $choice['name'] }}</option>@endforeach</select></label><p>Current Fantrax roster for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}. <strong class="team-today-total">Today: {{ number_format($teamTodayFpts ?? 0, 0) }} FPts</strong> @if($fantraxTeamUrl)<a class="team-fantrax-link" href="{{ $fantraxTeamUrl }}" target="_blank" rel="noopener noreferrer"><img src="/fantrax-icon.png" alt="">Fantrax ↗</a>@endif</p>@if($lastUpdate)<p class="team-updated">Updated {{ \Carbon\CarbonImmutable::parse($lastUpdate)->setTimezone('America/Halifax')->format('g:i a T') }}</p>@endif</div></div>
 <div class="shell current-team-page">
   <div class="team-page-controls">
     <div class="team-left-controls">
@@ -34,7 +34,7 @@
                   @if($groupKey==='active')
                     <span class="team-not-playing-label">{{ $group['label'] }} Not Playing ({{ $statusRows->reject(fn($p)=>(bool)$p->is_ir)->count() }}) <span class="team-not-playing-chevron">▾</span></span>
                   @else
-                    <div class="team-playing-header"><span>{{ $group['label'] }} {{ $groupLabel }} ({{ $statusRows->reject(fn($p)=>(bool)$p->is_ir)->count() }})</span><span class="team-score-headings"><span>Proj.</span><span>Today</span></span></div>
+                    <div class="team-playing-header"><span>{{ $group['label'] }} {{ $groupLabel }} ({{ $statusRows->reject(fn($p)=>(bool)$p->is_ir)->count() }})</span><span class="team-score-headings"><span>Proj./G</span><span>Today</span></span></div>
                   @endif
                 </td>
               </tr>
@@ -67,8 +67,8 @@
                   <td data-label="Proj." class="num">
                     <div class="team-proj-wrap">
                       <div class="team-score-columns">
-                        <span class="team-projected-fpts">{{ $player->projected_fpts!==null?number_format($player->projected_fpts,0):'—' }}</span>
-                        <strong class="team-today-fpts">{{ number_format($player->today_fpts ?? 0, 1) }}</strong>
+                        <span class="team-projected-fpts">{{ $player->projected_fpts_per_game!==null?number_format($player->projected_fpts_per_game,2):'—' }}</span>
+                        <strong class="team-today-fpts">{{ number_format($player->today_fpts ?? 0, 0) }}</strong>
                       </div>
                       <div class="team-proj-badges">
                         @if($player->line_number)
