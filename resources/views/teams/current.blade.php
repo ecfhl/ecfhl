@@ -384,13 +384,13 @@
                         @else
                           <span class="pill goalie-status goalie-status-na">NA</span>
                         @endif
-                        @if(array_key_exists('vegas_odds',$target) && $target['vegas_odds']!==null)
-                          <span class="pill goalie-vegas-odds {{ $target['vegas_odds_class'] }}">{{ $target['vegas_odds']>0?'+':'' }}{{ (int)$target['vegas_odds'] }}</span>
-                        @endif
                       @endif
                     </div>
                   </div>
                   <div class="team-target-actions">
+                    @if(($target['position'] ?? '') === 'G' && array_key_exists('vegas_odds',$target) && $target['vegas_odds']!==null)
+                      <span class="pill goalie-vegas-odds {{ $target['vegas_odds_class'] }}">{{ $target['vegas_odds']>0?'+':'' }}{{ (int)$target['vegas_odds'] }}</span>
+                    @endif
                     <strong class="team-target-proj">{{ $target['projected_points']!==null?number_format($target['projected_points'],0):'—' }}</strong>
                     @if(!empty($target['add_url']))
                       <a class="team-target-add" href="{{ $target['add_url'] }}" target="_blank" rel="noopener noreferrer">+ Add</a>
