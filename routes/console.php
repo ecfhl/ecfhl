@@ -387,7 +387,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             ->get()
             ->keyBy(fn($g)=>$normalizeGoalieTeam($g->team).'|'.$normalizeGoalieName($g->player_name));
 
-        $hasGoaliePlayingTonight=$teamRows->contains(function($p)use($dfoGoalies,$normalizeGoalieName,$normalizeGoalieTeam){
+        $goaliePlayingTonight=function($p)use($dfoGoalies,$normalizeGoalieName,$normalizeGoalieTeam){
             if(strtoupper((string)$p->position)!=='G')return false;
             if((bool)($p->is_ir??false) || strtoupper((string)($p->roster_status??''))==='MINORS')return false;
 
@@ -397,7 +397,9 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             $goalie=$dfoGoalies[$key]??null;
             $status=strtolower(trim((string)($goalie->starting_status??'')));
             return in_array($status,['confirmed','likely','probable','unconfirmed'],true);
-        });
+        };
+
+        $hasGoaliePlayingTonight=$teamRows->contains($goaliePlayingTonight);
 
         $slotLimits=['F'=>8,'D'=>4,'G'=>1];
 
@@ -441,7 +443,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             $surplusGoalie=$teamRows
                 ->filter(fn($p)=>
                     strtoupper((string)$p->position)==='G'
-                    && !(bool)($p->is_playing??false)
+                    && !$goaliePlayingTonight($p)
                     && !(bool)($p->is_ir??false)
                     && strtoupper((string)($p->roster_status??''))!=='MINORS'
                 )
@@ -497,7 +499,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             $drop=null;
             if($goaliesOnRoster->count()>=2){
                 $drop=$goaliesOnRoster
-                    ->filter(fn($p)=>!(bool)($p->is_playing??false))
+                    ->filter(fn($p)=>!$goaliePlayingTonight($p))
                     ->filter($dropEligible)
                     ->sortBy(fn($p)=>(float)($p->projected_fpts_per_game??0))
                     ->first();
@@ -506,8 +508,10 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             if(!$drop){
                 $drop=$eligibleDrops->first(fn($p)=>
                     strtoupper((string)$p->position)==='G'
-                    && !(bool)($p->is_playing??false)
-                ) ?? $eligibleDrops->first(fn($p)=>!(bool)($p->is_playing??false));
+                    && !$goaliePlayingTonight($p)
+                ) ?? $eligibleDrops->first(fn($p)=>
+                    strtoupper((string)$p->position)!=='G'
+                );
             }
 
             if($goalieTarget && $drop && ($trailing || $lateWeek || $isWeekend)){
