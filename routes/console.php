@@ -435,12 +435,18 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         // is not playing, convert that expendable goalie roster spot into an open
         // skater slot when a F/D starting slot is still available.
         if($hasMoveAvailable && $hasGoaliePlayingTonight){
-            $surplusGoalie=$eligibleDrops
+            // A goalie who is playing tonight is protected. If the team carries a
+            // second eligible goalie who is not playing, that goalie is the surplus
+            // roster spot to convert into an open skater slot.
+            $surplusGoalie=$teamRows
                 ->filter(fn($p)=>
                     strtoupper((string)$p->position)==='G'
                     && !(bool)($p->is_playing??false)
                     && !(bool)($p->is_ir??false)
+                    && strtoupper((string)($p->roster_status??''))!=='MINORS'
                 )
+                ->filter($dropEligible)
+                ->sortBy(fn($p)=>(float)($p->projected_fpts_per_game??0))
                 ->first();
 
             if($surplusGoalie){
