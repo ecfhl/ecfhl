@@ -136,6 +136,7 @@ class FantraxDailyScores
                 continue;
             }
 
+            $oppCell = $cell($entry, ['opponent','Opp']);
             $fptsCell = $cell($entry, ['fpts','SCORE','FPts','Fantasy Points']);
             $statusCell = $cell($entry, ['status','STATUS','Sta']);
             $gpCell = $cell($entry, ['GP','gp','Games Played','gamesPlayed','Games']);
@@ -153,12 +154,14 @@ class FantraxDailyScores
                 : html_entity_decode(strip_tags((string)$posValue));
 
             $status = trim(html_entity_decode(strip_tags((string)($statusCell['content'] ?? ''))));
+            $oppText = trim(preg_replace('/\s+/',' ',html_entity_decode(strip_tags(str_replace(['<br>','<br/>','<br />'], ' ', (string)($oppCell['content'] ?? ''))))));
 
             $rows[] = [
                 'player_name' => $name,
                 'nhl_team' => $team,
                 'position' => $this->position($posText),
                 'fantasy_status' => $status !== '' ? $status : null,
+                'opponent_display' => $oppText !== '' ? $oppText : null,
                 'today_fpts' => $this->numeric($fptsCell['content'] ?? null) ?? 0.0,
                 'gp' => (int)($this->numeric($gpCell['content'] ?? null) ?? 0),
                 'g' => (int)($this->numeric($gCell['content'] ?? null) ?? 0),
