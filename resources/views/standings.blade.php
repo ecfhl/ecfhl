@@ -57,11 +57,13 @@
           $periodDates=$periodStart->format('M j').' – '.$periodEnd->format('M j, Y');
           $periodTitle=trim((string)($period['caption']??'Scoring Period'));
         @endphp
-        <section class="standings-period">
-          <div class="matchup-period-label standings-period-label">
+        <details class="standings-period">
+          <summary class="matchup-period-label standings-period-label">
             <span>{{ $periodTitle }} ({{ $periodDates }})</span>
-          </div>
+            <span class="standings-period-chevron" aria-hidden="true">▾</span>
+          </summary>
 
+          <div class="standings-period-body">
           <div class="current-matchup-list standings-matchup-list">
             @foreach($period['matchups'] as $matchup)
               @php
@@ -103,13 +105,14 @@
               </div>
             @endforeach
           </div>
-        </section>
+          </div>
+        </details>
       @endforeach
     </div>
   @endif
 </div>
 <style>
 .standings-page{padding-bottom:26px}
-.standings-updated{margin:4px 0 6px;font-size:12px}.standings-team-link{color:inherit;text-decoration:none}.standings-team-link:hover{text-decoration:underline}.standings-scoring-periods{margin-top:28px}.standings-period{margin-top:26px}.standings-period:first-child{margin-top:0}.matchup-period-label{display:flex;align-items:center;justify-content:space-between;margin:0 0 10px;padding:8px 12px;border-radius:9px;background:#082f4f;color:#fff;font-weight:900;font-size:14px}.current-matchup-list{display:flex;flex-direction:column;gap:10px}.standings-matchup-card{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}.matchup-summary{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;padding:13px 14px}.matchup-summary-side{display:flex;align-items:center;gap:10px;min-width:0}.matchup-summary-away{justify-content:space-between}.matchup-summary-home{justify-content:space-between}.matchup-summary-name{min-width:0;font-weight:900}.matchup-summary-name a{color:inherit;text-decoration:none}.matchup-summary-name a:hover{text-decoration:underline}.matchup-summary-meta{margin-top:5px}.matchup-summary-meta-home{text-align:right}.matchup-side-pill{display:inline-flex;align-items:center;border-radius:999px;padding:2px 7px;font-size:9px;font-weight:900;letter-spacing:.04em}.away-pill{background:#e5e7eb;color:#374151}.home-pill{background:#dbeafe;color:#1d4ed8}.matchup-summary-score{display:inline-flex;align-items:flex-start}.matchup-week-score{font-size:24px;line-height:1;font-weight:900}.score-winning{color:#16a34a}.matchup-summary-vs{font-size:10px;font-weight:900;opacity:.55}@media(max-width:700px){.matchup-summary{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:7px;padding:11px 9px}.matchup-summary-side{gap:6px}.matchup-week-score{font-size:20px}.matchup-summary-name{font-size:12px}}
+.standings-updated{margin:4px 0 6px;font-size:12px}.standings-team-link{color:inherit;text-decoration:none}.standings-team-link:hover{text-decoration:underline}.standings-scoring-periods{margin-top:28px}.standings-period{margin-top:26px}.standings-period:first-child{margin-top:0}.standings-period>summary{list-style:none}.standings-period>summary::-webkit-details-marker{display:none}.matchup-period-label{display:flex;align-items:center;justify-content:space-between;margin:0;padding:8px 12px;border-radius:9px;background:#082f4f;color:#fff;font-weight:900;font-size:14px;cursor:pointer}.standings-period-chevron{transition:transform .18s ease}.standings-period[open] .standings-period-chevron{transform:rotate(180deg)}.standings-period-body{margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2,#f3f6fa)}.current-matchup-list{display:flex;flex-direction:column;gap:10px}.standings-matchup-card{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}.matchup-summary{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;padding:13px 14px}.matchup-summary-side{display:flex;align-items:center;gap:10px;min-width:0}.matchup-summary-away{justify-content:space-between}.matchup-summary-home{justify-content:space-between}.matchup-summary-name{min-width:0;font-weight:900}.matchup-summary-name a{color:inherit;text-decoration:none}.matchup-summary-name a:hover{text-decoration:underline}.matchup-summary-meta{margin-top:5px}.matchup-summary-meta-home{text-align:right}.matchup-side-pill{display:inline-flex;align-items:center;border-radius:999px;padding:2px 7px;font-size:9px;font-weight:900;letter-spacing:.04em}.away-pill{background:#e5e7eb;color:#374151}.home-pill{background:#dbeafe;color:#1d4ed8}.matchup-summary-score{display:inline-flex;align-items:flex-start}.matchup-week-score{font-size:24px;line-height:1;font-weight:900}.score-winning{color:#16a34a}.matchup-summary-vs{font-size:10px;font-weight:900;opacity:.55}html[data-theme="dark"] .standings-period-body{background:var(--surface-2,#172033)}html[data-theme="dark"] .standings-matchup-card{background:var(--surface,#111827)}@media(max-width:700px){.matchup-summary{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:7px;padding:11px 9px}.matchup-summary-side{gap:6px}.matchup-week-score{font-size:20px}.matchup-summary-name{font-size:12px}}
 </style>
 @endsection
