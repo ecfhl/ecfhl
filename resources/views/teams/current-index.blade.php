@@ -45,16 +45,45 @@
         $awayAll=$allPlayers($away);
         $homeAll=$allPlayers($home);
 
-        $skaters=function($rows){
-          return $rows
+        $skaterGroups=function($rows){
+          $eligible=$rows
             ->filter(fn($p)=>(bool)$p->is_playing && !(bool)$p->is_bench && strtoupper((string)$p->position)!=='G')
-            ->sortBy(function($p){
-              $isMinors=strtoupper((string)$p->roster_status)==='MINORS';
-              if($isMinors)return 2;
-              if((bool)$p->is_ir)return 1;
-              return 0;
-            })
             ->values();
+
+          return [
+            'F'=>$eligible->filter(fn($p)=>
+              !(bool)$p->is_ir
+              && strtoupper((string)$p->roster_status)!=='MINORS'
+              && strtoupper((string)$p->position)==='F'
+            )->values(),
+            'D'=>$eligible->filter(fn($p)=>
+              !(bool)$p->is_ir
+              && strtoupper((string)$p->roster_status)!=='MINORS'
+              && strtoupper((string)$p->position)==='D'
+            )->values(),
+            'IR'=>$eligible->filter(fn($p)=>
+              (bool)$p->is_ir
+              && strtoupper((string)$p->roster_status)!=='MINORS'
+            )->values(),
+            'M'=>$eligible->filter(fn($p)=>
+              strtoupper((string)$p->roster_status)==='MINORS'
+            )->values(),
+          ];
+        };
+
+        $alignGroups=function($leftGroups,$rightGroups){
+          $left=collect();
+          $right=collect();
+          foreach(['F','D','IR','M'] as $key){
+            $l=$leftGroups[$key]??collect();
+            $r=$rightGroups[$key]??collect();
+            $max=max($l->count(),$r->count());
+            for($i=0;$i<$max;$i++){
+              $left->push($l->get($i));
+              $right->push($r->get($i));
+            }
+          }
+          return [$left,$right];
         };
 
         $goalies=function($rows){
@@ -71,12 +100,21 @@
             ->values();
         };
 
-        $awaySkaters=$skaters($awayAll);
-        $homeSkaters=$skaters($homeAll);
+        $awaySkaterGroups=$skaterGroups($awayAll);
+        $homeSkaterGroups=$skaterGroups($homeAll);
+        [$awaySkaters,$homeSkaters]=$alignGroups($awaySkaterGroups,$homeSkaterGroups);
+
         $awayGoalies=$goalies($awayAll);
         $homeGoalies=$goalies($homeAll);
+        $goalieMax=max($awayGoalies->count(),$homeGoalies->count());
+        while($awayGoalies->count()<$goalieMax)$awayGoalies->push(null);
+        while($homeGoalies->count()<$goalieMax)$homeGoalies->push(null);
+
         $awayBench=$bench($awayAll);
         $homeBench=$bench($homeAll);
+        $benchMax=max($awayBench->count(),$homeBench->count());
+        while($awayBench->count()<$benchMax)$awayBench->push(null);
+        while($homeBench->count()<$benchMax)$homeBench->push(null);
 
         $activePlayingCounts=function($rows){
           $eligible=$rows->filter(fn($p)=>
@@ -145,14 +183,22 @@
           <div class="matchup-roster-grid">
             <div class="matchup-roster-col">
               @forelse($awaySkaters as $player)
-                @include('teams.partials.current-matchup-player',['player'=>$player])
+                @if($player)
+                  @include('teams.partials.current-matchup-player',['player'=>$player])
+                @else
+                  <div class="matchup-player-row matchup-player-blank" aria-hidden="true"></div>
+                @endif
               @empty
                 <div class="matchup-empty">(Empty)</div>
               @endforelse
             </div>
             <div class="matchup-roster-col">
               @forelse($homeSkaters as $player)
-                @include('teams.partials.current-matchup-player',['player'=>$player])
+                @if($player)
+                  @include('teams.partials.current-matchup-player',['player'=>$player])
+                @else
+                  <div class="matchup-player-row matchup-player-blank" aria-hidden="true"></div>
+                @endif
               @empty
                 <div class="matchup-empty">(Empty)</div>
               @endforelse
@@ -163,14 +209,22 @@
           <div class="matchup-roster-grid">
             <div class="matchup-roster-col">
               @forelse($awayGoalies as $player)
-                @include('teams.partials.current-matchup-player',['player'=>$player])
+                @if($player)
+                  @include('teams.partials.current-matchup-player',['player'=>$player])
+                @else
+                  <div class="matchup-player-row matchup-player-blank" aria-hidden="true"></div>
+                @endif
               @empty
                 <div class="matchup-empty">(Empty)</div>
               @endforelse
             </div>
             <div class="matchup-roster-col">
               @forelse($homeGoalies as $player)
-                @include('teams.partials.current-matchup-player',['player'=>$player])
+                @if($player)
+                  @include('teams.partials.current-matchup-player',['player'=>$player])
+                @else
+                  <div class="matchup-player-row matchup-player-blank" aria-hidden="true"></div>
+                @endif
               @empty
                 <div class="matchup-empty">(Empty)</div>
               @endforelse
@@ -184,14 +238,22 @@
               <div class="matchup-roster-grid">
                 <div class="matchup-roster-col">
                   @forelse($awayBench as $player)
-                    @include('teams.partials.current-matchup-player',['player'=>$player])
+                    @if($player)
+                      @include('teams.partials.current-matchup-player',['player'=>$player])
+                    @else
+                      <div class="matchup-player-row matchup-player-blank" aria-hidden="true"></div>
+                    @endif
                   @empty
                     <div class="matchup-empty">(Empty)</div>
                   @endforelse
                 </div>
                 <div class="matchup-roster-col">
                   @forelse($homeBench as $player)
-                    @include('teams.partials.current-matchup-player',['player'=>$player])
+                    @if($player)
+                      @include('teams.partials.current-matchup-player',['player'=>$player])
+                    @else
+                      <div class="matchup-player-row matchup-player-blank" aria-hidden="true"></div>
+                    @endif
                   @empty
                     <div class="matchup-empty">(Empty)</div>
                   @endforelse
@@ -220,7 +282,7 @@
 .matchup-summary-name{min-width:0;display:flex;flex-direction:column}
 .matchup-summary-name a{font-weight:900;color:var(--text);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .matchup-summary-name a:hover{text-decoration:underline}
-.matchup-summary-name small{font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.05em}.matchup-summary-meta{display:flex;align-items:center;gap:7px;min-width:0}.matchup-live-games{font-size:8px;font-weight:900;color:#b45309;white-space:nowrap}.matchup-playing-counts{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}.matchup-playing-counts span{font-size:8px;font-weight:500;color:var(--muted)}.matchup-playing-counts span.full{font-weight:900;color:var(--text)}.matchup-summary-meta-home{justify-content:flex-end}.matchup-daily-cats{font-size:9px;color:#475569;font-weight:900;white-space:nowrap;display:inline-flex;gap:5px;align-items:center}.matchup-side-pill{display:inline-flex;align-items:center;justify-content:center;padding:2px 7px;border-radius:999px;font-size:9px;font-weight:900;letter-spacing:.05em;line-height:1.1;border:1px solid transparent;white-space:nowrap}.away-pill{background:#fef3c7;color:#92400e;border-color:#fcd34d}.home-pill{background:#dcfce7;color:#166534;border-color:#86efac}
+.matchup-summary-name small{font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.05em}.matchup-summary-meta{display:flex;align-items:center;gap:7px;min-width:0}.matchup-live-games{font-size:8px;font-weight:900;color:#b45309;white-space:nowrap}.matchup-playing-counts{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}.matchup-playing-counts span{font-size:10px;font-weight:600;color:#111827}.matchup-playing-counts span.full{font-weight:900;color:#000}.matchup-summary-meta-home{justify-content:flex-end}.matchup-daily-cats{font-size:9px;color:#475569;font-weight:900;white-space:nowrap;display:inline-flex;gap:5px;align-items:center}.matchup-side-pill{display:inline-flex;align-items:center;justify-content:center;padding:2px 7px;border-radius:999px;font-size:9px;font-weight:900;letter-spacing:.05em;line-height:1.1;border:1px solid transparent;white-space:nowrap}.away-pill{background:#fef3c7;color:#92400e;border-color:#fcd34d}.home-pill{background:#dcfce7;color:#166534;border-color:#86efac}
 .matchup-summary-score{display:inline-flex;align-items:flex-start;gap:4px;white-space:nowrap}.matchup-week-score{font-size:20px;line-height:1;font-weight:500;color:var(--text)}.matchup-day-score{font-size:13px;line-height:1;font-weight:500;color:var(--text);transform:translateY(-2px)}.matchup-week-score.score-winning,.matchup-day-score.score-winning{font-weight:900}.matchup-week-score.score-changed,.matchup-day-score.score-changed{color:#16834f!important}
 .matchup-summary-vs{text-align:center;font-size:10px;font-weight:900;color:var(--muted)}
 .matchup-bye{font-size:11px;font-weight:900;color:var(--muted)}
@@ -230,7 +292,7 @@
 .matchup-roster-col{min-width:0;border-right:1px solid var(--line)}
 .matchup-roster-col:last-child{border-right:0}
 .matchup-player-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line);min-height:58px}
-.matchup-player-row:last-child{border-bottom:0}
+.matchup-player-row:last-child{border-bottom:0}.matchup-player-blank{min-height:58px;background:transparent!important}
 .matchup-player-main{min-width:0}
 .matchup-player-name{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:13px;line-height:1.15}
 .matchup-player-name strong{min-width:0}
