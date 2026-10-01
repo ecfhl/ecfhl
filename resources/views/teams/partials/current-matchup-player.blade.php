@@ -1,4 +1,9 @@
-<div class="matchup-player-row {{ $player->is_ir?'team-ir-row':'' }} {{ $player->is_bench?'team-bench-row':'' }} {{ strtoupper((string)$player->roster_status)==='MINORS'?'team-minors-row':'' }} {{ !empty($player->game_finished)?'team-game-finished-row':'' }}">
+@php
+  $liveOppText = trim((string)($player->live_opponent_display ?? ''));
+  $isGameFinished = !empty($player->game_finished)
+    || ($liveOppText !== '' && preg_match('/(?:\bF\b|\bFinal\b)\s*$/i', $liveOppText));
+@endphp
+<div class="matchup-player-row {{ $player->is_ir?'team-ir-row':'' }} {{ $player->is_bench?'team-bench-row':'' }} {{ strtoupper((string)$player->roster_status)==='MINORS'?'team-minors-row':'' }} {{ $isGameFinished?'team-game-finished-row':'' }}">
   <div class="matchup-player-main">
     <div class="matchup-player-name">
       @if($player->is_ir)<span class="pill team-ir">IR</span>@endif
