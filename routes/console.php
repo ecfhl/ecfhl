@@ -367,6 +367,17 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             'D'=>$activePlayers->filter(fn($p)=>strtoupper((string)$p->position)==='D')->count(),
             'G'=>$activePlayers->filter(fn($p)=>strtoupper((string)$p->position)==='G')->count(),
         ];
+
+        // Goalie coverage is based on whether any rostered goalie is scheduled
+        // tonight, regardless of whether Fantrax currently labels that goalie
+        // as active or bench. Bench status must not trigger a needless goalie add.
+        $hasGoaliePlayingTonight=$teamRows->contains(fn($p)=>
+            strtoupper((string)$p->position)==='G'
+            && (bool)($p->is_playing??false)
+            && !(bool)($p->is_ir??false)
+            && strtoupper((string)($p->roster_status??''))!=='MINORS'
+        );
+
         $slotLimits=['F'=>8,'D'=>4,'G'=>1];
 
         $eligibleDrops=$teamRows
@@ -402,7 +413,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         // If tonight's goalie slot is already covered but another eligible goalie
         // is not playing, convert that expendable goalie roster spot into an open
         // skater slot when a F/D starting slot is still available.
-        if($hasMoveAvailable && $playingCounts['G']>=1){
+        if($hasMoveAvailable && $hasGoaliePlayingTonight){
             $surplusGoalie=$eligibleDrops
                 ->filter(fn($p)=>
                     strtoupper((string)$p->position)==='G'
@@ -443,7 +454,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         }
 
         // Goalie streaming remains a priority when no active goalie is playing.
-        if($hasMoveAvailable && $playingCounts['G']===0){
+        if($hasMoveAvailable && !$hasGoaliePlayingTonight){
             $goalieTarget=collect($availableGroups['G']??[])
                 ->first(fn($g)=>!in_array(strtolower(trim((string)($g['starting_status']??''))),['not starting',''],true))
                 ?? collect($availableGroups['G']??[])->first();
