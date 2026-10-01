@@ -52,15 +52,15 @@
     <div class="standings-scoring-periods">
       @foreach($scoringPeriods as $period)
         @php
-          $periodStart=\Carbon\CarbonImmutable::parse($period['start'],'America/Halifax');
-          $periodEnd=\Carbon\CarbonImmutable::parse($period['end'],'America/Halifax');
-          $periodDates=$periodStart->format('M j').' – '.$periodEnd->format('M j, Y');
+          $periodStart=!empty($period['start'])?\Carbon\CarbonImmutable::parse($period['start'],'America/Halifax'):null;
+          $periodEnd=!empty($period['end'])?\Carbon\CarbonImmutable::parse($period['end'],'America/Halifax'):null;
+          $periodDates=$periodStart&&$periodEnd ? $periodStart->format('M j').' – '.$periodEnd->format('M j, Y') : null;
           $periodTitle=trim((string)($period['caption']??'Scoring Period'));
           $isCurrentPeriod=(int)($period['period_number']??0)===(int)($currentPeriodNumber??0);
         @endphp
         <details class="standings-period" {{ $isCurrentPeriod ? 'open' : '' }}>
           <summary class="matchup-period-label standings-period-label">
-            <span>{{ $periodTitle }} ({{ $periodDates }})</span>
+            <span>{{ $periodTitle }}@if($periodDates) ({{ $periodDates }})@endif</span>
             <span class="standings-period-chevron" aria-hidden="true">▾</span>
           </summary>
 
