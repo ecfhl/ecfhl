@@ -286,6 +286,8 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
 .team-roster-table tr.team-roster-group{display:block;width:100%;padding:0;overflow:hidden}
 .team-roster-table tr.team-roster-group td{display:block!important;width:100%;max-width:100%;padding:5px 8px!important}
 }
+.matchup-player-row.team-game-finished-row{background:#fffbea!important}
+html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#3a3217!important}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
