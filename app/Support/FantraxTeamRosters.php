@@ -255,10 +255,12 @@ class FantraxTeamRosters
             }
 
             $fptsCell = $cell($entry, ['fpts','SCORE','FPts']);
+            $fpPerGameCell = $cell($entry, ['fptsPerGame','FPTS_PER_GAME','FP/G','FPts/G','Fantasy Points Per Game']);
             $gpCell = $cell($entry, ['gp','GP','Games Played','GamesPlayed','Games','Projected GP','Proj GP']);
             $contractCell = $cell($entry, ['contract','CONTRACT','Contract']);
             $contract = trim(html_entity_decode(strip_tags((string)($contractCell['content'] ?? ''))));
             $projectedFpts=$this->numeric($fptsCell['content'] ?? null);
+            $projectedFpPerGame=$this->numeric($fpPerGameCell['content'] ?? null);
             $projectedGp=$this->numeric($gpCell['content'] ?? null);
             $rows[] = [
                 'player_id'=>(string)($scorer['scorerId'] ?? ''),
@@ -269,7 +271,7 @@ class FantraxTeamRosters
                 'game_time'=>$gameTime,
                 'projected_fpts'=>$projectedFpts,
                 'projected_gp'=>$projectedGp,
-                'projected_fpts_per_game'=>$projectedFpts!==null && $projectedGp!==null && $projectedGp>0 ? $projectedFpts/$projectedGp : null,
+                'projected_fpts_per_game'=>$projectedFpPerGame ?? ($projectedFpts!==null && $projectedGp!==null && $projectedGp>0 ? $projectedFpts/$projectedGp : null),
                 'contract'=>$contract !== '' ? $contract : null,
                 'injury_status'=>$this->injury($scorer['icons'] ?? []),
                 'is_playing'=>false,
