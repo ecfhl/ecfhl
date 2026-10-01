@@ -2,7 +2,7 @@
 @section('title','Trades · ECFHL')
 @section('content')
 <div class="shell">
-  <div class="page-head"><div class="eyebrow">Transaction archive</div><h1>Trades</h1><p>Search recorded ECFHL trades by season, franchise or player.</p></div>
+  <div class="page-head"><div class="eyebrow">Transaction archive</div><h1>📖 Trades</h1><p>Search recorded ECFHL trades by season, franchise or player.</p></div>
 
   <div class="grid-3 leader-cards" style="margin-bottom:22px">
     @foreach([['trade-traders','🔄 Top Traders',$topTraders,'No recorded trades.'],['trade-partners','🤝 Top Trade Partners',$topTradePartners,'No recorded trade partners.'],['trade-firsts','1️⃣ 1st Round Picks Traded',$topFirstRoundTraders,'No recorded first-round picks traded.']] as [$id,$title,$rows,$empty])
