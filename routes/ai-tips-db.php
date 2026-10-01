@@ -3,9 +3,9 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/daily-targets', function () {
-    $now = \Carbon\CarbonImmutable::now('America/Halifax');
-    $today = $now->toDateString();
-    $tomorrow = $now->addDay()->toDateString();
+    $fantasyDay = \Carbon\CarbonImmutable::now('America/Los_Angeles')->subHours(12)->startOfDay();
+    $today = $fantasyDay->toDateString();
+    $tomorrow = $fantasyDay->addDay()->toDateString();
     $date = request('date', $today);
 
     abort_unless(is_string($date) && preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date), 422, 'Use a valid game date.');
