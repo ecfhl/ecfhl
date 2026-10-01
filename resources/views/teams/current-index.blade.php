@@ -66,7 +66,7 @@
                 <a href="/teams/current/{{ $away['slug'] }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $away['name'] }}</a>
                 <small>AWAY</small>
               </div>
-              <strong class="matchup-summary-score matchup-summary-score-green">{{ number_format($away['week_fpts'] ?? 0,0) }} +{{ number_format($away['today_fpts'] ?? 0,0) }}</strong>
+              <span class="matchup-summary-score"><strong class="matchup-week-score">{{ number_format($away['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score">+{{ number_format($away['today_fpts'] ?? 0,0) }}</small></span>
             @endif
           </div>
 
@@ -74,7 +74,7 @@
 
           <div class="matchup-summary-side matchup-summary-home">
             @if($home)
-              <strong class="matchup-summary-score matchup-summary-score-green">{{ number_format($home['week_fpts'] ?? 0,0) }} +{{ number_format($home['today_fpts'] ?? 0,0) }}</strong>
+              <span class="matchup-summary-score"><strong class="matchup-week-score">{{ number_format($home['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score">+{{ number_format($home['today_fpts'] ?? 0,0) }}</small></span>
               <div class="matchup-summary-name">
                 <a href="/teams/current/{{ $home['slug'] }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $home['name'] }}</a>
                 <small>HOME</small>
@@ -166,7 +166,7 @@
 .matchup-summary-name a{font-weight:900;color:var(--text);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .matchup-summary-name a:hover{text-decoration:underline}
 .matchup-summary-name small{font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.05em}
-.matchup-summary-score{font-size:20px;line-height:1;font-weight:900;white-space:nowrap}.matchup-summary-score-green{color:#16a34a}
+.matchup-summary-score{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap}.matchup-week-score{font-size:20px;line-height:1;font-weight:900;color:var(--text)}.matchup-day-score{font-size:11px;line-height:1;font-weight:900;color:#16a34a}
 .matchup-summary-vs{text-align:center;font-size:10px;font-weight:900;color:var(--muted)}
 .matchup-bye{font-size:11px;font-weight:900;color:var(--muted)}
 .matchup-expanded{border-top:1px solid var(--line);background:#fff}
