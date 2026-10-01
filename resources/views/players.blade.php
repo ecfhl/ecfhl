@@ -2,7 +2,7 @@
 @section('title','Players · ECFHL')
 @section('content')
 <div class="shell">
-<div class="page-head"><div class="eyebrow">Player history</div><h1>Players</h1><p>Explore draft selections, trades and awards across all seasons, from oldest to newest.</p></div>
+<div class="page-head"><div class="eyebrow">Player history</div><h1>📖 Players</h1><p>Explore draft selections, trades and awards across all seasons, from oldest to newest.</p></div>
 <form method="get" class="toolbar"><label class="sr-only" for="playerQuery">Player name</label><input id="playerQuery" name="q" value="{{ $q }}" class="control" placeholder="Enter a player name…" style="flex:1" required><button class="button primary" type="submit">Search</button></form>
 
 <style>
