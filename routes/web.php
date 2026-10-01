@@ -611,6 +611,12 @@ Route::get('/job-status', function () {
         $next = $now->minute < 30 ? $now->startOfHour()->minute(30) : $now->addHour()->startOfHour();
         return $next->format('M j · g:i a T');
     };
+    $nextQuarterHourly = function () use ($now) {
+        $minute=(int)$now->format('i');
+        $nextMinute=(int)(ceil(($minute+0.001)/15)*15);
+        $next=$nextMinute>=60 ? $now->addHour()->startOfHour() : $now->startOfHour()->minute($nextMinute);
+        return $next->format('M j · g:i a T');
+    };
     $nextFourHourly = function (int $minute) use ($now) {
         $hour = (int)$now->format('G'); $nextHour = $hour - ($hour % 4);
         $next = $now->startOfDay()->addHours($nextHour)->minute($minute);
@@ -635,13 +641,13 @@ Route::get('/job-status', function () {
         return $job;
     };
     $jobs = array_map($withOutcome, [
-        ['key'=>'players','name'=>'Fantrax Available Players','schedule'=>'Every hour at :00','last_update'=>$format($fantraxLast),'records'=>DB::table('active_daily_players')->count(),'next_run'=>$nextHourly(0),'state'=>$state($fantraxLast,90),'description'=>'Available players playing today and tomorrow, including projected fantasy points.'],
-        ['key'=>'goalies','name'=>'Daily Faceoff Goalies','schedule'=>'Every 30 minutes','last_update'=>$format($goaliesLast),'records'=>DB::table('active_starting_goalies')->count(),'next_run'=>$nextHalfHourly(),'state'=>$state($goaliesLast,60),'description'=>'Starting-goalie status for today and tomorrow.'],
-        ['key'=>'lines','name'=>'Daily Faceoff Lines','schedule'=>'Every 4 hours at :02','last_update'=>$format($linesLast),'records'=>DB::table('active_pp_lines')->count(),'next_run'=>$nextFourHourly(2),'state'=>$state($linesLast,300),'description'=>'Current line combinations and PP1/PP2 assignments for all NHL teams.'],
-        ['key'=>'odds','name'=>'NHL Odds','schedule'=>'Every 4 hours at :06','last_update'=>$format($oddsLast),'records'=>DB::table('todays_odds')->count(),'next_run'=>$nextFourHourly(6),'state'=>$state($oddsLast,300),'description'=>'Consensus NHL moneyline odds for today and tomorrow from The Odds API.'],
-        ['key'=>'teams','name'=>'Fantasy Team Rosters','schedule'=>'Every hour at :10','last_update'=>$format($teamsLast),'records'=>DB::table('active_fantasy_rosters')->count(),'next_run'=>$nextHourly(10),'state'=>$state($teamsLast,90),'description'=>'Current Fantrax rosters for every fantasy team, enriched with projections, opponents, injuries, line and power-play assignments.'],
-        ['key'=>'scores','name'=>'Live Daily Scores','schedule'=>'Every minute','last_update'=>$format($scoresLast),'records'=>DB::table('active_daily_scores')->count(),'next_run'=>'Every minute','state'=>$state($scoresLast,6),'description'=>'Fantrax player FPts and live NHL category stats for today, refreshed every minute.'],
-        ['key'=>'standings','name'=>'Current Standings','schedule'=>'Daily; every 30 minutes during games','last_update'=>$format($standingsLast),'records'=>DB::table('team_seasons')->where('season_id','2026-27')->count(),'next_run'=>'Daily / 30 min during games','state'=>$state($standingsLast,1500),'description'=>'2026-27 standings and fantasy points from Fantrax scoring-period data.'],
+        ['key'=>'players','name'=>'Fantrax Available Players','schedule'=>'Every 15 minutes (:00, :15, :30, :45)','last_update'=>$format($fantraxLast),'records'=>DB::table('active_daily_players')->count(),'next_run'=>$nextQuarterHourly(),'state'=>$state($fantraxLast,30),'description'=>'Available players playing today and tomorrow, including projected fantasy points.'],
+        ['key'=>'goalies','name'=>'Daily Faceoff Goalies','schedule'=>'Every 15 minutes (:00, :15, :30, :45)','last_update'=>$format($goaliesLast),'records'=>DB::table('active_starting_goalies')->count(),'next_run'=>$nextQuarterHourly(),'state'=>$state($goaliesLast,30),'description'=>'Starting-goalie status for today and tomorrow.'],
+        ['key'=>'lines','name'=>'Daily Faceoff Lines','schedule'=>'Every hour at :00','last_update'=>$format($linesLast),'records'=>DB::table('active_pp_lines')->count(),'next_run'=>$nextHourly(0),'state'=>$state($linesLast,90),'description'=>'Current line combinations and PP1/PP2 assignments for all NHL teams.'],
+        ['key'=>'odds','name'=>'NHL Odds','schedule'=>'Every 2 hours at :00','last_update'=>$format($oddsLast),'records'=>DB::table('todays_odds')->count(),'next_run'=>($now->hour%2===0 && $now->minute===0 ? $now->format('M j · g:i a T') : $now->addHours($now->hour%2===0?2:1)->startOfHour()->format('M j · g:i a T')),'state'=>$state($oddsLast,150),'description'=>'Consensus NHL moneyline odds for today and tomorrow from The Odds API.'],
+        ['key'=>'teams','name'=>'Fantasy Team Rosters','schedule'=>'Every 15 minutes (:00, :15, :30, :45)','last_update'=>$format($teamsLast),'records'=>DB::table('active_fantasy_rosters')->count(),'next_run'=>$nextQuarterHourly(),'state'=>$state($teamsLast,30),'description'=>'Current Fantrax rosters for every fantasy team, enriched with projections, opponents, injuries, line and power-play assignments.'],
+        ['key'=>'scores','name'=>'Live Daily Scores','schedule'=>'Every minute during games','last_update'=>$format($scoresLast),'records'=>DB::table('active_daily_scores')->count(),'next_run'=>'During live game window','state'=>$state($scoresLast,6),'description'=>'Fantrax player FPts and live NHL category stats from first game start until 4 hours after the last game starts.'],
+        ['key'=>'standings','name'=>'Current Standings','schedule'=>'Every 5 minutes during games','last_update'=>$format($standingsLast),'records'=>DB::table('team_seasons')->where('season_id','2026-27')->count(),'next_run'=>'Every 5 min during live game window','state'=>$state($standingsLast,15),'description'=>'2026-27 standings and fantasy points from Fantrax scoring-period data, refreshed during the live game window.'],
     ]);
     return response()
         ->view('job-status', compact('jobs'))
