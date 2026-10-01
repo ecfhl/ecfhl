@@ -269,6 +269,137 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
     return $failed?1:0;
 });
 
+Artisan::command('ecfhl:refresh-lineup-advice', function () {
+    $tz='America/Halifax';
+    $day=CarbonImmutable::now($tz)->subHours(4)->startOfDay();
+    $date=$day->toDateString();
+    $dow=(int)$day->format('N');
+    $isWeekend=$dow>=6;
+
+    $rosters=DB::table('active_fantasy_rosters')->whereDate('game_date',$date)->get();
+    $teams=$rosters->groupBy('fantasy_team_id');
+
+    $scheduleScores=[];
+    try {
+        $schedule=app(FantraxSchedule::class)->forDate($day,true);
+        foreach(($schedule['matchups']??[]) as $pair){
+            $scheduleScores[(string)($pair['away_team_id']??'')]=(float)($pair['away_score']??0);
+            $scheduleScores[(string)($pair['home_team_id']??'')]=(float)($pair['home_score']??0);
+        }
+    } catch (\Throwable $e) {
+        Log::warning('Lineup advisor schedule lookup failed',['error'=>$e->getMessage()]);
+    }
+
+    $normContract=fn($v)=>strtoupper(trim(preg_replace('/\s+/',' ',(string)$v)));
+    $dropEligible=function($p)use($normContract){
+        $contract=$normContract($p->contract??'');
+        if(!in_array($contract,['FA','1 YEAR','1 YEAR(S)','1 YR'],true))return false;
+        if((bool)($p->is_ir??false) || strtoupper((string)($p->roster_status??''))==='MINORS')return false;
+        $proj=(float)($p->projected_fpts_per_game??0);
+        return match(strtoupper((string)$p->position)){
+            'F'=>$proj<=1.0,
+            'D'=>$proj<=0.6,
+            'G'=>$proj<=1.2,
+            default=>false,
+        };
+    };
+
+    foreach($teams as $teamId=>$teamRows){
+        $teamName=(string)($teamRows->first()->fantasy_team_name??$teamId);
+        $teamScore=$scheduleScores[(string)$teamId]??null;
+        $opponentScore=null;
+
+        try {
+            $schedule=$schedule??app(FantraxSchedule::class)->forDate($day);
+            foreach(($schedule['matchups']??[]) as $pair){
+                if((string)($pair['away_team_id']??'')===(string)$teamId){
+                    $opponentScore=(float)($pair['home_score']??0);
+                    break;
+                }
+                if((string)($pair['home_team_id']??'')===(string)$teamId){
+                    $opponentScore=(float)($pair['away_score']??0);
+                    break;
+                }
+            }
+        } catch (\Throwable) {}
+
+        $trailing=$teamScore!==null&&$opponentScore!==null&&$teamScore<$opponentScore;
+        $lateWeek=$dow>=4;
+        $movesLeft=null;
+
+        $activeGoaliePlaying=$teamRows->contains(fn($p)=>
+            strtoupper((string)$p->position)==='G'
+            && (bool)($p->is_playing??false)
+            && !(bool)($p->is_bench??false)
+            && !(bool)($p->is_ir??false)
+            && strtoupper((string)($p->roster_status??''))!=='MINORS'
+        );
+
+        $eligibleDrops=$teamRows->filter($dropEligible)->sortBy(fn($p)=>(float)($p->projected_fpts_per_game??0))->values();
+        $advice='No moves to suggest.';
+
+        if(!$activeGoaliePlaying){
+            $goalieTargets=DB::table('active_daily_players as p')
+                ->leftJoin('active_starting_goalies as g',function($join)use($date){
+                    $join->on('g.player_name','=','p.player_name')
+                        ->on('g.team','=','p.team')
+                        ->whereDate('g.game_date',$date);
+                })
+                ->whereDate('p.game_date',$date)
+                ->where('p.position','G')
+                ->where(function($q){
+                    $q->whereNull('p.injury_status')->orWhere('p.injury_status','');
+                })
+                ->orderByRaw("CASE LOWER(COALESCE(g.starting_status,'')) WHEN 'confirmed' THEN 1 WHEN 'likely' THEN 2 WHEN 'probable' THEN 2 WHEN 'unconfirmed' THEN 3 ELSE 4 END")
+                ->orderByDesc('p.projected_fpts')
+                ->select('p.player_name','p.team','p.projected_fpts','g.starting_status')
+                ->get();
+
+            $goalie=$goalieTargets->first();
+            $drop=$eligibleDrops->first(fn($p)=>strtoupper((string)$p->position)==='G')
+                ?? $eligibleDrops->first();
+
+            if($goalie && $drop && ($isWeekend || $lateWeek || $trailing)){
+                $status=trim((string)($goalie->starting_status??''));
+                $advice='No goalie is active tonight. Consider adding '.$goalie->player_name.' ('.$goalie->team.')'
+                    .($status!==''?' — '.$status:'')
+                    .' and dropping '.$drop->player_name.'.';
+            }
+        } elseif($trailing && $lateWeek){
+            $drop=$eligibleDrops->first();
+            if($drop){
+                $pos=strtoupper((string)$drop->position);
+                $target=DB::table('active_daily_players')
+                    ->whereDate('game_date',$date)
+                    ->where('position',$pos)
+                    ->where(function($q){
+                        $q->whereNull('injury_status')->orWhere('injury_status','');
+                    })
+                    ->orderByDesc('projected_fpts')
+                    ->first();
+                if($target){
+                    $advice='Trailing this week. Consider adding '.$target->player_name.' ('.$target->team.') and dropping '.$drop->player_name.'.';
+                }
+            }
+        }
+
+        DB::table('lineup_advice')->updateOrInsert(
+            ['advice_date'=>$date,'fantasy_team_id'=>(string)$teamId],
+            [
+                'fantasy_team_name'=>$teamName,
+                'moves_left'=>$movesLeft,
+                'advice_text'=>$advice,
+                'generated_at'=>now(),
+                'created_at'=>now(),
+                'updated_at'=>now(),
+            ]
+        );
+    }
+
+    $this->info($teams->count().' lineup advisor rows refreshed.');
+    return 0;
+});
+
 Artisan::command('ecfhl:refresh-scoring-period-matchups', function (FantraxSchedule $fantraxSchedule) {
     $seasonId='2026-27';
     try {
@@ -620,6 +751,12 @@ Schedule::command('ecfhl:refresh-daily-scores')
             return false;
         }
     });
+
+Schedule::command('ecfhl:refresh-lineup-advice')
+    ->cron('0 7,19 * * *')
+    ->timezone('America/Halifax')
+    ->withoutOverlapping(30)
+    ->runInBackground();
 
 Schedule::command('ecfhl:refresh-scoring-period-matchups')
     ->weeklyOn(1,'08:00')
