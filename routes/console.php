@@ -326,7 +326,11 @@ Artisan::command('ecfhl:refresh-lineup-advice', function () {
 
         $trailing=$teamScore!==null&&$opponentScore!==null&&$teamScore<$opponentScore;
         $lateWeek=$dow>=4;
-        $movesLeft=null;
+        $movesLeft=DB::table('team_daily_moves')
+            ->whereDate('move_date',$date)
+            ->where('fantasy_team_id',(string)$teamId)
+            ->value('moves_left');
+        $movesLeft=$movesLeft!==null?(int)$movesLeft:null;
 
         $activeGoaliePlaying=$teamRows->contains(fn($p)=>
             strtoupper((string)$p->position)==='G'
@@ -337,9 +341,11 @@ Artisan::command('ecfhl:refresh-lineup-advice', function () {
         );
 
         $eligibleDrops=$teamRows->filter($dropEligible)->sortBy(fn($p)=>(float)($p->projected_fpts_per_game??0))->values();
+        $hasMoveAvailable=$movesLeft!==null&&$movesLeft>0;
+        $hasEligibleDrop=$eligibleDrops->isNotEmpty();
         $advice='No moves to suggest.';
 
-        if(!$activeGoaliePlaying){
+        if($hasMoveAvailable && $hasEligibleDrop && !$activeGoaliePlaying){
             $goalieTargets=DB::table('active_daily_players as p')
                 ->leftJoin('active_starting_goalies as g',function($join)use($date){
                     $join->on('g.player_name','=','p.player_name')
@@ -366,7 +372,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function () {
                     .($status!==''?' — '.$status:'')
                     .' and dropping '.$drop->player_name.'.';
             }
-        } elseif($trailing && $lateWeek){
+        } elseif($hasMoveAvailable && $hasEligibleDrop && ($trailing || $lateWeek || $isWeekend)){
             $drop=$eligibleDrops->first();
             if($drop){
                 $pos=strtoupper((string)$drop->position);
@@ -379,9 +385,18 @@ Artisan::command('ecfhl:refresh-lineup-advice', function () {
                     ->orderByDesc('projected_fpts')
                     ->first();
                 if($target){
-                    $advice='Trailing this week. Consider adding '.$target->player_name.' ('.$target->team.') and dropping '.$drop->player_name.'.';
+                    $reason=$trailing
+                        ? 'Trailing this week'
+                        : ($isWeekend ? 'A weekend move could add another game' : 'You have a low-projection FA/1-year roster spot');
+                    $advice=$reason.'. Consider adding '.$target->player_name.' ('.$target->team.') and dropping '.$drop->player_name.'.';
                 }
             }
+        }
+
+        if(!$hasMoveAvailable){
+            $advice=$movesLeft===0?'No moves left today.':'No moves to suggest.';
+        } elseif(!$hasEligibleDrop){
+            $advice='No eligible FA/1-year drop below your projection thresholds.';
         }
 
         DB::table('lineup_advice')->updateOrInsert(
