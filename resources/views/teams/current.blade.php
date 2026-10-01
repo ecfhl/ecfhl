@@ -228,6 +228,7 @@
     @endif
     @php
       $advisorText=$lineupAdvice->advice_text ?? 'No moves to suggest.';
+      $advisorText=str_replace('—', ',', $advisorText);
       $advisorText=preg_replace_callback('/\s*\[GOALIE_STATUS:([^\]]+)\]/i',function($m){
         $raw=trim($m[1]);
         $status=ucfirst(strtolower($raw));
