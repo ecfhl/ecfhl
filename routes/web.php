@@ -581,6 +581,45 @@ Route::get('/players',function(EcfhlData $data){$q=trim((string)request('q',''))
 Route::get('/rules',function(){$sections=DB::table('rules')->orderBy('rule_id')->get()->groupBy('section')->map(fn($rows)=>$rows->pluck('rule_text')->all())->all();return view('rules',compact('sections'));
 });
 
+Route::get('/push/config', function () {
+    try {
+        return response()->json([
+            'publicKey'=>app(\App\Support\WebPush::class)->publicKey(),
+            'latestId'=>(int)(DB::table('push_notifications')->max('id')??0),
+        ])->header('Cache-Control','no-store');
+    } catch (\Throwable $e) {
+        report($e);
+        return response()->json(['message'=>'Push notifications are temporarily unavailable.'],500);
+    }
+});
+
+Route::post('/push/subscribe', function () {
+    $endpoint=(string)request('endpoint','');
+    try {
+        $latestId=app(\App\Support\WebPush::class)->subscribe($endpoint);
+        return response()->json(['ok'=>true,'latestId'=>$latestId]);
+    } catch (\Throwable $e) {
+        report($e);
+        return response()->json(['ok'=>false,'message'=>$e->getMessage()],422);
+    }
+});
+
+Route::post('/push/unsubscribe', function () {
+    $endpoint=(string)request('endpoint','');
+    if($endpoint!=='')app(\App\Support\WebPush::class)->unsubscribe($endpoint);
+    return response()->json(['ok'=>true]);
+});
+
+Route::get('/push/notifications', function () {
+    $after=max(0,(int)request('after',0));
+    $rows=DB::table('push_notifications')
+        ->where('id','>',$after)
+        ->orderBy('id')
+        ->limit(25)
+        ->get(['id','category','title','body','url']);
+    return response()->json(['notifications'=>$rows])->header('Cache-Control','no-store');
+});
+
 Route::get('/job-status', function () {
     $tz = 'America/Halifax';
     $now = \Carbon\CarbonImmutable::now($tz);
