@@ -370,7 +370,7 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
   .matchup-summary-home .matchup-summary-score{left:0;right:auto}
   .matchup-summary-meta{width:100%}
   .matchup-meta-row{max-width:100%;flex-wrap:wrap}
-  .matchup-live-games{font-size:8px;line-height:1.05;white-space:normal;max-width:92px}
+  .matchup-live-games{font-size:7px;line-height:1;white-space:normal;max-width:78px}
   .matchup-summary-home .matchup-live-games{text-align:right}
   .matchup-summary-meta{gap:4px}
   .matchup-playing-counts{display:none!important}
