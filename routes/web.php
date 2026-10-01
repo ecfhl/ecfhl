@@ -26,6 +26,7 @@ Route::get('/standings', function(EcfhlData $data){
     $seasonName='2026-27';
     $season=$data->season($seasonName);
     if(!$season)return redirect('/seasons');
+
     $standings=$data->teamSeasons($seasonName);
     $standingsLastUpdate=DB::table('job_run_history')
         ->where('job_name','ecfhl:refresh-current-standings')
@@ -35,43 +36,21 @@ Route::get('/standings', function(EcfhlData $data){
     $scoringPeriods=[];
 
     try {
-        if(\Illuminate\Support\Facades\Schema::hasTable('scoring_period_matchups')){
-            $storedPeriods=DB::table('scoring_period_matchups')
+        if(\Illuminate\Support\Facades\Schema::hasTable('fantrax_scoring_period_matchups')){
+            $needsDates=!DB::table('fantrax_scoring_period_matchups')
                 ->where('season_id',$seasonName)
-                ->distinct()
-                ->count('period_number');
+                ->whereNotNull('start_date')
+                ->exists();
 
-            if($storedPeriods<24){
-                foreach(app(\App\Support\FantraxSchedule::class)->periods(true) as $period){
-                    $caption=trim((string)($period['caption']??''));
-                    preg_match('/(\d+)/',$caption,$m);
-                    $periodNumber=(int)($m[1]??0);
-                    if($periodNumber<1)continue;
-
-                    foreach(($period['matchups']??[]) as $matchup){
-                        DB::table('scoring_period_matchups')->updateOrInsert(
-                            [
-                                'season_id'=>$seasonName,
-                                'period_number'=>$periodNumber,
-                                'away_team_name'=>(string)($matchup['away_name']??''),
-                                'home_team_name'=>(string)($matchup['home_name']??''),
-                            ],
-                            [
-                                'start_date'=>$period['start'],
-                                'end_date'=>$period['end'],
-                                'away_team_id'=>(string)($matchup['away_team_id']??''),
-                                'away_score'=>$matchup['away_score'],
-                                'home_team_id'=>(string)($matchup['home_team_id']??''),
-                                'home_score'=>$matchup['home_score'],
-                                'created_at'=>now(),
-                                'updated_at'=>now(),
-                            ]
-                        );
-                    }
+            if($needsDates){
+                try {
+                    \Illuminate\Support\Facades\Artisan::call('ecfhl:refresh-scoring-period-matchups');
+                } catch (\Throwable $e) {
+                    report($e);
                 }
             }
 
-            $rows=DB::table('scoring_period_matchups')
+            $rows=DB::table('fantrax_scoring_period_matchups')
                 ->where('season_id',$seasonName)
                 ->orderBy('period_number')
                 ->orderBy('id')
@@ -82,14 +61,12 @@ Route::get('/standings', function(EcfhlData $data){
                 return [
                     'caption'=>'Scoring Period '.$periodNumber,
                     'period_number'=>(int)$periodNumber,
-                    'start'=>(string)$first->start_date,
-                    'end'=>(string)$first->end_date,
+                    'start'=>$first->start_date ? (string)$first->start_date : null,
+                    'end'=>$first->end_date ? (string)$first->end_date : null,
                     'matchups'=>$group->map(fn($r)=>[
-                        'away_team_id'=>(string)($r->away_team_id??''),
                         'away_name'=>(string)$r->away_team_name,
                         'away_display'=>(string)$r->away_team_name,
                         'away_score'=>$r->away_score!==null?(float)$r->away_score:null,
-                        'home_team_id'=>(string)($r->home_team_id??''),
                         'home_name'=>(string)$r->home_team_name,
                         'home_display'=>(string)$r->home_team_name,
                         'home_score'=>$r->home_score!==null?(float)$r->home_score:null,
@@ -99,9 +76,10 @@ Route::get('/standings', function(EcfhlData $data){
 
             $fantasyToday=\Carbon\CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();
             foreach($scoringPeriods as $period){
-                $start=\Carbon\CarbonImmutable::parse($period['start'],'America/Halifax')->startOfDay();
-                $end=\Carbon\CarbonImmutable::parse($period['end'],'America/Halifax')->endOfDay();
-                if($fantasyToday->betweenIncluded($start,$end)){
+                if(empty($period['start'])||empty($period['end']))continue;
+                $periodStart=\Carbon\CarbonImmutable::parse($period['start'],'America/Halifax')->startOfDay();
+                $periodEnd=\Carbon\CarbonImmutable::parse($period['end'],'America/Halifax')->endOfDay();
+                if($fantasyToday->betweenIncluded($periodStart,$periodEnd)){
                     $currentPeriodNumber=(int)$period['period_number'];
                     break;
                 }
