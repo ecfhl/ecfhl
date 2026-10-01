@@ -113,6 +113,7 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
                     'nhl_team'=>$r['nhl_team'],
                     'position'=>$r['position'],
                     'fantasy_status'=>$r['fantasy_status'],
+                    'opponent_display'=>$r['opponent_display']??null,
                     'today_fpts'=>$r['today_fpts'],
                     'fpts_changed'=>($previous=$previousScores[$normTeam($r['nhl_team']??'').'|'.$normName($r['player_name']??'')]??null)
                         ? abs((float)$previous->today_fpts-(float)$r['today_fpts'])>0.0001
