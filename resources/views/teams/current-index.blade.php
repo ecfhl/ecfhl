@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('content')
-<div class="page-head current-teams-head"><div class="shell"><div class="eyebrow">2026-27 rosters</div><h1>Live Scoring</h1><p>Current Matchups for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}.</p>@if($scoreLastUpdate)<p class="team-updated">Updated {{ \Carbon\CarbonImmutable::parse($scoreLastUpdate)->setTimezone('America/Halifax')->format('g:i:s a T') }}@if($autoRefresh) · Updates every minute@endif</p>@endif</div></div>
+<div class="page-head current-teams-head"><div class="shell"><div class="eyebrow">2026-27 rosters</div><h1>Live Scoring</h1><p>Current Matchups for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}.</p>@if($scoreLastUpdate)<p class="team-updated">Updated {{ \Carbon\CarbonImmutable::parse($scoreLastUpdate)->setTimezone('America/Halifax')->format('g:i:s a T') }}{{ $autoRefresh ? ' · Updates every minute' : '' }}</p>@endif</div></div>
 
 <div class="shell current-teams-page">
   <div class="team-toolbar">
@@ -295,12 +295,13 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   cards.forEach(card=>card.addEventListener('toggle',saveOpenMatchups));
 
-  @if($autoRefresh)
-  setInterval(()=>{
-    saveOpenMatchups();
-    location.reload();
-  },60000);
-  @endif
+  const autoRefresh={{ $autoRefresh ? 'true' : 'false' }};
+  if(autoRefresh){
+    setInterval(()=>{
+      saveOpenMatchups();
+      location.reload();
+    },60000);
+  }
 
   document.querySelectorAll('.matchup-summary a').forEach(link=>{
     link.addEventListener('click',event=>event.stopPropagation());
