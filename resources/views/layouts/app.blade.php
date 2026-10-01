@@ -52,6 +52,7 @@ html,body,main{max-width:100%;overflow-x:clip}
     <button type="button" class="nav-dropdown-toggle" onclick="this.closest('.nav-dropdown').classList.toggle('open')" aria-label="Open Archive menu" aria-expanded="false"><span aria-hidden="true">▾</span></button>
   </div>
   <div class="nav-dropdown-menu archive-menu">
+    <a href="/teams">Franchise History</a>
     <a href="/seasons">Seasons</a>
     <a href="/prizes">Prizes</a>
     <a href="/trades">Trades</a>
