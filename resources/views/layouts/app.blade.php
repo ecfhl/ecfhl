@@ -36,7 +36,7 @@ html,body,main{max-width:100%;overflow-x:clip}
 <a href="/daily-targets" class="{{ request()->is('daily-targets')?'active':'' }}">Daily Targets</a>
 <div class="nav-dropdown {{ request()->is('teams')||request()->is('teams/*')&&!request()->is('teams/current','teams/current/*')?'active':'' }}">
   <div class="nav-dropdown-row">
-    <a class="nav-dropdown-main-link" href="/teams">Teams</a>
+    <a class="nav-dropdown-main-link" href="/standings">Teams</a>
     <button type="button" class="nav-dropdown-toggle" onclick="this.closest('.nav-dropdown').classList.toggle('open')" aria-label="Open Teams menu" aria-expanded="false"><span aria-hidden="true">▾</span></button>
   </div>
   <div class="nav-dropdown-menu">
