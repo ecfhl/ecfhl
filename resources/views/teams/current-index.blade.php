@@ -365,6 +365,13 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
   .matchup-summary{grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr);padding:8px 10px}
   .matchup-summary-score{font-size:18px}
   .matchup-summary-name a{font-size:12px}
+  .matchup-summary-side{position:relative;align-items:flex-start;padding-bottom:22px}
+  .matchup-summary-score{position:absolute;right:0;bottom:2px;z-index:2}
+  .matchup-summary-home .matchup-summary-score{left:0;right:auto}
+  .matchup-summary-meta{width:100%}
+  .matchup-meta-row{max-width:100%;flex-wrap:wrap}
+  .matchup-live-games{font-size:8px;line-height:1.05;white-space:normal;max-width:92px}
+  .matchup-summary-home .matchup-live-games{text-align:right}
   .matchup-summary-meta{gap:4px}
   .matchup-playing-counts{display:none!important}
   .matchup-daily-cats{font-size:8px;color:#475569;overflow:hidden;text-overflow:ellipsis;max-width:170px}
