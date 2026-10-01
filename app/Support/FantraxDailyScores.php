@@ -4,7 +4,6 @@ namespace App\Support;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class FantraxDailyScores
@@ -127,11 +126,6 @@ class FantraxDailyScores
             }
             return null;
         };
-
-        Log::info('Fantrax daily score header metadata', [
-            'date' => $day,
-            'headers' => $data['tableHeader']['cells'] ?? [],
-        ]);
 
         $rows = [];
         foreach (($data['statsTable'] ?? []) as $entry) {
