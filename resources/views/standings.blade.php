@@ -5,16 +5,10 @@
   <div class="page-head">
     <div class="eyebrow">2026-27 season</div>
     <h1>Standings</h1>
+    @if(!empty($standingsLastUpdate))
+      <p class="subtle standings-updated">Updated @include('partials.updated-time',['value'=>$standingsLastUpdate])</p>
+    @endif
     @include('partials.fantrax-standings',['season'=>$season])
-  </div>
-
-  <div class="section-title standings-title">
-    <div>
-      <h2>Standings</h2>
-      @if(!empty($standingsLastUpdate))
-        <p class="subtle standings-updated">Updated @include('partials.updated-time',['value'=>$standingsLastUpdate])</p>
-      @endif
-    </div>
   </div>
 
   <div class="table-card">
@@ -56,6 +50,6 @@
 </div>
 <style>
 .standings-page{padding-bottom:26px}
-.standings-title{margin-top:8px}.standings-updated{margin:4px 0 0;font-size:12px}.standings-team-link{color:inherit;text-decoration:none}.standings-team-link:hover{text-decoration:underline}
+.standings-updated{margin:4px 0 6px;font-size:12px}.standings-team-link{color:inherit;text-decoration:none}.standings-team-link:hover{text-decoration:underline}
 </style>
 @endsection
