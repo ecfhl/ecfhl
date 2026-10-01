@@ -368,15 +368,36 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             'G'=>$activePlayers->filter(fn($p)=>strtoupper((string)$p->position)==='G')->count(),
         ];
 
-        // Goalie coverage is based on whether any rostered goalie is scheduled
-        // tonight, regardless of whether Fantrax currently labels that goalie
-        // as active or bench. Bench status must not trigger a needless goalie add.
-        $hasGoaliePlayingTonight=$teamRows->contains(fn($p)=>
-            strtoupper((string)$p->position)==='G'
-            && (bool)($p->is_playing??false)
-            && !(bool)($p->is_ir??false)
-            && strtoupper((string)($p->roster_status??''))!=='MINORS'
-        );
+        // Goalie coverage uses both Fantrax's datePlaying flag and Daily Faceoff.
+        // A Confirmed/Likely/Unconfirmed DFO goalie counts as scheduled tonight,
+        // even if Fantrax's roster flag is stale. Bench status never removes coverage.
+        $normalizeGoalieName=function($value){
+            $name=trim((string)$value);
+            if(str_contains($name,',')){
+                [$last,$first]=array_map('trim',explode(',',$name,2));
+                if($first!==''&&$last!=='')$name=$first.' '.$last;
+            }
+            return preg_replace('/[^\pL\pN]+/u','',mb_strtolower($name))??'';
+        };
+        $normalizeGoalieTeam=fn($value)=>match(strtoupper(trim((string)$value))){
+            'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>strtoupper(trim((string)$value))
+        };
+        $dfoGoalies=DB::table('active_starting_goalies')
+            ->whereDate('game_date',$date)
+            ->get()
+            ->keyBy(fn($g)=>$normalizeGoalieTeam($g->team).'|'.$normalizeGoalieName($g->player_name));
+
+        $hasGoaliePlayingTonight=$teamRows->contains(function($p)use($dfoGoalies,$normalizeGoalieName,$normalizeGoalieTeam){
+            if(strtoupper((string)$p->position)!=='G')return false;
+            if((bool)($p->is_ir??false) || strtoupper((string)($p->roster_status??''))==='MINORS')return false;
+
+            if((bool)($p->is_playing??false))return true;
+
+            $key=$normalizeGoalieTeam($p->nhl_team??'').'|'.$normalizeGoalieName($p->player_name??'');
+            $goalie=$dfoGoalies[$key]??null;
+            $status=strtolower(trim((string)($goalie->starting_status??'')));
+            return in_array($status,['confirmed','likely','probable','unconfirmed'],true);
+        });
 
         $slotLimits=['F'=>8,'D'=>4,'G'=>1];
 
