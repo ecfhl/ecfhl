@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title','Seasons · ECFHL')
 @section('content')
-<div class="shell"><div class="page-head"><div class="eyebrow">League archive</div><h1>Seasons</h1><p>Playoff finishes and regular-season leaders from 2007–08 to the present.</p></div>
+<div class="shell"><div class="page-head"><div class="eyebrow">League archive</div><h1>📖 Seasons</h1><p>Playoff finishes and regular-season leaders from 2007–08 to the present.</p></div>
 <div style="display:flex;justify-content:flex-end;margin:0 0 22px"><select id="seasonJump" class="form-control" style="width:260px;padding:10px 12px;border-radius:8px" onchange="if(this.value) window.location.href=this.value"><option value="">Go to season...</option>@foreach($seasons as $season)<option value="/seasons/{{ rawurlencode($season['season']) }}">{{ $season['season'] }}</option>@endforeach</select></div>
 @php
   $currentSeason=collect($seasons)->first(fn($s)=>($s['season']??'')==='2026-27');
