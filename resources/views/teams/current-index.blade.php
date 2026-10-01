@@ -290,7 +290,7 @@
 .matchup-summary{display:grid;grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr);align-items:center;gap:8px;padding:9px 14px;cursor:pointer;list-style:none;background:#fff}
 .matchup-summary::-webkit-details-marker{display:none}
 .matchup-summary-side{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}
-.matchup-summary-home{text-align:right}\n.matchup-summary-home .matchup-summary-name{margin-left:auto;width:100%;align-items:flex-end;text-align:right}\n.matchup-summary-home .matchup-summary-name>a{display:block;width:100%;text-align:right}
+.matchup-summary-home{text-align:right;justify-content:flex-end}\n.matchup-summary-home .matchup-summary-name{margin-left:auto;width:auto;max-width:100%;align-items:flex-end;text-align:right;flex:0 1 auto}\n.matchup-summary-home .matchup-summary-name>a{display:block;width:100%;text-align:right}
 .matchup-summary-name{min-width:0;display:flex;flex-direction:column}
 .matchup-summary-name a{font-weight:900;color:var(--text);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .matchup-summary-name a:hover{text-decoration:underline}
