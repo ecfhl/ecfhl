@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded',()=>{
      card.style.borderColor='var(--line)';
    });
  });
- const headings={players:'Getting available players in Fantrax...',goalies:'Getting goalie information from Daily Faceoff...',lines:'Getting Lines information from Daily Faceoff...',odds:'Getting NHL moneyline odds...',teams:'Getting current fantasy team rosters from Fantrax...',scores:'Refreshing live daily scores...',standings:'Refreshing current standings from Fantrax...'};
+ const headings={players:'Getting available players in Fantrax...',goalies:'Getting goalie information from Daily Faceoff...',lines:'Getting Lines information from Daily Faceoff...',odds:'Getting NHL moneyline odds...',teams:'Getting current fantasy team rosters from Fantrax...',scores:'Refreshing live daily scores...',standings:'Refreshing current standings from Fantrax...',advisor:'Regenerating lineup advice for all teams...'};
  const colorCard=(job,status)=>{
    const card=document.querySelector('.status-card[data-job-key="'+job+'"]');
    if(!card)return;
@@ -127,6 +127,10 @@ document.addEventListener('DOMContentLoaded',()=>{
    if(job==='standings'){
      const match=output.match(/(\d+) Fantrax standings rows refreshed/);
      return match?match[1]+' standings teams updated':output;
+   }
+   if(job==='advisor'){
+     const match=output.match(/(\d+) lineup advisor rows refreshed/);
+     return match?match[1]+' teams analyzed':output;
    }
    return output;
  };
@@ -169,7 +173,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    }
  };
  document.querySelectorAll('.job-ajax-form').forEach(form=>form.addEventListener('submit',async e=>{
-   e.preventDefault();const requested=form.dataset.job;const jobs=requested==='all'?['players','goalies','lines','odds','teams','scores','standings']:[requested];const button=form.querySelector('button');const original=button.textContent;const lines=[];const csrf=form.querySelector('input[name="_token"]')?.value || document.querySelector('meta[name="csrf-token"]')?.content;
+   e.preventDefault();const requested=form.dataset.job;const jobs=requested==='all'?['players','goalies','lines','odds','teams','scores','standings','advisor']:[requested];const button=form.querySelector('button');const original=button.textContent;const lines=[];const csrf=form.querySelector('input[name="_token"]')?.value || document.querySelector('meta[name="csrf-token"]')?.content;
    sessionStorage.removeItem(clearedKey);statusRoot?.classList.remove('job-outcomes-cleared');document.querySelectorAll('.status-card').forEach(card=>{card.style.background='';card.style.borderColor='';});
    document.querySelectorAll('.job-ajax-form button').forEach(b=>b.disabled=true);button.textContent=requested==='all'?'Refreshing…':'Running…';box.hidden=false;box.className='job-live-results';boxText.textContent='';saveBox();
    const outcomes=[];
@@ -178,7 +182,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    const warnings=outcomes.filter(x=>x.status==='warning').length;
    box.classList.add(failed?'error':(warnings?'warning':'ok'));saveBox();
    if(requested==='all'){
-     lines.push(failed?('Finished all 7 jobs: '+failed+' failed'+(warnings?', '+warnings+' warning'+(warnings===1?'':'s'):'')+'.'):(warnings?('Finished all 7 jobs with '+warnings+' warning'+(warnings===1?'':'s')+'.'):'All 7 jobs completed.'));
+     lines.push(failed?('Finished all 8 jobs: '+failed+' failed'+(warnings?', '+warnings+' warning'+(warnings===1?'':'s'):'')+'.'):(warnings?('Finished all 8 jobs with '+warnings+' warning'+(warnings===1?'':'s')+'.'):'All 8 jobs completed.'));
    }else{
      lines.push(failed?'Job failed.':(warnings?'Job completed with a warning.':'Job completed.'));
    }
