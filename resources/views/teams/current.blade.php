@@ -348,7 +348,7 @@
         </table></div></div>
 
         @if(in_array($code,['F','D','G'],true) && count($targetGroups[$code] ?? []))
-          <details class="team-targets">
+          <details class="team-targets" data-target-position="{{ $code }}">
             <summary>{{ $group['label'] }} Targets <span>{{ count($targetGroups[$code] ?? []) }}</span></summary>
             <div class="team-target-list">
               @foreach(($targetGroups[$code] ?? []) as $target)
@@ -436,6 +436,15 @@ html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#3
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
+  const targetStatePrefix='ecfhl-team-targets:{{ $slug }}:{{ $date }}:';
+  document.querySelectorAll('details.team-targets[data-target-position]').forEach(details=>{
+    const key=targetStatePrefix+details.dataset.targetPosition;
+    details.open=sessionStorage.getItem(key)==='1';
+    details.addEventListener('toggle',()=>{
+      sessionStorage.setItem(key,details.open?'1':'0');
+    });
+  });
+
   setInterval(()=>location.reload(),60000);
   document.querySelectorAll('[data-target-more]').forEach(button=>{
     button.addEventListener('click',()=>{
