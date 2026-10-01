@@ -22,14 +22,20 @@
 
         $awayDay=(float)($away['today_fpts'] ?? 0);
         $homeDay=(float)($home['today_fpts'] ?? 0);
-        $dayScoreClass=function(float $mine,float $theirs): string {
-          if($mine==0.0)return 'matchup-day-zero';
-          if($mine>$theirs)return 'matchup-day-leading';
-          if($mine<$theirs)return 'matchup-day-trailing';
-          return 'matchup-day-tied';
+        $awayWeek=(float)($away['week_fpts'] ?? 0);
+        $homeWeek=(float)($home['week_fpts'] ?? 0);
+
+        $scoreClass=function(float $mine,float $theirs,string $prefix): string {
+          if($mine==0.0 && $theirs==0.0)return $prefix.'-zero';
+          if($mine>$theirs)return $prefix.'-leading';
+          if($mine<$theirs)return $prefix.'-trailing';
+          return $prefix.'-tied';
         };
-        $awayDayClass=$dayScoreClass($awayDay,$homeDay);
-        $homeDayClass=$dayScoreClass($homeDay,$awayDay);
+
+        $awayDayClass=$awayDay==0.0?'matchup-day-zero':$scoreClass($awayDay,$homeDay,'matchup-day');
+        $homeDayClass=$homeDay==0.0?'matchup-day-zero':$scoreClass($homeDay,$awayDay,'matchup-day');
+        $awayWeekClass=$scoreClass($awayWeek,$homeWeek,'matchup-week');
+        $homeWeekClass=$scoreClass($homeWeek,$awayWeek,'matchup-week');
 
         $allPlayers=function($team){
           return $team
@@ -80,7 +86,7 @@
                   <span class="matchup-daily-cats">@foreach(['gp'=>'GP','g'=>'G','a'=>'A','ppg'=>'PPG','shg'=>'SHG','gwg'=>'GWG','w'=>'W','so'=>'SO'] as $key=>$label)@if(($away['today_stats'][$key] ?? 0) != 0)<span>{{ $label }}: {{ $away['today_stats'][$key] }}</span>@endif @endforeach</span>
                 </div>
               </div>
-              <span class="matchup-summary-score"><strong class="matchup-week-score">{{ number_format($away['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $awayDayClass }}">+{{ number_format($away['today_fpts'] ?? 0,0) }}</small></span>
+              <span class="matchup-summary-score"><strong class="matchup-week-score {{ $awayWeekClass }}">{{ number_format($away['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $awayDayClass }}">+{{ number_format($away['today_fpts'] ?? 0,0) }}</small></span>
             @endif
           </div>
 
@@ -88,7 +94,7 @@
 
           <div class="matchup-summary-side matchup-summary-home">
             @if($home)
-              <span class="matchup-summary-score"><strong class="matchup-week-score">{{ number_format($home['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $homeDayClass }}">+{{ number_format($home['today_fpts'] ?? 0,0) }}</small></span>
+              <span class="matchup-summary-score"><strong class="matchup-week-score {{ $homeWeekClass }}">{{ number_format($home['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $homeDayClass }}">+{{ number_format($home['today_fpts'] ?? 0,0) }}</small></span>
               <div class="matchup-summary-name">
                 <a href="/teams/current/{{ $home['slug'] }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $home['name'] }}</a>
                 <div class="matchup-summary-meta matchup-summary-meta-home">
@@ -183,7 +189,7 @@
 .matchup-summary-name a{font-weight:900;color:var(--text);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .matchup-summary-name a:hover{text-decoration:underline}
 .matchup-summary-name small{font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.05em}.matchup-summary-meta{display:flex;align-items:center;gap:7px;min-width:0}.matchup-summary-meta-home{justify-content:flex-end}.matchup-daily-cats{font-size:9px;color:#475569;font-weight:900;white-space:nowrap;display:inline-flex;gap:5px;align-items:center}.matchup-side-pill{display:inline-flex;align-items:center;justify-content:center;padding:2px 7px;border-radius:999px;font-size:9px;font-weight:900;letter-spacing:.05em;line-height:1.1;border:1px solid transparent;white-space:nowrap}.away-pill{background:#fef3c7;color:#92400e;border-color:#fcd34d}.home-pill{background:#dcfce7;color:#166534;border-color:#86efac}
-.matchup-summary-score{display:inline-flex;align-items:flex-start;gap:4px;white-space:nowrap}.matchup-week-score{font-size:20px;line-height:1;font-weight:900;color:var(--text)}.matchup-day-score{font-size:13px;line-height:1;font-weight:900;transform:translateY(-2px)}.matchup-day-zero{color:var(--text)}.matchup-day-leading{color:#16a34a}.matchup-day-tied{color:#2563eb}.matchup-day-trailing{color:#dc2626}
+.matchup-summary-score{display:inline-flex;align-items:flex-start;gap:4px;white-space:nowrap}.matchup-week-score{font-size:20px;line-height:1;font-weight:900}.matchup-day-score{font-size:13px;line-height:1;font-weight:900;transform:translateY(-2px)}.matchup-day-zero,.matchup-week-zero{color:var(--text)}.matchup-day-leading,.matchup-week-leading{color:#16a34a}.matchup-day-tied,.matchup-week-tied{color:#2563eb}.matchup-day-trailing,.matchup-week-trailing{color:#dc2626}
 .matchup-summary-vs{text-align:center;font-size:10px;font-weight:900;color:var(--muted)}
 .matchup-bye{font-size:11px;font-weight:900;color:var(--muted)}
 .matchup-expanded{border-top:1px solid var(--line);background:#fff}
