@@ -543,7 +543,7 @@ Schedule::command('ecfhl:refresh-current-standings')
 
 Schedule::command('ecfhl:refresh-daily-players')->cron('*/15 * * * *')->withoutOverlapping(14);
 Schedule::command('ecfhl:refresh-fantasy-rosters')->cron('*/15 * * * *')->withoutOverlapping(14)->runInBackground();
-Schedule::command('ecfhl:refresh-starting-goalies')->cron('*/15 * * * *')->withoutOverlapping(14)->runInBackground();
+Schedule::command('ecfhl:refresh-starting-goalies')->cron('*/5 * * * *')->withoutOverlapping(4)->runInBackground();
 Schedule::command('ecfhl:refresh-pp-lines')->cron('0 * * * *')->withoutOverlapping(55)->runInBackground();
 Schedule::command('ecfhl:refresh-odds')->cron('0 */2 * * *')->withoutOverlapping(110)->runInBackground();
 
