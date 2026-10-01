@@ -315,6 +315,15 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         Log::warning('Lineup advisor schedule lookup failed',['error'=>$e->getMessage()]);
     }
 
+    $displayPlayerName=function($value){
+        $name=trim((string)$value);
+        if(str_contains($name,',')){
+            [$last,$first]=array_map('trim',explode(',',$name,2));
+            if($first!==''&&$last!=='')$name=$first.' '.$last;
+        }
+        return preg_replace('/\s+/u',' ',$name)??$name;
+    };
+
     $normContract=fn($v)=>strtoupper(trim(preg_replace('/\s+/',' ',(string)$v)));
     $dropEligible=function($p)use($normContract){
         $contract=$normContract($p->contract??'');
@@ -427,7 +436,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                 $pos=strtoupper((string)$irCandidate->position);
                 $target=collect($availableGroups[$pos]??[])->first();
                 if($target){
-                    $suggestions[]='Move '.$irCandidate->player_name.' to IR and add '.$target['name'].' ('.$target['team'].')'
+                    $suggestions[]='Move '.$displayPlayerName($irCandidate->player_name).' to IR and add '.$displayPlayerName($target['name']).' ('.$target['team'].')'
                         .(!empty($target['projected_points'])?' — '.$target['projected_points'].' projected FPts':'').'.';
                 }
             }
@@ -460,7 +469,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                     $target=collect($availableGroups[$targetPos]??[])->first();
                     if($target){
                         $suggestions[]='You already have a goalie playing tonight and have an open '.$targetPos.' spot. Consider dropping '
-                            .$surplusGoalie->player_name.' and adding '.$target['name'].' ('.$target['team'].')'
+                            .$displayPlayerName($surplusGoalie->player_name).' and adding '.$displayPlayerName($target['name']).' ('.$target['team'].')'
                             .(!empty($target['projected_points'])?' — '.$target['projected_points'].' projected FPts':'').'.';
                     }
                 }
@@ -478,7 +487,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                 $reason=$trailing
                     ? 'Trailing this week'
                     : ($isWeekend ? 'A weekend move could add another game' : 'You have a low-projection FA/1-year roster spot');
-                $suggestions[]=$reason.'. Consider adding '.$target['name'].' ('.$target['team'].') and dropping '.$drop->player_name.'.';
+                $suggestions[]=$reason.'. Consider adding '.$displayPlayerName($target['name']).' ('.$target['team'].') and dropping '.$displayPlayerName($drop->player_name).'.';
             }
         }
 
@@ -519,9 +528,9 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                     ? 'You already carry 2 goalies. '
                     : '';
                 array_unshift($suggestions,
-                    $goalieReason.'No goalie is active tonight. Consider adding '.$goalieTarget['name'].' ('.$goalieTarget['team'].')'
+                    $goalieReason.'No goalie is active tonight. Consider adding '.$displayPlayerName($goalieTarget['name']).' ('.$goalieTarget['team'].')'
                     .(!empty($goalieTarget['starting_status'])?' [GOALIE_STATUS:'.$goalieTarget['starting_status'].']':'')
-                    .' and dropping '.$drop->player_name.'.'
+                    .' and dropping '.$displayPlayerName($drop->player_name).'.'
                 );
             }
         }
