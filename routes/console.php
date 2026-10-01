@@ -238,31 +238,11 @@ Artisan::command('ecfhl:refresh-odds', function (NhlOdds $odds) {
     }
 });
 
-Schedule::command('ecfhl:refresh-daily-scores')->cron('* * * * *')->withoutOverlapping(2)->runInBackground()->when(function () {
-    $tz='America/Halifax';
-    $now=CarbonImmutable::now($tz);
-    $today=$now->toDateString();
-    $times=DB::table('active_fantasy_rosters')
-        ->whereDate('game_date',$today)
-        ->whereNotNull('game_time')
-        ->pluck('game_time')
-        ->filter()
-        ->unique();
+Schedule::command('ecfhl:refresh-daily-scores')
+    ->cron('* * * * *')
+    ->withoutOverlapping(2)
+    ->runInBackground();
 
-    $starts=$times->map(function($value)use($today,$tz){
-        if(!preg_match('/(\\d{1,2}:\\d{2}\\s*(?:AM|PM))/i',(string)$value,$m))return null;
-        try {
-            return CarbonImmutable::createFromFormat('!Y-m-d g:i A',$today.' '.strtoupper(preg_replace('/\\s+/',' ',trim($m[1]))),$tz);
-        } catch (\Throwable) {
-            return null;
-        }
-    })->filter();
-
-    if($starts->isEmpty())return false;
-    $first=$starts->sort()->first();
-    $last=$starts->sortDesc()->first();
-    return $now->betweenIncluded($first,$last->addHours(4));
-});
 Schedule::command('ecfhl:refresh-daily-players')->hourlyAt(0)->withoutOverlapping(55);
 Schedule::command('ecfhl:refresh-fantasy-rosters')->hourlyAt(10)->withoutOverlapping(45)->runInBackground();
 Schedule::command('ecfhl:refresh-starting-goalies')->everyThirtyMinutes()->withoutOverlapping(25)->runInBackground();
