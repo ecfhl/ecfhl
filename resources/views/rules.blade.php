@@ -2,7 +2,7 @@
 @section('title','Rules · ECFHL')
 @section('content')
 <div class="shell">
-  <div class="page-head"><div class="eyebrow">League bylaws</div><h1>Rules</h1><p>Core ECFHL roster, transaction and playoff rules.</p></div>
+  <div class="page-head"><div class="eyebrow">League bylaws</div><h1>🔨 Rules</h1><p>Core ECFHL roster, transaction and playoff rules.</p></div>
 
   <div class="rules-grid">
     @foreach($sections as $title=>$items)
