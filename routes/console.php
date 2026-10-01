@@ -376,7 +376,7 @@ Schedule::command('ecfhl:refresh-daily-scores')
     ->runInBackground();
 
 Schedule::command('ecfhl:refresh-current-standings')
-    ->everyThirtyMinutes()
+    ->everyMinute()
     ->withoutOverlapping(25)
     ->runInBackground()
     ->when(function () {
@@ -384,12 +384,14 @@ Schedule::command('ecfhl:refresh-current-standings')
         $now=CarbonImmutable::now($tz);
         $today=$now->toDateString();
 
-        $alreadyRanToday=DB::table('job_run_history')
+        $lastRun=DB::table('job_run_history')
             ->where('job_name','ecfhl:refresh-current-standings')
             ->whereDate('target_date',$today)
-            ->exists();
+            ->max('completed_at');
 
-        if(!$alreadyRanToday)return true;
+        // Always get at least one successful standings refresh each day,
+        // immediately on the next scheduler tick.
+        if(!$lastRun)return true;
 
         try {
             $response=Http::timeout(12)->retry(1,500)->get('https://api-web.nhle.com/v1/score/'.$today);
@@ -405,7 +407,11 @@ Schedule::command('ecfhl:refresh-current-standings')
 
             $first=$starts->sort()->first();
             $last=$starts->sortDesc()->first();
-            return $now->betweenIncluded($first,$last->addHours(4));
+            $inLiveWindow=$now->betweenIncluded($first,$last->addHours(4));
+            if(!$inLiveWindow)return false;
+
+            $last=CarbonImmutable::parse($lastRun)->setTimezone($tz);
+            return $last->lte($now->subMinutes(30));
         } catch (\Throwable $e) {
             Log::warning('Current standings game-window check failed',['error'=>$e->getMessage()]);
             return false;
