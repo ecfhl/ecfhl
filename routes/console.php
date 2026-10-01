@@ -441,52 +441,44 @@ Schedule::command('ecfhl:refresh-daily-scores')
     });
 
 Schedule::command('ecfhl:refresh-current-standings')
-    ->everyMinute()
-    ->withoutOverlapping(25)
+    ->cron('*/5 * * * *')
+    ->withoutOverlapping(4)
     ->runInBackground()
     ->when(function () {
-        $tz='America/Halifax';
-        $now=CarbonImmutable::now($tz);
-        $today=$now->toDateString();
-
-        $lastRun=DB::table('job_run_history')
-            ->where('job_name','ecfhl:refresh-current-standings')
-            ->whereDate('target_date',$today)
-            ->max('completed_at');
-
-        // Always get at least one successful standings refresh each day,
-        // immediately on the next scheduler tick.
-        if(!$lastRun)return true;
+        $fantasyDay=CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();
+        $day=$fantasyDay->toDateString();
 
         try {
-            $response=Http::timeout(12)->retry(1,500)->get('https://api-web.nhle.com/v1/score/'.$today);
+            $response=Http::timeout(12)->retry(1,500)->get('https://api-web.nhle.com/v1/score/'.$day);
             $response->throw();
-            $games=$response->json('games')??[];
-            $starts=collect($games)->map(function($game)use($tz){
-                $utc=$game['startTimeUTC']??null;
-                if(!$utc)return null;
-                try{return CarbonImmutable::parse($utc)->setTimezone($tz);}catch(\Throwable){return null;}
-            })->filter();
+            $starts=collect($response->json('games')??[])
+                ->map(function($game){
+                    $utc=$game['startTimeUTC']??null;
+                    if(!$utc)return null;
+                    try{return CarbonImmutable::parse($utc)->utc();}catch(\Throwable){return null;}
+                })
+                ->filter();
 
             if($starts->isEmpty())return false;
 
+            $now=CarbonImmutable::now('UTC');
             $first=$starts->sort()->first();
             $last=$starts->sortDesc()->first();
-            $inLiveWindow=$now->betweenIncluded($first,$last->addHours(4));
-            if(!$inLiveWindow)return false;
 
-            $last=CarbonImmutable::parse($lastRun)->setTimezone($tz);
-            return $last->lte($now->subMinutes(30));
+            return $now->betweenIncluded($first,$last->addHours(4));
         } catch (\Throwable $e) {
-            Log::warning('Current standings game-window check failed',['error'=>$e->getMessage()]);
+            Log::warning('Current standings game-window check failed',[
+                'date'=>$day,
+                'error'=>$e->getMessage(),
+            ]);
             return false;
         }
     });
 
-Schedule::command('ecfhl:refresh-daily-players')->hourlyAt(0)->withoutOverlapping(55);
-Schedule::command('ecfhl:refresh-fantasy-rosters')->everyThirtyMinutes()->withoutOverlapping(25)->runInBackground();
-Schedule::command('ecfhl:refresh-starting-goalies')->everyThirtyMinutes()->withoutOverlapping(25)->runInBackground();
-Schedule::command('ecfhl:refresh-pp-lines')->cron('2 */4 * * *')->withoutOverlapping(240)->runInBackground();
-Schedule::command('ecfhl:refresh-odds')->cron('6 */4 * * *')->withoutOverlapping(30)->runInBackground();
+Schedule::command('ecfhl:refresh-daily-players')->cron('*/15 * * * *')->withoutOverlapping(14);
+Schedule::command('ecfhl:refresh-fantasy-rosters')->cron('*/15 * * * *')->withoutOverlapping(14)->runInBackground();
+Schedule::command('ecfhl:refresh-starting-goalies')->cron('*/15 * * * *')->withoutOverlapping(14)->runInBackground();
+Schedule::command('ecfhl:refresh-pp-lines')->cron('0 * * * *')->withoutOverlapping(55)->runInBackground();
+Schedule::command('ecfhl:refresh-odds')->cron('0 */2 * * *')->withoutOverlapping(110)->runInBackground();
 
 require __DIR__.'/available-goalies.php';
