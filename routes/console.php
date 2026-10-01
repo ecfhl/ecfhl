@@ -63,7 +63,7 @@ Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayer
         Log::info('Fantrax daily players refresh started',['date'=>$date->format('Y-m-d'),'url'=>$fantrax->url($date)]);
         $all=$fantrax->fetch($date,'ALL');
         try{$goalies=$fantrax->fetch($date,'G');}catch(\Throwable $e){Log::warning('Dedicated Fantrax goalie fetch failed',['date'=>$date->format('Y-m-d'),'error'=>$e->getMessage()]);$goalies=['rows'=>[]];}
-        $merged=[];foreach(array_merge($all['rows'],$goalies['rows']) as $p){$key=mb_strtolower(trim($p['player_name'])).'|'.strtoupper(trim($p['team']));$merged[$key]=$p;}
+        $merged=[];foreach(array_merge($all['rows'],$goalies['rows']) as $p){$key=mb_strtolower(trim($p['player_name'])).'|'.strtoupper(trim($p['team'])).'|'.strtoupper(trim((string)($p['position']??'')));$merged[$key]=$p;}
         $now=now();$rows=array_map(function($p)use($date,$now){$opp=trim((string)($p['opponent']??''));$away=str_starts_with($opp,'@');return ['game_date'=>$date->format('Y-m-d'),'player_name'=>$p['player_name'],'team'=>$p['team'],'position'=>$p['position'],'opponent'=>ltrim($opp,'@'),'home_away'=>$opp===''?null:($away?'AWAY':'HOME'),'game_time'=>$p['game_time']??null,'game_started'=>(bool)($p['game_started']??false),'availability'=>$p['availability'],'waiver_day'=>$p['waiver_day'],'injury_status'=>$p['injury_status'],'projected_fpts'=>$p['projected_fpts'],'fantrax_url'=>$p['fantrax_url'],'source_rank'=>$p['source_rank'],'last_update'=>$now,'created_at'=>$now,'updated_at'=>$now];},array_values($merged));
         DB::transaction(function()use($date,$rows){DB::table('active_daily_players')->whereDate('game_date',$date->format('Y-m-d'))->delete();if($rows)DB::table('active_daily_players')->insert($rows);});$count=count($rows);$gcount=count(array_filter($rows,fn($r)=>$r['position']==='G'));$this->info($date->format('Y-m-d').': '.$count.' Fantrax players refreshed ('.$gcount.' goalies)');Log::info('Fantrax daily players refresh completed',['date'=>$date->format('Y-m-d'),'rows'=>$count,'goalies'=>$gcount]);
     }catch(\Throwable $e){$failed=true;Log::error('Fantrax daily players refresh failed',['date'=>$date->format('Y-m-d'),'url'=>$fantrax->url($date),'error'=>$e->getMessage(),'exception'=>get_class($e)]);$this->error($date->format('Y-m-d').': '.$e->getMessage());}}
@@ -303,6 +303,30 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
     $rosters=DB::table('active_fantasy_rosters')->whereDate('game_date',$date)->get();
     $teams=$rosters->groupBy('fantasy_team_id');
     $availableGroups=\App\Support\AiTips::groups([], $date);
+
+    // Avoid ambiguous duplicate-name players that can be mistaken for the
+    // fantasy-relevant NHL player with the same name.
+    $advisorExcludedNames=[
+        'eliaspettersson',
+        'sebastianaho',
+        'sebastienaho',
+        'jackhughes',
+        'ryanoreilly',
+    ];
+    $advisorNameKey=function($value){
+        $name=trim((string)$value);
+        if(str_contains($name,',')){
+            [$last,$first]=array_map('trim',explode(',',$name,2));
+            if($first!==''&&$last!=='')$name=$first.' '.$last;
+        }
+        return preg_replace('/[^\pL\pN]+/u','',mb_strtolower($name))??'';
+    };
+    foreach(['F','D','G'] as $positionKey){
+        $availableGroups[$positionKey]=array_values(array_filter(
+            $availableGroups[$positionKey]??[],
+            fn($player)=>!in_array($advisorNameKey($player['name']??''),$advisorExcludedNames,true)
+        ));
+    }
 
     // Use the same Daily Targets ranking shown on the current-team page:
     // PP1 before PP2 before no PP unit, then L1-L4, then projected FPts.
