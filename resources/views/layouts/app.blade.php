@@ -11,7 +11,7 @@
         elseif(request()->is('teams/*')&&isset($team)){$browserTitle='ECFHL - '.($team['team']??'Franchise');}
         elseif(request()->is('seasons/*')&&isset($season)){$browserTitle='ECFHL - '.($season['season']??'Season');}
         elseif(request()->is('teams/current')){$browserTitle='ECFHL - Live Scoring';}
-        else{$pageTitles=['seasons'=>'Seasons','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','daily-targets'=>'Daily Targets','job-status'=>'Collector Status','rules'=>'Rules'];$browserTitle='ECFHL - '.($pageTitles[request()->segment(1)]??'East Coast Fantasy Hockey League');}
+        else{$pageTitles=['seasons'=>'Seasons','standings'=>'Standings','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','daily-targets'=>'Daily Targets','job-status'=>'Collector Status','rules'=>'Rules'];$browserTitle='ECFHL - '.($pageTitles[request()->segment(1)]??'East Coast Fantasy Hockey League');}
         $showSeasonFilter=!request()->is('rules','players','daily-targets','job-status','teams/current','teams/current/*','seasons','seasons/*');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
         $currentTeamMenu=\Illuminate\Support\Facades\DB::table('team_seasons as ts')
             ->join('seasons as s','s.season_id','=','ts.season_id')
@@ -45,14 +45,14 @@ html,body,main{max-width:100%;overflow-x:clip}
     <a class="nav-history-link" href="/teams">Franchise History</a>
   </div>
 </div>
-<a href="/seasons" class="{{ request()->is('seasons')?'active':'' }}">Seasons</a>
-<a href="/seasons/2026-27" class="{{ request()->is('seasons/2026-27')?'active':'' }}">Standings</a>
-<div class="nav-dropdown {{ request()->is('prizes','trades','draft','players')?'active':'' }}">
+<a href="/standings" class="{{ request()->is('standings')?'active':'' }}">Standings</a>
+<div class="nav-dropdown {{ request()->is('seasons','seasons/*','prizes','trades','draft','players')?'active':'' }}">
   <div class="nav-dropdown-row">
     <a class="nav-dropdown-main-link" href="/prizes">Archive</a>
     <button type="button" class="nav-dropdown-toggle" onclick="this.closest('.nav-dropdown').classList.toggle('open')" aria-label="Open Archive menu" aria-expanded="false"><span aria-hidden="true">▾</span></button>
   </div>
   <div class="nav-dropdown-menu archive-menu">
+    <a href="/seasons">Seasons</a>
     <a href="/prizes">Prizes</a>
     <a href="/trades">Trades</a>
     <a href="/draft" onclick="if(location.pathname==='/draft'){event.preventDefault();history.replaceState(null,'','/draft');window.scrollTo({top:0,left:0,behavior:'auto'});}">Draft</a>
