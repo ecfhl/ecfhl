@@ -32,8 +32,8 @@
           return $prefix.'-tied';
         };
 
-        $awayDayClass=$awayDay==0.0?'matchup-day-zero':$scoreClass($awayDay,$homeDay,'matchup-day');
-        $homeDayClass=$homeDay==0.0?'matchup-day-zero':$scoreClass($homeDay,$awayDay,'matchup-day');
+        $awayDayClass=$scoreClass($awayDay,$homeDay,'matchup-day');
+        $homeDayClass=$scoreClass($homeDay,$awayDay,'matchup-day');
         $awayWeekClass=$scoreClass($awayWeek,$homeWeek,'matchup-week');
         $homeWeekClass=$scoreClass($homeWeek,$awayWeek,'matchup-week');
 
