@@ -163,6 +163,39 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
             $matchupRows=null;
             try {
                 $schedule=$fantraxSchedule->forDate($date,true);
+
+                if(\Illuminate\Support\Facades\Schema::hasTable('fantrax_scoring_period_matchups')){
+                    $caption=trim((string)($schedule['caption']??''));
+                    preg_match('/(\d+)/',$caption,$periodMatch);
+                    $periodNumber=(int)($periodMatch[1]??0);
+                    if($periodNumber>0){
+                        $normalizeMatchupName=fn($v)=>mb_strtolower(trim(preg_replace('/\s+/u',' ',str_replace(["’","‘"],"'",(string)$v))));
+                        $storedPeriodRows=DB::table('fantrax_scoring_period_matchups')
+                            ->where('season_id','2026-27')
+                            ->where('period_number',$periodNumber)
+                            ->get();
+                        foreach(($schedule['matchups']??[]) as $periodMatchup){
+                            $awayName=(string)($periodMatchup['away_name']??'');
+                            $homeName=(string)($periodMatchup['home_name']??'');
+                            $storedPeriodRow=$storedPeriodRows->first(fn($r)=>
+                                $normalizeMatchupName($r->away_team_name)===$normalizeMatchupName($awayName)
+                                && $normalizeMatchupName($r->home_team_name)===$normalizeMatchupName($homeName)
+                            );
+                            if($storedPeriodRow){
+                                DB::table('fantrax_scoring_period_matchups')
+                                    ->where('id',$storedPeriodRow->id)
+                                    ->update([
+                                        'start_date'=>$schedule['start']??null,
+                                        'end_date'=>$schedule['end']??null,
+                                        'away_score'=>$periodMatchup['away_score']??0,
+                                        'home_score'=>$periodMatchup['home_score']??0,
+                                        'updated_at'=>now(),
+                                    ]);
+                            }
+                        }
+                    }
+                }
+
                 $previousMatchups=DB::table('active_matchup_scores')
                     ->whereDate('game_date',$date->toDateString())
                     ->get()
@@ -234,6 +267,55 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
     }
 
     return $failed?1:0;
+});
+
+Artisan::command('ecfhl:refresh-scoring-period-matchups', function (FantraxSchedule $fantraxSchedule) {
+    $seasonId='2026-27';
+    try {
+        $periods=$fantraxSchedule->periods(true);
+        $updated=0;
+        $normalize=fn($v)=>mb_strtolower(trim(preg_replace('/\s+/u',' ',str_replace(["’","‘"],"'",(string)$v))));
+
+        foreach($periods as $period){
+            $caption=trim((string)($period['caption']??''));
+            preg_match('/(\d+)/',$caption,$m);
+            $periodNumber=(int)($m[1]??0);
+            if($periodNumber<1)continue;
+
+            $stored=DB::table('fantrax_scoring_period_matchups')
+                ->where('season_id',$seasonId)
+                ->where('period_number',$periodNumber)
+                ->get();
+
+            foreach(($period['matchups']??[]) as $matchup){
+                $awayName=(string)($matchup['away_name']??'');
+                $homeName=(string)($matchup['home_name']??'');
+                $row=$stored->first(fn($r)=>
+                    $normalize($r->away_team_name)===$normalize($awayName)
+                    && $normalize($r->home_team_name)===$normalize($homeName)
+                );
+                if(!$row)continue;
+
+                DB::table('fantrax_scoring_period_matchups')
+                    ->where('id',$row->id)
+                    ->update([
+                        'start_date'=>$period['start'],
+                        'end_date'=>$period['end'],
+                        'away_score'=>$matchup['away_score']??0,
+                        'home_score'=>$matchup['home_score']??0,
+                        'updated_at'=>now(),
+                    ]);
+                $updated++;
+            }
+        }
+
+        $this->info($updated.' scoring-period matchup rows refreshed.');
+        return 0;
+    } catch (\Throwable $e) {
+        Log::error('Scoring period matchup refresh failed',['error'=>$e->getMessage()]);
+        $this->error($e->getMessage());
+        return 1;
+    }
 });
 
 Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $fantrax, FantraxSchedule $fantraxSchedule) {
@@ -538,6 +620,12 @@ Schedule::command('ecfhl:refresh-daily-scores')
             return false;
         }
     });
+
+Schedule::command('ecfhl:refresh-scoring-period-matchups')
+    ->weeklyOn(1,'08:00')
+    ->timezone('America/Halifax')
+    ->withoutOverlapping(30)
+    ->runInBackground();
 
 Schedule::command('ecfhl:refresh-current-standings')
     ->cron('*/5 * * * *')
