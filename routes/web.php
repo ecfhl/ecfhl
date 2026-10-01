@@ -208,8 +208,12 @@ Route::get('/teams/current', function() {
     $pp=DB::table('active_pp_lines')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name));
     $lines=DB::table('active_line_combinations')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name).'|'.strtoupper(trim($r->position_group)));
     $oddsByTeam=DB::table('todays_odds')->whereDate('game_date',$date)->get()->keyBy(fn($r)=>$normTeam($r->team));
+    $goalieStatusByPlayer=DB::table('active_starting_goalies')
+        ->whereDate('game_date',$date)
+        ->get()
+        ->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name));
 
-    $rows=$rows->map(function($p)use($pp,$lines,$normName,$normTeam,$oddsByTeam){
+    $rows=$rows->map(function($p)use($pp,$lines,$normName,$normTeam,$oddsByTeam,$goalieStatusByPlayer){
         $team=$normTeam($p->nhl_team);
         $name=$normName($p->player_name);
         $pos=strtoupper(trim((string)$p->position));
@@ -217,6 +221,23 @@ Route::get('/teams/current', function() {
         $power=$pp[$team.'|'.$name]??null;
         $p->line_number=$line?(int)$line->line_number:null;
         $p->pp_unit=$power?(int)$power->pp_unit:null;
+        $p->starting_status=null;
+        $p->starting_status_class='goalie-status-na';
+        if($pos==='G'){
+            $goalieRow=$goalieStatusByPlayer[$team.'|'.$name]??null;
+            if($goalieRow){
+                $rawStatus=ucfirst(strtolower(trim((string)$goalieRow->starting_status)));
+                if($rawStatus==='Probable')$rawStatus='Likely';
+                $p->starting_status=$rawStatus;
+                $p->starting_status_class=match(strtolower($rawStatus)){
+                    'confirmed'=>'goalie-status-confirmed',
+                    'likely'=>'goalie-status-likely',
+                    'unconfirmed'=>'goalie-status-unconfirmed',
+                    'not starting'=>'goalie-status-not-starting',
+                    default=>'goalie-status-na',
+                };
+            }
+        }
         $p->vegas_odds=null;
         $p->vegas_odds_class=null;
         if($pos==='G' && isset($oddsByTeam[$team]) && $oddsByTeam[$team]->american_odds!==null){
