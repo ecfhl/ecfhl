@@ -36,9 +36,10 @@ Route::get('/teams/current', function() {
     $tz='America/Halifax';
     $fantasyDay=\Carbon\CarbonImmutable::now('America/Los_Angeles')->subHours(12)->startOfDay();
     $today=$fantasyDay->toDateString();
+    $yesterday=$fantasyDay->subDay()->toDateString();
     $tomorrow=$fantasyDay->addDay()->toDateString();
     $date=(string)request('date',$today);
-    if(!in_array($date,[$today,$tomorrow],true))$date=$today;
+    if(!in_array($date,[$yesterday,$today,$tomorrow],true))$date=$today;
 
     $autoRefresh=false;
     if($date===$today){
@@ -246,16 +247,17 @@ Route::get('/teams/current', function() {
     });
 
     $lastUpdate=$rows->max('last_update');
-    return view('teams.current-index',compact('teams','matchups','scheduleLabel','date','today','tomorrow','lastUpdate','scoreLastUpdate','autoRefresh'));
+    return view('teams.current-index',compact('teams','matchups','scheduleLabel','date','yesterday','today','tomorrow','lastUpdate','scoreLastUpdate','autoRefresh'));
 });
 
 Route::get('/teams/current/{slug}', function(string $slug) {
     $tz='America/Halifax';
     $fantasyDay=\Carbon\CarbonImmutable::now('America/Los_Angeles')->subHours(12)->startOfDay();
     $today=$fantasyDay->toDateString();
+    $yesterday=$fantasyDay->subDay()->toDateString();
     $tomorrow=$fantasyDay->addDay()->toDateString();
     $date=(string)request('date',$today);
-    if(!in_array($date,[$today,$tomorrow],true))$date=$today;
+    if(!in_array($date,[$yesterday,$today,$tomorrow],true))$date=$today;
 
     $currentNames=DB::table('team_seasons as ts')
         ->join('seasons as s','s.season_id','=','ts.season_id')
