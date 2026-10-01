@@ -23,13 +23,13 @@
     <title>{{ $browserTitle }}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7"><link rel="shortcut icon" href="/favicon.svg?v=7"><link rel="apple-touch-icon" href="/ecfhl-logo.png?v=7"><link rel="stylesheet" href="/app.css?v=6"><link rel="stylesheet" href="/header-filters.css?v=3">
 <style>
-html,body,main{max-width:100%;overflow-x:clip}
+html,body,main{max-width:100%;overflow-x:clip}.push-notification-toggle{border:0;background:transparent;color:inherit;font-size:18px;line-height:1;cursor:pointer;padding:7px;border-radius:8px}.push-notification-toggle:hover{background:var(--surface-2,rgba(255,255,255,.08))}.push-notification-toggle.push-enabled{background:#dcfce7;color:#166534}.push-notification-toggle.push-blocked{opacity:.5}
 .nav-dropdown{position:relative;display:flex;align-items:center}.nav-dropdown-row{display:flex;align-items:center}.nav-dropdown-main-link{display:block}.nav-dropdown-toggle{appearance:none;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;padding:8px 7px;cursor:pointer;border-radius:7px}.nav-dropdown.active>.nav-dropdown-row,.nav-dropdown-toggle:hover{background:var(--surface-2,rgba(255,255,255,.08));border-radius:7px}.nav-dropdown-menu{display:none;position:absolute;top:100%;left:0;z-index:1000;min-width:430px;grid-template-columns:repeat(2,minmax(190px,1fr));gap:2px;padding:8px;background:#082f4f;border:1px solid #6b88a0;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,.28);color:#fff}.nav-dropdown:hover .nav-dropdown-menu,.nav-dropdown.open .nav-dropdown-menu{display:grid}.nav-dropdown-menu a{display:block;padding:8px 10px!important;border-radius:7px;white-space:nowrap;text-decoration:none;color:#fff!important}.nav-dropdown-menu a:hover{background:#12486f}.archive-menu{min-width:180px!important;grid-template-columns:1fr!important}.nav-dropdown-menu .nav-all-teams-link,.nav-dropdown-menu .nav-history-link{grid-column:1/-1;font-weight:800}.nav-dropdown-menu .nav-all-teams-link{border-bottom:1px solid #6b88a0;margin-bottom:4px}.nav-dropdown-menu .nav-history-link{border-top:1px solid #6b88a0;margin-top:4px;padding-top:9px!important}
 @media(max-width:900px){.nav-dropdown{display:block;width:100%}.nav-dropdown-row{display:grid;grid-template-columns:1fr auto;align-items:center;width:100%}.nav-dropdown-main-link{text-align:center!important;padding:10px 0!important}.nav-dropdown-toggle{width:44px;text-align:center;padding:10px 0}.nav-dropdown:hover .nav-dropdown-menu{display:none}.nav-dropdown.open .nav-dropdown-menu{display:grid!important;position:static;min-width:0;width:100%;grid-template-columns:1fr;background:transparent;border:0;box-shadow:none;padding:4px 0 8px 12px}.nav-dropdown-menu a{padding:8px 0!important;text-align:center!important}.nav-dropdown-menu .nav-history-link{border-top:1px solid var(--line);padding-top:10px!important}}
 </style>
 </head>
 <body>
-<header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a></div><div class="header-actions"><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav">
+<header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a></div><div class="header-actions"><button id="push-notifications-button" class="push-notification-toggle" type="button" aria-label="Enable browser notifications" title="Enable browser notifications">🔔</button><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav">
 <a href="/" class="{{ request()->is('/')?'active':'' }}">Overview</a>
 <a href="/teams/current" class="{{ request()->is('teams/current','teams/current/*')?'active':'' }}">Live Scoring</a>
 <a href="/standings" class="{{ request()->is('standings')?'active':'' }}">Standings</a>
@@ -66,6 +66,94 @@ html,body,main{max-width:100%;overflow-x:clip}
 <main>@yield('content')</main>
 <footer class="site-footer"><div class="shell footer-inner"><div><strong>ECFHL HISTORY</strong><br><span>2007–08 → present</span></div><div class="footer-right">Database-backed league archive</div></div></footer>
 <script>(function(){const saved=localStorage.getItem('ecfhl-theme');if(saved)document.documentElement.dataset.theme=saved;if(location.pathname==='/draft'&&location.hash){history.replaceState(null,'',location.pathname+location.search);window.scrollTo(0,0);}})();function toggleTheme(){const next=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=next;localStorage.setItem('ecfhl-theme',next);}</script>
+<script>
+(function(){
+ const button=document.getElementById('push-notifications-button');
+ if(!button)return;
+ const csrf=document.querySelector('meta[name="csrf-token"]')?.content||'';
+ const supported=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
+
+ const b64ToUint8=value=>{
+   const padding='='.repeat((4-value.length%4)%4);
+   const base64=(value+padding).replace(/-/g,'+').replace(/_/g,'/');
+   const raw=atob(base64);
+   return Uint8Array.from([...raw].map(ch=>ch.charCodeAt(0)));
+ };
+
+ const updateButton=async()=>{
+   if(!supported){
+     button.classList.add('push-blocked');
+     button.title='Browser notifications are not supported here';
+     button.setAttribute('aria-label','Browser notifications unavailable');
+     return;
+   }
+   try{
+     const reg=await navigator.serviceWorker.getRegistration('/push-sw.js');
+     const sub=reg?await reg.pushManager.getSubscription():null;
+     const enabled=!!sub && Notification.permission==='granted';
+     button.classList.toggle('push-enabled',enabled);
+     button.classList.toggle('push-blocked',Notification.permission==='denied');
+     button.title=enabled?'Disable ECFHL notifications':(Notification.permission==='denied'?'Notifications are blocked in this browser':'Enable ECFHL notifications');
+     button.setAttribute('aria-label',button.title);
+   }catch(e){}
+ };
+
+ button.addEventListener('click',async()=>{
+   if(!supported)return;
+   if(Notification.permission==='denied'){
+     alert('Notifications are blocked for this site. Enable them in your browser site settings first.');
+     return;
+   }
+
+   try{
+     const reg=await navigator.serviceWorker.register('/push-sw.js',{scope:'/'});
+     await navigator.serviceWorker.ready;
+     const existing=await reg.pushManager.getSubscription();
+
+     if(existing){
+       await fetch('/push/unsubscribe',{
+         method:'POST',
+         credentials:'same-origin',
+         headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
+         body:JSON.stringify({endpoint:existing.endpoint})
+       });
+       await existing.unsubscribe();
+       await updateButton();
+       return;
+     }
+
+     const permission=await Notification.requestPermission();
+     if(permission!=='granted'){await updateButton();return;}
+
+     const configResponse=await fetch('/push/config',{credentials:'same-origin',cache:'no-store'});
+     if(!configResponse.ok)throw new Error('Could not load push configuration.');
+     const config=await configResponse.json();
+
+     const subscription=await reg.pushManager.subscribe({
+       userVisibleOnly:true,
+       applicationServerKey:b64ToUint8(config.publicKey)
+     });
+
+     const saveResponse=await fetch('/push/subscribe',{
+       method:'POST',
+       credentials:'same-origin',
+       headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
+       body:JSON.stringify({endpoint:subscription.endpoint})
+     });
+     if(!saveResponse.ok)throw new Error('Could not save push subscription.');
+     const saved=await saveResponse.json();
+
+     reg.active?.postMessage({type:'set-last-notification-id',id:saved.latestId??config.latestId??0});
+     await updateButton();
+   }catch(e){
+     console.error('ECFHL push setup failed',e);
+     alert('Could not enable ECFHL notifications in this browser.');
+   }
+ });
+
+ updateButton();
+})();
+</script>
 <script>document.querySelectorAll('.season-type-choice').forEach(button=>button.addEventListener('click',()=>{const value=button.dataset.value;const buttons=[...document.querySelectorAll('.season-type-choice')];const selected=buttons.filter(x=>x.classList.contains('active')).map(x=>x.dataset.value);const next=selected.includes(value)?selected.filter(x=>x!==value):[...selected,value];const mode=next.length===2?'all':(next[0]||'none');document.cookie='ecfhl-season-type='+mode+'; Path=/; Max-Age=31536000; SameSite=Lax';const url=new URL(location.href);url.searchParams.set('type',mode);if(/^\/seasons\//.test(url.pathname))url.pathname='/seasons';url.searchParams.delete('season');location.assign(url);}));</script>
 @if(request()->is('daily-targets'))
 <script>
