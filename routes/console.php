@@ -325,6 +325,11 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
     };
 
     $normContract=fn($v)=>strtoupper(trim(preg_replace('/\s+/',' ',(string)$v)));
+    $contractDropEligible=function($p)use($normContract){
+        $contract=$normContract($p->contract??'');
+        return in_array($contract,['FA','1 YEAR','1 YEAR(S)','1 YR'],true)
+            && strtoupper((string)($p->roster_status??''))!=='MINORS';
+    };
     $dropEligible=function($p)use($normContract){
         $contract=$normContract($p->contract??'');
         if(!in_array($contract,['FA','1 YEAR','1 YEAR(S)','1 YR'],true))return false;
@@ -507,14 +512,18 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
 
             $drop=null;
             if($goaliesOnRoster->count()>=2){
+                // When replacing a goalie on a roster that already carries two,
+                // keep the transaction goalie-for-goalie. The normal 1.2 Proj/G
+                // protection is intentionally waived here, but contract eligibility
+                // still applies.
                 $drop=$goaliesOnRoster
                     ->filter(fn($p)=>!$goaliePlayingTonight($p))
-                    ->filter($dropEligible)
+                    ->filter($contractDropEligible)
                     ->sortBy(fn($p)=>(float)($p->projected_fpts_per_game??0))
                     ->first();
             }
 
-            if(!$drop){
+            if(!$drop && $goaliesOnRoster->count()<2){
                 $drop=$eligibleDrops->first(fn($p)=>
                     strtoupper((string)$p->position)==='G'
                     && !$goaliePlayingTonight($p)
