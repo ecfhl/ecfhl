@@ -8,14 +8,15 @@ class AiTips
 {
     public static function groups(array $snapshot, string $date): array
     {
-        $groups = ['G' => [], 'F' => [], 'D' => []];
+        $groups = ['G' => [], 'F' => [], 'D' => [];
+        $startedTeams = self::startedTeams($date);
         $daily = DB::table('active_daily_players')->whereDate('game_date', $date)->orderBy('source_rank')->get();
         foreach ($daily as $row) {
             $position = strtoupper(trim((string) $row->position));
             if (! in_array($position, ['F', 'D'], true)) continue;
             $status = self::availability($row);
             if ($status === null || trim((string) $row->opponent) === '' || ! $row->team || ! $row->player_name) continue;
-            if (self::gameHasStarted($row, $date)) continue;
+            if (isset($startedTeams[strtoupper(trim((string)$row->team))]) || self::gameHasStarted($row, $date)) continue;
             $groups[$position][] = self::player($row, $position, $date, $status);
         }
         foreach (['F', 'D'] as $position) {
@@ -35,6 +36,7 @@ class AiTips
 
         $goalies = DB::table('active_available_goalies')->whereDate('game_date', $date)->get();
         foreach ($goalies as $row) {
+            if (isset($startedTeams[strtoupper(trim((string)$row->team))]) || self::gameHasStarted($row, $date)) continue;
             $status = self::availability($row);
             if ($status === null || ! $row->team || ! $row->player_name) continue;
             $player = self::player($row, 'G', $date, $status);
@@ -58,6 +60,36 @@ class AiTips
         };
         usort($groups['G'], fn ($a, $b) => ($priority($a) <=> $priority($b)) ?: (($b['projected_points'] ?? 0) <=> ($a['projected_points'] ?? 0)) ?: (($a['source_rank'] ?? PHP_INT_MAX) <=> ($b['source_rank'] ?? PHP_INT_MAX)) ?: strcasecmp($a['name'], $b['name']));
         return $groups;
+    }
+
+    private static function startedTeams(string $date): array
+    {
+        if ($date !== now('America/Halifax')->toDateString()) return [];
+
+        $teams = [];
+        $rows = DB::table('active_fantasy_rosters')
+            ->whereDate('game_date', $date)
+            ->whereNotNull('game_time')
+            ->get(['nhl_team','game_time']);
+
+        foreach ($rows as $row) {
+            $team = strtoupper(trim((string)$row->nhl_team));
+            $gameTime = trim((string)$row->game_time);
+            if ($team === '' || $gameTime === '') continue;
+            if (!preg_match('/(\d{1,2}:\d{2}\s*(?:AM|PM))/i', $gameTime, $m)) continue;
+
+            try {
+                $starts = \Carbon\CarbonImmutable::createFromFormat(
+                    '!Y-m-d g:i A',
+                    $date.' '.strtoupper(preg_replace('/\s+/', ' ', trim($m[1]))),
+                    'America/Halifax'
+                );
+                if ($starts && $starts->lte(now('America/Halifax'))) $teams[$team] = true;
+            } catch (\Throwable) {
+            }
+        }
+
+        return $teams;
     }
 
     private static function gameHasStarted(object $row, string $date): bool
