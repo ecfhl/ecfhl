@@ -215,8 +215,23 @@
 .team-away{color:#a16207;font-weight:800}
 .team-home{color:#15803d;font-weight:800}
 .team-playing-text{color:#15803d;font-weight:800}
-html[data-theme="dark"] .matchup-section-title{background:#1f2937;color:#d1d5db}
+html[data-theme="dark"] .matchup-card{background:#0f1c2b;border-color:#334155}
+html[data-theme="dark"] .matchup-summary{background:#0f1c2b}
+html[data-theme="dark"] .matchup-expanded{background:#0f1c2b;border-top-color:#334155}
+html[data-theme="dark"] .matchup-summary-name a,
+html[data-theme="dark"] .matchup-week-score,
+html[data-theme="dark"] .matchup-player-name strong,
+html[data-theme="dark"] .matchup-player-metrics strong{color:#f8fafc}
+html[data-theme="dark"] .matchup-summary-vs,
+html[data-theme="dark"] .matchup-player-metrics span,
+html[data-theme="dark"] .matchup-player-cats,
+html[data-theme="dark"] .matchup-daily-cats{color:#cbd5e1}
+html[data-theme="dark"] .matchup-roster-col{border-color:#334155}
+html[data-theme="dark"] .matchup-player-row{background:#0f1c2b;border-bottom-color:#334155;color:#f8fafc}
+html[data-theme="dark"] .matchup-section-title{background:#1f2937;color:#e5e7eb;border-color:#334155}
 html[data-theme="dark"] .matchup-bench{background:#111827;border-top-color:#1f2937}
+html[data-theme="dark"] .matchup-bench-title{color:#e5e7eb}
+html[data-theme="dark"] .matchup-empty{color:#94a3b8}
 html[data-theme="dark"] .team-ir-row{background:#3a1f26}
 html[data-theme="dark"] .team-bench-row{background:#1d2735}
 html[data-theme="dark"] .team-minors-row{background:#17263a}
