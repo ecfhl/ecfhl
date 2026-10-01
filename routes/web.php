@@ -3,6 +3,7 @@
 use App\Support\Archive as EcfhlData;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 Route::get('/', function (EcfhlData $data) {
     $seasons=$data->seasons(); $teams=$data->teams(); $trades=$data->trades();
@@ -38,6 +39,28 @@ Route::get('/teams/current', function() {
     $tomorrow=$fantasyDay->addDay()->toDateString();
     $date=(string)request('date',$today);
     if(!in_array($date,[$today,$tomorrow],true))$date=$today;
+
+    $autoRefresh=false;
+    if($date===$today){
+        try {
+            $response=Http::timeout(8)->get('https://api-web.nhle.com/v1/score/'.$today);
+            $starts=collect($response->json('games')??[])
+                ->map(function($game){
+                    $utc=$game['startTimeUTC']??null;
+                    if(!$utc)return null;
+                    try{return \Carbon\CarbonImmutable::parse($utc)->utc();}catch(\Throwable){return null;}
+                })
+                ->filter();
+            if($starts->isNotEmpty()){
+                $nowUtc=\Carbon\CarbonImmutable::now('UTC');
+                $first=$starts->sort()->first();
+                $last=$starts->sortDesc()->first();
+                $autoRefresh=$nowUtc->betweenIncluded($first,$last->addHours(4));
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
 
     $currentNames=DB::table('team_seasons as ts')
         ->join('seasons as s','s.season_id','=','ts.season_id')
@@ -223,7 +246,7 @@ Route::get('/teams/current', function() {
     });
 
     $lastUpdate=$rows->max('last_update');
-    return view('teams.current-index',compact('teams','matchups','scheduleLabel','date','today','tomorrow','lastUpdate','scoreLastUpdate'));
+    return view('teams.current-index',compact('teams','matchups','scheduleLabel','date','today','tomorrow','lastUpdate','scoreLastUpdate','autoRefresh'));
 });
 
 Route::get('/teams/current/{slug}', function(string $slug) {
