@@ -53,7 +53,7 @@
   </div></section>
   @endif
 
-  <section class="section" style="padding-top:0"><div class="season-links-grid season-rank-cards">
+  <section class="section season-summary-links"><div class="season-links-grid season-rank-cards">
     <div class="card leader-card">
       <div class="leader-card-head"><h3 class="leader-card-title">🔄 Trades</h3></div>
       <div class="season-rank-body">
@@ -81,7 +81,7 @@
 .season-title-switcher{display:block;width:min(320px,100%)}.season-title-switcher select{appearance:auto;width:auto;max-width:100%;border:0;background:transparent;color:var(--text);font:inherit;font-size:34px;font-weight:800;line-height:1.05;letter-spacing:-1px;padding:0 30px 0 0;cursor:pointer}.season-title-switcher select:focus{outline:none}
 .season-result-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:12px;min-height:205px;margin:0 0 28px;padding:24px 22px 0;background:var(--panel,#fff);border:1px solid var(--border,#d9e0ea);border-radius:20px;box-shadow:0 8px 24px rgba(18,38,63,.06);overflow:hidden}
 .season-result-entry{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}.season-result-team{font-size:17px;text-align:center;margin-bottom:9px;line-height:1.2;overflow-wrap:anywhere}.season-result-podium .podium-place{width:100%;justify-content:center;padding:10px 8px}.season-result-podium .podium-second{height:112px}.season-result-podium .podium-first{height:145px}.season-result-podium .podium-third{height:90px}.season-result-podium .podium-medal{margin-bottom:7px}
-.season-rank-cards{align-items:start}.season-rank-footer{display:block;padding:15px 18px;border-top:1px solid var(--line);font-weight:700;text-decoration:none}
+.season-summary-links{padding-top:28px}.season-rank-cards{align-items:start}.season-rank-footer{display:block;padding:15px 18px;border-top:1px solid var(--line);font-weight:700;text-decoration:none}
 @media(max-width:700px){.season-result-podium{gap:8px;padding:20px 10px 0;min-height:185px}.season-result-team{font-size:13px}.season-result-podium .podium-second{height:95px}.season-result-podium .podium-first{height:125px}.season-result-podium .podium-third{height:78px}}
 </style>
 @endsection
