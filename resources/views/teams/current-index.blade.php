@@ -241,6 +241,7 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
 
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
+  setInterval(()=>location.reload(),60000);
   document.querySelectorAll('.matchup-summary a').forEach(link=>{
     link.addEventListener('click',event=>event.stopPropagation());
   });
