@@ -24,7 +24,7 @@
     </div>
   </div>
   <div class="matchup-player-metrics">
-    <div><span>Proj.</span><strong>{{ $player->projected_fpts!==null?number_format($player->projected_fpts,0):'—' }}</strong></div>
-    <div class="matchup-player-today"><span>Today</span><strong>{{ number_format($player->today_fpts ?? 0,1) }}</strong></div>
+    <div><span>Proj./G</span><strong>{{ $player->projected_fpts_per_game!==null?number_format($player->projected_fpts_per_game,2):'—' }}</strong></div>
+    <div class="matchup-player-today"><span>Today</span><strong>{{ number_format($player->today_fpts ?? 0,0) }}</strong></div>
   </div>
 </div>
