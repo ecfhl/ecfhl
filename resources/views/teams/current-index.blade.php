@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('content')
-<div class="page-head current-teams-head"><div class="shell"><div class="eyebrow">2026-27 rosters</div><h1>Live Scoring</h1><p>Current Matchups for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}.</p>@if($scoreLastUpdate)<p class="team-updated">Updated @include('partials.updated-time',['value'=>$scoreLastUpdate]){{ $autoRefresh ? ' · Updates every minute' : '' }}</p>@endif</div></div>
+<div class="page-head current-teams-head"><div class="shell"><div class="eyebrow">2026-27 rosters</div><h1><span style="color:#c94b52">●</span> Live Scoring</h1><p>Current Matchups for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}.</p>@if($scoreLastUpdate)<p class="team-updated">Updated @include('partials.updated-time',['value'=>$scoreLastUpdate]){{ $autoRefresh ? ' · Updates every minute' : '' }}</p>@endif</div></div>
 
 <div class="shell current-teams-page">
   <div class="team-toolbar">
