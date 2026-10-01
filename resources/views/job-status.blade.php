@@ -17,7 +17,7 @@
             $jobKey = $job['key'];
             $displaySchedule = $job['schedule'];
         @endphp
-        <section class="card status-card {{ $job['outcome']==='success'?'status-card-success':($job['outcome']==='warning'?'status-card-warning':($job['outcome']==='failed'?'status-card-failed':'')) }}">
+        <section class="card status-card {{ $job['outcome']==='success'?'status-card-success':($job['outcome']==='warning'?'status-card-warning':($job['outcome']==='failed'?'status-card-failed':'')) }}" data-job-key="{{ $jobKey }}">
             <div class="status-head"><div><h2>{{ $job['name'] }}</h2><p class="subtle">{{ $displaySchedule }}</p></div>
                 @if($job['outcome'])
                   <span class="pill {{ $job['outcome']==='success'?'status-ok':($job['outcome']==='warning'?'status-stale':'status-failed-pill') }}">{{ $job['outcome']==='success'?'Successful':($job['outcome']==='warning'?'Warning':'Failed') }}</span>
@@ -89,6 +89,16 @@ document.addEventListener('DOMContentLoaded',()=>{
    });
  });
  const headings={players:'Getting available players in Fantrax...',goalies:'Getting goalie information from Daily Faceoff...',lines:'Getting Lines information from Daily Faceoff...',odds:'Getting NHL moneyline odds...',teams:'Getting current fantasy team rosters from Fantrax...',scores:'Refreshing live daily scores...',standings:'Refreshing current standings from Fantrax...'};
+ const colorCard=(job,status)=>{
+   const card=document.querySelector('.status-card[data-job-key="'+job+'"]');
+   if(!card)return;
+   card.classList.remove('status-card-success','status-card-warning','status-card-failed');
+   card.style.background='';
+   card.style.borderColor='';
+   if(status==='success')card.classList.add('status-card-success');
+   else if(status==='warning')card.classList.add('status-card-warning');
+   else if(status==='failed')card.classList.add('status-card-failed');
+ };
  const parse=(job,output)=>{
    if(job==='players'){
      const counts=[...output.matchAll(/\d{4}-\d{2}-\d{2}:\s*(\d+) Fantrax players refreshed/g)].map(m=>Number(m[1]));
@@ -139,18 +149,22 @@ document.addEventListener('DOMContentLoaded',()=>{
      if(detail.failed){
        lines.push('Failed: '+(detail.output||data.message||'Job failed.'),'');
        boxText.textContent=lines.join('\n');saveBox();
+       colorCard(job,'failed');
        return {status:'failed'};
      }
      if(detail.warning){
        lines.push('Warning: '+parse(job,detail.output||''),'');
        boxText.textContent=lines.join('\n');saveBox();
+       colorCard(job,'warning');
        return {status:'warning'};
      }
      lines.push(parse(job,detail.output||''),'');boxText.textContent=lines.join('\n');saveBox();
+     colorCard(job,'success');
      return {status:'success'};
    }catch(err){
      lines.push('Failed: '+err.message,'');
      boxText.textContent=lines.join('\n');saveBox();
+     colorCard(job,'failed');
      return {status:'failed'};
    }
  };
