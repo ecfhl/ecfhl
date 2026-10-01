@@ -154,8 +154,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    }
    boxText.textContent=lines.join('\n');saveBox();
    document.querySelectorAll('.job-ajax-form button').forEach(b=>b.disabled=false);button.textContent=original;
-   setTimeout(()=>location.reload(),700);
- }));
+  }));
 });
 </script>
 @endsection
