@@ -270,6 +270,8 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
   .matchup-player-metrics strong{font-size:12px}
   .matchup-player-today strong{font-size:14px}
 }
+.matchup-player-row.team-game-finished-row{background:#fffbea!important}
+html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#3a3217!important}
 </style>
 
 <script>
