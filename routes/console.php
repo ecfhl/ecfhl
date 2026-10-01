@@ -86,6 +86,12 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
         try {
             $data=$fantrax->fetch($date);
             $nhlRows=$nhlStats->fetch($date);
+            $cowanNhl=collect($nhlRows)->first(fn($r)=>str_contains(mb_strtolower((string)($r['player_name']??'')),'cowan'));
+            Log::info('NHL daily stat merge diagnostic',[
+                'date'=>$date->toDateString(),
+                'nhl_rows'=>count($nhlRows),
+                'cowan'=>$cowanNhl,
+            ]);
             $normName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower($name))??'';};
             $normTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
             $nhlByKey=[];
