@@ -48,7 +48,12 @@
         $skaters=function($rows){
           return $rows
             ->filter(fn($p)=>(bool)$p->is_playing && !(bool)$p->is_bench && strtoupper((string)$p->position)!=='G')
-            ->sortBy(fn($p)=>(bool)$p->is_ir?1:0)
+            ->sortBy(function($p){
+              $isMinors=strtoupper((string)$p->roster_status)==='MINORS';
+              if($isMinors)return 2;
+              if((bool)$p->is_ir)return 1;
+              return 0;
+            })
             ->values();
         };
 
