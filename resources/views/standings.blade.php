@@ -5,7 +5,6 @@
   <div class="page-head">
     <div class="eyebrow">2026-27 season</div>
     <h1>Standings</h1>
-    <p>{{ $season['format'] ?? '' }} · {{ $season['status'] ?? '' }}</p>
     @include('partials.fantrax-standings',['season'=>$season])
   </div>
 
