@@ -12,11 +12,12 @@ class FantraxSchedule
     public const LEAGUE_ID = '092zcn40molvao69';
     private const API_VERSION = '186.1.9';
 
-    public function forDate(CarbonImmutable $date): array
+    public function forDate(CarbonImmutable $date, bool $fresh = false): array
     {
         $cacheKey = 'fantrax:schedule:'.self::LEAGUE_ID.':'.$date->format('Y-m-d');
+        if ($fresh) Cache::forget($cacheKey);
 
-        return Cache::remember($cacheKey, now()->addMinutes(15), function () use ($date) {
+        return Cache::remember($cacheKey, now()->addMinute(), function () use ($date) {
             $data = $this->fetch();
 
             foreach (($data['tableList'] ?? []) as $table) {
