@@ -86,10 +86,19 @@ class FantraxDailyScores
             }
         }
 
-        $cell = static function (array $entry, array $ids) use ($columns): ?array {
+        $normalizedColumns = [];
+        foreach ($columns as $key => $index) {
+            $normalizedColumns[preg_replace('/[^a-z0-9]+/', '', strtolower($key))] = $index;
+        }
+
+        $cell = static function (array $entry, array $ids) use ($columns, $normalizedColumns): ?array {
             foreach ($ids as $id) {
                 if (isset($columns[$id])) {
                     return $entry['cells'][$columns[$id]] ?? null;
+                }
+                $normalized = preg_replace('/[^a-z0-9]+/', '', strtolower($id));
+                if (isset($normalizedColumns[$normalized])) {
+                    return $entry['cells'][$normalizedColumns[$normalized]] ?? null;
                 }
             }
             return null;
@@ -104,8 +113,16 @@ class FantraxDailyScores
                 continue;
             }
 
-            $fptsCell = $cell($entry, ['fpts','SCORE','FPts']);
+            $fptsCell = $cell($entry, ['fpts','SCORE','FPts','Fantasy Points']);
             $statusCell = $cell($entry, ['status','STATUS','Sta']);
+            $gpCell = $cell($entry, ['GP','gp','Games Played','gamesPlayed']);
+            $gCell = $cell($entry, ['G','g','Goals','goals']);
+            $aCell = $cell($entry, ['A','a','Assists','assists']);
+            $ppgCell = $cell($entry, ['PPG','ppg','Power Play Goals','powerPlayGoals']);
+            $shgCell = $cell($entry, ['SHG','shg','Short Handed Goals','shortHandedGoals']);
+            $gwgCell = $cell($entry, ['GWG','gwg','Game Winning Goals','gameWinningGoals']);
+            $wCell = $cell($entry, ['W','w','Wins','wins']);
+            $soCell = $cell($entry, ['SO','so','Shutouts','shutouts']);
 
             $posValue = $scorer['posShortNames'] ?? $entry['multiPositions'] ?? '';
             $posText = is_array($posValue)
@@ -120,6 +137,14 @@ class FantraxDailyScores
                 'position' => $this->position($posText),
                 'fantasy_status' => $status !== '' ? $status : null,
                 'today_fpts' => $this->numeric($fptsCell['content'] ?? null) ?? 0.0,
+                'gp' => (int)($this->numeric($gpCell['content'] ?? null) ?? 0),
+                'g' => (int)($this->numeric($gCell['content'] ?? null) ?? 0),
+                'a' => (int)($this->numeric($aCell['content'] ?? null) ?? 0),
+                'ppg' => (int)($this->numeric($ppgCell['content'] ?? null) ?? 0),
+                'shg' => (int)($this->numeric($shgCell['content'] ?? null) ?? 0),
+                'gwg' => (int)($this->numeric($gwgCell['content'] ?? null) ?? 0),
+                'w' => (int)($this->numeric($wCell['content'] ?? null) ?? 0),
+                'so' => (int)($this->numeric($soCell['content'] ?? null) ?? 0),
             ];
         }
 
