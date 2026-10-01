@@ -144,17 +144,20 @@ Route::get('/teams/current', function() {
             $away=$teamsById[$pair['away_team_id']]??null;
             $home=$teamsById[$pair['home_team_id']]??null;
             if(!$away || !$home)continue;
+            $away['week_fpts']=$pair['away_score']??null;
+            $home['week_fpts']=$pair['home_score']??null;
             $matchups[]=['away'=>$away,'home'=>$home];
             $used[$away['id']]=true;
             $used[$home['id']]=true;
         }
         foreach($teams as $team){
             if($team['id']!=='' && isset($used[$team['id']]))continue;
+            $team['week_fpts']=$team['today_fpts']??0;
             $matchups[]=['away'=>$team,'home'=>null];
         }
     } catch (\Throwable $e) {
         report($e);
-        foreach($teams as $team)$matchups[]=['away'=>$team,'home'=>null];
+        foreach($teams as $team){$team['week_fpts']=$team['today_fpts']??0;$matchups[]=['away'=>$team,'home'=>null];}
     }
 
     $matchupRank=function($matchup){
