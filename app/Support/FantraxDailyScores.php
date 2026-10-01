@@ -77,18 +77,40 @@ class FantraxDailyScores
         }
 
         $columns = [];
-        foreach (($data['tableHeader']['cells'] ?? []) as $i => $col) {
-            foreach (['key','sortType','shortName'] as $field) {
-                $key = trim((string)($col[$field] ?? ''));
-                if ($key !== '' && !isset($columns[$key])) {
-                    $columns[$key] = $i;
-                }
-            }
-        }
-
         $normalizedColumns = [];
-        foreach ($columns as $key => $index) {
-            $normalizedColumns[preg_replace('/[^a-z0-9]+/', '', strtolower($key))] = $index;
+
+        $registerColumn = static function (mixed $value, int $index) use (&$columns, &$normalizedColumns): void {
+            if (is_array($value)) {
+                array_walk_recursive($value, function ($nested) use ($index, &$columns, &$normalizedColumns) {
+                    if (!is_scalar($nested)) return;
+                    $text = trim(html_entity_decode(strip_tags((string)$nested)));
+                    if ($text === '') return;
+
+                    if (!isset($columns[$text])) $columns[$text] = $index;
+
+                    $normalized = preg_replace('/[^a-z0-9]+/', '', strtolower($text));
+                    if ($normalized !== '' && !isset($normalizedColumns[$normalized])) {
+                        $normalizedColumns[$normalized] = $index;
+                    }
+                });
+                return;
+            }
+
+            if (!is_scalar($value)) return;
+            $text = trim(html_entity_decode(strip_tags((string)$value)));
+            if ($text === '') return;
+
+            if (!isset($columns[$text])) $columns[$text] = $index;
+
+            $normalized = preg_replace('/[^a-z0-9]+/', '', strtolower($text));
+            if ($normalized !== '' && !isset($normalizedColumns[$normalized])) {
+                $normalizedColumns[$normalized] = $index;
+            }
+        };
+
+        foreach (($data['tableHeader']['cells'] ?? []) as $i => $col) {
+            if (!is_array($col)) continue;
+            foreach ($col as $value) $registerColumn($value, $i);
         }
 
         $cell = static function (array $entry, array $ids) use ($columns, $normalizedColumns): ?array {
@@ -96,8 +118,9 @@ class FantraxDailyScores
                 if (isset($columns[$id])) {
                     return $entry['cells'][$columns[$id]] ?? null;
                 }
-                $normalized = preg_replace('/[^a-z0-9]+/', '', strtolower($id));
-                if (isset($normalizedColumns[$normalized])) {
+
+                $normalized = preg_replace('/[^a-z0-9]+/', '', strtolower((string)$id));
+                if ($normalized !== '' && isset($normalizedColumns[$normalized])) {
                     return $entry['cells'][$normalizedColumns[$normalized]] ?? null;
                 }
             }
@@ -115,12 +138,12 @@ class FantraxDailyScores
 
             $fptsCell = $cell($entry, ['fpts','SCORE','FPts','Fantasy Points']);
             $statusCell = $cell($entry, ['status','STATUS','Sta']);
-            $gpCell = $cell($entry, ['GP','gp','Games Played','gamesPlayed']);
+            $gpCell = $cell($entry, ['GP','gp','Games Played','gamesPlayed','Games']);
             $gCell = $cell($entry, ['G','g','Goals','goals']);
             $aCell = $cell($entry, ['A','a','Assists','assists']);
-            $ppgCell = $cell($entry, ['PPG','ppg','Power Play Goals','powerPlayGoals']);
-            $shgCell = $cell($entry, ['SHG','shg','Short Handed Goals','shortHandedGoals']);
-            $gwgCell = $cell($entry, ['GWG','gwg','Game Winning Goals','gameWinningGoals']);
+            $ppgCell = $cell($entry, ['PPG','ppg','Power Play Goals','Power-Play Goals','powerPlayGoals']);
+            $shgCell = $cell($entry, ['SHG','shg','Short Handed Goals','Short-Handed Goals','shortHandedGoals']);
+            $gwgCell = $cell($entry, ['GWG','gwg','Game Winning Goals','Game-Winning Goals','gameWinningGoals']);
             $wCell = $cell($entry, ['W','w','Wins','wins']);
             $soCell = $cell($entry, ['SO','so','Shutouts','shutouts']);
 
