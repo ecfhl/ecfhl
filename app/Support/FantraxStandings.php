@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class FantraxStandings
@@ -52,6 +53,20 @@ class FantraxStandings
             }
         }
 
+        Log::warning('Fantrax standings parse diagnostic',[
+            'data_keys'=>array_keys($data),
+            'table_count'=>count($tables),
+            'tables'=>array_map(function($table){
+                return [
+                    'keys'=>is_array($table)?array_keys($table):[],
+                    'caption'=>is_array($table)?($table['caption']??null):null,
+                    'subCaption'=>is_array($table)?($table['subCaption']??null):null,
+                    'row_count'=>is_array($table)?count($table['rows']??$table['statsTable']??[]):0,
+                    'header'=>$table['tableHeader']['cells']??$table['header']['cells']??$table['headers']??$table['columns']??null,
+                    'first_row'=>($table['rows'][0]??$table['statsTable'][0]??null),
+                ];
+            },array_slice($tables,0,3)),
+        ]);
         throw new RuntimeException('Fantrax standings returned no complete standings table.');
     }
 
