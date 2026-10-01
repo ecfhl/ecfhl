@@ -179,6 +179,7 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
+  setInterval(()=>location.reload(),60000);
   document.querySelectorAll('[data-target-more]').forEach(button=>{
     button.addEventListener('click',()=>{
       const list=button.closest('.team-target-list');
