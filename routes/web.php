@@ -138,6 +138,19 @@ Route::get('/teams/current', function() {
         foreach(['gp','g','a','ppg','shg','gwg','w','so'] as $stat){
             $dailyStats[$stat]=(int)$scoringRows->sum(fn($p)=>(int)($p->{'today_'.$stat}??0));
         }
+        $inProgressGames=$teamRows
+            ->filter(fn($p)=>(bool)($p->game_in_progress??false))
+            ->map(function($p){
+                $a=strtoupper(trim((string)($p->nhl_team??'')));
+                $b=strtoupper(trim((string)($p->opponent??'')));
+                $pair=array_filter([$a,$b]);
+                sort($pair,SORT_STRING);
+                return implode('|',$pair);
+            })
+            ->filter()
+            ->unique()
+            ->count();
+
         $teams[]=[
             'id'=>(string)($teamRows->first()?->fantasy_team_id ?? ''),
             'name'=>$teamName,
@@ -147,6 +160,7 @@ Route::get('/teams/current', function() {
             'today_stats'=>$dailyStats,
             'today_fpts'=>$scoringRows->sum(fn($p)=>(float)($p->today_fpts??0)),
             'today_fpts_changed'=>$scoringRows->contains(fn($p)=>(bool)($p->today_fpts_changed??false)),
+            'games_in_progress'=>$inProgressGames,
         ];
     }
 
@@ -266,6 +280,10 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         $score=$dailyScores[$scoreTeam($p->nhl_team).'|'.$scoreName($p->player_name)]??null;
         $p->today_fpts=$score?(float)$score->today_fpts:0.0;
         $p->live_opponent_display=$score?($score->opponent_display??null):null;
+        $liveOpp=trim((string)($p->live_opponent_display??''));
+        $p->game_finished=$liveOpp!=='' && (bool)preg_match('/(?:\bF\b|\bFinal\b)\s*$/i',$liveOpp);
+        $p->game_in_progress=$liveOpp!=='' && !$p->game_finished
+            && (bool)preg_match('/\b(?:1st|2nd|3rd|OT|SO|INT|P\d|\d{1,2}:\d{2})\b/i',$liveOpp);
         foreach(['gp','g','a','ppg','shg','gwg','w','so'] as $stat){
             $p->{'today_'.$stat}=$score?(int)($score->{$stat}??0):0;
         }
@@ -357,6 +375,10 @@ Route::get('/teams/current/{slug}', function(string $slug) {
                         $score=$dailyScores[$scoreTeam($p->nhl_team).'|'.$scoreName($p->player_name)]??null;
                         $p->today_fpts=$score?(float)$score->today_fpts:0.0;
                         $p->live_opponent_display=$score?($score->opponent_display??null):null;
+                        $liveOpp=trim((string)($p->live_opponent_display??''));
+                        $p->game_finished=$liveOpp!=='' && (bool)preg_match('/(?:\bF\b|\bFinal\b)\s*$/i',$liveOpp);
+                        $p->game_in_progress=$liveOpp!=='' && !$p->game_finished
+                            && (bool)preg_match('/\b(?:1st|2nd|3rd|OT|SO|INT|P\d|\d{1,2}:\d{2})\b/i',$liveOpp);
                         foreach(['gp','g','a','ppg','shg','gwg','w','so'] as $stat){
                             $p->{'today_'.$stat}=$score?(int)($score->{$stat}??0):0;
                         }
