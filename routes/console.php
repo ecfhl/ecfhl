@@ -270,12 +270,35 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
     return $failed?1:0;
 });
 
-Artisan::command('ecfhl:refresh-lineup-advice', function () {
+Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dailyMoves) {
     $tz='America/Halifax';
     $day=CarbonImmutable::now($tz)->subHours(4)->startOfDay();
     $date=$day->toDateString();
     $dow=(int)$day->format('N');
     $isWeekend=$dow>=6;
+
+    try {
+        $moveRows=$dailyMoves->fetch($day);
+        $now=now();
+        DB::transaction(function()use($date,$moveRows,$now){
+            DB::table('team_daily_moves')->whereDate('move_date',$date)->delete();
+            foreach($moveRows as $move){
+                DB::table('team_daily_moves')->insert([
+                    'move_date'=>$date,
+                    'fantasy_team_id'=>(string)$move['fantasy_team_id'],
+                    'fantasy_team_name'=>(string)$move['fantasy_team_name'],
+                    'moves_used'=>(int)$move['moves_used'],
+                    'moves_left'=>(int)$move['moves_left'],
+                    'checked_at'=>$now,
+                    'created_at'=>$now,
+                    'updated_at'=>$now,
+                ]);
+            }
+        });
+        $this->info(count($moveRows).' team move-limit rows refreshed before lineup advice.');
+    } catch (\Throwable $e) {
+        Log::warning('Lineup advisor move-limit refresh failed',['error'=>$e->getMessage()]);
+    }
 
     $rosters=DB::table('active_fantasy_rosters')->whereDate('game_date',$date)->get();
     $teams=$rosters->groupBy('fantasy_team_id');
@@ -330,7 +353,10 @@ Artisan::command('ecfhl:refresh-lineup-advice', function () {
             ->whereDate('move_date',$date)
             ->where('fantasy_team_id',(string)$teamId)
             ->value('moves_left');
-        $movesLeft=$movesLeft!==null?(int)$movesLeft:null;
+        // If Fantrax move history is temporarily unavailable, do not block every
+        // team from advice. Treat an unknown count as the full daily allowance
+        // until the next successful refresh replaces it with the real value.
+        $movesLeft=$movesLeft!==null?(int)$movesLeft:7;
 
         $activeGoaliePlaying=$teamRows->contains(fn($p)=>
             strtoupper((string)$p->position)==='G'
