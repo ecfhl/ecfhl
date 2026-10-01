@@ -358,7 +358,6 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
 
         $activePlayers=$teamRows->filter(fn($p)=>
             (bool)($p->is_playing??false)
-            && !(bool)($p->is_bench??false)
             && !(bool)($p->is_ir??false)
             && strtoupper((string)($p->roster_status??''))!=='MINORS'
         );
@@ -460,14 +459,17 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             $drop=null;
             if($goaliesOnRoster->count()>=2){
                 $drop=$goaliesOnRoster
+                    ->filter(fn($p)=>!(bool)($p->is_playing??false))
                     ->filter($dropEligible)
                     ->sortBy(fn($p)=>(float)($p->projected_fpts_per_game??0))
                     ->first();
             }
 
             if(!$drop){
-                $drop=$eligibleDrops->first(fn($p)=>strtoupper((string)$p->position)==='G')
-                    ?? $eligibleDrops->first();
+                $drop=$eligibleDrops->first(fn($p)=>
+                    strtoupper((string)$p->position)==='G'
+                    && !(bool)($p->is_playing??false)
+                ) ?? $eligibleDrops->first(fn($p)=>!(bool)($p->is_playing??false));
             }
 
             if($goalieTarget && $drop && ($trailing || $lateWeek || $isWeekend)){
