@@ -127,6 +127,15 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
                 if($rows)DB::table('active_daily_scores')->insert($rows);
             });
 
+            DB::table('job_run_history')->insert([
+                'job_name'=>'ecfhl:refresh-daily-scores',
+                'target_date'=>$date->toDateString(),
+                'rows_processed'=>count($rows),
+                'completed_at'=>now(),
+                'created_at'=>now(),
+                'updated_at'=>now(),
+            ]);
+
             $this->info($date->toDateString().': '.count($rows).' Fantrax daily scores refreshed');
         } catch (\Throwable $e) {
             $failed=true;
