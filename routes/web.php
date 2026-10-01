@@ -223,8 +223,7 @@ Route::get('/teams/current', function() {
     });
 
     $lastUpdate=$rows->max('last_update');
-    $displayLastUpdate=$scoreLastUpdate ?: $lastUpdate;
-    return view('teams.current-index',compact('teams','matchups','scheduleLabel','date','today','tomorrow','lastUpdate','scoreLastUpdate','displayLastUpdate'));
+    return view('teams.current-index',compact('teams','matchups','scheduleLabel','date','today','tomorrow','lastUpdate','scoreLastUpdate'));
 });
 
 Route::get('/teams/current/{slug}', function(string $slug) {
