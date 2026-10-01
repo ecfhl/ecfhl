@@ -66,7 +66,9 @@ Route::get('/teams/current', function() {
 
     $scoreName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower($name))??'';};
     $scoreTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
-    $dailyScores=DB::table('active_daily_scores')->whereDate('game_date',$date)->get()->keyBy(fn($r)=>$scoreTeam($r->nhl_team).'|'.$scoreName($r->player_name));
+    $dailyScoreRows=DB::table('active_daily_scores')->whereDate('game_date',$date)->get();
+    $scoreLastUpdate=$dailyScoreRows->max('checked_at');
+    $dailyScores=$dailyScoreRows->keyBy(fn($r)=>$scoreTeam($r->nhl_team).'|'.$scoreName($r->player_name));
     $rows=$rows->map(function($p)use($dailyScores,$scoreName,$scoreTeam){
         $score=$dailyScores[$scoreTeam($p->nhl_team).'|'.$scoreName($p->player_name)]??null;
         $p->today_fpts=$score?(float)$score->today_fpts:0.0;
@@ -192,7 +194,7 @@ Route::get('/teams/current', function() {
     });
 
     $lastUpdate=$rows->max('last_update');
-    return view('teams.current-index',compact('teams','matchups','scheduleLabel','date','today','tomorrow','lastUpdate'));
+    return view('teams.current-index',compact('teams','matchups','scheduleLabel','date','today','tomorrow','lastUpdate','scoreLastUpdate'));
 });
 
 Route::get('/teams/current/{slug}', function(string $slug) {
