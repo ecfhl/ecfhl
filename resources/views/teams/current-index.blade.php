@@ -86,27 +86,6 @@
         </summary>
 
         <div class="matchup-expanded">
-          <div class="matchup-expanded-head">
-            <div class="matchup-team-head">
-              @if($away)
-                <div>
-                  <a href="/teams/current/{{ $away['slug'] }}?date={{ $date }}">{{ $away['name'] }}</a>
-                  <small>AWAY</small>
-                </div>
-                <strong>{{ number_format($away['today_fpts'] ?? 0,0) }}</strong>
-              @endif
-            </div>
-            <div class="matchup-team-head matchup-team-head-home">
-              @if($home)
-                <strong>{{ number_format($home['today_fpts'] ?? 0,0) }}</strong>
-                <div>
-                  <a href="/teams/current/{{ $home['slug'] }}?date={{ $date }}">{{ $home['name'] }}</a>
-                  <small>HOME</small>
-                </div>
-              @endif
-            </div>
-          </div>
-
           <div class="matchup-section-title">Skaters</div>
           <div class="matchup-roster-grid">
             <div class="matchup-roster-col">
@@ -193,12 +172,6 @@
 .matchup-summary-vs{text-align:center;font-size:10px;font-weight:900;color:var(--muted)}
 .matchup-bye{font-size:11px;font-weight:900;color:var(--muted)}
 .matchup-expanded{border-top:1px solid var(--line)}
-.matchup-expanded-head{display:grid;grid-template-columns:1fr 1fr;background:var(--surface)}
-.matchup-team-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-right:1px solid var(--line)}
-.matchup-team-head-home{border-right:0}
-.matchup-team-head a{font-size:16px;font-weight:900;text-decoration:none;color:var(--text)}
-.matchup-team-head small{display:block;margin-top:1px;font-size:9px;color:var(--muted);font-weight:800}
-.matchup-team-head strong{font-size:28px;line-height:1}
 .matchup-section-title{grid-column:1/-1;text-align:center;background:#e5e7eb;color:#374151;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;padding:5px 8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .matchup-roster-grid{display:grid;grid-template-columns:1fr 1fr}
 .matchup-roster-col{min-width:0;border-right:1px solid var(--line)}
@@ -249,10 +222,7 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
   .matchup-summary{grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr);padding:10px}
   .matchup-summary-score{font-size:18px}
   .matchup-summary-name a{font-size:12px}
-  .matchup-expanded-head,.matchup-roster-grid{grid-template-columns:1fr 1fr}
-  .matchup-team-head{padding:10px}
-  .matchup-team-head a{font-size:13px}
-  .matchup-team-head strong{font-size:22px}
+  .matchup-roster-grid{grid-template-columns:1fr 1fr}
   .matchup-player-row{padding:7px 8px;align-items:flex-start}
   .matchup-player-name{font-size:11px}
   .matchup-player-metrics{gap:6px}
