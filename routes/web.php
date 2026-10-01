@@ -833,6 +833,7 @@ Route::get('/job-status', function () {
     $teamsLast = DB::table('active_fantasy_rosters')->max('last_update');
     $scoresLast = DB::table('active_daily_scores')->max('checked_at');
     $standingsLast = DB::table('job_run_history')->where('job_name','ecfhl:refresh-current-standings')->max('completed_at');
+    $advisorLast = \Illuminate\Support\Facades\Schema::hasTable('lineup_advice') ? DB::table('lineup_advice')->max('generated_at') : null;
     $collectorStates = \Illuminate\Support\Facades\Schema::hasTable('collector_job_statuses')
         ? DB::table('collector_job_statuses')->get()->keyBy('job_key')
         : collect();
@@ -851,6 +852,7 @@ Route::get('/job-status', function () {
         ['key'=>'teams','name'=>'Fantasy Team Rosters','schedule'=>'Every 15 minutes (:00, :15, :30, :45)','last_update'=>$format($teamsLast),'records'=>DB::table('active_fantasy_rosters')->count(),'next_run'=>$nextQuarterHourly(),'state'=>$state($teamsLast,30),'description'=>'Current Fantrax rosters for every fantasy team, enriched with projections, opponents, injuries, line and power-play assignments.'],
         ['key'=>'scores','name'=>'Live Daily Scores','schedule'=>'Every minute during games','last_update'=>$format($scoresLast),'records'=>DB::table('active_daily_scores')->count(),'next_run'=>'During live game window','state'=>$state($scoresLast,6),'description'=>'Fantrax player FPts and live NHL category stats from first game start until 4 hours after the last game starts.'],
         ['key'=>'standings','name'=>'Current Standings','schedule'=>'Every 5 minutes during games','last_update'=>$format($standingsLast),'records'=>DB::table('team_seasons')->where('season_id','2026-27')->count(),'next_run'=>'Every 5 min during live game window','state'=>$state($standingsLast,15),'description'=>'2026-27 standings and fantasy points from Fantrax scoring-period data, refreshed during the live game window.'],
+        ['key'=>'advisor','name'=>'Regenerate Lineup Advisor','schedule'=>'Twice daily at 7:00 AM and 7:00 PM Atlantic','last_update'=>$format($advisorLast),'records'=>\Illuminate\Support\Facades\Schema::hasTable('lineup_advice')?DB::table('lineup_advice')->count():0,'next_run'=>(function()use($now){$morning=$now->startOfDay()->hour(7);$evening=$now->startOfDay()->hour(19);$next=$now->lt($morning)?$morning:($now->lt($evening)?$evening:$morning->addDay());return $next->format('M j · g:i a T');})(),'state'=>$state($advisorLast,750),'description'=>'Rebuilds lineup recommendations for every current fantasy team using moves left, roster construction, injuries, available players, projections, goalie coverage, and matchup context.'],
     ]);
     return response()
         ->view('job-status', compact('jobs'))
