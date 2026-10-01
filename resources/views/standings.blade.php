@@ -9,13 +9,12 @@
   </div>
 
   <div class="section-title standings-title">
-    <h2>Standings</h2>
-    <span class="subtle">
-      {{ count($standings) }} teams
+    <div>
+      <h2>Standings</h2>
       @if(!empty($standingsLastUpdate))
-        · Updated {{ \Carbon\CarbonImmutable::parse($standingsLastUpdate)->setTimezone('America/Halifax')->format('M j, Y · g:i:s a T') }}
+        <p class="subtle standings-updated">Updated @include('partials.updated-time',['value'=>$standingsLastUpdate])</p>
       @endif
-    </span>
+    </div>
   </div>
 
   <div class="table-card">
@@ -57,6 +56,6 @@
 </div>
 <style>
 .standings-page{padding-bottom:26px}
-.standings-title{margin-top:8px}.standings-team-link{color:inherit;text-decoration:none}.standings-team-link:hover{text-decoration:underline}
+.standings-title{margin-top:8px}.standings-updated{margin:4px 0 0;font-size:12px}.standings-team-link{color:inherit;text-decoration:none}.standings-team-link:hover{text-decoration:underline}
 </style>
 @endsection
