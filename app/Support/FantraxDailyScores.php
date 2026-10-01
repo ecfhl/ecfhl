@@ -16,8 +16,10 @@ class FantraxDailyScores
         $day = $date->format('Y-m-d');
 
         return 'https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID
-            .'/players;reload=1;datePlaying='.$day
-            .';pageNumber=1;maxResultsPerPage=500;statusOrTeamFilter=ALL';
+            .'/players;reload=1;datePlaying=ALL'
+            .';pageNumber=1;statusOrTeamFilter=ALL'
+            .';startDate='.$day.';endDate='.$day
+            .';timeframeTypeCode=BY_DATE;maxResultsPerPage=500';
     }
 
     public function fetch(CarbonImmutable $date): array
@@ -30,7 +32,10 @@ class FantraxDailyScores
             'positionOrGroup' => 'ALL',
             'pageNumber' => '1',
             'maxResultsPerPage' => 500,
-            'datePlaying' => $day,
+            'datePlaying' => 'ALL',
+            'startDate' => $day,
+            'endDate' => $day,
+            'timeframeTypeCode' => 'BY_DATE',
         ];
 
         $payload = [
