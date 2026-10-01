@@ -20,6 +20,21 @@
     </div>
   @endif
 
+  @php
+    // Pin Lone Tsar first and One Man Bang second. If they play each other,
+    // their shared matchup is first and is only listed once.
+    $matchups = collect($matchups)->sortBy(function($matchup, $index){
+      $names = collect([$matchup['away']['name'] ?? '', $matchup['home']['name'] ?? '']);
+      $hasLoneTsar = $names->contains(fn($name) => str_contains((string)$name, 'Ꮮ૦ท૯'));
+      $hasOneManBang = $names->contains(fn($name) => str_contains((string)$name, 'One Man Bang'));
+
+      if ($hasLoneTsar && $hasOneManBang) return -2000;
+      if ($hasLoneTsar) return -1000;
+      if ($hasOneManBang) return -500;
+      return $index;
+    })->values();
+  @endphp
+
   <div class="current-matchup-list">
     @foreach($matchups as $matchup)
       @php
