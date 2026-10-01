@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('content')
-<div class="page-head current-teams-head"><div class="shell"><div class="eyebrow">2026-27 rosters</div><h1>Live Scoring</h1><p>Current Matchups for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}.</p>@if($scoreLastUpdate)<p class="team-updated">Updated {{ \Carbon\CarbonImmutable::parse($scoreLastUpdate)->setTimezone('America/Halifax')->format('g:i:s a T') }} · Updates every minute</p>@endif</div></div>
+<div class="page-head current-teams-head"><div class="shell"><div class="eyebrow">2026-27 rosters</div><h1>Live Scoring</h1><p>Current Matchups for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}.</p>@if($displayLastUpdate)<p class="team-updated">Updated {{ \Carbon\CarbonImmutable::parse($displayLastUpdate)->setTimezone('America/Halifax')->format('g:i:s a T') }}@if($date===$today) · Updates every minute@endif</p>@endif</div></div>
 
 <div class="shell current-teams-page">
   <div class="team-toolbar">
@@ -13,8 +13,8 @@
   @if($scheduleLabel)
     <div class="matchup-period-label">
       <span>{{ $scheduleLabel }}</span>
-      @if($scoreLastUpdate)
-        <span class="matchup-period-updated">Updated {{ \Carbon\CarbonImmutable::parse($scoreLastUpdate)->setTimezone('America/Halifax')->format('g:i:s a T') }}</span>
+      @if($displayLastUpdate)
+        <span class="matchup-period-updated">Updated {{ \Carbon\CarbonImmutable::parse($displayLastUpdate)->setTimezone('America/Halifax')->format('g:i:s a T') }}</span>
       @endif
     </div>
   @endif
