@@ -2,16 +2,28 @@
 @section('title',($season['season'] ?? 'Season').' · ECFHL')
 @section('content')
 <div class="shell">
-  <div class="page-head"><div class="eyebrow">Season history</div><h1>{{ $season['season'] }}</h1><p>{{ $season['format'] ?? '' }} · {{ $season['status'] ?? '' }}</p>@include('partials.fantrax-standings',['season'=>$season])</div>
-
   @php $seasonOptions = app(\App\Support\Archive::class)->seasons(); @endphp
-  <div style="display:flex;justify-content:flex-end;margin:0 0 22px"><select aria-label="Go to season" style="width:260px;padding:10px 12px;border-radius:8px" onchange="if(this.value) window.location.href=this.value"><option value="">Go to season...</option>@foreach($seasonOptions as $option)<option value="/seasons/{{ rawurlencode($option['season']) }}" {{ $option['season']===$season['season']?'selected':'' }}>{{ $option['season'] }}</option>@endforeach</select></div>
+  <div class="page-head">
+    <div class="eyebrow">Season history</div>
+    <label class="season-title-switcher">
+      <span class="sr-only">Season</span>
+      <select aria-label="Season" onchange="if(this.value) window.location.href=this.value">
+        @foreach($seasonOptions as $option)
+          <option value="/seasons/{{ rawurlencode($option['season']) }}" {{ $option['season']===$season['season']?'selected':'' }}>{{ $option['season'] }}</option>
+        @endforeach
+      </select>
+    </label>
+    <p>{{ $season['format'] ?? '' }} · {{ $season['status'] ?? '' }}</p>
+    @include('partials.fantrax-standings',['season'=>$season])
+  </div>
 
+  @if(($season['season'] ?? '') !== '2026-27')
   <div class="season-result-podium">
     <div class="season-result-entry"><strong class="season-result-team">{{ $season['runner_up'] ?: '—' }}</strong><div class="podium-place podium-second"><span class="podium-medal">🥈</span><small>2nd</small></div></div>
     <div class="season-result-entry"><strong class="season-result-team">{{ $season['champion'] ?: '—' }}</strong><div class="podium-place podium-first"><span class="podium-medal">🏆</span><small>Champion</small></div></div>
     <div class="season-result-entry"><strong class="season-result-team">{{ $season['third_place'] ?: '—' }}</strong><div class="podium-place podium-third"><span class="podium-medal">🥉</span><small>3rd</small></div></div>
   </div>
+  @endif
 
   <div class="section-title">
     <h2>Standings</h2>
@@ -66,6 +78,7 @@
   </div></section>
 </div>
 <style>
+.season-title-switcher{display:block;width:min(320px,100%)}.season-title-switcher select{appearance:auto;width:auto;max-width:100%;border:0;background:transparent;color:var(--text);font:inherit;font-size:34px;font-weight:800;line-height:1.05;letter-spacing:-1px;padding:0 30px 0 0;cursor:pointer}.season-title-switcher select:focus{outline:none}
 .season-result-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:12px;min-height:205px;margin:0 0 28px;padding:24px 22px 0;background:var(--panel,#fff);border:1px solid var(--border,#d9e0ea);border-radius:20px;box-shadow:0 8px 24px rgba(18,38,63,.06);overflow:hidden}
 .season-result-entry{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}.season-result-team{font-size:17px;text-align:center;margin-bottom:9px;line-height:1.2;overflow-wrap:anywhere}.season-result-podium .podium-place{width:100%;justify-content:center;padding:10px 8px}.season-result-podium .podium-second{height:112px}.season-result-podium .podium-first{height:145px}.season-result-podium .podium-third{height:90px}.season-result-podium .podium-medal{margin-bottom:7px}
 .season-rank-cards{align-items:start}.season-rank-footer{display:block;padding:15px 18px;border-top:1px solid var(--line);font-weight:700;text-decoration:none}
