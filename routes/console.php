@@ -147,11 +147,12 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
                     $label=$name.($team!==''?' ('.$team.')':'');
                     $delta=fn($field)=>(int)($row[$field]??0)-(int)($previous->{$field}??0);
 
-                    if($delta('g')>0){
-                        if($delta('ppg')>0)$scoreNotifications[]='PPG by '.$label;
-                        elseif($delta('shg')>0)$scoreNotifications[]='SHG by '.$label;
-                        else $scoreNotifications[]='Goal by '.$label;
-                    }
+                    $goalDelta=max(0,$delta('g'));
+                    $ppgDelta=max(0,$delta('ppg'));
+                    $shgDelta=max(0,$delta('shg'));
+                    if($ppgDelta>0)$scoreNotifications[]='PPG by '.$label;
+                    if($shgDelta>0)$scoreNotifications[]='SHG by '.$label;
+                    if(max(0,$goalDelta-$ppgDelta-$shgDelta)>0)$scoreNotifications[]='Goal by '.$label;
                     if($delta('a')>0)$scoreNotifications[]='Assist by '.$label;
                     if($delta('gwg')>0)$scoreNotifications[]='GWG by '.$label;
                     if($delta('w')>0)$scoreNotifications[]='Win by '.$label;
