@@ -5,6 +5,7 @@ use App\Support\DailyFaceoffStartingGoalies;
 use App\Support\FantraxAvailablePlayers;
 use App\Support\FantraxDailyScores;
 use App\Support\FantraxTeamRosters;
+use App\Support\FantraxStandings;
 use App\Support\NhlOdds;
 use App\Support\NhlDailyStats;
 use Carbon\CarbonImmutable;
@@ -147,6 +148,80 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
     return $failed?1:0;
 });
 
+Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $fantrax) {
+    $seasonId='2026-27';
+    $source='https://www.fantrax.com/fantasy/league/'.FantraxStandings::LEAGUE_ID.'/standings';
+
+    try {
+        $data=$fantrax->fetch();
+        $seasonRows=DB::table('team_seasons')->where('season_id',$seasonId)->get();
+        if($seasonRows->isEmpty())throw new \RuntimeException('No 2026-27 team_seasons rows exist.');
+
+        $normalize=fn($s)=>mb_strtolower(trim(preg_replace('/\s+/u',' ',str_replace(["’","‘"],"'",(string)$s))));
+        $byName=$seasonRows->keyBy(fn($r)=>$normalize($r->original_name));
+
+        $rosterNameByTeamId=DB::table('active_fantasy_rosters')
+            ->select('fantasy_team_id','fantasy_team_name')
+            ->whereNotNull('fantasy_team_id')
+            ->whereNotNull('fantasy_team_name')
+            ->get()
+            ->unique('fantasy_team_id')
+            ->keyBy(fn($r)=>(string)$r->fantasy_team_id);
+
+        $updates=[];
+        foreach($data['rows'] as $standing){
+            $name=(string)($standing['team_name']??'');
+            $teamId=(string)($standing['team_id']??'');
+            $target=$byName[$normalize($name)]??null;
+
+            if(!$target && $teamId!=='' && isset($rosterNameByTeamId[$teamId])){
+                $rosterName=(string)$rosterNameByTeamId[$teamId]->fantasy_team_name;
+                $target=$byName[$normalize($rosterName)]??null;
+            }
+
+            if(!$target)continue;
+
+            $updates[$target->team_season_id]=[
+                'rank'=>$standing['rank'],
+                'w'=>$standing['w'],
+                'l'=>$standing['l'],
+                't'=>$standing['t'],
+                'standings_points'=>$standing['standings_points'],
+                'fantasy_points_for'=>$standing['fantasy_points_for'],
+                'source'=>$source,
+                'source_id'=>'fantrax-'.FantraxStandings::LEAGUE_ID,
+            ];
+        }
+
+        $expected=$seasonRows->count();
+        if(count($updates)!==$expected){
+            throw new \RuntimeException('Fantrax standings matched '.count($updates).' of '.$expected.' current teams. Existing standings preserved.');
+        }
+
+        DB::transaction(function()use($updates){
+            foreach($updates as $teamSeasonId=>$values){
+                DB::table('team_seasons')->where('team_season_id',$teamSeasonId)->update($values);
+            }
+        });
+
+        DB::table('job_run_history')->insert([
+            'job_name'=>'ecfhl:refresh-current-standings',
+            'target_date'=>CarbonImmutable::now('America/Halifax')->toDateString(),
+            'rows_processed'=>count($updates),
+            'completed_at'=>now(),
+            'created_at'=>now(),
+            'updated_at'=>now(),
+        ]);
+
+        $this->info(count($updates).' Fantrax standings rows refreshed for '.$seasonId);
+        return 0;
+    } catch (\Throwable $e) {
+        Log::error('Fantrax current standings refresh failed',['error'=>$e->getMessage()]);
+        $this->error($e->getMessage());
+        return 1;
+    }
+});
+
 Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $fantrax) {
     $base=CarbonImmutable::now('America/Halifax')->startOfDay();
     $failed=false;
@@ -251,6 +326,43 @@ Schedule::command('ecfhl:refresh-daily-scores')
     ->cron('* * * * *')
     ->withoutOverlapping(2)
     ->runInBackground();
+
+Schedule::command('ecfhl:refresh-current-standings')
+    ->everyThirtyMinutes()
+    ->withoutOverlapping(25)
+    ->runInBackground()
+    ->when(function () {
+        $tz='America/Halifax';
+        $now=CarbonImmutable::now($tz);
+        $today=$now->toDateString();
+
+        $alreadyRanToday=DB::table('job_run_history')
+            ->where('job_name','ecfhl:refresh-current-standings')
+            ->whereDate('target_date',$today)
+            ->exists();
+
+        if(!$alreadyRanToday)return true;
+
+        try {
+            $response=Http::timeout(12)->retry(1,500)->get('https://api-web.nhle.com/v1/score/'.$today);
+            $response->throw();
+            $games=$response->json('games')??[];
+            $starts=collect($games)->map(function($game)use($tz){
+                $utc=$game['startTimeUTC']??null;
+                if(!$utc)return null;
+                try{return CarbonImmutable::parse($utc)->setTimezone($tz);}catch(\Throwable){return null;}
+            })->filter();
+
+            if($starts->isEmpty())return false;
+
+            $first=$starts->sort()->first();
+            $last=$starts->sortDesc()->first();
+            return $now->betweenIncluded($first,$last->addHours(4));
+        } catch (\Throwable $e) {
+            Log::warning('Current standings game-window check failed',['error'=>$e->getMessage()]);
+            return false;
+        }
+    });
 
 Schedule::command('ecfhl:refresh-daily-players')->hourlyAt(0)->withoutOverlapping(55);
 Schedule::command('ecfhl:refresh-fantasy-rosters')->hourlyAt(10)->withoutOverlapping(45)->runInBackground();
