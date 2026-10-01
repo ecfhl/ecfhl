@@ -2,7 +2,7 @@
 @section('title','Prizes · ECFHL')
 @section('content')
 <div class="shell">
-<div class="page-head"><div class="eyebrow">League prizes</div><h1>Prizes</h1><p>Historical awards and winnings for the selected season types.</p></div>
+<div class="page-head"><div class="eyebrow">League prizes</div><h1>📖 Prizes</h1><p>Historical awards and winnings for the selected season types.</p></div>
 @php
     $selectedSeasonNames = collect(app(\App\Support\Archive::class)->seasons())->pluck('season')->all();
     $singleSeasonEarners = $seasonLeaders['top_earners'];
