@@ -299,6 +299,9 @@
                       @if(!empty($player->contract_label))
                         <span class="pill team-contract-sticker {{ $player->contract_class }}">{{ $player->contract_label }}</span>
                       @endif
+                      @if(strtoupper((string)$player->position)==='G' && !empty($player->starting_status))
+                        <span class="pill goalie-status {{ $player->starting_status_class }}">{{ $player->starting_status }}</span>
+                      @endif
                       @if(strtoupper((string)$player->position)==='G' && $player->vegas_odds!==null)
                         <span class="pill goalie-vegas-odds {{ $player->vegas_odds_class }}">{{ $player->vegas_odds>0?'+':'' }}{{ $player->vegas_odds }}</span>
                       @endif
