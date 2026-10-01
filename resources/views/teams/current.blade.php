@@ -5,6 +5,7 @@
   <div class="team-page-controls">
     <div class="team-left-controls">
       <div class="team-date-buttons">
+        <a class="button team-date-button {{ $date===$yesterday?'primary':'team-date-inactive' }}" href="/teams/current/{{ $slug }}?date={{ $yesterday }}">Yesterday</a>
         <a class="button team-date-button {{ $date===$today?'primary':'team-date-inactive' }}" href="/teams/current/{{ $slug }}?date={{ $today }}">Today</a>
         <a class="button team-date-button {{ $date===$tomorrow?'primary':'team-date-inactive' }}" href="/teams/current/{{ $slug }}?date={{ $tomorrow }}">Tomorrow</a>
       </div>
