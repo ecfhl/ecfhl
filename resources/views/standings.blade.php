@@ -47,9 +47,69 @@
       </table>
     </div>
   </div>
+
+  @if(!empty($scoringPeriods))
+    <div class="standings-scoring-periods">
+      @foreach($scoringPeriods as $period)
+        @php
+          $periodStart=\Carbon\CarbonImmutable::parse($period['start'],'America/Halifax');
+          $periodEnd=\Carbon\CarbonImmutable::parse($period['end'],'America/Halifax');
+          $periodDates=$periodStart->format('M j').' – '.$periodEnd->format('M j, Y');
+          $periodTitle=trim((string)($period['caption']??'Scoring Period'));
+        @endphp
+        <section class="standings-period">
+          <div class="matchup-period-label standings-period-label">
+            <span>{{ $periodTitle }} ({{ $periodDates }})</span>
+          </div>
+
+          <div class="current-matchup-list standings-matchup-list">
+            @foreach($period['matchups'] as $matchup)
+              @php
+                $awayName=$matchup['away_display']??$matchup['away_name']??'Away';
+                $homeName=$matchup['home_display']??$matchup['home_name']??'Home';
+                $awayScore=$matchup['away_score'];
+                $homeScore=$matchup['home_score'];
+                $awayWinning=$awayScore!==null&&$homeScore!==null&&$awayScore>$homeScore;
+                $homeWinning=$awayScore!==null&&$homeScore!==null&&$homeScore>$awayScore;
+              @endphp
+              <div class="matchup-card standings-matchup-card">
+                <div class="matchup-summary">
+                  <div class="matchup-summary-side matchup-summary-away">
+                    <div class="matchup-summary-name">
+                      <a href="/teams/current/{{ \Illuminate\Support\Str::slug($awayName) }}">{{ $awayName }}</a>
+                      <div class="matchup-summary-meta matchup-summary-meta-away">
+                        <span class="matchup-side-pill away-pill">AWAY</span>
+                      </div>
+                    </div>
+                    <span class="matchup-summary-score">
+                      <strong class="matchup-week-score {{ $awayWinning?'score-winning':'' }}">{{ $awayScore!==null?number_format($awayScore,0):'—' }}</strong>
+                    </span>
+                  </div>
+
+                  <div class="matchup-summary-vs">VS</div>
+
+                  <div class="matchup-summary-side matchup-summary-home">
+                    <span class="matchup-summary-score">
+                      <strong class="matchup-week-score {{ $homeWinning?'score-winning':'' }}">{{ $homeScore!==null?number_format($homeScore,0):'—' }}</strong>
+                    </span>
+                    <div class="matchup-summary-name">
+                      <a href="/teams/current/{{ \Illuminate\Support\Str::slug($homeName) }}">{{ $homeName }}</a>
+                      <div class="matchup-summary-meta matchup-summary-meta-home">
+                        <span class="matchup-side-pill home-pill">HOME</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            @endforeach
+          </div>
+        </section>
+      @endforeach
+    </div>
+  @endif
 </div>
 <style>
 .standings-page{padding-bottom:26px}
-.standings-updated{margin:4px 0 6px;font-size:12px}.standings-team-link{color:inherit;text-decoration:none}.standings-team-link:hover{text-decoration:underline}
+.standings-updated{margin:4px 0 6px;font-size:12px}.standings-team-link{color:inherit;text-decoration:none}.standings-team-link:hover{text-decoration:underline}.standings-scoring-periods{margin-top:28px}.standings-period{margin-top:26px}.standings-period:first-child{margin-top:0}.matchup-period-label{display:flex;align-items:center;justify-content:space-between;margin:0 0 10px;padding:8px 12px;border-radius:9px;background:#082f4f;color:#fff;font-weight:900;font-size:14px}.current-matchup-list{display:flex;flex-direction:column;gap:10px}.standings-matchup-card{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}.matchup-summary{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;padding:13px 14px}.matchup-summary-side{display:flex;align-items:center;gap:10px;min-width:0}.matchup-summary-away{justify-content:space-between}.matchup-summary-home{justify-content:space-between}.matchup-summary-name{min-width:0;font-weight:900}.matchup-summary-name a{color:inherit;text-decoration:none}.matchup-summary-name a:hover{text-decoration:underline}.matchup-summary-meta{margin-top:5px}.matchup-summary-meta-home{text-align:right}.matchup-side-pill{display:inline-flex;align-items:center;border-radius:999px;padding:2px 7px;font-size:9px;font-weight:900;letter-spacing:.04em}.away-pill{background:#e5e7eb;color:#374151}.home-pill{background:#dbeafe;color:#1d4ed8}.matchup-summary-score{display:inline-flex;align-items:flex-start}.matchup-week-score{font-size:24px;line-height:1;font-weight:900}.score-winning{color:#16a34a}.matchup-summary-vs{font-size:10px;font-weight:900;opacity:.55}@media(max-width:700px){.matchup-summary{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:7px;padding:11px 9px}.matchup-summary-side{gap:6px}.matchup-week-score{font-size:20px}.matchup-summary-name{font-size:12px}}
 </style>
 @endsection
