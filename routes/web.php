@@ -22,6 +22,17 @@ Route::get('/seasons', function (EcfhlData $data) {
     foreach($seasons as $season) foreach($data->seasonAwards($season['season']) as $a){$key=$season['season'].'|'.($a['franchise_id']??$a['team']);if(!isset($awardCounts[$key]))$awardCounts[$key]=['team'=>$a['team'],'season'=>$season['season'],'value'=>0,'score'=>0];$awardCounts[$key]['value']++;$awardCounts[$key]['score']++;}
     $awardRows=array_values($awardCounts);usort($awardRows,fn($a,$b)=>($b['score']<=>$a['score'])?:strcmp($b['season'],$a['season']));$seasonLeaders['season_awards']=$awardRows;$seasonLeaders['top_earners']=$data->seasonPrizeLeaders();return view('seasons.index',compact('seasons','seasonLeaders'));
 });
+Route::get('/standings', function(EcfhlData $data){
+    $seasonName='2026-27';
+    $season=$data->season($seasonName);
+    if(!$season)return redirect('/seasons');
+    $standings=$data->teamSeasons($seasonName);
+    $standingsLastUpdate=DB::table('job_run_history')
+        ->where('job_name','ecfhl:refresh-current-standings')
+        ->max('completed_at');
+    return view('standings',compact('season','standings','standingsLastUpdate'));
+});
+
 Route::get('/seasons/{season}', function(string $season,EcfhlData $data){
     $season=rawurldecode($season);$row=$data->season($season);if(!$row)return redirect('/seasons')->with('notice','This season is outside the selected season types.');$standings=$data->teamSeasons($season);$tradeCounts=[];
     foreach($data->trades() as $trade){if(($trade['season']??null)!==$season||!empty($trade['vetoed']))continue;foreach(array_unique(array_filter([$trade['from_id']??null,$trade['to_id']??null])) as $franchiseId)$tradeCounts[$franchiseId]=($tradeCounts[$franchiseId]??0)+1;}
