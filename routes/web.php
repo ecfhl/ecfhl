@@ -283,7 +283,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         $liveOpp=trim((string)($p->live_opponent_display??''));
         $p->game_finished=$liveOpp!=='' && (bool)preg_match('/(?:\bF\b|\bFinal\b)\s*$/i',$liveOpp);
         $p->game_in_progress=$liveOpp!=='' && !$p->game_finished
-            && (bool)preg_match('/\b(?:1st|2nd|3rd|OT|SO|INT|P\d|\d{1,2}:\d{2})\b/i',$liveOpp);
+            && (bool)preg_match('/\b\d+\s+@?[A-Z]{2,4}\s+\d+\b/i',$liveOpp);
         foreach(['gp','g','a','ppg','shg','gwg','w','so'] as $stat){
             $p->{'today_'.$stat}=$score?(int)($score->{$stat}??0):0;
         }
@@ -378,7 +378,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
                         $liveOpp=trim((string)($p->live_opponent_display??''));
                         $p->game_finished=$liveOpp!=='' && (bool)preg_match('/(?:\bF\b|\bFinal\b)\s*$/i',$liveOpp);
                         $p->game_in_progress=$liveOpp!=='' && !$p->game_finished
-                            && (bool)preg_match('/\b(?:1st|2nd|3rd|OT|SO|INT|P\d|\d{1,2}:\d{2})\b/i',$liveOpp);
+                            && (bool)preg_match('/\b\d+\s+@?[A-Z]{2,4}\s+\d+\b/i',$liveOpp);
                         foreach(['gp','g','a','ppg','shg','gwg','w','so'] as $stat){
                             $p->{'today_'.$stat}=$score?(int)($score->{$stat}??0):0;
                         }
