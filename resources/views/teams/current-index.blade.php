@@ -11,7 +11,12 @@
   </div>
 
   @if($scheduleLabel)
-    <div class="matchup-period-label">{{ $scheduleLabel }}</div>
+    <div class="matchup-period-label">
+      <span>{{ $scheduleLabel }}</span>
+      @if($lastUpdate)
+        <span class="matchup-period-updated">Updated {{ \Carbon\CarbonImmutable::parse($lastUpdate)->setTimezone('America/Halifax')->format('g:i:s a T') }}</span>
+      @endif
+    </div>
   @endif
 
   <div class="current-matchup-list">
@@ -178,7 +183,7 @@
 .team-date-buttons .button{padding:6px 10px;font-size:12px}
 .team-date-inactive{background:#e5e7eb!important;border-color:#d1d5db!important;color:#374151!important}
 .team-date-inactive:hover{background:#d1d5db!important;color:#111827!important}
-.matchup-period-label{margin:4px 0 10px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.matchup-period-label{margin:4px 0 10px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:flex;align-items:center;justify-content:space-between;gap:10px}.matchup-period-updated{font-size:10px;font-weight:700;letter-spacing:0;text-transform:none;white-space:nowrap}
 .current-matchup-list{display:flex;flex-direction:column;gap:7px;margin-bottom:20px}
 .matchup-card{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}
 .matchup-summary{display:grid;grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr);align-items:center;gap:8px;padding:9px 14px;cursor:pointer;list-style:none;background:#fff}
