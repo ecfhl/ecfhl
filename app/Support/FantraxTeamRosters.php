@@ -198,7 +198,6 @@ class FantraxTeamRosters
         $normalizedColumns = [];
         $registerColumn = function(mixed $value, int $index) use (&$columns, &$normalizedColumns): void {
             if (is_array($value)) {
-                foreach ($value as $nested) $thisValue = null;
                 array_walk_recursive($value, function($nested) use ($index, &$columns, &$normalizedColumns) {
                     if (!is_scalar($nested)) return;
                     $text = trim(html_entity_decode(strip_tags((string)$nested)));
