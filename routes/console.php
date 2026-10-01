@@ -274,7 +274,41 @@ Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $
 Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $fantrax) {
     $base=CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();
     $failed=false;
+
+    $todayFrozen=false;
+    try {
+        $day=$base->toDateString();
+        $response=Http::timeout(12)->retry(1,500)->get('https://api-web.nhle.com/v1/score/'.$day);
+        $response->throw();
+        $starts=collect($response->json('games')??[])
+            ->map(function($game){
+                $utc=$game['startTimeUTC']??null;
+                if(!$utc)return null;
+                try{return CarbonImmutable::parse($utc)->utc();}catch(\Throwable){return null;}
+            })
+            ->filter();
+
+        if($starts->isNotEmpty()){
+            $lastStart=$starts->sortDesc()->first();
+            $todayFrozen=CarbonImmutable::now('UTC')->gt($lastStart->addHours(4));
+        }
+    } catch (\Throwable $e) {
+        // If the NHL schedule check fails, preserve the current-day snapshot rather
+        // than risk overwriting a completed historical lineup.
+        $todayFrozen=true;
+        Log::warning('Fantasy roster freeze-window check failed',[
+            'date'=>$base->toDateString(),
+            'error'=>$e->getMessage(),
+        ]);
+    }
+
     foreach ([$base,$base->addDay()] as $date) {
+        $isToday=$date->isSameDay($base);
+        if($isToday && $todayFrozen){
+            $this->info($date->toDateString().': roster snapshot frozen after live scoring window');
+            continue;
+        }
+
         try {
             $data=$fantrax->fetch($date);
             $now=now();
@@ -450,7 +484,7 @@ Schedule::command('ecfhl:refresh-current-standings')
     });
 
 Schedule::command('ecfhl:refresh-daily-players')->hourlyAt(0)->withoutOverlapping(55);
-Schedule::command('ecfhl:refresh-fantasy-rosters')->hourlyAt(10)->withoutOverlapping(45)->runInBackground();
+Schedule::command('ecfhl:refresh-fantasy-rosters')->everyThirtyMinutes()->withoutOverlapping(25)->runInBackground();
 Schedule::command('ecfhl:refresh-starting-goalies')->everyThirtyMinutes()->withoutOverlapping(25)->runInBackground();
 Schedule::command('ecfhl:refresh-pp-lines')->cron('2 */4 * * *')->withoutOverlapping(240)->runInBackground();
 Schedule::command('ecfhl:refresh-odds')->cron('6 */4 * * *')->withoutOverlapping(30)->runInBackground();
