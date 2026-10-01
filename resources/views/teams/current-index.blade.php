@@ -159,8 +159,8 @@
 .team-date-inactive:hover{background:#d1d5db!important;color:#111827!important}
 .matchup-period-label{margin:4px 0 10px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .current-matchup-list{display:flex;flex-direction:column;gap:16px;margin-bottom:28px}
-.matchup-card{border:1px solid var(--line);border-radius:18px;background:var(--surface);overflow:hidden}
-.matchup-summary{display:grid;grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr);align-items:center;gap:8px;padding:12px 14px;cursor:pointer;list-style:none}
+.matchup-card{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}
+.matchup-summary{display:grid;grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr);align-items:center;gap:8px;padding:12px 14px;cursor:pointer;list-style:none;background:#fff}
 .matchup-summary::-webkit-details-marker{display:none}
 .matchup-summary-side{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}
 .matchup-summary-home{text-align:right}
@@ -171,7 +171,7 @@
 .matchup-summary-score{font-size:22px;line-height:1;font-weight:900}
 .matchup-summary-vs{text-align:center;font-size:10px;font-weight:900;color:var(--muted)}
 .matchup-bye{font-size:11px;font-weight:900;color:var(--muted)}
-.matchup-expanded{border-top:1px solid var(--line)}
+.matchup-expanded{border-top:1px solid var(--line);background:#fff}
 .matchup-section-title{grid-column:1/-1;text-align:center;background:#e5e7eb;color:#374151;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;padding:5px 8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .matchup-roster-grid{display:grid;grid-template-columns:1fr 1fr}
 .matchup-roster-col{min-width:0;border-right:1px solid var(--line)}
