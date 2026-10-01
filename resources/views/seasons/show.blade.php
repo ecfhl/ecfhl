@@ -13,7 +13,15 @@
     <div class="season-result-entry"><strong class="season-result-team">{{ $season['third_place'] ?: '—' }}</strong><div class="podium-place podium-third"><span class="podium-medal">🥉</span><small>3rd</small></div></div>
   </div>
 
-  <div class="section-title"><h2>Standings</h2><span class="subtle">{{ count($standings) }} teams</span></div>
+  <div class="section-title">
+    <h2>Standings</h2>
+    <span class="subtle">
+      {{ count($standings) }} teams
+      @if(!empty($standingsLastUpdate))
+        · Updated {{ \Carbon\CarbonImmutable::parse($standingsLastUpdate)->setTimezone('America/Halifax')->format('g:i a T') }}
+      @endif
+    </span>
+  </div>
   <div class="table-card"><div class="table-scroll"><table class="data-table">
     <thead><tr><th class="num">Rank</th><th>Team</th><th class="num">W</th><th class="num">L</th><th class="num">T</th><th class="num">Pts</th><th class="num">Fpts</th><th class="num">Win %</th></tr></thead>
     <tbody>
