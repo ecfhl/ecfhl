@@ -287,8 +287,8 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                     'move_date'=>$date,
                     'fantasy_team_id'=>(string)$move['fantasy_team_id'],
                     'fantasy_team_name'=>(string)$move['fantasy_team_name'],
-                    'moves_used'=>(int)$move['moves_used'],
-                    'moves_left'=>(int)$move['moves_left'],
+                    'moves_used'=>$move['moves_used']===null?null:(int)$move['moves_used'],
+                    'moves_left'=>$move['moves_left']===null?null:(int)$move['moves_left'],
                     'checked_at'=>$now,
                     'created_at'=>$now,
                     'updated_at'=>$now,
@@ -368,7 +368,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             ->whereDate('move_date',$date)
             ->where('fantasy_team_id',(string)$teamId)
             ->value('moves_left');
-        $movesLeft=$movesLeft!==null?(int)$movesLeft:7;
+        $movesLeft=$movesLeft!==null?(int)$movesLeft:null;
 
         $activePlayers=$teamRows->filter(fn($p)=>
             (bool)($p->is_playing??false)
@@ -422,7 +422,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             ->sortBy(fn($p)=>(float)($p->projected_fpts_per_game??0))
             ->values();
 
-        $hasMoveAvailable=$movesLeft>0;
+        $hasMoveAvailable=$movesLeft!==null&&$movesLeft>0;
         $suggestions=[];
 
         // IR opportunity: an injured player who is not already in an IR roster slot
@@ -547,8 +547,10 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         // Do not spend more moves in the advice than the team actually has left.
         $suggestions=array_slice(array_values(array_unique($suggestions)),0,max(0,min($movesLeft,2)));
 
-        if(!$hasMoveAvailable){
-            $advice='No moves left today.';
+        if($movesLeft===null){
+            $advice='Claims remaining unavailable from Fantrax.';
+        } elseif(!$hasMoveAvailable){
+            $advice='No moves left.';
         } elseif(empty($suggestions)){
             $advice=$eligibleDrops->isEmpty()
                 ? 'No eligible FA/1-year drop below your projection thresholds.'
@@ -802,8 +804,8 @@ Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $
                     'move_date'=>$base->toDateString(),
                     'fantasy_team_id'=>(string)$move['fantasy_team_id'],
                     'fantasy_team_name'=>(string)$move['fantasy_team_name'],
-                    'moves_used'=>(int)$move['moves_used'],
-                    'moves_left'=>(int)$move['moves_left'],
+                    'moves_used'=>$move['moves_used']===null?null:(int)$move['moves_used'],
+                    'moves_left'=>$move['moves_left']===null?null:(int)$move['moves_left'],
                     'checked_at'=>$now,
                     'created_at'=>$now,
                     'updated_at'=>$now,
