@@ -67,7 +67,10 @@ Route::get('/teams/current', function() {
     $scoreName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower($name))??'';};
     $scoreTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
     $dailyScoreRows=DB::table('active_daily_scores')->whereDate('game_date',$date)->get();
-    $scoreLastUpdate=$dailyScoreRows->max('checked_at');
+    $scoreLastUpdate=DB::table('job_run_history')
+        ->where('job_name','ecfhl:refresh-daily-scores')
+        ->whereDate('target_date',$date)
+        ->max('completed_at');
     $dailyScores=$dailyScoreRows->keyBy(fn($r)=>$scoreTeam($r->nhl_team).'|'.$scoreName($r->player_name));
     $rows=$rows->map(function($p)use($dailyScores,$scoreName,$scoreTeam){
         $score=$dailyScores[$scoreTeam($p->nhl_team).'|'.$scoreName($p->player_name)]??null;
@@ -241,7 +244,12 @@ Route::get('/teams/current/{slug}', function(string $slug) {
 
     $scoreName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower($name))??'';};
     $scoreTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
-    $dailyScores=DB::table('active_daily_scores')->whereDate('game_date',$date)->get()->keyBy(fn($r)=>$scoreTeam($r->nhl_team).'|'.$scoreName($r->player_name));
+    $dailyScoreRows=DB::table('active_daily_scores')->whereDate('game_date',$date)->get();
+    $scoreLastUpdate=DB::table('job_run_history')
+        ->where('job_name','ecfhl:refresh-daily-scores')
+        ->whereDate('target_date',$date)
+        ->max('completed_at');
+    $dailyScores=$dailyScoreRows->keyBy(fn($r)=>$scoreTeam($r->nhl_team).'|'.$scoreName($r->player_name));
     $rows=$rows->map(function($p)use($dailyScores,$scoreName,$scoreTeam){
         $score=$dailyScores[$scoreTeam($p->nhl_team).'|'.$scoreName($p->player_name)]??null;
         $p->today_fpts=$score?(float)$score->today_fpts:0.0;
@@ -429,7 +437,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $fantasyTeamId=$rows->first()->fantasy_team_id??null;
     $fantraxTeamUrl=$fantasyTeamId?'https://www.fantrax.com/fantasy/league/092zcn40molvao69/team/roster;teamId='.$fantasyTeamId:null;
     $teamChoices=array_map(fn($name)=>['name'=>$name,'slug'=>\Illuminate\Support\Str::slug($name)],$currentNames);
-    return view('teams.current',compact('teamName','slug','date','today','tomorrow','positions','targetGroups','lastUpdate','fantraxTeamUrl','teamChoices','teamTodayFpts','liveMatchup'));
+    return view('teams.current',compact('teamName','slug','date','today','tomorrow','positions','targetGroups','lastUpdate','scoreLastUpdate','fantraxTeamUrl','teamChoices','teamTodayFpts','liveMatchup'));
 });
 
 Route::get('/teams/{slug}', function(string $slug,EcfhlData $data){
