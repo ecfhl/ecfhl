@@ -17,10 +17,16 @@
     </div>
     <div class="matchup-player-opponent">
       @if($player->opponent)
-        <span class="{{ $player->home_away==='AWAY'?'team-away':'team-home' }}">{{ $player->home_away==='AWAY'?'@':'vs' }} {{ $player->opponent }}@if($player->game_time) · {{ $player->game_time }}@endif</span>
+        @php
+          $displayGameTime = $player->game_time
+            ? preg_replace('/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+/i', '', trim((string)$player->game_time))
+            : null;
+        @endphp
+        <span class="{{ $player->home_away==='AWAY'?'team-away':'team-home' }}">{{ $player->home_away==='AWAY'?'@':'vs' }} {{ $player->opponent }}@if($displayGameTime) · {{ $displayGameTime }}@endif</span>
       @else
         <span class="team-playing-text">Playing</span>
       @endif
+      <span class="matchup-player-cats">GP: {{ $player->today_gp ?? 0 }} G: {{ $player->today_g ?? 0 }} A: {{ $player->today_a ?? 0 }} PPG: {{ $player->today_ppg ?? 0 }} SHG: {{ $player->today_shg ?? 0 }} GWG: {{ $player->today_gwg ?? 0 }} W: {{ $player->today_w ?? 0 }} SO: {{ $player->today_so ?? 0 }}</span>
     </div>
   </div>
   <div class="matchup-player-metrics">
