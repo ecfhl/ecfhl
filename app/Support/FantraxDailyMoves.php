@@ -13,21 +13,51 @@ class FantraxDailyMoves
 
     public function fetch(CarbonImmutable $date, ?CarbonImmutable $periodStart=null): array
     {
-        $url='https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/transactions/history;maxResultsPerPage=250;view=CLAIM_DROP;pageNumber=1;executedOnly=true;includeDeleted=false';
+        $rostersResponse=Http::timeout(45)->retry(2,1200)->withHeaders([
+            'User-Agent'=>'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/154 Safari/537.36',
+            'Accept'=>'application/json',
+        ])->get('https://www.fantrax.com/fxea/general/getTeamRosters',[
+            'leagueId'=>self::LEAGUE_ID,
+        ]);
+        $rostersResponse->throw();
+        $rosters=$rostersResponse->json('rosters');
+        if(!is_array($rosters))throw new RuntimeException('Fantrax team rosters returned no teams while reading Claims Remaining.');
+
+        $rows=[];
+        foreach($rosters as $teamId=>$team){
+            $teamId=(string)$teamId;
+            $teamName=trim((string)($team['teamName']??$teamId));
+            if($teamId==='')continue;
+
+            $data=$this->teamRosterInfo($teamId);
+            $remaining=$this->extractClaimsRemaining($data);
+
+            $rows[]=[
+                'fantasy_team_id'=>$teamId,
+                'fantasy_team_name'=>$teamName,
+                'moves_used'=>$remaining===null?null:max(0,7-$remaining),
+                'moves_left'=>$remaining,
+            ];
+        }
+
+        if(!$rows)throw new RuntimeException('Fantrax returned no team Claims Remaining rows.');
+        return $rows;
+    }
+
+    private function teamRosterInfo(string $teamId): array
+    {
+        $refUrl='https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/team/roster;teamId='.rawurlencode($teamId);
         $payload=[
             'msgs'=>[[
-                'method'=>'getTransactionDetailsHistory',
+                'method'=>'getTeamRosterInfo',
                 'data'=>[
                     'leagueId'=>self::LEAGUE_ID,
-                    'maxResultsPerPage'=>'250',
-                    'executedOnly'=>true,
-                    'includeDeleted'=>false,
-                    'view'=>'CLAIM_DROP',
-                    'pageNumber'=>'1',
+                    'teamId'=>$teamId,
+                    'view'=>'STATS',
                 ],
             ]],
             'uiv'=>3,
-            'refUrl'=>$url,
+            'refUrl'=>$refUrl,
             'dt'=>0,
             'at'=>0,
             'av'=>'0.0',
@@ -39,98 +69,103 @@ class FantraxDailyMoves
             'User-Agent'=>'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/154 Safari/537.36',
             'Accept'=>'application/json',
             'Content-Type'=>'application/json',
-            'Referer'=>$url,
+            'Referer'=>$refUrl,
         ])->post('https://www.fantrax.com/fxpa/req?leagueId='.self::LEAGUE_ID,$payload);
         $response->throw();
 
         $data=$response->json('responses.0.data');
-        if(!is_array($data))throw new RuntimeException('Fantrax transaction history returned no response data.');
-
-        $rows=$data['table']['rows']??[];
-        if(!is_array($rows))throw new RuntimeException('Fantrax transaction history returned no rows.');
-
-        $teamNames=[];
-        foreach(($data['displayedLists']['teams']??[]) as $team){
-            $id=trim((string)($team['id']??''));
-            $name=trim((string)($team['name']??''));
-            if($id!=='')$teamNames[$id]=$name;
-        }
-
-        $target=$date->toDateString();
-        $periodStart=($periodStart??$date)->startOfDay();
-        $periodEnd=$date->endOfDay();
-        $counts=[];
-        $groupTeam=[];
-        $groupDate=[];
-
-        foreach($rows as $row){
-            if(!is_array($row) || empty($row['executed']) || !empty($row['deleted']))continue;
-            if(strtoupper(trim((string)($row['transactionCode']??'')))!=='CLAIM')continue;
-
-            $txSetId=(string)($row['txSetId']??'');
-            $teamId='';
-            $teamName='';
-            $processedDate=null;
-
-            foreach(($row['cells']??[]) as $cell){
-                if(!is_array($cell))continue;
-                $key=(string)($cell['key']??'');
-
-                if($key==='team'){
-                    $teamId=trim((string)($cell['teamId']??''));
-                    $teamName=trim(strip_tags((string)($cell['content']??'')));
-                    if($txSetId!=='' && $teamId!=='')$groupTeam[$txSetId]=[$teamId,$teamName];
-                } elseif($key==='date'){
-                    $processedDate=$this->parseDate((string)($cell['content']??''),(string)($cell['toolTip']??''));
-                    if($txSetId!=='' && $processedDate)$groupDate[$txSetId]=$processedDate;
-                }
-            }
-
-            if(($teamId==='' || $teamName==='') && $txSetId!=='' && isset($groupTeam[$txSetId])){
-                [$teamId,$teamName]=$groupTeam[$txSetId];
-            }
-            if(!$processedDate && $txSetId!=='' && isset($groupDate[$txSetId]))$processedDate=$groupDate[$txSetId];
-
-            if(!$processedDate)continue;
-            $processedAtlantic=$processedDate->setTimezone('America/Halifax');
-            if($processedAtlantic->lt($periodStart) || $processedAtlantic->gt($periodEnd))continue;
-            if($teamId==='')continue;
-
-            if($teamName==='')$teamName=$teamNames[$teamId]??$teamId;
-            if(!isset($counts[$teamId]))$counts[$teamId]=['fantasy_team_id'=>$teamId,'fantasy_team_name'=>$teamName,'moves_used'=>0];
-            $counts[$teamId]['moves_used']++;
-        }
-
-        foreach($teamNames as $teamId=>$teamName){
-            if(!isset($counts[$teamId])){
-                $counts[$teamId]=['fantasy_team_id'=>$teamId,'fantasy_team_name'=>$teamName,'moves_used'=>0];
-            }
-        }
-
-        foreach($counts as &$row)$row['moves_left']=max(0,7-(int)$row['moves_used']);
-        unset($row);
-
-        return array_values($counts);
+        if(!is_array($data))throw new RuntimeException('Fantrax team roster page returned no data for team '.$teamId.'.');
+        return $data;
     }
 
-    private function parseDate(string $content,string $tooltip): ?CarbonImmutable
+    private function extractClaimsRemaining(array $data): ?int
     {
-        $candidates=[];
-        $text=trim(html_entity_decode(strip_tags($content)));
-        if($text!=='')$candidates[]=$text;
-
-        if($tooltip!==''){
-            $plain=trim(html_entity_decode(strip_tags(str_replace(['<br>','<br/>','<br />'],' ', $tooltip))));
-            if(preg_match('/Processed\s+(.+)/i',$plain,$m))$candidates[]=trim($m[1]);
+        $directKeys=[
+            'claimsRemaining','claimRemaining','remainingClaims','claims_remaining',
+            'claim_remaining','remaining_claims'
+        ];
+        foreach($directKeys as $key){
+            $found=$this->findKeyRecursive($data,$key);
+            $number=$this->integerFromValue($found);
+            if($number!==null)return max(0,$number);
         }
 
-        foreach($candidates as $value){
-            $value=preg_replace('/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+/i','',$value);
-            foreach(['M j, Y, g:iA','M j, Y, g:i A','M j, Y, g:i:s A','F j, Y, g:iA','F j, Y, g:i:s A'] as $format){
-                try{
-                    $dt=CarbonImmutable::createFromFormat('!'.$format,$value,'America/Halifax');
-                    if($dt)return $dt;
-                }catch(\Throwable){}
+        $found=$this->findLabelledValue($data);
+        if($found!==null)return max(0,$found);
+
+        $json=json_encode($data,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+        if(is_string($json) && preg_match('/Claims?\\s+Remaining[^0-9]{0,30}(\\d+)/i',$json,$m)){
+            return (int)$m[1];
+        }
+
+        return null;
+    }
+
+    private function findKeyRecursive(mixed $node,string $wanted): mixed
+    {
+        if(!is_array($node))return null;
+        foreach($node as $key=>$value){
+            if(is_string($key) && strcasecmp($key,$wanted)===0)return $value;
+            if(is_array($value)){
+                $found=$this->findKeyRecursive($value,$wanted);
+                if($found!==null)return $found;
+            }
+        }
+        return null;
+    }
+
+    private function findLabelledValue(mixed $node): ?int
+    {
+        if(!is_array($node))return null;
+
+        $label='';
+        foreach(['label','name','title','heading','key','description','text'] as $key){
+            if(isset($node[$key]) && is_scalar($node[$key])){
+                $candidate=trim(html_entity_decode(strip_tags((string)$node[$key])));
+                if(preg_match('/claims?\\s+remaining/i',$candidate)){
+                    $label=$candidate;
+                    break;
+                }
+            }
+        }
+
+        if($label!==''){
+            foreach(['value','content','total','remaining','count','number','amount'] as $key){
+                if(array_key_exists($key,$node)){
+                    $number=$this->integerFromValue($node[$key]);
+                    if($number!==null)return $number;
+                }
+            }
+            if(preg_match('/(\\d+)/',$label,$m))return (int)$m[1];
+        }
+
+        foreach($node as $value){
+            if(is_scalar($value)){
+                $text=trim(html_entity_decode(strip_tags((string)$value)));
+                if(preg_match('/claims?\\s+remaining[^0-9]*(\\d+)/i',$text,$m))return (int)$m[1];
+            } elseif(is_array($value)){
+                $found=$this->findLabelledValue($value);
+                if($found!==null)return $found;
+            }
+        }
+
+        return null;
+    }
+
+    private function integerFromValue(mixed $value): ?int
+    {
+        if(is_int($value))return $value;
+        if(is_float($value))return (int)$value;
+        if(is_string($value)){
+            $text=trim(html_entity_decode(strip_tags($value)));
+            if(preg_match('/-?\\d+/',$text,$m))return (int)$m[0];
+        }
+        if(is_array($value)){
+            foreach(['value','content','total','remaining','count','number','amount'] as $key){
+                if(array_key_exists($key,$value)){
+                    $number=$this->integerFromValue($value[$key]);
+                    if($number!==null)return $number;
+                }
             }
         }
         return null;
