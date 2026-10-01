@@ -72,7 +72,20 @@ document.addEventListener('DOMContentLoaded',()=>{
    }catch(e){}
  };
  restoreBox();
- closeButton.addEventListener('click',()=>{box.hidden=true;box.className='job-live-results';boxText.textContent='';sessionStorage.removeItem(storageKey);});
+ closeButton.addEventListener('click',()=>{
+   box.hidden=true;
+   box.className='job-live-results';
+   boxText.textContent='';
+   sessionStorage.removeItem(storageKey);
+   document.querySelectorAll('.status-card').forEach(card=>{
+     card.classList.remove('status-card-success','status-card-warning','status-card-failed');
+   });
+   document.querySelectorAll('.status-card .status-head .pill').forEach(pill=>{
+     pill.classList.remove('status-ok','status-stale','status-failed-pill');
+     pill.textContent='';
+     pill.style.display='none';
+   });
+ });
  const headings={players:'Getting available players in Fantrax...',goalies:'Getting goalie information from Daily Faceoff...',lines:'Getting Lines information from Daily Faceoff...',odds:'Getting NHL moneyline odds...',teams:'Getting current fantasy team rosters from Fantrax...',scores:'Refreshing live daily scores...',standings:'Refreshing current standings from Fantrax...'};
  const parse=(job,output)=>{
    if(job==='players'){
