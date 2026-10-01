@@ -58,7 +58,7 @@
         $homeBench=$bench($homeAll);
       @endphp
 
-      <details class="matchup-card">
+      <details class="matchup-card" data-matchup-key="{{ ($away['id'] ?? $away['slug'] ?? 'away') }}::{{ ($home['id'] ?? $home['slug'] ?? 'home') }}">
         <summary class="matchup-summary">
           <div class="matchup-summary-side matchup-summary-away">
             @if($away)
@@ -187,7 +187,7 @@
 .matchup-player-name strong{min-width:0}
 .matchup-player-name .pill{padding:1px 4px!important;font-size:9px!important;line-height:1.05}
 .matchup-player-opponent{margin-top:4px;font-size:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.matchup-player-cats{font-size:8px;color:var(--muted);font-weight:800;white-space:nowrap}
-.matchup-player-metrics{display:flex;align-items:center;gap:10px;flex:0 0 auto;text-align:right}
+.matchup-player-metrics{display:flex;align-items:flex-start;align-self:flex-start;gap:10px;flex:0 0 auto;text-align:right}
 .matchup-player-metrics span{display:block;font-size:8px;color:var(--muted);font-weight:700}
 .matchup-player-metrics strong{display:block;font-size:14px}
 .matchup-player-today strong{font-size:17px}
@@ -241,7 +241,30 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
 
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
-  setInterval(()=>location.reload(),60000);
+  const stateKey='ecfhl-open-matchups:'+location.pathname+location.search;
+  const cards=[...document.querySelectorAll('.matchup-card[data-matchup-key]')];
+
+  try{
+    const saved=JSON.parse(sessionStorage.getItem(stateKey)||'[]');
+    if(Array.isArray(saved)){
+      cards.forEach(card=>card.open=saved.includes(card.dataset.matchupKey));
+    }
+  }catch(e){}
+
+  const saveOpenMatchups=()=>{
+    try{
+      const open=cards.filter(card=>card.open).map(card=>card.dataset.matchupKey);
+      sessionStorage.setItem(stateKey,JSON.stringify(open));
+    }catch(e){}
+  };
+
+  cards.forEach(card=>card.addEventListener('toggle',saveOpenMatchups));
+
+  setInterval(()=>{
+    saveOpenMatchups();
+    location.reload();
+  },60000);
+
   document.querySelectorAll('.matchup-summary a').forEach(link=>{
     link.addEventListener('click',event=>event.stopPropagation());
   });
