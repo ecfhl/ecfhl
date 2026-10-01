@@ -442,7 +442,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                 $target=collect($availableGroups[$pos]??[])->first();
                 if($target){
                     $suggestions[]='Move '.$displayPlayerName($irCandidate->player_name).' to IR and add '.$displayPlayerName($target['name']).' ('.$target['team'].')'
-                        .(!empty($target['projected_points'])?' — '.$target['projected_points'].' projected FPts':'').'.';
+                        .(!empty($target['projected_points'])?', '.$target['projected_points'].' projected FPts':'').'.';
                 }
             }
         }
@@ -475,7 +475,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                     if($target){
                         $suggestions[]='You already have a goalie playing tonight and have an open '.$targetPos.' spot. Consider dropping '
                             .$displayPlayerName($surplusGoalie->player_name).' and adding '.$displayPlayerName($target['name']).' ('.$target['team'].')'
-                            .(!empty($target['projected_points'])?' — '.$target['projected_points'].' projected FPts':'').'.';
+                            .(!empty($target['projected_points'])?', '.$target['projected_points'].' projected FPts':'').'.';
                     }
                 }
             }
