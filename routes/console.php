@@ -4,6 +4,7 @@ use App\Support\DailyFaceoffPowerPlay;
 use App\Support\DailyFaceoffStartingGoalies;
 use App\Support\FantraxAvailablePlayers;
 use App\Support\FantraxDailyScores;
+use App\Support\FantraxDailyMoves;
 use App\Support\FantraxTeamRosters;
 use App\Support\FantraxStandings;
 use App\Support\FantraxSchedule;
@@ -556,7 +557,7 @@ Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $
     }
 });
 
-Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $fantrax) {
+Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $fantrax, FantraxDailyMoves $dailyMoves) {
     $base=CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();
     $failed=false;
 
@@ -617,6 +618,40 @@ Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $
             $this->error($date->toDateString().': '.$e->getMessage().'. Existing roster data preserved.');
         }
     }
+
+    try {
+        $moveRows=$dailyMoves->fetch($base);
+        $now=now();
+        DB::transaction(function()use($base,$moveRows,$now){
+            DB::table('team_daily_moves')->whereDate('move_date',$base->toDateString())->delete();
+            foreach($moveRows as $move){
+                DB::table('team_daily_moves')->insert([
+                    'move_date'=>$base->toDateString(),
+                    'fantasy_team_id'=>(string)$move['fantasy_team_id'],
+                    'fantasy_team_name'=>(string)$move['fantasy_team_name'],
+                    'moves_used'=>(int)$move['moves_used'],
+                    'moves_left'=>(int)$move['moves_left'],
+                    'checked_at'=>$now,
+                    'created_at'=>$now,
+                    'updated_at'=>$now,
+                ]);
+            }
+        });
+        $this->info(count($moveRows).' team move-limit rows refreshed.');
+
+        try {
+            Artisan::call('ecfhl:refresh-lineup-advice');
+            $output=trim(Artisan::output());
+            if($output!=='')$this->line($output);
+        } catch (\Throwable $e) {
+            Log::warning('Lineup advisor refresh after roster update failed',['error'=>$e->getMessage()]);
+        }
+    } catch (\Throwable $e) {
+        $failed=true;
+        Log::error('Fantrax daily move refresh failed',['date'=>$base->toDateString(),'error'=>$e->getMessage()]);
+        $this->error('Daily moves: '.$e->getMessage());
+    }
+
     return $failed?1:0;
 });
 
