@@ -6,6 +6,7 @@ use App\Support\FantraxAvailablePlayers;
 use App\Support\FantraxDailyScores;
 use App\Support\FantraxTeamRosters;
 use App\Support\NhlOdds;
+use App\Support\NhlDailyStats;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -66,7 +67,7 @@ Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayer
     return $failed?1:0;
 });
 
-Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailyScores $fantrax) {
+Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailyScores $fantrax, NhlDailyStats $nhlStats) {
     $tz='America/Halifax';
     $requested=trim((string)($this->argument('date')??''));
     if($requested!==''){
@@ -84,27 +85,36 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
     foreach($dates as $date){
         try {
             $data=$fantrax->fetch($date);
+            $nhlRows=$nhlStats->fetch($date);
+            $normName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower($name))??'';};
+            $normTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
+            $nhlByKey=[];
+            foreach($nhlRows as $stat)$nhlByKey[$normTeam($stat['nhl_team']??'').'|'.$normName($stat['player_name']??'')]=$stat;
+
             $now=now();
-            $rows=array_map(fn($r)=>[
-                'game_date'=>$date->toDateString(),
-                'player_name'=>$r['player_name'],
-                'nhl_team'=>$r['nhl_team'],
-                'position'=>$r['position'],
-                'fantasy_status'=>$r['fantasy_status'],
-                'today_fpts'=>$r['today_fpts'],
-                'gp'=>$r['gp']??0,
-                'g'=>$r['g']??0,
-                'a'=>$r['a']??0,
-                'ppg'=>$r['ppg']??0,
-                'shg'=>$r['shg']??0,
-                'gwg'=>$r['gwg']??0,
-                'w'=>$r['w']??0,
-                'so'=>$r['so']??0,
-                'source_url'=>$data['url'],
-                'checked_at'=>$now,
-                'created_at'=>$now,
-                'updated_at'=>$now,
-            ],$data['rows']);
+            $rows=array_map(function($r)use($date,$now,$data,$nhlByKey,$normName,$normTeam){
+                $stat=$nhlByKey[$normTeam($r['nhl_team']??'').'|'.$normName($r['player_name']??'')]??[];
+                return [
+                    'game_date'=>$date->toDateString(),
+                    'player_name'=>$r['player_name'],
+                    'nhl_team'=>$r['nhl_team'],
+                    'position'=>$r['position'],
+                    'fantasy_status'=>$r['fantasy_status'],
+                    'today_fpts'=>$r['today_fpts'],
+                    'gp'=>$stat['gp']??0,
+                    'g'=>$stat['g']??0,
+                    'a'=>$stat['a']??0,
+                    'ppg'=>$stat['ppg']??0,
+                    'shg'=>$stat['shg']??0,
+                    'gwg'=>$stat['gwg']??0,
+                    'w'=>$stat['w']??0,
+                    'so'=>$stat['so']??0,
+                    'source_url'=>$data['url'],
+                    'checked_at'=>$now,
+                    'created_at'=>$now,
+                    'updated_at'=>$now,
+                ];
+            },$data['rows']);
 
             DB::transaction(function()use($date,$rows){
                 DB::table('active_daily_scores')->whereDate('game_date',$date->toDateString())->delete();
