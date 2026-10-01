@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title','Draft · ECFHL')
 @section('content')
-<div class="shell"><div class="page-head"><div class="eyebrow">Draft archive</div><h1>Draft</h1><p>Browse every recorded ECFHL draft selection.</p></div>
+<div class="shell"><div class="page-head"><div class="eyebrow">Draft archive</div><h1>📖 Draft</h1><p>Browse every recorded ECFHL draft selection.</p></div>
 <div class="grid-3 leader-cards draft-leader-cards" style="margin-bottom:22px">
 @foreach([['overall1','#1 Overall Picks'],['top5','Top 5 Picks'],['round1','1st Round Picks']] as [$key,$title])
 <article class="card leader-card" data-expand-card>
