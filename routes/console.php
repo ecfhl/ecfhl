@@ -374,7 +374,37 @@ Artisan::command('ecfhl:refresh-odds', function (NhlOdds $odds) {
 Schedule::command('ecfhl:refresh-daily-scores')
     ->cron('* * * * *')
     ->withoutOverlapping(2)
-    ->runInBackground();
+    ->runInBackground()
+    ->when(function () {
+        $fantasyDay=CarbonImmutable::now('America/Los_Angeles')->subHours(12)->startOfDay();
+        $day=$fantasyDay->toDateString();
+
+        try {
+            $response=Http::timeout(12)->retry(1,500)->get('https://api-web.nhle.com/v1/score/'.$day);
+            $response->throw();
+            $starts=collect($response->json('games')??[])
+                ->map(function($game){
+                    $utc=$game['startTimeUTC']??null;
+                    if(!$utc)return null;
+                    try{return CarbonImmutable::parse($utc)->utc();}catch(\Throwable){return null;}
+                })
+                ->filter();
+
+            if($starts->isEmpty())return false;
+
+            $now=CarbonImmutable::now('UTC');
+            $first=$starts->sort()->first();
+            $last=$starts->sortDesc()->first();
+
+            return $now->betweenIncluded($first,$last->addHours(4));
+        } catch (\Throwable $e) {
+            Log::warning('Live scoring window check failed',[
+                'date'=>$day,
+                'error'=>$e->getMessage(),
+            ]);
+            return false;
+        }
+    });
 
 Schedule::command('ecfhl:refresh-current-standings')
     ->everyMinute()
