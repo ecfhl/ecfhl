@@ -24,7 +24,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7"><link rel="shortcut icon" href="/favicon.svg?v=7"><link rel="apple-touch-icon" href="/ecfhl-logo.png?v=7"><link rel="stylesheet" href="/app.css?v=6"><link rel="stylesheet" href="/header-filters.css?v=3">
 <style>
 html,body,main{max-width:100%;overflow-x:clip}
-.nav-dropdown{position:relative;display:flex;align-items:center}.nav-dropdown-row{display:flex;align-items:center}.nav-dropdown-main-link{display:block}.nav-dropdown-toggle{appearance:none;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;padding:8px 7px;cursor:pointer;border-radius:7px}.nav-dropdown.active>.nav-dropdown-row,.nav-dropdown-toggle:hover{background:var(--surface-2,rgba(255,255,255,.08));border-radius:7px}.nav-dropdown-menu{display:none;position:absolute;top:100%;left:0;z-index:1000;min-width:430px;grid-template-columns:repeat(2,minmax(190px,1fr));gap:2px;padding:8px;background:#082f4f;border:1px solid #6b88a0;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,.28);color:#fff}.nav-dropdown:hover .nav-dropdown-menu,.nav-dropdown.open .nav-dropdown-menu{display:grid}.nav-dropdown-menu a{display:block;padding:8px 10px!important;border-radius:7px;white-space:nowrap;text-decoration:none;color:#fff!important}.nav-dropdown-menu a:hover{background:#12486f}.nav-dropdown-menu .nav-all-teams-link,.nav-dropdown-menu .nav-history-link{grid-column:1/-1;font-weight:800}.nav-dropdown-menu .nav-all-teams-link{border-bottom:1px solid #6b88a0;margin-bottom:4px}.nav-dropdown-menu .nav-history-link{border-top:1px solid #6b88a0;margin-top:4px;padding-top:9px!important}
+.nav-dropdown{position:relative;display:flex;align-items:center}.nav-dropdown-row{display:flex;align-items:center}.nav-dropdown-main-link{display:block}.nav-dropdown-toggle{appearance:none;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;padding:8px 7px;cursor:pointer;border-radius:7px}.nav-dropdown.active>.nav-dropdown-row,.nav-dropdown-toggle:hover{background:var(--surface-2,rgba(255,255,255,.08));border-radius:7px}.nav-dropdown-menu{display:none;position:absolute;top:100%;left:0;z-index:1000;min-width:430px;grid-template-columns:repeat(2,minmax(190px,1fr));gap:2px;padding:8px;background:#082f4f;border:1px solid #6b88a0;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,.28);color:#fff}.nav-dropdown:hover .nav-dropdown-menu,.nav-dropdown.open .nav-dropdown-menu{display:grid}.nav-dropdown-menu a{display:block;padding:8px 10px!important;border-radius:7px;white-space:nowrap;text-decoration:none;color:#fff!important}.nav-dropdown-menu a:hover{background:#12486f}.archive-menu{min-width:180px!important;grid-template-columns:1fr!important}.nav-dropdown-menu .nav-all-teams-link,.nav-dropdown-menu .nav-history-link{grid-column:1/-1;font-weight:800}.nav-dropdown-menu .nav-all-teams-link{border-bottom:1px solid #6b88a0;margin-bottom:4px}.nav-dropdown-menu .nav-history-link{border-top:1px solid #6b88a0;margin-top:4px;padding-top:9px!important}
 @media(max-width:900px){.nav-dropdown{display:block;width:100%}.nav-dropdown-row{display:grid;grid-template-columns:1fr auto;align-items:center;width:100%}.nav-dropdown-main-link{text-align:center!important;padding:10px 0!important}.nav-dropdown-toggle{width:44px;text-align:center;padding:10px 0}.nav-dropdown:hover .nav-dropdown-menu{display:none}.nav-dropdown.open .nav-dropdown-menu{display:grid!important;position:static;min-width:0;width:100%;grid-template-columns:1fr;background:transparent;border:0;box-shadow:none;padding:4px 0 8px 12px}.nav-dropdown-menu a{padding:8px 0!important;text-align:center!important}.nav-dropdown-menu .nav-history-link{border-top:1px solid var(--line);padding-top:10px!important}}
 </style>
 </head>
@@ -45,11 +45,20 @@ html,body,main{max-width:100%;overflow-x:clip}
     <a class="nav-history-link" href="/teams">Franchise History</a>
   </div>
 </div>
-<a href="/seasons" class="{{ request()->is('seasons*')?'active':'' }}">Seasons</a>
-<a href="/prizes" class="{{ request()->is('prizes')?'active':'' }}">Prizes</a>
-<a href="/trades" class="{{ request()->is('trades')?'active':'' }}">Trades</a>
-<a href="/draft" class="{{ request()->is('draft')?'active':'' }}" onclick="if(location.pathname==='/draft'){event.preventDefault();history.replaceState(null,'','/draft');window.scrollTo({top:0,left:0,behavior:'auto'});}">Draft</a>
-<a href="/players" class="{{ request()->is('players')?'active':'' }}">Players</a>
+<a href="/seasons" class="{{ request()->is('seasons')?'active':'' }}">Seasons</a>
+<a href="/seasons/2026-27" class="{{ request()->is('seasons/2026-27')?'active':'' }}">Standings</a>
+<div class="nav-dropdown {{ request()->is('prizes','trades','draft','players')?'active':'' }}">
+  <div class="nav-dropdown-row">
+    <a class="nav-dropdown-main-link" href="/prizes">Archive</a>
+    <button type="button" class="nav-dropdown-toggle" onclick="this.closest('.nav-dropdown').classList.toggle('open')" aria-label="Open Archive menu" aria-expanded="false"><span aria-hidden="true">▾</span></button>
+  </div>
+  <div class="nav-dropdown-menu archive-menu">
+    <a href="/prizes">Prizes</a>
+    <a href="/trades">Trades</a>
+    <a href="/draft" onclick="if(location.pathname==='/draft'){event.preventDefault();history.replaceState(null,'','/draft');window.scrollTo({top:0,left:0,behavior:'auto'});}">Draft</a>
+    <a href="/players">Players</a>
+  </div>
+</div>
 <a href="/rules" class="{{ request()->is('rules')?'active':'' }}">Rules</a>
 </nav></div></header>
 @if($showSeasonFilter)<div class="season-filter-bar"><div class="shell"><div class="header-season-filter" role="group" aria-label="Season type">@foreach(['h2h'=>'Head-to-Head','total'=>'Total Points'] as $value=>$label)<button type="button" class="header-filter-button season-type-choice {{ in_array($seasonMode,[$value,'all'])?'active':'' }}" data-value="{{ $value }}">{{ $label }}</button>@endforeach</div></div></div>@endif
