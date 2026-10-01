@@ -613,7 +613,17 @@ Route::get('/job-status', function () {
     $teamsLast = DB::table('active_fantasy_rosters')->max('last_update');
     $scoresLast = DB::table('active_daily_scores')->max('checked_at');
     $standingsLast = DB::table('job_run_history')->where('job_name','ecfhl:refresh-current-standings')->max('completed_at');
-    $jobs = [
+    $collectorStates = IlluminateSupportFacadesSchema::hasTable('collector_job_statuses')
+        ? DB::table('collector_job_statuses')->get()->keyBy('job_key')
+        : collect();
+    $withOutcome = function(array $job) use ($collectorStates) {
+        $row=$collectorStates[$job['key']]??null;
+        $job['outcome']=$row?($row->status??null):null;
+        $job['outcome_message']=$row?($row->message??null):null;
+        $job['outcome_ran_at']=$row?($row->ran_at??null):null;
+        return $job;
+    };
+    $jobs = array_map($withOutcome, [
         ['key'=>'players','name'=>'Fantrax Available Players','schedule'=>'Every hour at :00','last_update'=>$format($fantraxLast),'records'=>DB::table('active_daily_players')->count(),'next_run'=>$nextHourly(0),'state'=>$state($fantraxLast,90),'description'=>'Available players playing today and tomorrow, including projected fantasy points.'],
         ['key'=>'goalies','name'=>'Daily Faceoff Goalies','schedule'=>'Every 30 minutes','last_update'=>$format($goaliesLast),'records'=>DB::table('active_starting_goalies')->count(),'next_run'=>$nextHalfHourly(),'state'=>$state($goaliesLast,60),'description'=>'Starting-goalie status for today and tomorrow.'],
         ['key'=>'lines','name'=>'Daily Faceoff Lines','schedule'=>'Every 4 hours at :02','last_update'=>$format($linesLast),'records'=>DB::table('active_pp_lines')->count(),'next_run'=>$nextFourHourly(2),'state'=>$state($linesLast,300),'description'=>'Current line combinations and PP1/PP2 assignments for all NHL teams.'],
@@ -621,7 +631,7 @@ Route::get('/job-status', function () {
         ['key'=>'teams','name'=>'Fantasy Team Rosters','schedule'=>'Every hour at :10','last_update'=>$format($teamsLast),'records'=>DB::table('active_fantasy_rosters')->count(),'next_run'=>$nextHourly(10),'state'=>$state($teamsLast,90),'description'=>'Current Fantrax rosters for every fantasy team, enriched with projections, opponents, injuries, line and power-play assignments.'],
         ['key'=>'scores','name'=>'Live Daily Scores','schedule'=>'Every minute','last_update'=>$format($scoresLast),'records'=>DB::table('active_daily_scores')->count(),'next_run'=>'Every minute','state'=>$state($scoresLast,6),'description'=>'Fantrax player FPts and live NHL category stats for today, refreshed every minute.'],
         ['key'=>'standings','name'=>'Current Standings','schedule'=>'Daily; every 30 minutes during games','last_update'=>$format($standingsLast),'records'=>DB::table('team_seasons')->where('season_id','2026-27')->count(),'next_run'=>'Daily / 30 min during games','state'=>$state($standingsLast,1500),'description'=>'2026-27 standings and fantasy points from Fantrax scoring-period data.'],
-    ];
+    ]);
     return response()
         ->view('job-status', compact('jobs'))
         ->header('Cache-Control','no-store, no-cache, must-revalidate, max-age=0')
