@@ -21,11 +21,13 @@ class NhlDailyStats
             try{
                 $box=$this->get('https://api-web.nhle.com/v1/gamecenter/'.$gameId.'/boxscore');
                 $landing=$this->get('https://api-web.nhle.com/v1/gamecenter/'.$gameId.'/landing');
+                $playByPlay=$this->get('https://api-web.nhle.com/v1/gamecenter/'.$gameId.'/play-by-play');
             }catch(\Throwable){
                 continue;
             }
 
-            $this->mergeBoxscore($rows,$box);
+            $rosterNames=$this->rosterNames($playByPlay);
+            $this->mergeBoxscore($rows,$box,$rosterNames);
             $this->mergeGoalTypes($rows,$landing);
             $this->mergeGameWinner($rows,$landing);
         }
@@ -33,7 +35,7 @@ class NhlDailyStats
         return array_values($rows);
     }
 
-    private function mergeBoxscore(array &$rows,array $box): void
+    private function mergeBoxscore(array &$rows,array $box,array $rosterNames): void
     {
         foreach(['awayTeam','homeTeam'] as $side){
             $teamStats=$box['playerByGameStats'][$side]??[];
@@ -41,18 +43,21 @@ class NhlDailyStats
 
             foreach(['forwards','defense'] as $group){
                 foreach(($teamStats[$group]??[]) as $p){
-                    $name=$this->localized($p['name']??null);
+                    $playerId=(string)($p['playerId']??'');
+                    $name=$rosterNames[$playerId]??$this->localized($p['name']??null);
                     if($name==='')continue;
                     $key=$this->key($name,$teamAbbr);
                     $rows[$key]=$rows[$key]??$this->emptyRow($name,$teamAbbr);
                     $rows[$key]['gp']=1;
                     $rows[$key]['g']=(int)($p['goals']??0);
                     $rows[$key]['a']=(int)($p['assists']??0);
+                    $rows[$key]['ppg']=(int)($p['powerPlayGoals']??0);
                 }
             }
 
             foreach(($teamStats['goalies']??[]) as $p){
-                $name=$this->localized($p['name']??null);
+                $playerId=(string)($p['playerId']??'');
+                $name=$rosterNames[$playerId]??$this->localized($p['name']??null);
                 if($name==='')continue;
                 $toi=trim((string)($p['toi']??''));
                 $key=$this->key($name,$teamAbbr);
@@ -65,6 +70,22 @@ class NhlDailyStats
                     ? 1 : 0;
             }
         }
+    }
+
+    private function rosterNames(array $playByPlay): array
+    {
+        $names=[];
+        foreach(($playByPlay['rosterSpots']??[]) as $spot){
+            $id=(string)($spot['playerId']??'');
+            if($id==='')continue;
+
+            $first=$this->localized($spot['firstName']??null);
+            $last=$this->localized($spot['lastName']??null);
+            $full=trim($first.' '.$last);
+
+            if($full!=='')$names[$id]=$full;
+        }
+        return $names;
     }
 
     private function mergeGoalTypes(array &$rows,array $landing): void
