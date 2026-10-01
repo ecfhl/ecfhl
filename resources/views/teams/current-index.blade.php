@@ -123,7 +123,7 @@
                     <span class="matchup-side-pill away-pill">AWAY</span>
                     <span class="matchup-playing-counts">
                       @if($awayPlayingCounts['F']>0)<span class="position-count-pill {{ $awayPlayingCounts['F']>=8?'full':'' }}">{{ $awayPlayingCounts['F'] }} Forward{{ $awayPlayingCounts['F']==1?'':'s' }}</span>@endif
-                      @if($awayPlayingCounts['D']>0)<span class="position-count-pill {{ $awayPlayingCounts['D']>=4?'full':'' }}">{{ $awayPlayingCounts['D'] }} Defenseman{{ $awayPlayingCounts['D']==1?'':'men' }}</span>@endif
+                      @if($awayPlayingCounts['D']>0)<span class="position-count-pill {{ $awayPlayingCounts['D']>=4?'full':'' }}">{{ $awayPlayingCounts['D'] }} {{ $awayPlayingCounts['D']==1?'Defenseman':'Defensemen' }}</span>@endif
                       @if($awayPlayingCounts['G']>0)<span class="position-count-pill {{ $awayPlayingCounts['G']>=1?'full':'' }}">{{ $awayPlayingCounts['G'] }} Goaltender{{ $awayPlayingCounts['G']==1?'':'s' }}</span>@endif
                     </span>
                     @if(($away['games_in_progress'] ?? 0)>0)<span class="matchup-live-games">{{ $away['games_in_progress'] }} game{{ ($away['games_in_progress']??0)==1?'':'s' }} in progress</span>@endif
@@ -149,7 +149,7 @@
                     @if(($home['games_in_progress'] ?? 0)>0)<span class="matchup-live-games">{{ $home['games_in_progress'] }} game{{ ($home['games_in_progress']??0)==1?'':'s' }} in progress</span>@endif
                     <span class="matchup-playing-counts">
                       @if($homePlayingCounts['F']>0)<span class="position-count-pill {{ $homePlayingCounts['F']>=8?'full':'' }}">{{ $homePlayingCounts['F'] }} Forward{{ $homePlayingCounts['F']==1?'':'s' }}</span>@endif
-                      @if($homePlayingCounts['D']>0)<span class="position-count-pill {{ $homePlayingCounts['D']>=4?'full':'' }}">{{ $homePlayingCounts['D'] }} Defenseman{{ $homePlayingCounts['D']==1?'':'men' }}</span>@endif
+                      @if($homePlayingCounts['D']>0)<span class="position-count-pill {{ $homePlayingCounts['D']>=4?'full':'' }}">{{ $homePlayingCounts['D'] }} {{ $homePlayingCounts['D']==1?'Defenseman':'Defensemen' }}</span>@endif
                       @if($homePlayingCounts['G']>0)<span class="position-count-pill {{ $homePlayingCounts['G']>=1?'full':'' }}">{{ $homePlayingCounts['G'] }} Goaltender{{ $homePlayingCounts['G']==1?'':'s' }}</span>@endif
                     </span>
                     <span class="matchup-side-pill home-pill">HOME</span>
