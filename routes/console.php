@@ -56,7 +56,7 @@ Artisan::command('ecfhl:refresh-pp-lines {--team=}', function (DailyFaceoffPower
 });
 
 Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayers $fantrax) {
-    $base=CarbonImmutable::now('America/Los_Angeles')->subHours(12)->startOfDay();$failed=false;
+    $base=CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();$failed=false;
     foreach([$base,$base->addDay()] as $date){try{
         Log::info('Fantrax daily players refresh started',['date'=>$date->format('Y-m-d'),'url'=>$fantrax->url($date)]);
         $all=$fantrax->fetch($date,'ALL');
@@ -76,7 +76,7 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
         try{$dates=[CarbonImmutable::createFromFormat('!Y-m-d',$requested,$tz)];}
         catch(\Throwable){$this->error('Use date format YYYY-MM-DD.');return 1;}
     }else{
-        $today=CarbonImmutable::now('America/Los_Angeles')->subHours(12)->startOfDay();
+        $today=CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();
         $dates=[$today];
         $yesterday=$today->subDay();
         $hasYesterday=DB::table('active_daily_scores')->whereDate('game_date',$yesterday->toDateString())->exists();
@@ -272,7 +272,7 @@ Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $
 });
 
 Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $fantrax) {
-    $base=CarbonImmutable::now('America/Los_Angeles')->subHours(12)->startOfDay();
+    $base=CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();
     $failed=false;
     foreach ([$base,$base->addDay()] as $date) {
         try {
@@ -302,7 +302,7 @@ Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $
 });
 
 Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartingGoalies $dfo) {
-    $abbr=['Anaheim Ducks'=>'ANA','Boston Bruins'=>'BOS','Buffalo Sabres'=>'BUF','Calgary Flames'=>'CGY','Carolina Hurricanes'=>'CAR','Chicago Blackhawks'=>'CHI','Colorado Avalanche'=>'COL','Columbus Blue Jackets'=>'CBJ','Dallas Stars'=>'DAL','Detroit Red Wings'=>'DET','Edmonton Oilers'=>'EDM','Florida Panthers'=>'FLA','Los Angeles Kings'=>'LAK','Minnesota Wild'=>'MIN','Montreal Canadiens'=>'MTL','Nashville Predators'=>'NSH','New Jersey Devils'=>'NJD','New York Islanders'=>'NYI','New York Rangers'=>'NYR','Ottawa Senators'=>'OTT','Philadelphia Flyers'=>'PHI','Pittsburgh Penguins'=>'PIT','San Jose Sharks'=>'SJS','Seattle Kraken'=>'SEA','St. Louis Blues'=>'STL','Tampa Bay Lightning'=>'TBL','Toronto Maple Leafs'=>'TOR','Utah Mammoth'=>'UTA','Vancouver Canucks'=>'VAN','Vegas Golden Knights'=>'VGK','Washington Capitals'=>'WSH','Winnipeg Jets'=>'WPG'];$base=CarbonImmutable::now('America/Los_Angeles')->subHours(12)->startOfDay();$failed=false;
+    $abbr=['Anaheim Ducks'=>'ANA','Boston Bruins'=>'BOS','Buffalo Sabres'=>'BUF','Calgary Flames'=>'CGY','Carolina Hurricanes'=>'CAR','Chicago Blackhawks'=>'CHI','Colorado Avalanche'=>'COL','Columbus Blue Jackets'=>'CBJ','Dallas Stars'=>'DAL','Detroit Red Wings'=>'DET','Edmonton Oilers'=>'EDM','Florida Panthers'=>'FLA','Los Angeles Kings'=>'LAK','Minnesota Wild'=>'MIN','Montreal Canadiens'=>'MTL','Nashville Predators'=>'NSH','New Jersey Devils'=>'NJD','New York Islanders'=>'NYI','New York Rangers'=>'NYR','Ottawa Senators'=>'OTT','Philadelphia Flyers'=>'PHI','Pittsburgh Penguins'=>'PIT','San Jose Sharks'=>'SJS','Seattle Kraken'=>'SEA','St. Louis Blues'=>'STL','Tampa Bay Lightning'=>'TBL','Toronto Maple Leafs'=>'TOR','Utah Mammoth'=>'UTA','Vancouver Canucks'=>'VAN','Vegas Golden Knights'=>'VGK','Washington Capitals'=>'WSH','Winnipeg Jets'=>'WPG'];$base=CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();$failed=false;
     foreach ([$base, $base->addDay()] as $date) {
         $day = $date->format('Y-m-d');
         try {
@@ -341,7 +341,7 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
 });
 
 Artisan::command('ecfhl:refresh-odds', function (NhlOdds $odds) {
-    $base = CarbonImmutable::now('America/Los_Angeles')->subHours(12)->startOfDay();
+    $base = CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();
     $wanted = [$base->toDateString(), $base->addDay()->toDateString()];
     try {
         $data = $odds->fetch();
@@ -376,7 +376,7 @@ Schedule::command('ecfhl:refresh-daily-scores')
     ->withoutOverlapping(2)
     ->runInBackground()
     ->when(function () {
-        $fantasyDay=CarbonImmutable::now('America/Los_Angeles')->subHours(12)->startOfDay();
+        $fantasyDay=CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();
         $day=$fantasyDay->toDateString();
 
         try {
