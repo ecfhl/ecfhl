@@ -389,8 +389,9 @@ document.addEventListener('DOMContentLoaded',()=>{
       const card=link.closest('.matchup-card');
       if(!card?.open){
         event.preventDefault();
-        // Do not stop propagation: let the <summary> handle the click
-        // so clicking the team name behaves exactly like clicking the row.
+        event.stopPropagation();
+        card.open=true;
+        saveOpenMatchups();
         return;
       }
       event.stopPropagation();
