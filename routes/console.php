@@ -236,7 +236,7 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
     return $failed?1:0;
 });
 
-Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $fantrax) {
+Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $fantrax, FantraxSchedule $fantraxSchedule) {
     $seasonId='2026-27';
     $source='https://www.fantrax.com/fantasy/league/'.FantraxStandings::LEAGUE_ID.'/standings';
 
@@ -291,6 +291,39 @@ Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $
                 DB::table('team_seasons')->where('team_season_id',$teamSeasonId)->update($values);
             }
         });
+
+        try {
+            $periods=$fantraxSchedule->periods(true);
+            foreach($periods as $period){
+                $caption=trim((string)($period['caption']??''));
+                preg_match('/(\d+)/',$caption,$m);
+                $periodNumber=(int)($m[1]??0);
+                if($periodNumber<1)continue;
+
+                foreach(($period['matchups']??[]) as $matchup){
+                    DB::table('scoring_period_matchups')->updateOrInsert(
+                        [
+                            'season_id'=>$seasonId,
+                            'period_number'=>$periodNumber,
+                            'away_team_name'=>(string)($matchup['away_name']??''),
+                            'home_team_name'=>(string)($matchup['home_name']??''),
+                        ],
+                        [
+                            'start_date'=>$period['start'],
+                            'end_date'=>$period['end'],
+                            'away_team_id'=>(string)($matchup['away_team_id']??''),
+                            'away_score'=>$matchup['away_score'],
+                            'home_team_id'=>(string)($matchup['home_team_id']??''),
+                            'home_score'=>$matchup['home_score'],
+                            'created_at'=>now(),
+                            'updated_at'=>now(),
+                        ]
+                    );
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Scoring period matchup history refresh failed',['error'=>$e->getMessage()]);
+        }
 
         DB::table('job_run_history')->insert([
             'job_name'=>'ecfhl:refresh-current-standings',
