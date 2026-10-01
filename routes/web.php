@@ -265,6 +265,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $rows=$rows->map(function($p)use($dailyScores,$scoreName,$scoreTeam){
         $score=$dailyScores[$scoreTeam($p->nhl_team).'|'.$scoreName($p->player_name)]??null;
         $p->today_fpts=$score?(float)$score->today_fpts:0.0;
+        $p->live_opponent_display=$score?($score->opponent_display??null):null;
         foreach(['gp','g','a','ppg','shg','gwg','w','so'] as $stat){
             $p->{'today_'.$stat}=$score?(int)($score->{$stat}??0):0;
         }
@@ -355,6 +356,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
                     ->map(function($p)use($dailyScores,$scoreName,$scoreTeam){
                         $score=$dailyScores[$scoreTeam($p->nhl_team).'|'.$scoreName($p->player_name)]??null;
                         $p->today_fpts=$score?(float)$score->today_fpts:0.0;
+                        $p->live_opponent_display=$score?($score->opponent_display??null):null;
                         foreach(['gp','g','a','ppg','shg','gwg','w','so'] as $stat){
                             $p->{'today_'.$stat}=$score?(int)($score->{$stat}??0):0;
                         }
