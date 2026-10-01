@@ -376,6 +376,35 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         $availableGroups[$rankPosition]=$decorated;
     }
 
+    // Spread recommendations across the best Daily Targets instead of handing
+    // every fantasy team the same player. Stay near the top of the ranking, but
+    // prefer a target that has been recommended fewer times during this run.
+    $targetUsage=['F'=>[],'D'=>[],'G'=>[]];
+    $pickTarget=function(string $position,string $teamId)use(&$targetUsage,$availableGroups){
+        $pool=collect($availableGroups[$position]??[])->take(5)->values();
+        if($pool->isEmpty())return null;
+
+        $best=null;
+        $bestScore=null;
+        foreach($pool as $rank=>$player){
+            $key=mb_strtolower(trim((string)($player['name']??''))).'|'.strtoupper(trim((string)($player['team']??''))).'|'.$position;
+            $used=(int)($targetUsage[$position][$key]??0);
+            // Usage matters more than a small ranking difference. This keeps the
+            // recommendations varied while still selecting from the top five.
+            $score=($used*10)+$rank;
+            if($bestScore===null || $score<$bestScore){
+                $best=$player;
+                $bestScore=$score;
+            }
+        }
+
+        if($best){
+            $key=mb_strtolower(trim((string)($best['name']??''))).'|'.strtoupper(trim((string)($best['team']??''))).'|'.$position;
+            $targetUsage[$position][$key]=(int)($targetUsage[$position][$key]??0)+1;
+        }
+        return $best;
+    };
+
     $scheduleScores=[];
     try {
         $schedule=app(FantraxSchedule::class)->forDate($day,true);
@@ -488,6 +517,11 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         $hasGoaliePlayingTonight=$teamRows->contains($goaliePlayingTonight);
 
         $slotLimits=['F'=>8,'D'=>4,'G'=>1];
+        $nonIrMinorDefenseCount=$teamRows->filter(fn($p)=>
+            strtoupper((string)$p->position)==='D'
+            && !(bool)($p->is_ir??false)
+            && strtoupper((string)($p->roster_status??''))!=='MINORS'
+        )->count();
 
         $eligibleDrops=$teamRows
             ->filter($dropEligible)
@@ -511,7 +545,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
 
             if($irCandidate){
                 $pos=strtoupper((string)$irCandidate->position);
-                $target=collect($availableGroups[$pos]??[])->first();
+                $target=$pickTarget($pos,(string)$teamId);
                 if($target){
                     $suggestions[]='Move '.$displayPlayerName($irCandidate->player_name).' to IR. Add '.$displayPlayerName($target['name']).' ('.$target['team'].')'
                         .(!empty($target['projected_points'])?', '.$target['projected_points'].' projected FPts':'').'.';
@@ -543,7 +577,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                 elseif($playingCounts['D']<$slotLimits['D'])$targetPos='D';
 
                 if($targetPos){
-                    $target=collect($availableGroups[$targetPos]??[])->first();
+                    $target=$pickTarget($targetPos,(string)$teamId);
                     if($target){
                         $suggestions[]='Goalie is covered tonight. You have an open '.$targetPos.' spot. Drop '
                             .$displayPlayerName($surplusGoalie->player_name).'. Add '.$displayPlayerName($target['name']).' ('.$target['team'].')'
@@ -553,26 +587,71 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             }
         }
 
-        // If no structural move was found, use a weak FA/1-year roster spot for
-        // the best same-position available player. Later-week/trailing teams are
-        // intentionally more aggressive.
+        // Prioritize forward scoring. First look for a weak forward-for-forward
+        // upgrade. A defenseman can be converted into a forward only when the team
+        // carries at least five non-IR/non-minors defensemen.
         if($hasMoveAvailable && empty($suggestions) && $eligibleDrops->isNotEmpty() && ($trailing || $lateWeek || $isWeekend)){
-            $drop=$eligibleDrops->first();
-            $pos=strtoupper((string)$drop->position);
-            $target=collect($availableGroups[$pos]??[])->first();
-            if($target){
-                $reason=$trailing
-                    ? 'You are trailing. Make a move'
-                    : ($isWeekend ? 'Use the weekend. Add another game' : 'This roster spot is not giving you enough');
-                $suggestions[]=$reason.'. Add '.$displayPlayerName($target['name']).' ('.$target['team'].'). Drop '.$displayPlayerName($drop->player_name).'.';
+            $drop=$eligibleDrops
+                ->filter(fn($p)=>strtoupper((string)$p->position)==='F')
+                ->sortBy(fn($p)=>(float)($p->projected_fpts_per_game??0))
+                ->first();
+            $targetPos='F';
+
+            if(!$drop && $nonIrMinorDefenseCount>=5){
+                $drop=$eligibleDrops
+                    ->filter(fn($p)=>strtoupper((string)$p->position)==='D')
+                    ->sortBy(fn($p)=>(float)($p->projected_fpts_per_game??0))
+                    ->first();
+                $targetPos='F';
+            }
+
+            // If there is no forward upgrade and the team is not overloaded on
+            // defense, a defense-for-defense cleanup is still allowed.
+            if(!$drop){
+                $drop=$eligibleDrops
+                    ->filter(fn($p)=>strtoupper((string)$p->position)==='D')
+                    ->sortBy(fn($p)=>(float)($p->projected_fpts_per_game??0))
+                    ->first();
+                $targetPos='D';
+            }
+
+            if($drop){
+                $target=$pickTarget($targetPos,(string)$teamId);
+                if($target){
+                    $reason=$trailing
+                        ? 'You are trailing. Make a move'
+                        : ($isWeekend ? 'Use the weekend. Add another game' : 'This roster spot is not giving you enough');
+                    $suggestions[]=$reason.'. Add '.$displayPlayerName($target['name']).' ('.$target['team'].'). Drop '.$displayPlayerName($drop->player_name).'.';
+                }
             }
         }
 
         // Goalie streaming remains a priority when no active goalie is playing.
         if($hasMoveAvailable && !$hasGoaliePlayingTonight){
-            $goalieTarget=collect($availableGroups['G']??[])
-                ->first(fn($g)=>!in_array(strtolower(trim((string)($g['starting_status']??''))),['not starting',''],true))
-                ?? collect($availableGroups['G']??[])->first();
+            $goalieEligible=collect($availableGroups['G']??[])
+                ->filter(fn($g)=>!in_array(strtolower(trim((string)($g['starting_status']??''))),['not starting',''],true))
+                ->values();
+            $goaliePool=$goalieEligible->isNotEmpty()?$goalieEligible:collect($availableGroups['G']??[]);
+            $goalieCandidates=$goaliePool->take(5)->all();
+            $savedGoalies=$availableGroups['G']??[];
+            $availableGroupsForGoalie=$availableGroups;
+            $availableGroupsForGoalie['G']=$goalieCandidates;
+            $goalieTarget=(function()use(&$targetUsage,$availableGroupsForGoalie,$teamId){
+                $pool=collect($availableGroupsForGoalie['G']??[])->values();
+                if($pool->isEmpty())return null;
+                $best=null;$bestScore=null;
+                foreach($pool as $rank=>$player){
+                    $key=mb_strtolower(trim((string)($player['name']??''))).'|'.strtoupper(trim((string)($player['team']??''))).'|G';
+                    $used=(int)($targetUsage['G'][$key]??0);
+                    $score=($used*10)+$rank;
+                    if($bestScore===null||$score<$bestScore){$best=$player;$bestScore=$score;}
+                }
+                if($best){
+                    $key=mb_strtolower(trim((string)($best['name']??''))).'|'.strtoupper(trim((string)($best['team']??''))).'|G';
+                    $targetUsage['G'][$key]=(int)($targetUsage['G'][$key]??0)+1;
+                }
+                return $best;
+            })();
 
             $goaliesOnRoster=$teamRows
                 ->filter(fn($p)=>
