@@ -172,7 +172,10 @@ Route::get('/teams/current', function() {
             strtolower((string)($matchup['away']['name']??'')),
             strtolower((string)($matchup['home']['name']??'')),
         ];
-        $hasLoneTsar=(bool)collect($names)->first(fn($name)=>str_contains($name,'lone')&&str_contains($name,'tsar'));
+        $hasLoneTsar=(bool)collect($names)->first(function($name){
+            return (str_contains($name,'lone')&&str_contains($name,'tsar'))
+                || str_contains($name,mb_strtolower('Ꮮ૦ท૯⚡️𐌕รคг'));
+        });
         $hasOneManBang=(bool)collect($names)->first(fn($name)=>str_contains($name,'one man bang'));
         if($hasLoneTsar&&$hasOneManBang)return 0;
         if($hasLoneTsar)return 1;
