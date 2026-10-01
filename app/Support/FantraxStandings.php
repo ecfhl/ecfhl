@@ -2,8 +2,8 @@
 
 namespace App\Support;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class FantraxStandings
@@ -14,11 +14,11 @@ class FantraxStandings
     public function fetch(): array
     {
         $url='https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/standings';
-        $requestData=['leagueId'=>self::LEAGUE_ID,'view'=>'STANDINGS'];
+        $requestData=['leagueId'=>self::LEAGUE_ID,'view'=>'SCHEDULE'];
         $payload=[
             'msgs'=>[['method'=>'getStandings','data'=>$requestData]],
             'uiv'=>3,
-            'refUrl'=>$url,
+            'refUrl'=>$url.';view=SCHEDULE',
             'dt'=>0,
             'at'=>0,
             'av'=>'0.0',
@@ -36,191 +36,100 @@ class FantraxStandings
         $response->throw();
         $json=$response->json();
         $data=$json['responses'][0]['data']??null;
-        if(!is_array($data)) throw new RuntimeException('Fantrax standings returned no response data.');
+        if(!is_array($data))throw new RuntimeException('Fantrax standings schedule returned no response data.');
 
-        $tables=$data['tableList']??$data['tables']??[];
-        if(!is_array($tables))$tables=[];
+        $today=CarbonImmutable::now('America/Halifax')->startOfDay();
+        $teams=[];
 
-        // Some Fantrax responses expose the primary standings table directly.
-        if(isset($data['rows']) && is_array($data['rows'])){
-            array_unshift($tables,$data);
-        }
+        foreach(($data['tableList']??[]) as $table){
+            $range=$this->dateRange((string)($table['subCaption']??''));
+            if(!$range)continue;
+            [$start,$end]=$range;
 
-        $merged=[];
-        foreach($tables as $table){
-            foreach($this->parseTable($table) as $row){
-                $key=(string)($row['team_id']??'');
-                if($key==='')$key=mb_strtolower(trim((string)($row['team_name']??'')));
-                if($key!=='')$merged[$key]=$row;
-            }
-        }
-        $rows=array_values($merged);
-        if(count($rows)>=10){
-            return ['rows'=>$rows,'url'=>$url];
-        }
+            // Ignore future scoring periods entirely.
+            if($start->gt($today))continue;
+            $completed=$end->lt($today);
 
-        Log::warning('Fantrax standings parse diagnostic',[
-            'data_keys'=>array_keys($data),
-            'table_count'=>count($tables),
-            'tables'=>array_map(function($table){
-                return [
-                    'keys'=>is_array($table)?array_keys($table):[],
-                    'caption'=>is_array($table)?($table['caption']??null):null,
-                    'subCaption'=>is_array($table)?($table['subCaption']??null):null,
-                    'row_count'=>is_array($table)?count($table['rows']??$table['statsTable']??[]):0,
-                    'header'=>$table['tableHeader']['cells']??$table['header']['cells']??$table['headers']??$table['columns']??null,
-                    'first_row'=>($table['rows'][0]??$table['statsTable'][0]??null),
-                ];
-            },array_slice($tables,0,3)),
-        ]);
-        throw new RuntimeException('Fantrax standings returned no complete standings table.');
-    }
+            foreach(($table['rows']??[]) as $row){
+                $cells=$row['cells']??[];
+                if(!is_array($cells)||count($cells)<4)continue;
 
-    private function parseTable(array $table): array
-    {
-        $sourceRows=$table['rows']??$table['statsTable']??[];
-        if(!is_array($sourceRows) || !$sourceRows)return [];
+                $awayId=trim((string)($cells[0]['teamId']??''));
+                $homeId=trim((string)($cells[2]['teamId']??''));
+                $awayName=$this->text($cells[0]['content']??'');
+                $homeName=$this->text($cells[2]['content']??'');
+                $awayScore=$this->numeric($cells[1]['content']??null);
+                $homeScore=$this->numeric($cells[3]['content']??null);
 
-        $headers=$this->headers($table);
-        $index=function(array $aliases)use($headers): ?int {
-            foreach($aliases as $alias){
-                $key=$this->normalizeHeader($alias);
-                if(array_key_exists($key,$headers))return $headers[$key];
-            }
-            return null;
-        };
+                if($awayId===''||$homeId===''||$awayName===''||$homeName==='')continue;
 
-        $rankIndex=$index(['Rank','Rk','#']);
-        $wIndex=$index(['W','Wins']);
-        $lIndex=$index(['L','Losses']);
-        $tIndex=$index(['T','Ties']);
-        $fptsIndex=$index(['FPts','FPTS','Fantasy Points','Fantasy Points For','FPts For','PF']);
-
-        $out=[];
-        foreach($sourceRows as $row){
-            if(!is_array($row))continue;
-            $cells=$row['cells']??[];
-            if(!is_array($cells) || !$cells)continue;
-
-            $teamIndex=null;
-            $teamId=trim((string)($row['teamId']??$row['fantasyTeamId']??''));
-            $teamName=$this->text($row['teamName']??$row['name']??'');
-
-            foreach($cells as $i=>$cell){
-                if(!is_array($cell))continue;
-                $candidate=trim((string)($cell['teamId']??$cell['fantasyTeamId']??''));
-                if($candidate!=='' || isset($cell['teamName'])){
-                    $teamIndex=$i;
-                    if($teamId==='')$teamId=$candidate;
-                    if($teamName==='')$teamName=$this->text($cell['content']??$cell['teamName']??$cell['name']??'');
-                    break;
-                }
-            }
-
-            if($teamIndex===null){
-                foreach($cells as $i=>$cell){
-                    $text=$this->text(is_array($cell)?($cell['content']??$cell['value']??''):$cell);
-                    if($text!=='' && !is_numeric(preg_replace('/[^0-9.\-]/','',$text))){
-                        $teamIndex=$i;
-                        if($teamName==='')$teamName=$text;
-                        break;
+                foreach([[$awayId,$awayName],[$homeId,$homeName]] as [$id,$name]){
+                    if(!isset($teams[$id])){
+                        $teams[$id]=[
+                            'team_id'=>$id,
+                            'team_name'=>$name,
+                            'w'=>0,'l'=>0,'t'=>0,
+                            'standings_points'=>0,
+                            'fantasy_points_for'=>0.0,
+                        ];
                     }
                 }
-            }
 
-            if($teamName==='')continue;
-            if($teamId==='')$teamId='name:'.mb_strtolower($teamName);
+                if($awayScore!==null)$teams[$awayId]['fantasy_points_for']+=$awayScore;
+                if($homeScore!==null)$teams[$homeId]['fantasy_points_for']+=$homeScore;
 
-            // Header names are preferred. Fantrax's standard standings layout is
-            // rank, team, W, L, T, ... FPts; the relative fallbacks cover cases
-            // where header metadata is omitted from the JSON response.
-            $rank=$this->number($this->cellValue($cells,$rankIndex));
-            if($rank===null && $teamIndex>0)$rank=$this->number($this->cellValue($cells,$teamIndex-1));
+                // Current-period scores are live FPts, but W/L/T are only official
+                // after the scoring period is complete.
+                if(!$completed||$awayScore===null||$homeScore===null)continue;
 
-            $w=$this->number($row['w']??$row['wins']??$this->cellValue($cells,$wIndex));
-            $l=$this->number($row['l']??$row['losses']??$this->cellValue($cells,$lIndex));
-            $t=$this->number($row['t']??$row['ties']??$this->cellValue($cells,$tIndex));
-
-            if($w===null || $l===null || $t===null){
-                $numeric=[];
-                for($i=$teamIndex+1;$i<count($cells);$i++){
-                    $n=$this->number($this->cellValue($cells,$i));
-                    if($n!==null)$numeric[]=['index'=>$i,'value'=>$n];
-                }
-                if(count($numeric)>=3){
-                    $w??=$numeric[0]['value'];
-                    $l??=$numeric[1]['value'];
-                    $t??=$numeric[2]['value'];
-                }
-            }
-
-            $fpts=$this->number(
-                $row['fantasyPointsFor']??$row['fantasy_points_for']??$row['fpts']??$row['fPts']
-                ??$this->cellValue($cells,$fptsIndex)
-            );
-            if($fpts===null){
-                $numeric=[];
-                for($i=($teamIndex??0)+1;$i<count($cells);$i++){
-                    $raw=$this->cellValue($cells,$i);
-                    if(is_string($raw) && str_contains($raw,'%'))continue;
-                    $n=$this->number($raw);
-                    if($n!==null)$numeric[]=$n;
-                }
-                // Standard Fantrax H2H order after Team is W, L, T, Pts, FPts.
-                if(count($numeric)>=5)$fpts=$numeric[4];
-                elseif(count($numeric)>=4)$fpts=$numeric[count($numeric)-1];
-            }
-
-            if($w===null || $l===null || $t===null || $fpts===null)continue;
-
-            $out[]=[
-                'team_id'=>$teamId,
-                'team_name'=>$teamName,
-                'rank'=>$rank!==null?(int)$rank:null,
-                'w'=>(int)$w,
-                'l'=>(int)$l,
-                't'=>(int)$t,
-                'standings_points'=>(int)(2*$w+$t),
-                'fantasy_points_for'=>(float)$fpts,
-            ];
-        }
-
-        return $out;
-    }
-
-    private function headers(array $table): array
-    {
-        $sets=[
-            $table['tableHeader']['cells']??null,
-            $table['header']['cells']??null,
-            $table['headers']??null,
-            $table['columns']??null,
-        ];
-        $map=[];
-        foreach($sets as $set){
-            if(!is_array($set))continue;
-            foreach(array_values($set) as $i=>$cell){
-                $values=[];
-                if(is_array($cell)){
-                    array_walk_recursive($cell,function($v)use(&$values){
-                        if(is_scalar($v))$values[]=(string)$v;
-                    });
-                }elseif(is_scalar($cell))$values[]=(string)$cell;
-                foreach($values as $value){
-                    $key=$this->normalizeHeader($this->text($value));
-                    if($key!=='' && !array_key_exists($key,$map))$map[$key]=$i;
+                if(abs($awayScore-$homeScore)<0.0001){
+                    $teams[$awayId]['t']++;
+                    $teams[$homeId]['t']++;
+                }elseif($awayScore>$homeScore){
+                    $teams[$awayId]['w']++;
+                    $teams[$homeId]['l']++;
+                }else{
+                    $teams[$homeId]['w']++;
+                    $teams[$awayId]['l']++;
                 }
             }
         }
-        return $map;
+
+        if(count($teams)<10){
+            throw new RuntimeException('Fantrax schedule returned fewer than 10 standings teams.');
+        }
+
+        foreach($teams as &$team){
+            $team['standings_points']=2*$team['w']+$team['t'];
+        }
+        unset($team);
+
+        $rows=array_values($teams);
+        usort($rows,function($a,$b){
+            return ($b['standings_points']<=>$a['standings_points'])
+                ?:($b['fantasy_points_for']<=>$a['fantasy_points_for'])
+                ?:strnatcasecmp($a['team_name'],$b['team_name']);
+        });
+        foreach($rows as $i=>&$row)$row['rank']=$i+1;
+        unset($row);
+
+        return ['rows'=>$rows,'url'=>$url];
     }
 
-    private function cellValue(array $cells, ?int $index): mixed
+    private function dateRange(string $value): ?array
     {
-        if($index===null || !array_key_exists($index,$cells))return null;
-        $cell=$cells[$index];
-        if(!is_array($cell))return $cell;
-        return $cell['content']??$cell['value']??$cell['displayValue']??null;
+        $text=trim($value," \t\n\r\0\x0B()");
+        if(!preg_match('/([A-Z][a-z]{2}\s+[A-Z][a-z]{2}\s+\d{1,2},\s+\d{4})\s+-\s+([A-Z][a-z]{2}\s+[A-Z][a-z]{2}\s+\d{1,2},\s+\d{4})/',$text,$m)){
+            return null;
+        }
+
+        try{
+            $start=CarbonImmutable::createFromFormat('!D M j, Y',$m[1],'America/Halifax');
+            $end=CarbonImmutable::createFromFormat('!D M j, Y',$m[2],'America/Halifax');
+            return ($start&&$end)?[$start,$end]:null;
+        }catch(\Throwable){
+            return null;
+        }
     }
 
     private function text(mixed $value): string
@@ -228,17 +137,10 @@ class FantraxStandings
         return trim(preg_replace('/\s+/u',' ',html_entity_decode(strip_tags((string)$value))));
     }
 
-    private function number(mixed $value): ?float
+    private function numeric(mixed $value): ?float
     {
-        if($value===null)return null;
-        $text=$this->text($value);
-        if($text==='')return null;
-        $clean=preg_replace('/[^0-9.\-]/','',$text);
+        if($value===null||$value==='')return null;
+        $clean=preg_replace('/[^0-9.\-]/','',html_entity_decode(strip_tags((string)$value)));
         return is_numeric($clean)?(float)$clean:null;
-    }
-
-    private function normalizeHeader(string $value): string
-    {
-        return preg_replace('/[^a-z0-9]+/','',strtolower($value))??'';
     }
 }
