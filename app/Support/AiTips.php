@@ -8,7 +8,7 @@ class AiTips
 {
     public static function groups(array $snapshot, string $date): array
     {
-        $groups = ['G' => [], 'F' => [], 'D' => [];
+        $groups = ['G' => [], 'F' => [], 'D' => []];
         $startedTeams = self::startedTeams($date);
         $daily = DB::table('active_daily_players')->whereDate('game_date', $date)->orderBy('source_rank')->get();
         foreach ($daily as $row) {
