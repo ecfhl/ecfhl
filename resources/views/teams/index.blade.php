@@ -2,7 +2,7 @@
 @section('title','Franchises · ECFHL')
 @section('content')
 <div class="shell">
-<div class="page-head"><div class="eyebrow">Franchise ledger</div><h1>Franchises</h1><p>All-time franchise performance across the ECFHL archive.</p></div>
+<div class="page-head"><div class="eyebrow">Franchise ledger</div><h1>👥 Franchises</h1><p>All-time franchise performance across the ECFHL archive.</p></div>
 <div class="filter-bar" style="justify-content:space-between;flex-wrap:wrap">
 <div class="filter-group">
 <a class="filter-button" style="{{ $status==='active'?'background:#17834b;color:white;border-color:#17834b':'background:#e5e7eb;color:#555' }}" href="?type={{ $type }}&status=active">Active</a>
