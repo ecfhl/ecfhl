@@ -162,33 +162,68 @@
             @php
               $awaySectionRows=$alignedSections[$sectionName]['away'];
               $homeSectionRows=$alignedSections[$sectionName]['home'];
+              $sectionCount=$awaySectionRows->filter()->count()+$homeSectionRows->filter()->count();
+              $isCollapsible=in_array($sectionName,['Bench','IR','Minors'],true);
             @endphp
             @if($awaySectionRows->count() || $homeSectionRows->count())
-              <div class="matchup-section-title">{{ $sectionName }}</div>
-              <div class="matchup-roster-grid">
-                <div class="matchup-roster-col">
-                  @forelse($awaySectionRows as $player)
-                    @if($player)
-                      @include('teams.partials.current-matchup-player',['player'=>$player])
-                    @else
-                      <div class="matchup-player-row matchup-player-blank" aria-hidden="true"></div>
-                    @endif
-                  @empty
-                    <div class="matchup-empty">(Empty)</div>
-                  @endforelse
+              @if($isCollapsible)
+                <details class="matchup-subsection">
+                  <summary class="matchup-section-title matchup-section-toggle">
+                    <span>{{ $sectionName }} ({{ $sectionCount }})</span>
+                    <span class="matchup-section-chevron" aria-hidden="true">▾</span>
+                  </summary>
+                  <div class="matchup-roster-grid">
+                    <div class="matchup-roster-col">
+                      @forelse($awaySectionRows as $player)
+                        @if($player)
+                          @include('teams.partials.current-matchup-player',['player'=>$player])
+                        @else
+                          <div class="matchup-player-row matchup-player-blank" aria-hidden="true"></div>
+                        @endif
+                      @empty
+                        <div class="matchup-empty">(Empty)</div>
+                      @endforelse
+                    </div>
+                    <div class="matchup-roster-col">
+                      @forelse($homeSectionRows as $player)
+                        @if($player)
+                          @include('teams.partials.current-matchup-player',['player'=>$player])
+                        @else
+                          <div class="matchup-player-row matchup-player-blank" aria-hidden="true"></div>
+                        @endif
+                      @empty
+                        <div class="matchup-empty">(Empty)</div>
+                      @endforelse
+                    </div>
+                  </div>
+                </details>
+              @else
+                <div class="matchup-section-title">{{ $sectionName }} ({{ $sectionCount }})</div>
+                <div class="matchup-roster-grid">
+                  <div class="matchup-roster-col">
+                    @forelse($awaySectionRows as $player)
+                      @if($player)
+                        @include('teams.partials.current-matchup-player',['player'=>$player])
+                      @else
+                        <div class="matchup-player-row matchup-player-blank" aria-hidden="true"></div>
+                      @endif
+                    @empty
+                      <div class="matchup-empty">(Empty)</div>
+                    @endforelse
+                  </div>
+                  <div class="matchup-roster-col">
+                    @forelse($homeSectionRows as $player)
+                      @if($player)
+                        @include('teams.partials.current-matchup-player',['player'=>$player])
+                      @else
+                        <div class="matchup-player-row matchup-player-blank" aria-hidden="true"></div>
+                      @endif
+                    @empty
+                      <div class="matchup-empty">(Empty)</div>
+                    @endforelse
+                  </div>
                 </div>
-                <div class="matchup-roster-col">
-                  @forelse($homeSectionRows as $player)
-                    @if($player)
-                      @include('teams.partials.current-matchup-player',['player'=>$player])
-                    @else
-                      <div class="matchup-player-row matchup-player-blank" aria-hidden="true"></div>
-                    @endif
-                  @empty
-                    <div class="matchup-empty">(Empty)</div>
-                  @endforelse
-                </div>
-              </div>
+              @endif
             @endif
           @endforeach
         </div>
@@ -218,7 +253,7 @@
 .matchup-bye{font-size:11px;font-weight:900;color:var(--muted)}
 .matchup-expanded{border-top:1px solid var(--line);background:#fff}
 .matchup-section-title{grid-column:1/-1;text-align:center;background:#e5e7eb;color:#374151;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;padding:5px 8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.matchup-roster-grid{display:grid;grid-template-columns:1fr 1fr}
+.matchup-section-title{text-align:left!important;justify-content:flex-start!important;padding-left:12px}.matchup-subsection{margin:0}.matchup-section-toggle{display:flex;align-items:center;justify-content:space-between!important;cursor:pointer;list-style:none}.matchup-section-toggle::-webkit-details-marker{display:none}.matchup-section-chevron{margin-left:auto;font-size:11px;transition:transform .15s ease}.matchup-subsection[open] .matchup-section-chevron{transform:rotate(180deg)}.matchup-roster-grid{display:grid;grid-template-columns:1fr 1fr}
 .matchup-roster-col{min-width:0;border-right:1px solid var(--line)}
 .matchup-roster-col:last-child{border-right:0}
 .matchup-player-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line);min-height:58px}
