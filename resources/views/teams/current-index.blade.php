@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('content')
-<div class="page-head current-teams-head"><div class="shell"><div class="eyebrow">2026-27 rosters</div><h1>Live Scoring</h1><p>Current Matchups for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}.</p>@if($lastUpdate)<p class="team-updated">Updated {{ \Carbon\CarbonImmutable::parse($lastUpdate)->setTimezone('America/Halifax')->format('g:i a T') }} · Updates every minute</p>@endif</div></div>
+<div class="page-head current-teams-head"><div class="shell"><div class="eyebrow">2026-27 rosters</div><h1>Live Scoring</h1><p>Current Matchups for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}.</p>@if($scoreLastUpdate)<p class="team-updated">Updated {{ \Carbon\CarbonImmutable::parse($scoreLastUpdate)->setTimezone('America/Halifax')->format('g:i:s a T') }} · Updates every minute</p>@endif</div></div>
 
 <div class="shell current-teams-page">
   <div class="team-toolbar">
@@ -84,7 +84,7 @@
                   <span class="matchup-daily-cats">@foreach(['gp'=>'GP','g'=>'G','a'=>'A','ppg'=>'PPG','shg'=>'SHG','gwg'=>'GWG','w'=>'W','so'=>'SO'] as $key=>$label)@if(($away['today_stats'][$key] ?? 0) != 0)<span>{{ $label }}: {{ $away['today_stats'][$key] }}</span>@endif @endforeach</span>
                 </div>
               </div>
-              <span class="matchup-summary-score"><strong class="matchup-week-score {{ $awayWeekClass }}">{{ number_format($away['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $awayDayClass }}">{{ number_format($awayDay,0) }}</small></span>
+              <span class="matchup-summary-score"><strong class="matchup-week-score {{ $awayWeekClass }} {{ !empty($away['week_fpts_changed'])?'score-changed':'' }}">{{ number_format($away['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $awayDayClass }} {{ !empty($away['today_fpts_changed'])?'score-changed':'' }}">{{ number_format($awayDay,0) }}</small></span>
             @endif
           </div>
 
@@ -92,7 +92,7 @@
 
           <div class="matchup-summary-side matchup-summary-home">
             @if($home)
-              <span class="matchup-summary-score"><strong class="matchup-week-score {{ $homeWeekClass }}">{{ number_format($home['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $homeDayClass }}">{{ number_format($homeDay,0) }}</small></span>
+              <span class="matchup-summary-score"><strong class="matchup-week-score {{ $homeWeekClass }} {{ !empty($home['week_fpts_changed'])?'score-changed':'' }}">{{ number_format($home['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $homeDayClass }} {{ !empty($home['today_fpts_changed'])?'score-changed':'' }}">{{ number_format($homeDay,0) }}</small></span>
               <div class="matchup-summary-name">
                 <a href="/teams/current/{{ $home['slug'] }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $home['name'] }}</a>
                 <div class="matchup-summary-meta matchup-summary-meta-home">
@@ -178,7 +178,7 @@
 .team-date-inactive:hover{background:#d1d5db!important;color:#111827!important}
 .matchup-period-label{margin:4px 0 10px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:flex;align-items:center;justify-content:space-between;gap:10px}.matchup-period-updated{font-size:10px;font-weight:700;letter-spacing:0;text-transform:none;white-space:nowrap}
 .current-matchup-list{display:flex;flex-direction:column;gap:7px;margin-bottom:20px}
-.matchup-card{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}
+.matchup-card{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}.matchup-card[open]{border:3px solid #2563eb}
 .matchup-summary{display:grid;grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr);align-items:center;gap:8px;padding:9px 14px;cursor:pointer;list-style:none;background:#fff}
 .matchup-summary::-webkit-details-marker{display:none}
 .matchup-summary-side{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}
@@ -187,7 +187,7 @@
 .matchup-summary-name a{font-weight:900;color:var(--text);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .matchup-summary-name a:hover{text-decoration:underline}
 .matchup-summary-name small{font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.05em}.matchup-summary-meta{display:flex;align-items:center;gap:7px;min-width:0}.matchup-summary-meta-home{justify-content:flex-end}.matchup-daily-cats{font-size:9px;color:#475569;font-weight:900;white-space:nowrap;display:inline-flex;gap:5px;align-items:center}.matchup-side-pill{display:inline-flex;align-items:center;justify-content:center;padding:2px 7px;border-radius:999px;font-size:9px;font-weight:900;letter-spacing:.05em;line-height:1.1;border:1px solid transparent;white-space:nowrap}.away-pill{background:#fef3c7;color:#92400e;border-color:#fcd34d}.home-pill{background:#dcfce7;color:#166534;border-color:#86efac}
-.matchup-summary-score{display:inline-flex;align-items:flex-start;gap:4px;white-space:nowrap}.matchup-week-score{font-size:20px;line-height:1;font-weight:500;color:var(--text)}.matchup-day-score{font-size:13px;line-height:1;font-weight:500;color:var(--text);transform:translateY(-2px)}.matchup-week-score.score-winning,.matchup-day-score.score-winning{font-weight:900}
+.matchup-summary-score{display:inline-flex;align-items:flex-start;gap:4px;white-space:nowrap}.matchup-week-score{font-size:20px;line-height:1;font-weight:500;color:var(--text)}.matchup-day-score{font-size:13px;line-height:1;font-weight:500;color:var(--text);transform:translateY(-2px)}.matchup-week-score.score-winning,.matchup-day-score.score-winning{font-weight:900}.matchup-week-score.score-changed,.matchup-day-score.score-changed{color:#16834f!important}
 .matchup-summary-vs{text-align:center;font-size:10px;font-weight:900;color:var(--muted)}
 .matchup-bye{font-size:11px;font-weight:900;color:var(--muted)}
 .matchup-expanded{border-top:1px solid var(--line);background:#fff}
@@ -230,7 +230,7 @@
 .team-away{color:#a16207;font-weight:800}
 .team-home{color:#15803d;font-weight:800}
 .team-playing-text{color:#15803d;font-weight:800}
-html[data-theme="dark"] .matchup-card{background:#0f1c2b;border-color:#334155}
+html[data-theme="dark"] .matchup-card{background:#0f1c2b;border-color:#334155}html[data-theme="dark"] .matchup-card[open]{border-color:#3b82f6}
 html[data-theme="dark"] .matchup-summary{background:#0f1c2b}
 html[data-theme="dark"] .matchup-expanded{background:#0f1c2b;border-top-color:#334155}
 html[data-theme="dark"] .matchup-summary-name a,
