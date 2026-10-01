@@ -585,7 +585,18 @@ Route::get('/job-status', function () {
     $tz = 'America/Halifax';
     $now = \Carbon\CarbonImmutable::now($tz);
     $dbTime = fn($value) => $value ? \Carbon\CarbonImmutable::createFromFormat('Y-m-d H:i:s', (string)$value, $tz) : null;
-    $format = fn($value) => ($dt=$dbTime($value)) ? $dt->setTimezone($tz)->format('M j, Y · g:i a T') : null;
+    $format = function($value) use ($dbTime,$now,$tz) {
+        $dt=$dbTime($value);
+        if(!$dt)return null;
+        $dt=$dt->setTimezone($tz);
+        $seconds=max(0,(int)floor($dt->diffInSeconds($now)));
+        if($seconds<60)return $seconds===1?'1 second ago':$seconds.' seconds ago';
+        if($seconds<3600){
+            $minutes=(int)floor($seconds/60);
+            return $minutes===1?'1 minute ago':$minutes.' minutes ago';
+        }
+        return $dt->format('M j, Y · g:i:s a T');
+    };
     $state = function ($value, int $minutes) use ($now, $dbTime, $tz) {
         if (!$value) return 'No data';
         $dt=$dbTime($value); if(!$dt) return 'No data';
