@@ -624,7 +624,7 @@ Route::get('/job-status', function () {
     $teamsLast = DB::table('active_fantasy_rosters')->max('last_update');
     $scoresLast = DB::table('active_daily_scores')->max('checked_at');
     $standingsLast = DB::table('job_run_history')->where('job_name','ecfhl:refresh-current-standings')->max('completed_at');
-    $collectorStates = IlluminateSupportFacadesSchema::hasTable('collector_job_statuses')
+    $collectorStates = \Illuminate\Support\Facades\Schema::hasTable('collector_job_statuses')
         ? DB::table('collector_job_statuses')->get()->keyBy('job_key')
         : collect();
     $withOutcome = function(array $job) use ($collectorStates) {
