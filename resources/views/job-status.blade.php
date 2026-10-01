@@ -55,7 +55,24 @@ document.addEventListener('DOMContentLoaded',()=>{
  const box=document.getElementById('job-live-results');
  const boxText=box.querySelector('.job-live-text');
  const closeButton=box.querySelector('.job-live-close');
- closeButton.addEventListener('click',()=>{box.hidden=true;box.className='job-live-results';boxText.textContent='';});
+ const storageKey='ecfhl-job-live-results';
+ const saveBox=()=>sessionStorage.setItem(storageKey,JSON.stringify({
+   text:boxText.textContent,
+   className:box.className,
+   hidden:box.hidden
+ }));
+ const restoreBox=()=>{
+   try{
+     const saved=JSON.parse(sessionStorage.getItem(storageKey)||'null');
+     if(saved && saved.text){
+       boxText.textContent=saved.text;
+       box.className=saved.className||'job-live-results';
+       box.hidden=false;
+     }
+   }catch(e){}
+ };
+ restoreBox();
+ closeButton.addEventListener('click',()=>{box.hidden=true;box.className='job-live-results';boxText.textContent='';sessionStorage.removeItem(storageKey);});
  const headings={players:'Getting available players in Fantrax...',goalies:'Getting goalie information from Daily Faceoff...',lines:'Getting Lines information from Daily Faceoff...',odds:'Getting NHL moneyline odds...',teams:'Getting current fantasy team rosters from Fantrax...',scores:'Refreshing live daily scores...',standings:'Refreshing current standings from Fantrax...'};
  const parse=(job,output)=>{
    if(job==='players'){
@@ -89,7 +106,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    return output;
  };
  const runOne=async(job,lines,csrf)=>{
-   lines.push(headings[job]);boxText.textContent=lines.join('\n');
+   lines.push(headings[job]);boxText.textContent=lines.join('\n');saveBox();
    try{
      const response=await fetch('/job-status/run/'+job,{
        method:'POST',
@@ -106,36 +123,36 @@ document.addEventListener('DOMContentLoaded',()=>{
      const detail=data.details?.[job]||{};
      if(detail.failed){
        lines.push('Failed: '+(detail.output||data.message||'Job failed.'),'');
-       boxText.textContent=lines.join('\n');
+       boxText.textContent=lines.join('\n');saveBox();
        return {status:'failed'};
      }
      if(detail.warning){
        lines.push('Warning: '+parse(job,detail.output||''),'');
-       boxText.textContent=lines.join('\n');
+       boxText.textContent=lines.join('\n');saveBox();
        return {status:'warning'};
      }
-     lines.push(parse(job,detail.output||''),'');boxText.textContent=lines.join('\n');
+     lines.push(parse(job,detail.output||''),'');boxText.textContent=lines.join('\n');saveBox();
      return {status:'success'};
    }catch(err){
      lines.push('Failed: '+err.message,'');
-     boxText.textContent=lines.join('\n');
+     boxText.textContent=lines.join('\n');saveBox();
      return {status:'failed'};
    }
  };
  document.querySelectorAll('.job-ajax-form').forEach(form=>form.addEventListener('submit',async e=>{
    e.preventDefault();const requested=form.dataset.job;const jobs=requested==='all'?['players','goalies','lines','odds','teams','scores','standings']:[requested];const button=form.querySelector('button');const original=button.textContent;const lines=[];const csrf=form.querySelector('input[name="_token"]')?.value || document.querySelector('meta[name="csrf-token"]')?.content;
-   document.querySelectorAll('.job-ajax-form button').forEach(b=>b.disabled=true);button.textContent=requested==='all'?'Refreshing…':'Running…';box.hidden=false;box.className='job-live-results';boxText.textContent='';
+   document.querySelectorAll('.job-ajax-form button').forEach(b=>b.disabled=true);button.textContent=requested==='all'?'Refreshing…':'Running…';box.hidden=false;box.className='job-live-results';boxText.textContent='';saveBox();
    const outcomes=[];
    for(const job of jobs)outcomes.push(await runOne(job,lines,csrf));
    const failed=outcomes.filter(x=>x.status==='failed').length;
    const warnings=outcomes.filter(x=>x.status==='warning').length;
-   box.classList.add(failed?'error':(warnings?'warning':'ok'));
+   box.classList.add(failed?'error':(warnings?'warning':'ok'));saveBox();
    if(requested==='all'){
      lines.push(failed?('Finished all 7 jobs: '+failed+' failed'+(warnings?', '+warnings+' warning'+(warnings===1?'':'s'):'')+'.'):(warnings?('Finished all 7 jobs with '+warnings+' warning'+(warnings===1?'':'s')+'.'):'All 7 jobs completed.'));
    }else{
      lines.push(failed?'Job failed.':(warnings?'Job completed with a warning.':'Job completed.'));
    }
-   boxText.textContent=lines.join('\n');
+   boxText.textContent=lines.join('\n');saveBox();
    document.querySelectorAll('.job-ajax-form button').forEach(b=>b.disabled=false);button.textContent=original;
    setTimeout(()=>location.reload(),700);
  }));
