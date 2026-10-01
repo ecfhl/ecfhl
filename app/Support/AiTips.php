@@ -16,7 +16,7 @@ class AiTips
             if (! in_array($position, ['F', 'D'], true)) continue;
             $status = self::availability($row);
             if ($status === null || trim((string) $row->opponent) === '' || ! $row->team || ! $row->player_name) continue;
-            if (isset($startedTeams[strtoupper(trim((string)$row->team))]) || self::gameHasStarted($row, $date)) continue;
+            if ((bool)($row->game_started ?? false) || isset($startedTeams[strtoupper(trim((string)$row->team))]) || self::gameHasStarted($row, $date)) continue;
             $groups[$position][] = self::player($row, $position, $date, $status);
         }
         foreach (['F', 'D'] as $position) {
