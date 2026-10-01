@@ -5,14 +5,14 @@
   @php $seasonOptions = app(\App\Support\Archive::class)->seasons(); @endphp
   <div class="page-head">
     <div class="eyebrow">Season history</div>
-    <label class="season-title-switcher">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font-size:1.05em">📖</span><label class="season-title-switcher">
       <span class="sr-only">Season</span>
       <select aria-label="Season" onchange="if(this.value) window.location.href=this.value">
         @foreach($seasonOptions as $option)
           <option value="/seasons/{{ rawurlencode($option['season']) }}" {{ $option['season']===$season['season']?'selected':'' }}>{{ $option['season'] }}</option>
         @endforeach
       </select>
-    </label>
+    </label></div>
     <p>{{ $season['format'] ?? '' }} · {{ $season['status'] ?? '' }}</p>
     @include('partials.fantrax-standings',['season'=>$season])
   </div>
