@@ -76,6 +76,7 @@ class FantraxTeamRosters
                     'injury_status'=>$stat['injury_status'] ?? null,
                     'is_playing'=>(bool)($stat['is_playing'] ?? false),
                     'opponent'=>$opponent !== '' ? $opponent : null,
+                    'opponent_display'=>$stat['opponent_display'] ?? null,
                     'home_away'=>$opponent !== '' ? ($away ? 'AWAY' : 'HOME') : null,
                     'game_time'=>$stat['game_time'] ?? null,
                     'projected_fpts'=>$stat['projected_fpts'] ?? null,
@@ -144,6 +145,7 @@ class FantraxTeamRosters
             // not necessarily for $day. Only the datePlaying request is authoritative
             // for whether a player plays on this specific date.
             $row['opponent'] = null;
+            $row['opponent_display'] = null;
             $row['home_away'] = null;
             $row['game_time'] = null;
             $key = $this->key($row['player_name'] ?? '', $row['nhl_team'] ?? '');
@@ -159,6 +161,7 @@ class FantraxTeamRosters
             $base['contract'] = $contractsByKey[$key] ?? ($base['contract'] ?? null);
             $base['is_playing'] = true;
             $base['opponent'] = $row['opponent'] ?? null;
+            $base['opponent_display'] = $row['opponent_display'] ?? null;
             $base['home_away'] = $row['home_away'] ?? null;
             $base['game_time'] = $row['game_time'] ?? null;
             $base['injury_status'] = $row['injury_status'] ?? ($base['injury_status'] ?? null);
@@ -267,6 +270,7 @@ class FantraxTeamRosters
                 'player_name'=>$name,
                 'nhl_team'=>$team,
                 'opponent'=>$opponent,
+                'opponent_display'=>$oppText !== '' ? $oppText : null,
                 'home_away'=>$homeAway,
                 'game_time'=>$gameTime,
                 'projected_fpts'=>$projectedFpts,
