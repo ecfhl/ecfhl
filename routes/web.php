@@ -253,6 +253,9 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $rows=$rows->map(function($p)use($dailyScores,$scoreName,$scoreTeam){
         $score=$dailyScores[$scoreTeam($p->nhl_team).'|'.$scoreName($p->player_name)]??null;
         $p->today_fpts=$score?(float)$score->today_fpts:0.0;
+        foreach(['gp','g','a','ppg','shg','gwg','w','so'] as $stat){
+            $p->{'today_'.$stat}=$score?(int)($score->{$stat}??0):0;
+        }
         return $p;
     });
 
@@ -321,24 +324,42 @@ Route::get('/teams/current/{slug}', function(string $slug) {
                 $opponentRows=DB::table('active_fantasy_rosters')
                     ->whereDate('game_date',$date)
                     ->where('fantasy_team_id',$opponentId)
-                    ->get();
+                    ->get()
+                    ->map(function($p)use($scheduleByTeam){
+                        $team=strtoupper(trim((string)$p->nhl_team));
+                        if($team!=='' && isset($scheduleByTeam[$team])){
+                            $game=$scheduleByTeam[$team];
+                            $p->is_playing=true;
+                            if(empty($p->opponent))$p->opponent=$game->opponent;
+                            if(empty($p->home_away))$p->home_away=$game->home_away;
+                        }
+                        return $p;
+                    })
+                    ->map(function($p)use($dailyScores,$scoreName,$scoreTeam){
+                        $score=$dailyScores[$scoreTeam($p->nhl_team).'|'.$scoreName($p->player_name)]??null;
+                        $p->today_fpts=$score?(float)$score->today_fpts:0.0;
+                        foreach(['gp','g','a','ppg','shg','gwg','w','so'] as $stat){
+                            $p->{'today_'.$stat}=$score?(int)($score->{$stat}??0):0;
+                        }
+                        return $p;
+                    })
+                    ->map($decorate);
 
                 $opponentTodayFpts=$opponentRows
                     ->reject(fn($p)=>(bool)$p->is_bench || (bool)$p->is_ir || strtoupper((string)$p->roster_status)==='MINORS')
-                    ->sum(function($p)use($dailyScores,$scoreName,$scoreTeam){
-                        $score=$dailyScores[$scoreTeam($p->nhl_team).'|'.$scoreName($p->player_name)]??null;
-                        return $score?(float)$score->today_fpts:0.0;
-                    });
+                    ->sum(fn($p)=>(float)($p->today_fpts??0));
 
                 $liveMatchup=[
                     'team_name'=>$teamName,
                     'team_side'=>$isAway?'AWAY':'HOME',
                     'team_week'=>(float)($isAway?($pair['away_score']??0):($pair['home_score']??0)),
                     'team_today'=>(float)$teamTodayFpts,
+                    'team_rows'=>$rows,
                     'opponent_name'=>$opponentName,
                     'opponent_side'=>$isAway?'HOME':'AWAY',
                     'opponent_week'=>(float)($isAway?($pair['home_score']??0):($pair['away_score']??0)),
                     'opponent_today'=>(float)$opponentTodayFpts,
+                    'opponent_rows'=>$opponentRows,
                     'caption'=>trim((string)($schedule['caption']??'')),
                 ];
                 break;
