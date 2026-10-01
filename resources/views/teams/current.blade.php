@@ -469,7 +469,12 @@ document.addEventListener('DOMContentLoaded',()=>{
     const label=toggle.querySelector('.team-not-playing-label');
     const chevron=toggle.querySelector('.team-not-playing-chevron');
     const rows=section?[...section.querySelectorAll('[data-status="active"]')].filter(el=>el!==toggle):[];
-    rows.forEach(row=>row.style.display='none');
+    const isMinors=/^Minors\b/i.test((label?.textContent||'').trim());
+    rows.forEach(row=>row.style.display=isMinors?'':'none');
+    if(isMinors){
+      toggle.setAttribute('aria-expanded','true');
+      if(chevron)chevron.textContent='▴';
+    }
 
     const setExpanded=(expanded)=>{
       rows.forEach(row=>row.style.display=expanded?'':'none');
