@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  const boxText=box.querySelector('.job-live-text');
  const closeButton=box.querySelector('.job-live-close');
  closeButton.addEventListener('click',()=>{box.hidden=true;box.className='job-live-results';boxText.textContent='';});
- const headings={players:'Getting available players in Fantrax...',goalies:'Getting goalie information from Daily Faceoff...',lines:'Getting Lines information from Daily Faceoff...',odds:'Getting NHL moneyline odds...',teams:'Getting current fantasy team rosters from Fantrax...'};
+ const headings={players:'Getting available players in Fantrax...',goalies:'Getting goalie information from Daily Faceoff...',lines:'Getting Lines information from Daily Faceoff...',odds:'Getting NHL moneyline odds...',teams:'Getting current fantasy team rosters from Fantrax...',scores:'Refreshing live daily scores...',standings:'Refreshing current standings from Fantrax...'};
  const parse=(job,output)=>{
    if(job==='players'){
      const counts=[...output.matchAll(/\d{4}-\d{2}-\d{2}:\s*(\d+) Fantrax players refreshed/g)].map(m=>Number(m[1]));
@@ -71,6 +71,14 @@ document.addEventListener('DOMContentLoaded',()=>{
    if(job==='teams'){
      const rows=[...output.matchAll(/(\d{4}-\d{2}-\d{2}):\s*(\d+) roster players refreshed across (\d+) fantasy teams/g)];
      return rows.map(m=>m[2]+' roster players across '+m[3]+' teams for '+m[1]).join('\n') || output;
+   }
+   if(job==='scores'){
+     const rows=[...output.matchAll(/(\d{4}-\d{2}-\d{2}):\s*(\d+) Fantrax daily scores refreshed/g)];
+     return rows.map(m=>m[2]+' daily scores for '+m[1]).join('\n') || output;
+   }
+   if(job==='standings'){
+     const match=output.match(/(\d+) Fantrax standings rows refreshed/);
+     return match?match[1]+' standings teams updated':output;
    }
    return output;
  };
@@ -93,9 +101,9 @@ document.addEventListener('DOMContentLoaded',()=>{
    lines.push(parse(job,detail?.output||''),'');boxText.textContent=lines.join('\n');
  };
  document.querySelectorAll('.job-ajax-form').forEach(form=>form.addEventListener('submit',async e=>{
-   e.preventDefault();const requested=form.dataset.job;const jobs=requested==='all'?['players','goalies','lines','odds','teams']:[requested];const button=form.querySelector('button');const original=button.textContent;const lines=[];const csrf=form.querySelector('input[name="_token"]')?.value || document.querySelector('meta[name="csrf-token"]')?.content;
+   e.preventDefault();const requested=form.dataset.job;const jobs=requested==='all'?['players','goalies','lines','odds','teams','scores','standings']:[requested];const button=form.querySelector('button');const original=button.textContent;const lines=[];const csrf=form.querySelector('input[name="_token"]')?.value || document.querySelector('meta[name="csrf-token"]')?.content;
    document.querySelectorAll('.job-ajax-form button').forEach(b=>b.disabled=true);button.textContent=requested==='all'?'Refreshing…':'Running…';box.hidden=false;box.className='job-live-results';boxText.textContent='';
-   try{for(const job of jobs)await runOne(job,lines,csrf);box.classList.add('ok');if(requested==='all')lines.push('All 5 jobs completed.');else lines.push('Job completed.');boxText.textContent=lines.join('\n');document.querySelectorAll('.job-ajax-form button').forEach(b=>b.disabled=false);button.textContent=original;}
+   try{for(const job of jobs)await runOne(job,lines,csrf);box.classList.add('ok');if(requested==='all')lines.push('All 7 jobs completed.');else lines.push('Job completed.');boxText.textContent=lines.join('\n');document.querySelectorAll('.job-ajax-form button').forEach(b=>b.disabled=false);button.textContent=original;}
    catch(err){box.classList.add('error');lines.push('Failed: '+err.message);boxText.textContent=lines.join('\n');document.querySelectorAll('.job-ajax-form button').forEach(b=>b.disabled=false);button.textContent=original;}
  }));
 });
