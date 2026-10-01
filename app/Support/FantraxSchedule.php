@@ -60,6 +60,55 @@ class FantraxSchedule
         });
     }
 
+    public function periods(bool $fresh = false): array
+    {
+        $cacheKey = 'fantrax:schedule:periods:'.self::LEAGUE_ID;
+        if ($fresh) Cache::forget($cacheKey);
+
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () {
+            $data = $this->fetch();
+            $periods = [];
+
+            foreach (($data['tableList'] ?? []) as $table) {
+                $range = $this->dateRange((string)($table['subCaption'] ?? ''));
+                if (!$range) continue;
+                [$start, $end] = $range;
+
+                $matchups = [];
+                foreach (($table['rows'] ?? []) as $row) {
+                    $cells = $row['cells'] ?? [];
+                    if (!is_array($cells) || count($cells) < 4) continue;
+
+                    $awayId = trim((string)($cells[0]['teamId'] ?? ''));
+                    $homeId = trim((string)($cells[2]['teamId'] ?? ''));
+                    if ($awayId === '' || $homeId === '') continue;
+
+                    $matchups[] = [
+                        'away_team_id' => $awayId,
+                        'away_name' => trim((string)($cells[0]['content'] ?? '')),
+                        'away_score' => $this->numeric($cells[1]['content'] ?? null),
+                        'home_team_id' => $homeId,
+                        'home_name' => trim((string)($cells[2]['content'] ?? '')),
+                        'home_score' => $this->numeric($cells[3]['content'] ?? null),
+                    ];
+                }
+
+                if (!$matchups) continue;
+
+                $periods[] = [
+                    'caption' => trim((string)($table['caption'] ?? '')),
+                    'sub_caption' => trim((string)($table['subCaption'] ?? '')),
+                    'start' => $start->toDateString(),
+                    'end' => $end->toDateString(),
+                    'matchups' => $matchups,
+                ];
+            }
+
+            usort($periods, fn($a,$b)=>strcmp($a['start'],$b['start']));
+            return $periods;
+        });
+    }
+
     private function fetch(): array
     {
         $requestData = [
