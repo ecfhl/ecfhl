@@ -45,76 +45,55 @@
         $awayAll=$allPlayers($away);
         $homeAll=$allPlayers($home);
 
-        $skaterGroups=function($rows){
-          $eligible=$rows
-            ->filter(fn($p)=>(bool)$p->is_playing && !(bool)$p->is_bench && strtoupper((string)$p->position)!=='G')
-            ->values();
+        $sectionGroups=function($rows){
+          $playing=$rows->filter(fn($p)=>(bool)$p->is_playing)->values();
 
           return [
-            'F'=>$eligible->filter(fn($p)=>
-              !(bool)$p->is_ir
+            'Forwards'=>$playing->filter(fn($p)=>
+              !(bool)$p->is_bench
+              && !(bool)$p->is_ir
               && strtoupper((string)$p->roster_status)!=='MINORS'
               && strtoupper((string)$p->position)==='F'
             )->values(),
-            'D'=>$eligible->filter(fn($p)=>
-              !(bool)$p->is_ir
+            'Defensemen'=>$playing->filter(fn($p)=>
+              !(bool)$p->is_bench
+              && !(bool)$p->is_ir
               && strtoupper((string)$p->roster_status)!=='MINORS'
               && strtoupper((string)$p->position)==='D'
             )->values(),
-            'IR'=>$eligible->filter(fn($p)=>
+            'Goalies'=>$playing->filter(fn($p)=>
+              !(bool)$p->is_bench
+              && !(bool)$p->is_ir
+              && strtoupper((string)$p->roster_status)!=='MINORS'
+              && strtoupper((string)$p->position)==='G'
+            )->values(),
+            'Bench'=>$playing->filter(fn($p)=>
+              (bool)$p->is_bench
+              && !(bool)$p->is_ir
+              && strtoupper((string)$p->roster_status)!=='MINORS'
+            )->values(),
+            'IR'=>$playing->filter(fn($p)=>
               (bool)$p->is_ir
               && strtoupper((string)$p->roster_status)!=='MINORS'
             )->values(),
-            'M'=>$eligible->filter(fn($p)=>
+            'Minors'=>$playing->filter(fn($p)=>
               strtoupper((string)$p->roster_status)==='MINORS'
             )->values(),
           ];
         };
 
-        $alignGroups=function($leftGroups,$rightGroups){
-          $left=collect();
-          $right=collect();
-          foreach(['F','D','IR','M'] as $key){
-            $l=$leftGroups[$key]??collect();
-            $r=$rightGroups[$key]??collect();
-            $max=max($l->count(),$r->count());
-            for($i=0;$i<$max;$i++){
-              $left->push($l->get($i));
-              $right->push($r->get($i));
-            }
-          }
-          return [$left,$right];
-        };
+        $awaySections=$sectionGroups($awayAll);
+        $homeSections=$sectionGroups($homeAll);
 
-        $goalies=function($rows){
-          return $rows
-            ->filter(fn($p)=>(bool)$p->is_playing && !(bool)$p->is_bench && strtoupper((string)$p->position)==='G')
-            ->sortBy(fn($p)=>(bool)$p->is_ir?1:0)
-            ->values();
-        };
-
-        $bench=function($rows){
-          return $rows
-            ->filter(fn($p)=>(bool)$p->is_playing && (bool)$p->is_bench)
-            ->sortBy(fn($p)=>(bool)$p->is_ir?1:0)
-            ->values();
-        };
-
-        $awaySkaterGroups=$skaterGroups($awayAll);
-        $homeSkaterGroups=$skaterGroups($homeAll);
-        [$awaySkaters,$homeSkaters]=$alignGroups($awaySkaterGroups,$homeSkaterGroups);
-
-        $awayGoalies=$goalies($awayAll);
-        $homeGoalies=$goalies($homeAll);
-        $goalieMax=max($awayGoalies->count(),$homeGoalies->count());
-        while($awayGoalies->count()<$goalieMax)$awayGoalies->push(null);
-        while($homeGoalies->count()<$goalieMax)$homeGoalies->push(null);
-
-        $awayBench=$bench($awayAll);
-        $homeBench=$bench($homeAll);
-        $benchMax=max($awayBench->count(),$homeBench->count());
-        while($awayBench->count()<$benchMax)$awayBench->push(null);
-        while($homeBench->count()<$benchMax)$homeBench->push(null);
+        $alignedSections=[];
+        foreach(['Forwards','Defensemen','Goalies','Bench','IR','Minors'] as $sectionName){
+          $left=$awaySections[$sectionName]??collect();
+          $right=$homeSections[$sectionName]??collect();
+          $max=max($left->count(),$right->count());
+          while($left->count()<$max)$left->push(null);
+          while($right->count()<$max)$right->push(null);
+          $alignedSections[$sectionName]=['away'=>$left,'home'=>$right];
+        }
 
         $activePlayingCounts=function($rows){
           $eligible=$rows->filter(fn($p)=>
@@ -179,65 +158,16 @@
         </summary>
 
         <div class="matchup-expanded">
-          <div class="matchup-section-title">Skaters</div>
-          <div class="matchup-roster-grid">
-            <div class="matchup-roster-col">
-              @forelse($awaySkaters as $player)
-                @if($player)
-                  @include('teams.partials.current-matchup-player',['player'=>$player])
-                @else
-                  <div class="matchup-player-row matchup-player-blank" aria-hidden="true"></div>
-                @endif
-              @empty
-                <div class="matchup-empty">(Empty)</div>
-              @endforelse
-            </div>
-            <div class="matchup-roster-col">
-              @forelse($homeSkaters as $player)
-                @if($player)
-                  @include('teams.partials.current-matchup-player',['player'=>$player])
-                @else
-                  <div class="matchup-player-row matchup-player-blank" aria-hidden="true"></div>
-                @endif
-              @empty
-                <div class="matchup-empty">(Empty)</div>
-              @endforelse
-            </div>
-          </div>
-
-          <div class="matchup-section-title">Goalies</div>
-          <div class="matchup-roster-grid">
-            <div class="matchup-roster-col">
-              @forelse($awayGoalies as $player)
-                @if($player)
-                  @include('teams.partials.current-matchup-player',['player'=>$player])
-                @else
-                  <div class="matchup-player-row matchup-player-blank" aria-hidden="true"></div>
-                @endif
-              @empty
-                <div class="matchup-empty">(Empty)</div>
-              @endforelse
-            </div>
-            <div class="matchup-roster-col">
-              @forelse($homeGoalies as $player)
-                @if($player)
-                  @include('teams.partials.current-matchup-player',['player'=>$player])
-                @else
-                  <div class="matchup-player-row matchup-player-blank" aria-hidden="true"></div>
-                @endif
-              @empty
-                <div class="matchup-empty">(Empty)</div>
-              @endforelse
-            </div>
-          </div>
-
-          @if($awayBench->count() || $homeBench->count())
-            <div class="matchup-bench">
-              <div class="matchup-bench-title">Bench</div>
-              <div class="matchup-section-title">Skaters</div>
+          @foreach(['Forwards','Defensemen','Goalies','Bench','IR','Minors'] as $sectionName)
+            @php
+              $awaySectionRows=$alignedSections[$sectionName]['away'];
+              $homeSectionRows=$alignedSections[$sectionName]['home'];
+            @endphp
+            @if($awaySectionRows->count() || $homeSectionRows->count())
+              <div class="matchup-section-title">{{ $sectionName }}</div>
               <div class="matchup-roster-grid">
                 <div class="matchup-roster-col">
-                  @forelse($awayBench as $player)
+                  @forelse($awaySectionRows as $player)
                     @if($player)
                       @include('teams.partials.current-matchup-player',['player'=>$player])
                     @else
@@ -248,7 +178,7 @@
                   @endforelse
                 </div>
                 <div class="matchup-roster-col">
-                  @forelse($homeBench as $player)
+                  @forelse($homeSectionRows as $player)
                     @if($player)
                       @include('teams.partials.current-matchup-player',['player'=>$player])
                     @else
@@ -259,8 +189,8 @@
                   @endforelse
                 </div>
               </div>
-            </div>
-          @endif
+            @endif
+          @endforeach
         </div>
       </details>
     @endforeach
