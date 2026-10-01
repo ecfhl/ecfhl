@@ -57,20 +57,30 @@ class DailyFaceoffStartingGoalies
         // Missing/invalid payloads must never be mistaken for an empty schedule.
         $rows = [];
         $seen = [];
+        $fantasyToday = CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay()->toDateString();
+        $isFutureDate = $day > $fantasyToday;
         foreach ($props['data'] as $game) {
             if (! is_array($game) || ($game['date'] ?? null) !== $day) {
                 throw new RuntimeException('Invalid matchup date');
             }
+            $awayTeam = $game['awayTeamName'] ?? null;
+            $homeTeam = $game['homeTeamName'] ?? null;
+            $teamsValid = in_array($awayTeam, self::TEAMS, true)
+                && in_array($homeTeam, self::TEAMS, true)
+                && $awayTeam !== $homeTeam;
+
+            if (! $teamsValid) {
+                if ($isFutureDate) {
+                    continue;
+                }
+                throw new RuntimeException('Incomplete matchup team data');
+            }
+
             foreach (['away', 'home'] as $side) {
                 $other = $side === 'away' ? 'home' : 'away';
-                $team = $game[$side.'TeamName'] ?? null;
-                $opponent = $game[$other.'TeamName'] ?? null;
+                $team = $game[$side.'TeamName'];
+                $opponent = $game[$other.'TeamName'];
                 $name = $game[$side.'GoalieName'] ?? null;
-
-                if (! in_array($team, self::TEAMS, true) || ! in_array($opponent, self::TEAMS, true)
-                    || $team === $opponent) {
-                    throw new RuntimeException('Incomplete matchup team data');
-                }
 
                 // Future Daily Faceoff matchups are often published before one or both
                 // goalies have been named. That is valid unavailable data, not a parse
