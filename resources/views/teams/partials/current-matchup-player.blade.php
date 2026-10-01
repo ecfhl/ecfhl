@@ -26,7 +26,7 @@
       @else
         <span class="team-playing-text">Playing</span>
       @endif
-      <span class="matchup-player-cats">GP: {{ $player->today_gp ?? 0 }} G: {{ $player->today_g ?? 0 }} A: {{ $player->today_a ?? 0 }} PPG: {{ $player->today_ppg ?? 0 }} SHG: {{ $player->today_shg ?? 0 }} GWG: {{ $player->today_gwg ?? 0 }} W: {{ $player->today_w ?? 0 }} SO: {{ $player->today_so ?? 0 }}</span>
+      <span class="matchup-player-cats">@foreach(['today_gp'=>'GP','today_g'=>'G','today_a'=>'A','today_ppg'=>'PPG','today_shg'=>'SHG','today_gwg'=>'GWG','today_w'=>'W','today_so'=>'SO'] as $field=>$label)@if(($player->{$field} ?? 0) != 0)<span>{{ $label }}: {{ $player->{$field} }}</span>@endif @endforeach</span>
     </div>
   </div>
   <div class="matchup-player-metrics">
