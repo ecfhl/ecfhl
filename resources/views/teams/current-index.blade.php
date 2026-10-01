@@ -246,7 +246,7 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
   .matchup-roster-grid{grid-template-columns:1fr 1fr}
   .matchup-player-row{padding:7px 8px;align-items:flex-start}
   .matchup-player-name{font-size:11px}
-  .team-contract-sticker,.line-1,.line-2,.line-3,.line-4{display:none!important}
+  .team-contract-sticker,.line-1,.line-2,.line-3,.line-4,.pp1,.pp2{display:none!important}
   .matchup-player-opponent{gap:5px}
   .matchup-player-cats{font-size:7px}
   .matchup-player-metrics{gap:6px}
