@@ -339,6 +339,7 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
   .matchup-summary-score{font-size:18px}
   .matchup-summary-name a{font-size:12px}
   .matchup-summary-meta{gap:4px}
+  .matchup-playing-counts{display:none!important}
   .matchup-daily-cats{font-size:8px;color:#475569;overflow:hidden;text-overflow:ellipsis;max-width:170px}
   .matchup-roster-grid{grid-template-columns:1fr 1fr}
   .matchup-player-row{padding:7px 8px;align-items:flex-start}
