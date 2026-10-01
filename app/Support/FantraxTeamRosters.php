@@ -79,6 +79,8 @@ class FantraxTeamRosters
                     'home_away'=>$opponent !== '' ? ($away ? 'AWAY' : 'HOME') : null,
                     'game_time'=>$stat['game_time'] ?? null,
                     'projected_fpts'=>$stat['projected_fpts'] ?? null,
+                    'projected_gp'=>$stat['projected_gp'] ?? null,
+                    'projected_fpts_per_game'=>$stat['projected_fpts_per_game'] ?? null,
                     'contract'=>$stat['contract'] ?? null,
                 ];
             }
@@ -227,8 +229,11 @@ class FantraxTeamRosters
             }
 
             $fptsCell = $cell($entry, ['fpts','SCORE','FPts']);
+            $gpCell = $cell($entry, ['gp','GP','Games Played','GamesPlayed']);
             $contractCell = $cell($entry, ['contract','CONTRACT','Contract']);
             $contract = trim(html_entity_decode(strip_tags((string)($contractCell['content'] ?? ''))));
+            $projectedFpts=$this->numeric($fptsCell['content'] ?? null);
+            $projectedGp=$this->numeric($gpCell['content'] ?? null);
             $rows[] = [
                 'player_id'=>(string)($scorer['scorerId'] ?? ''),
                 'player_name'=>$name,
@@ -236,7 +241,9 @@ class FantraxTeamRosters
                 'opponent'=>$opponent,
                 'home_away'=>$homeAway,
                 'game_time'=>$gameTime,
-                'projected_fpts'=>$this->numeric($fptsCell['content'] ?? null),
+                'projected_fpts'=>$projectedFpts,
+                'projected_gp'=>$projectedGp,
+                'projected_fpts_per_game'=>$projectedFpts!==null && $projectedGp!==null && $projectedGp>0 ? $projectedFpts/$projectedGp : null,
                 'contract'=>$contract !== '' ? $contract : null,
                 'injury_status'=>$this->injury($scorer['icons'] ?? []),
                 'is_playing'=>false,
