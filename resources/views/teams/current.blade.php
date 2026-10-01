@@ -228,17 +228,6 @@
     @endif
     @php
       $advisorText=$lineupAdvice->advice_text ?? 'No moves to suggest.';
-      $advisorText=preg_replace_callback('/\s*(?:—\s*)?(Confirmed|Likely|Probable|Unconfirmed)\b/i',function($m){
-        $status=ucfirst(strtolower($m[1]));
-        if($status==='Probable')$status='Likely';
-        $class=match($status){
-          'Confirmed'=>'goalie-status-confirmed',
-          'Likely'=>'goalie-status-likely',
-          'Unconfirmed'=>'goalie-status-unconfirmed',
-          default=>'goalie-status-na',
-        };
-        return ' <span class="pill goalie-status '.$class.'">'.$status.'</span>';
-      },$advisorText);
       $advisorText=preg_replace_callback('/\s*\[GOALIE_STATUS:([^\]]+)\]/i',function($m){
         $raw=trim($m[1]);
         $status=ucfirst(strtolower($raw));
@@ -251,6 +240,20 @@
         };
         return ' <span class="pill goalie-status '.$class.'">'.$status.'</span>';
       },$advisorText);
+      // Backward compatibility for advice generated before status markers were added.
+      if(!str_contains($advisorText,'goalie-status')){
+        $advisorText=preg_replace_callback('/\s+(Confirmed|Likely|Probable|Unconfirmed)\b/i',function($m){
+          $status=ucfirst(strtolower($m[1]));
+          if($status==='Probable')$status='Likely';
+          $class=match($status){
+            'Confirmed'=>'goalie-status-confirmed',
+            'Likely'=>'goalie-status-likely',
+            'Unconfirmed'=>'goalie-status-unconfirmed',
+            default=>'goalie-status-na',
+          };
+          return ' <span class="pill goalie-status '.$class.'">'.$status.'</span>';
+        },$advisorText);
+      }
     @endphp
     <div class="team-lineup-advisor-text">{!! $advisorText !!}</div>
     @if(!empty($lineupAdvice?->generated_at))
