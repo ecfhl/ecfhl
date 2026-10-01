@@ -618,11 +618,60 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         return $decorated->values()->all();
     })->all();
 
+    $nextWeekOpponent=null;
+    try {
+        if(\Illuminate\Support\Facades\Schema::hasTable('fantrax_scoring_period_matchups')){
+            $fantasyToday=\Carbon\CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();
+            $currentPeriod=DB::table('fantrax_scoring_period_matchups')
+                ->where('season_id','2026-27')
+                ->whereNotNull('start_date')
+                ->whereDate('start_date','<=',$fantasyToday->toDateString())
+                ->whereDate('end_date','>=',$fantasyToday->toDateString())
+                ->value('period_number');
+
+            if($currentPeriod){
+                $normalizeFantasyTeamName=fn($v)=>preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower((string)$v))??'';
+                $teamKey=$normalizeFantasyTeamName($teamName);
+                $nextRows=DB::table('fantrax_scoring_period_matchups')
+                    ->where('season_id','2026-27')
+                    ->where('period_number',(int)$currentPeriod+1)
+                    ->get();
+
+                foreach($nextRows as $nextRow){
+                    $awayKey=$normalizeFantasyTeamName($nextRow->away_team_name);
+                    $homeKey=$normalizeFantasyTeamName($nextRow->home_team_name);
+                    if($awayKey===$teamKey){
+                        $nextWeekOpponent=[
+                            'period'=>(int)$nextRow->period_number,
+                            'opponent'=>(string)$nextRow->home_team_name,
+                            'side'=>'AWAY',
+                            'start_date'=>$nextRow->start_date,
+                            'end_date'=>$nextRow->end_date,
+                        ];
+                        break;
+                    }
+                    if($homeKey===$teamKey){
+                        $nextWeekOpponent=[
+                            'period'=>(int)$nextRow->period_number,
+                            'opponent'=>(string)$nextRow->away_team_name,
+                            'side'=>'HOME',
+                            'start_date'=>$nextRow->start_date,
+                            'end_date'=>$nextRow->end_date,
+                        ];
+                        break;
+                    }
+                }
+            }
+        }
+    } catch (\Throwable $e) {
+        report($e);
+    }
+
     $lastUpdate=$rows->max('last_update');
     $fantasyTeamId=$rows->first()->fantasy_team_id??null;
     $fantraxTeamUrl=$fantasyTeamId?'https://www.fantrax.com/fantasy/league/092zcn40molvao69/team/roster;teamId='.$fantasyTeamId:null;
     $teamChoices=array_map(fn($name)=>['name'=>$name,'slug'=>\Illuminate\Support\Str::slug($name)],$currentNames);
-    return view('teams.current',compact('teamName','slug','date','yesterday','today','tomorrow','positions','targetGroups','lastUpdate','scoreLastUpdate','fantraxTeamUrl','teamChoices','teamTodayFpts','liveMatchup'));
+    return view('teams.current',compact('teamName','slug','date','yesterday','today','tomorrow','positions','targetGroups','lastUpdate','scoreLastUpdate','fantraxTeamUrl','teamChoices','teamTodayFpts','liveMatchup','nextWeekOpponent'));
 });
 
 Route::get('/teams/{slug}', function(string $slug,EcfhlData $data){
