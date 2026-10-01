@@ -86,7 +86,7 @@
                   <span class="matchup-daily-cats">@foreach(['gp'=>'GP','g'=>'G','a'=>'A','ppg'=>'PPG','shg'=>'SHG','gwg'=>'GWG','w'=>'W','so'=>'SO'] as $key=>$label)@if(($away['today_stats'][$key] ?? 0) != 0)<span>{{ $label }}: {{ $away['today_stats'][$key] }}</span>@endif @endforeach</span>
                 </div>
               </div>
-              <span class="matchup-summary-score"><strong class="matchup-week-score {{ $awayWeekClass }}">{{ number_format($away['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $awayDayClass }}">+{{ number_format($away['today_fpts'] ?? 0,0) }}</small></span>
+              <span class="matchup-summary-score"><strong class="matchup-week-score {{ $awayWeekClass }}">{{ number_format($away['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $awayDayClass }}">{{ $awayDay==0.0?'0':'+'.number_format($awayDay,0) }}</small></span>
             @endif
           </div>
 
@@ -94,7 +94,7 @@
 
           <div class="matchup-summary-side matchup-summary-home">
             @if($home)
-              <span class="matchup-summary-score"><strong class="matchup-week-score {{ $homeWeekClass }}">{{ number_format($home['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $homeDayClass }}">+{{ number_format($home['today_fpts'] ?? 0,0) }}</small></span>
+              <span class="matchup-summary-score"><strong class="matchup-week-score {{ $homeWeekClass }}">{{ number_format($home['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $homeDayClass }}">{{ $homeDay==0.0?'0':'+'.number_format($homeDay,0) }}</small></span>
               <div class="matchup-summary-name">
                 <a href="/teams/current/{{ $home['slug'] }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $home['name'] }}</a>
                 <div class="matchup-summary-meta matchup-summary-meta-home">
