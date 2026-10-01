@@ -48,7 +48,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-notification-toggle{border:0
 </div>
 <div class="nav-dropdown {{ request()->is('seasons','seasons/*','prizes','trades','draft','players')?'active':'' }}">
   <div class="nav-dropdown-row">
-    <a class="nav-dropdown-main-link" href="/franchises"><span class="nav-item-icon">📖</span>Archive</a>
+    <a class="nav-dropdown-main-link" href="/teams"><span class="nav-item-icon">📖</span>Archive</a>
     <button type="button" class="nav-dropdown-toggle" onclick="this.closest('.nav-dropdown').classList.toggle('open')" aria-label="Open Archive menu" aria-expanded="false"><span aria-hidden="true">▾</span></button>
   </div>
   <div class="nav-dropdown-menu archive-menu">
