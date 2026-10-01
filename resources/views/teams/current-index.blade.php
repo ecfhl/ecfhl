@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('content')
-<div class="page-head"><div class="shell"><div class="eyebrow">2026-27 rosters</div><h1>Teams</h1><p>Current fantasy rosters for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}.</p>@if($lastUpdate)<p class="team-updated">Updated {{ \Carbon\CarbonImmutable::parse($lastUpdate)->setTimezone('America/Halifax')->format('g:i a T') }}</p>@endif</div></div>
+<div class="page-head current-teams-head"><div class="shell"><div class="eyebrow">2026-27 rosters</div><h1>Teams</h1><p>Current fantasy rosters for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}.</p>@if($lastUpdate)<p class="team-updated">Updated {{ \Carbon\CarbonImmutable::parse($lastUpdate)->setTimezone('America/Halifax')->format('g:i a T') }}</p>@endif</div></div>
 
 <div class="shell current-teams-page">
   <div class="team-toolbar">
@@ -151,9 +151,7 @@
 </div>
 
 <style>
-.team-updated{font-size:12px;opacity:.8;margin-top:5px}
-.team-toolbar{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:18px 0}
-.team-date-buttons{display:flex;gap:6px;margin:18px 0}
+.current-teams-head{padding:16px 0 8px}.current-teams-head .eyebrow{margin-bottom:5px}.current-teams-head p{margin-top:4px}.team-updated{font-size:12px;opacity:.8;margin-top:3px}.team-toolbar{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:4px 0 10px}.team-date-buttons{display:flex;gap:6px;margin:4px 0}
 .team-date-buttons .button{padding:6px 10px;font-size:12px}
 .team-date-inactive{background:#e5e7eb!important;border-color:#d1d5db!important;color:#374151!important}
 .team-date-inactive:hover{background:#d1d5db!important;color:#111827!important}
