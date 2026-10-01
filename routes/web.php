@@ -157,6 +157,27 @@ Route::get('/teams/current', function() {
         foreach($teams as $team)$matchups[]=['away'=>$team,'home'=>null];
     }
 
+    $matchupRank=function($matchup){
+        $names=[
+            strtolower((string)($matchup['away']['name']??'')),
+            strtolower((string)($matchup['home']['name']??'')),
+        ];
+        $hasLoneTsar=(bool)collect($names)->first(fn($name)=>str_contains($name,'lone')&&str_contains($name,'tsar'));
+        $hasOneManBang=(bool)collect($names)->first(fn($name)=>str_contains($name,'one man bang'));
+        if($hasLoneTsar&&$hasOneManBang)return 0;
+        if($hasLoneTsar)return 1;
+        if($hasOneManBang)return 2;
+        return 3;
+    };
+    usort($matchups,function($a,$b)use($matchupRank){
+        $ar=$matchupRank($a);
+        $br=$matchupRank($b);
+        if($ar!==$br)return $ar<=>$br;
+        $an=strtolower((string)($a['away']['name']??$a['home']['name']??''));
+        $bn=strtolower((string)($b['away']['name']??$b['home']['name']??''));
+        return $an<=>$bn;
+    });
+
     $lastUpdate=$rows->max('last_update');
     return view('teams.current-index',compact('teams','matchups','scheduleLabel','date','today','tomorrow','lastUpdate'));
 });
