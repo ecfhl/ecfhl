@@ -159,7 +159,6 @@
                       @if($awayPlayingCounts['G']>0)<span class="position-count-pill {{ $awayPlayingCounts['G']>=1?'full':'' }}">{{ $awayPlayingCounts['G'] }} Goaltender{{ $awayPlayingCounts['G']==1?'':'s' }}</span>@endif
                       @if($awayPlayingCounts['B']>0)<span class="position-count-pill bench-count-pill">{{ $awayPlayingCounts['B'] }} Bench</span>@endif
                     </span>
-                    <span class="projected-total-pill">Proj: {{ number_format($awayProjectedTotal,2) }}</span>
                     @if(($away['games_in_progress'] ?? 0)>0)<span class="matchup-live-games">{{ $away['games_in_progress'] }} game{{ ($away['games_in_progress']??0)==1?'':'s' }} in progress</span>@endif
                   </div>
                   <div class="matchup-meta-row matchup-stat-row">
@@ -167,7 +166,7 @@
                   </div>
                 </div>
               </div>
-              <span class="matchup-summary-score"><strong class="matchup-week-score {{ $awayWeekClass }} {{ !empty($away['week_fpts_changed'])?'score-changed':'' }}">{{ number_format($away['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $awayDayClass }} {{ !empty($away['today_fpts_changed'])?'score-changed':'' }}">{{ number_format($awayDay,0) }}</small></span>
+              <span class="matchup-summary-score"><strong class="matchup-week-score {{ $awayWeekClass }} {{ !empty($away['week_fpts_changed'])?'score-changed':'' }}">{{ number_format($away['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $awayDayClass }} {{ !empty($away['today_fpts_changed'])?'score-changed':'' }}">{{ number_format($awayDay,0) }}</small><small class="matchup-projected-score">(Proj {{ number_format($awayProjectedTotal,2) }})</small></span>
             @endif
           </div>
 
@@ -175,7 +174,7 @@
 
           <div class="matchup-summary-side matchup-summary-home">
             @if($home)
-              <span class="matchup-summary-score"><strong class="matchup-week-score {{ $homeWeekClass }} {{ !empty($home['week_fpts_changed'])?'score-changed':'' }}">{{ number_format($home['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $homeDayClass }} {{ !empty($home['today_fpts_changed'])?'score-changed':'' }}">{{ number_format($homeDay,0) }}</small></span>
+              <span class="matchup-summary-score"><strong class="matchup-week-score {{ $homeWeekClass }} {{ !empty($home['week_fpts_changed'])?'score-changed':'' }}">{{ number_format($home['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $homeDayClass }} {{ !empty($home['today_fpts_changed'])?'score-changed':'' }}">{{ number_format($homeDay,0) }}</small><small class="matchup-projected-score">(Proj {{ number_format($homeProjectedTotal,2) }})</small></span>
               <div class="matchup-summary-name">
                 <a href="/teams/current/{{ $home['slug'] }}?date={{ $date }}">{{ $home['name'] }}</a>
                 <div class="matchup-summary-meta matchup-summary-meta-home">
@@ -187,7 +186,6 @@
                       @if($homePlayingCounts['G']>0)<span class="position-count-pill {{ $homePlayingCounts['G']>=1?'full':'' }}">{{ $homePlayingCounts['G'] }} Goaltender{{ $homePlayingCounts['G']==1?'':'s' }}</span>@endif
                       @if($homePlayingCounts['B']>0)<span class="position-count-pill bench-count-pill">{{ $homePlayingCounts['B'] }} Bench</span>@endif
                     </span>
-                    <span class="projected-total-pill">Proj: {{ number_format($homeProjectedTotal,2) }}</span>
                     <span class="matchup-side-pill home-pill">HOME</span>
                   </div>
                   <div class="matchup-meta-row matchup-meta-row-home matchup-stat-row">
@@ -297,7 +295,7 @@
 .matchup-summary-name a{font-weight:900;color:var(--text);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .matchup-summary-name a:hover{text-decoration:underline}
 .matchup-card[open] .matchup-summary-name a{text-decoration:underline;text-underline-offset:2px}
-.matchup-summary-name small{font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.05em}.matchup-summary-meta{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}.matchup-summary-meta-home{align-items:flex-end}.matchup-meta-row{display:flex;align-items:center;gap:7px;min-width:0}.matchup-meta-row-home{justify-content:flex-end}.matchup-stat-row{line-height:1.1;padding-top:4px}.matchup-live-games{font-size:8px;font-weight:900;color:#b45309;white-space:nowrap}.matchup-playing-counts{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;flex-wrap:wrap}.position-count-pill{display:inline-flex;align-items:center;padding:2px 6px;border:1px solid #cbd5e1;border-radius:999px;background:#f8fafc;color:#111827;font-size:9px;font-weight:700;line-height:1.1}.position-count-pill.full{border-color:#2563eb;background:#2563eb;color:#fff}.position-count-pill.bench-count-pill{border-color:#dc2626;background:#dc2626;color:#fff}.projected-total-pill{display:inline-flex;align-items:center;padding:2px 6px;border:1px solid #94a3b8;border-radius:999px;background:#fff;color:#111827;font-size:9px;font-weight:800;line-height:1.1;white-space:nowrap}.matchup-summary-meta-home{justify-content:flex-end}.matchup-daily-cats{font-size:9px;color:#475569;font-weight:900;white-space:nowrap;display:inline-flex;gap:5px;align-items:center}.matchup-side-pill{display:inline-flex;align-items:center;justify-content:center;padding:2px 7px;border-radius:999px;font-size:9px;font-weight:900;letter-spacing:.05em;line-height:1.1;border:1px solid transparent;white-space:nowrap}.away-pill{background:#fef3c7;color:#92400e;border-color:#fcd34d}.home-pill{background:#dcfce7;color:#166534;border-color:#86efac}
+.matchup-summary-name small{font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.05em}.matchup-summary-meta{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}.matchup-summary-meta-home{align-items:flex-end}.matchup-meta-row{display:flex;align-items:center;gap:7px;min-width:0}.matchup-meta-row-home{justify-content:flex-end}.matchup-stat-row{line-height:1.1;padding-top:4px}.matchup-live-games{font-size:8px;font-weight:900;color:#b45309;white-space:nowrap}.matchup-playing-counts{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;flex-wrap:wrap}.position-count-pill{display:inline-flex;align-items:center;padding:2px 6px;border:1px solid #cbd5e1;border-radius:999px;background:#f8fafc;color:#111827;font-size:9px;font-weight:700;line-height:1.1}.position-count-pill.full{border-color:#2563eb;background:#2563eb;color:#fff}.position-count-pill.bench-count-pill{border-color:#dc2626;background:#dc2626;color:#fff}.matchup-projected-score{font-size:9px!important;font-weight:600!important;color:var(--muted)!important;margin-left:3px;white-space:nowrap}.matchup-summary-meta-home{justify-content:flex-end}.matchup-daily-cats{font-size:9px;color:#475569;font-weight:900;white-space:nowrap;display:inline-flex;gap:5px;align-items:center}.matchup-side-pill{display:inline-flex;align-items:center;justify-content:center;padding:2px 7px;border-radius:999px;font-size:9px;font-weight:900;letter-spacing:.05em;line-height:1.1;border:1px solid transparent;white-space:nowrap}.away-pill{background:#fef3c7;color:#92400e;border-color:#fcd34d}.home-pill{background:#dcfce7;color:#166534;border-color:#86efac}
 .matchup-summary-score{display:inline-flex;align-items:flex-start;gap:4px;white-space:nowrap}.matchup-week-score{font-size:20px;line-height:1;font-weight:500;color:var(--text)}.matchup-day-score{font-size:13px;line-height:1;font-weight:500;color:var(--text);transform:translateY(-2px)}.matchup-week-score.score-winning,.matchup-day-score.score-winning{font-weight:900}.matchup-week-score.score-changed,.matchup-day-score.score-changed{color:#16834f!important}
 .matchup-summary-vs{text-align:center;font-size:10px;font-weight:900;color:var(--muted)}
 .matchup-bye{font-size:11px;font-weight:900;color:var(--muted)}
