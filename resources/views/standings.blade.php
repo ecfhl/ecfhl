@@ -4,7 +4,7 @@
 <div class="shell standings-page">
   <div class="page-head">
     <div class="eyebrow">2026-27 season</div>
-    <h1>Standings</h1>
+    <h1>🏆 Standings</h1>
     @if(!empty($standingsLastUpdate))
       <p class="subtle standings-updated">Updated @include('partials.updated-time',['value'=>$standingsLastUpdate])</p>
     @endif
