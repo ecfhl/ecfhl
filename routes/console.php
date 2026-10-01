@@ -448,12 +448,34 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             $goalieTarget=collect($availableGroups['G']??[])
                 ->first(fn($g)=>!in_array(strtolower(trim((string)($g['starting_status']??''))),['not starting',''],true))
                 ?? collect($availableGroups['G']??[])->first();
-            $drop=$eligibleDrops->first(fn($p)=>strtoupper((string)$p->position)==='G')
-                ?? $eligibleDrops->first();
+
+            $goaliesOnRoster=$teamRows
+                ->filter(fn($p)=>
+                    strtoupper((string)$p->position==='G'
+                    && strtoupper((string)($p->roster_status??''))!=='MINORS'
+                    && !(bool)($p->is_ir??false)
+                )
+                ->values();
+
+            $drop=null;
+            if($goaliesOnRoster->count()>=2){
+                $drop=$goaliesOnRoster
+                    ->filter($dropEligible)
+                    ->sortBy(fn($p)=>(float)($p->projected_fpts_per_game??0))
+                    ->first();
+            }
+
+            if(!$drop){
+                $drop=$eligibleDrops->first(fn($p)=>strtoupper((string)$p->position)==='G')
+                    ?? $eligibleDrops->first();
+            }
 
             if($goalieTarget && $drop && ($trailing || $lateWeek || $isWeekend)){
+                $goalieReason=$goaliesOnRoster->count()>=2 && strtoupper((string)$drop->position)==='G'
+                    ? 'You already carry 2 goalies. '
+                    : '';
                 array_unshift($suggestions,
-                    'No goalie is active tonight. Consider adding '.$goalieTarget['name'].' ('.$goalieTarget['team'].')'
+                    $goalieReason.'No goalie is active tonight. Consider adding '.$goalieTarget['name'].' ('.$goalieTarget['team'].')'
                     .(!empty($goalieTarget['starting_status'])?' — '.$goalieTarget['starting_status']:'')
                     .' and dropping '.$drop->player_name.'.'
                 );
