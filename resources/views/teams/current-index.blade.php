@@ -123,7 +123,7 @@
           <div class="matchup-summary-side matchup-summary-away">
             @if($away)
               <div class="matchup-summary-name">
-                <a href="/teams/current/{{ $away['slug'] }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $away['name'] }}</a>
+                <a href="/teams/current/{{ $away['slug'] }}?date={{ $date }}">{{ $away['name'] }}</a>
                 <div class="matchup-summary-meta matchup-summary-meta-away">
                   <div class="matchup-meta-row">
                     <span class="matchup-side-pill away-pill">AWAY</span>
@@ -150,7 +150,7 @@
             @if($home)
               <span class="matchup-summary-score"><strong class="matchup-week-score {{ $homeWeekClass }} {{ !empty($home['week_fpts_changed'])?'score-changed':'' }}">{{ number_format($home['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $homeDayClass }} {{ !empty($home['today_fpts_changed'])?'score-changed':'' }}">{{ number_format($homeDay,0) }}</small></span>
               <div class="matchup-summary-name">
-                <a href="/teams/current/{{ $home['slug'] }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $home['name'] }}</a>
+                <a href="/teams/current/{{ $home['slug'] }}?date={{ $date }}">{{ $home['name'] }}</a>
                 <div class="matchup-summary-meta matchup-summary-meta-home">
                   <div class="matchup-meta-row matchup-meta-row-home">
                     @if(($home['games_in_progress'] ?? 0)>0)<span class="matchup-live-games">{{ $home['games_in_progress'] }} game{{ ($home['games_in_progress']??0)==1?'':'s' }} in progress</span>@endif
@@ -389,6 +389,8 @@ document.addEventListener('DOMContentLoaded',()=>{
       const card=link.closest('.matchup-card');
       if(!card?.open){
         event.preventDefault();
+        // Do not stop propagation: let the <summary> handle the click
+        // so clicking the team name behaves exactly like clicking the row.
         return;
       }
       event.stopPropagation();
