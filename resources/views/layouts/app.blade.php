@@ -12,7 +12,7 @@
         elseif(request()->is('seasons/*')&&isset($season)){$browserTitle='ECFHL - '.($season['season']??'Season');}
         elseif(request()->is('teams/current')){$browserTitle='ECFHL - Live Scoring';}
         else{$pageTitles=['seasons'=>'Seasons','standings'=>'Standings','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','daily-targets'=>'Daily Targets','job-status'=>'Collector Status','rules'=>'Rules'];$browserTitle='ECFHL - '.($pageTitles[request()->segment(1)]??'East Coast Fantasy Hockey League');}
-        $showSeasonFilter=!request()->is('rules','players','daily-targets','job-status','teams/current','teams/current/*','seasons','seasons/*');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
+        $showSeasonFilter=!request()->is('rules','players','daily-targets','job-status','teams/current','teams/current/*','seasons','seasons/*','standings');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
         $currentTeamMenu=\Illuminate\Support\Facades\DB::table('team_seasons as ts')
             ->join('seasons as s','s.season_id','=','ts.season_id')
             ->where('s.season_name','2026-27')
