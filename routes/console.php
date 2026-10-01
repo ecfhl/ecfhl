@@ -450,7 +450,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
 
             $goaliesOnRoster=$teamRows
                 ->filter(fn($p)=>
-                    strtoupper((string)$p->position==='G'
+                    strtoupper((string)$p->position)==='G'
                     && strtoupper((string)($p->roster_status??''))!=='MINORS'
                     && !(bool)($p->is_ir??false)
                 )
