@@ -81,6 +81,10 @@ class FantraxAvailablePlayers
                     $gameTime = $this->atlanticGameTime($m[1], $day);
                 }
             }
+            $gameStarted = $gameTime === null && (
+                preg_match('/\b\d+\b.*\b\d+\b/', $oppText)
+                || preg_match('/\b(?:FINAL|F|OT|SO|1ST|2ND|3RD|P1|P2|P3|LIVE)\b/i', $oppText)
+            );
             $fptsCell = $cell($entry, ['fpts','SCORE','FPts']); $fpts = $this->numeric($fptsCell['content'] ?? null);
             $posValue = $scorer['posShortNames'] ?? $entry['multiPositions'] ?? '';
             $posText = is_array($posValue) ? implode(',', $posValue) : html_entity_decode(strip_tags((string)$posValue));
@@ -93,7 +97,7 @@ class FantraxAvailablePlayers
 
             $injury = $this->injury($scorer['icons'] ?? []); $waiverDay = null;
             if (preg_match('/W\s*\(([^)]+)\)/i', $statusRaw, $m)) $waiverDay = trim($m[1]);
-            $rows[] = ['player_name'=>$name,'team'=>$team,'position'=>$position,'opponent'=>$opp,'game_time'=>$gameTime,'availability'=>str_starts_with($statusUpper,'W')?'W':'FA','waiver_day'=>$waiverDay,'injury_status'=>$injury,'projected_fpts'=>$fpts,'source_rank'=>(int)($scorer['rank']??($rank+1)),'fantrax_url'=>'https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/players;searchName='.rawurlencode($name).';positionOrGroup=ALL;'];
+            $rows[] = ['player_name'=>$name,'team'=>$team,'position'=>$position,'opponent'=>$opp,'game_time'=>$gameTime,'game_started'=>(bool)$gameStarted,'availability'=>str_starts_with($statusUpper,'W')?'W':'FA','waiver_day'=>$waiverDay,'injury_status'=>$injury,'projected_fpts'=>$fpts,'source_rank'=>(int)($scorer['rank']??($rank+1)),'fantrax_url'=>'https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/players;searchName='.rawurlencode($name).';positionOrGroup=ALL;'];
         }
         if (!$rows && $positionGroup !== 'G') throw new RuntimeException('Fantrax returned player rows but none were parseable as available players.');
         return ['url'=>$url, 'rows'=>$rows];
