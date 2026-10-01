@@ -10,7 +10,7 @@
 
 @if($currentSeason)
   <div class="season-cards season-current-card">
-    @php($season=$currentSeason)
+    @php $season=$currentSeason; @endphp
     <article class="season-card">
       <div class="season-card-head"><div><strong>{{ $season['season'] }}</strong><span>{{ $season['format'] ?? '' }}</span>@include('partials.fantrax-standings',['season'=>$season])</div><a class="season-card-view" href="/seasons/{{ rawurlencode($season['season']) }}">View →</a></div>
       <div class="season-card-columns">
