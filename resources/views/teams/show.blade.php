@@ -14,9 +14,9 @@ $teamIconThemes=[
 $teamIcon=$teamIconThemes[$teamIconKey]??['🏒','#0b5f9e'];
 @endphp
 <style>
-.franchise-title{display:flex;align-items:center;gap:12px}.franchise-team-icon{width:58px;height:58px;border-radius:16px;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--team-icon) 14%,white);border:2px solid color-mix(in srgb,var(--team-icon) 38%,white);font-size:34px;line-height:1;box-shadow:0 3px 10px rgba(15,23,42,.08);flex:0 0 58px}@media(max-width:700px){.franchise-team-icon{width:50px;height:50px;flex-basis:50px;font-size:30px}.franchise-title{gap:9px}}
+.franchise-title{display:flex;align-items:center;gap:12px}.franchise-team-image{object-fit:cover;padding:0}.franchise-team-icon{width:58px;height:58px;border-radius:16px;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--team-icon) 14%,white);border:2px solid color-mix(in srgb,var(--team-icon) 38%,white);font-size:34px;line-height:1;box-shadow:0 3px 10px rgba(15,23,42,.08);flex:0 0 58px}@media(max-width:700px){.franchise-team-icon{width:50px;height:50px;flex-basis:50px;font-size:30px}.franchise-title{gap:9px}}
 </style>
-<div class="page-head"><div class="eyebrow">Franchise history</div><h1 class="franchise-title"><span class="franchise-team-icon" style="--team-icon:{{ $teamIcon[1] }}">{{ $teamIcon[0] }}</span><span>{{ $team['team'] }}</span></h1><p>Complete recorded franchise history.</p></div>
+<div class="page-head"><div class="eyebrow">Franchise history</div><h1 class="franchise-title">@if(strtolower($team['team'] ?? '') === 'orcas')<img class="franchise-team-icon franchise-team-image" src="{{ asset('images/team-icons/orcas.webp') }}" alt="Orcas">@else<span class="franchise-team-icon" style="--team-icon:{{ $teamIcon[1] }}">{{ $teamIcon[0] }}</span>@endif<span>{{ $team['team'] }}</span></h1><p>Complete recorded franchise history.</p></div>
 @php
 $archive=app(\App\Support\Archive::class);
 $franchiseOptions=$archive->teamLedger($archive->mode(),'all');
