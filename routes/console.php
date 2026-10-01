@@ -1035,7 +1035,7 @@ Schedule::command('ecfhl:refresh-daily-scores')
     });
 
 Schedule::command('ecfhl:refresh-lineup-advice')
-    ->cron('0 7,19 * * *')
+    ->hourly()
     ->timezone('America/Halifax')
     ->withoutOverlapping(30)
     ->runInBackground();
