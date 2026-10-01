@@ -66,10 +66,19 @@ class DailyFaceoffStartingGoalies
                 $team = $game[$side.'TeamName'] ?? null;
                 $opponent = $game[$other.'TeamName'] ?? null;
                 $name = $game[$side.'GoalieName'] ?? null;
+
                 if (! in_array($team, self::TEAMS, true) || ! in_array($opponent, self::TEAMS, true)
-                    || $team === $opponent || ! is_string($name) || trim($name) === '') {
-                    throw new RuntimeException('Incomplete matchup team/goalie data');
+                    || $team === $opponent) {
+                    throw new RuntimeException('Incomplete matchup team data');
                 }
+
+                // Future Daily Faceoff matchups are often published before one or both
+                // goalies have been named. That is valid unavailable data, not a parse
+                // failure. Store only the goalie sides that have actually been published.
+                if (! is_string($name) || trim($name) === '') {
+                    continue;
+                }
+
                 if (! array_key_exists($side.'NewsStrengthName', $game)) {
                     throw new RuntimeException('Missing goalie starting-status field');
                 }
