@@ -11,7 +11,7 @@ class FantraxDailyMoves
     public const LEAGUE_ID='092zcn40molvao69';
     private const API_VERSION='186.1.9';
 
-    public function fetch(CarbonImmutable $date): array
+    public function fetch(CarbonImmutable $date, ?CarbonImmutable $periodStart=null): array
     {
         $url='https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/transactions/history;maxResultsPerPage=250;view=CLAIM_DROP;pageNumber=1;executedOnly=true;includeDeleted=false';
         $payload=[
@@ -57,6 +57,8 @@ class FantraxDailyMoves
         }
 
         $target=$date->toDateString();
+        $periodStart=($periodStart??$date)->startOfDay();
+        $periodEnd=$date->endOfDay();
         $counts=[];
         $groupTeam=[];
         $groupDate=[];
@@ -89,7 +91,9 @@ class FantraxDailyMoves
             }
             if(!$processedDate && $txSetId!=='' && isset($groupDate[$txSetId]))$processedDate=$groupDate[$txSetId];
 
-            if(!$processedDate || $processedDate->setTimezone('America/Halifax')->toDateString()!==$target)continue;
+            if(!$processedDate)continue;
+            $processedAtlantic=$processedDate->setTimezone('America/Halifax');
+            if($processedAtlantic->lt($periodStart) || $processedAtlantic->gt($periodEnd))continue;
             if($teamId==='')continue;
 
             if($teamName==='')$teamName=$teamNames[$teamId]??$teamId;
