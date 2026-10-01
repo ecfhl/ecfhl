@@ -9,6 +9,7 @@ use App\Support\FantraxStandings;
 use App\Support\FantraxSchedule;
 use App\Support\NhlOdds;
 use App\Support\NhlDailyStats;
+use App\Support\WebPush;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -69,7 +70,7 @@ Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayer
     return $failed?1:0;
 });
 
-Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailyScores $fantrax, NhlDailyStats $nhlStats, FantraxSchedule $fantraxSchedule) {
+Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailyScores $fantrax, NhlDailyStats $nhlStats, FantraxSchedule $fantraxSchedule, WebPush $webPush) {
     $tz='America/Halifax';
     $requested=trim((string)($this->argument('date')??''));
     if($requested!==''){
@@ -133,6 +134,31 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
                 ];
             },$data['rows']);
 
+            $scoreNotifications=[];
+            $isCurrentFantasyDay=$date->toDateString()===CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay()->toDateString();
+            if($isCurrentFantasyDay){
+                foreach($rows as $row){
+                    $key=$normTeam($row['nhl_team']??'').'|'.$normName($row['player_name']??'');
+                    $previous=$previousScores[$key]??null;
+                    if(!$previous)continue;
+
+                    $name=trim((string)$row['player_name']);
+                    $team=$normTeam($row['nhl_team']??'');
+                    $label=$name.($team!==''?' ('.$team.')':'');
+                    $delta=fn($field)=>(int)($row[$field]??0)-(int)($previous->{$field}??0);
+
+                    if($delta('g')>0){
+                        if($delta('ppg')>0)$scoreNotifications[]='PPG by '.$label;
+                        elseif($delta('shg')>0)$scoreNotifications[]='SHG by '.$label;
+                        else $scoreNotifications[]='Goal by '.$label;
+                    }
+                    if($delta('a')>0)$scoreNotifications[]='Assist by '.$label;
+                    if($delta('gwg')>0)$scoreNotifications[]='GWG by '.$label;
+                    if($delta('w')>0)$scoreNotifications[]='Win by '.$label;
+                    if($delta('so')>0)$scoreNotifications[]='Shutout by '.$label;
+                }
+            }
+
             $matchupRows=null;
             try {
                 $schedule=$fantraxSchedule->forDate($date,true);
@@ -185,6 +211,18 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
                 'created_at'=>now(),
                 'updated_at'=>now(),
             ]);
+
+            foreach($scoreNotifications as $body){
+                try {
+                    $webPush->notify('live-score','ECFHL Live Scoring',$body,'/teams/current?date='.$date->toDateString());
+                } catch (\Throwable $e) {
+                    Log::warning('Live scoring push notification failed',[
+                        'date'=>$date->toDateString(),
+                        'body'=>$body,
+                        'error'=>$e->getMessage(),
+                    ]);
+                }
+            }
 
             $this->info($date->toDateString().': '.count($rows).' Fantrax daily scores refreshed');
         } catch (\Throwable $e) {
@@ -335,11 +373,16 @@ Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $
     return $failed?1:0;
 });
 
-Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartingGoalies $dfo) {
+Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartingGoalies $dfo, WebPush $webPush) {
     $abbr=['Anaheim Ducks'=>'ANA','Boston Bruins'=>'BOS','Buffalo Sabres'=>'BUF','Calgary Flames'=>'CGY','Carolina Hurricanes'=>'CAR','Chicago Blackhawks'=>'CHI','Colorado Avalanche'=>'COL','Columbus Blue Jackets'=>'CBJ','Dallas Stars'=>'DAL','Detroit Red Wings'=>'DET','Edmonton Oilers'=>'EDM','Florida Panthers'=>'FLA','Los Angeles Kings'=>'LAK','Minnesota Wild'=>'MIN','Montreal Canadiens'=>'MTL','Nashville Predators'=>'NSH','New Jersey Devils'=>'NJD','New York Islanders'=>'NYI','New York Rangers'=>'NYR','Ottawa Senators'=>'OTT','Philadelphia Flyers'=>'PHI','Pittsburgh Penguins'=>'PIT','San Jose Sharks'=>'SJS','Seattle Kraken'=>'SEA','St. Louis Blues'=>'STL','Tampa Bay Lightning'=>'TBL','Toronto Maple Leafs'=>'TOR','Utah Mammoth'=>'UTA','Vancouver Canucks'=>'VAN','Vegas Golden Knights'=>'VGK','Washington Capitals'=>'WSH','Winnipeg Jets'=>'WPG'];$base=CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();$failed=false;
     foreach ([$base, $base->addDay()] as $date) {
         $day = $date->format('Y-m-d');
         try {
+            $previousGoalies=DB::table('active_starting_goalies')
+                ->whereDate('game_date',$day)
+                ->get()
+                ->keyBy(fn($r)=>strtoupper(trim((string)$r->team)).'|'.mb_strtolower(trim((string)$r->player_name)));
+
             $data = $dfo->fetch($date);
             $now = now();
             $rows = [];
@@ -361,6 +404,28 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
             });
             $stored = DB::table('active_starting_goalies')->whereDate('game_date', $day)
                 ->get(['player_name','team','opponent','home_away','starting_status']);
+            foreach($stored as $goalie){
+                $key=strtoupper(trim((string)$goalie->team)).'|'.mb_strtolower(trim((string)$goalie->player_name));
+                $previous=$previousGoalies[$key]??null;
+                if(!$previous)continue;
+                $oldStatus=trim((string)($previous->starting_status??''));
+                $newStatus=trim((string)($goalie->starting_status??''));
+                if($newStatus==='' || strcasecmp($oldStatus,$newStatus)===0)continue;
+
+                $body=$goalie->player_name.' ('.$goalie->team.') is now '.$newStatus.'.';
+                try {
+                    $webPush->notify('goalie-status','Goalie Status',$body,'/daily-targets?date='.$day);
+                } catch (\Throwable $e) {
+                    Log::warning('Goalie status push notification failed',[
+                        'date'=>$day,
+                        'goalie'=>$goalie->player_name,
+                        'team'=>$goalie->team,
+                        'status'=>$newStatus,
+                        'error'=>$e->getMessage(),
+                    ]);
+                }
+            }
+
             $this->info($day.': '.$stored->count().' DFO goalies refreshed ('.$data['source'].')');
             Log::info('Daily Faceoff goalie refresh completed', [
                 'date'=>$day, 'source'=>$data['source'], 'rows'=>$stored->count(), 'goalies'=>$stored->all(),
