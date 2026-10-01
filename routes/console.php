@@ -302,6 +302,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
 
     $rosters=DB::table('active_fantasy_rosters')->whereDate('game_date',$date)->get();
     $teams=$rosters->groupBy('fantasy_team_id');
+    $availableGroups=\App\Support\AiTips::groups([], $date);
 
     $scheduleScores=[];
     try {
@@ -318,7 +319,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
     $dropEligible=function($p)use($normContract){
         $contract=$normContract($p->contract??'');
         if(!in_array($contract,['FA','1 YEAR','1 YEAR(S)','1 YR'],true))return false;
-        if((bool)($p->is_ir??false) || strtoupper((string)($p->roster_status??''))==='MINORS')return false;
+        if(strtoupper((string)($p->roster_status??''))==='MINORS')return false;
         $proj=(float)($p->projected_fpts_per_game??0);
         return match(strtoupper((string)$p->position)){
             'F'=>$proj<=1.0,
@@ -353,76 +354,123 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             ->whereDate('move_date',$date)
             ->where('fantasy_team_id',(string)$teamId)
             ->value('moves_left');
-        // If Fantrax move history is temporarily unavailable, do not block every
-        // team from advice. Treat an unknown count as the full daily allowance
-        // until the next successful refresh replaces it with the real value.
         $movesLeft=$movesLeft!==null?(int)$movesLeft:7;
 
-        $activeGoaliePlaying=$teamRows->contains(fn($p)=>
-            strtoupper((string)$p->position)==='G'
-            && (bool)($p->is_playing??false)
+        $activePlayers=$teamRows->filter(fn($p)=>
+            (bool)($p->is_playing??false)
             && !(bool)($p->is_bench??false)
             && !(bool)($p->is_ir??false)
             && strtoupper((string)($p->roster_status??''))!=='MINORS'
         );
 
-        $eligibleDrops=$teamRows->filter($dropEligible)->sortBy(fn($p)=>(float)($p->projected_fpts_per_game??0))->values();
-        $hasMoveAvailable=$movesLeft!==null&&$movesLeft>0;
-        $hasEligibleDrop=$eligibleDrops->isNotEmpty();
-        $advice='No moves to suggest.';
+        $playingCounts=[
+            'F'=>$activePlayers->filter(fn($p)=>strtoupper((string)$p->position)==='F')->count(),
+            'D'=>$activePlayers->filter(fn($p)=>strtoupper((string)$p->position)==='D')->count(),
+            'G'=>$activePlayers->filter(fn($p)=>strtoupper((string)$p->position)==='G')->count(),
+        ];
+        $slotLimits=['F'=>8,'D'=>4,'G'=>1];
 
-        if($hasMoveAvailable && $hasEligibleDrop && !$activeGoaliePlaying){
-            $goalieTargets=DB::table('active_daily_players as p')
-                ->leftJoin('active_starting_goalies as g',function($join)use($date){
-                    $join->on('g.player_name','=','p.player_name')
-                        ->on('g.team','=','p.team')
-                        ->whereDate('g.game_date',$date);
-                })
-                ->whereDate('p.game_date',$date)
-                ->where('p.position','G')
-                ->where(function($q){
-                    $q->whereNull('p.injury_status')->orWhere('p.injury_status','');
-                })
-                ->orderByRaw("CASE LOWER(COALESCE(g.starting_status,'')) WHEN 'confirmed' THEN 1 WHEN 'likely' THEN 2 WHEN 'probable' THEN 2 WHEN 'unconfirmed' THEN 3 ELSE 4 END")
-                ->orderByDesc('p.projected_fpts')
-                ->select('p.player_name','p.team','p.projected_fpts','g.starting_status')
-                ->get();
+        $eligibleDrops=$teamRows
+            ->filter($dropEligible)
+            ->sortBy(fn($p)=>(float)($p->projected_fpts_per_game??0))
+            ->values();
 
-            $goalie=$goalieTargets->first();
-            $drop=$eligibleDrops->first(fn($p)=>strtoupper((string)$p->position)==='G')
-                ?? $eligibleDrops->first();
+        $hasMoveAvailable=$movesLeft>0;
+        $suggestions=[];
 
-            if($goalie && $drop && ($isWeekend || $lateWeek || $trailing)){
-                $status=trim((string)($goalie->starting_status??''));
-                $advice='No goalie is active tonight. Consider adding '.$goalie->player_name.' ('.$goalie->team.')'
-                    .($status!==''?' — '.$status:'')
-                    .' and dropping '.$drop->player_name.'.';
-            }
-        } elseif($hasMoveAvailable && $hasEligibleDrop && ($trailing || $lateWeek || $isWeekend)){
-            $drop=$eligibleDrops->first();
-            if($drop){
-                $pos=strtoupper((string)$drop->position);
-                $target=DB::table('active_daily_players')
-                    ->whereDate('game_date',$date)
-                    ->where('position',$pos)
-                    ->where(function($q){
-                        $q->whereNull('injury_status')->orWhere('injury_status','');
-                    })
-                    ->orderByDesc('projected_fpts')
-                    ->first();
+        // IR opportunity: an injured player who is not already in an IR roster slot
+        // can be moved to IR to create a roster spot without sacrificing another player.
+        if($hasMoveAvailable){
+            $irCandidate=$teamRows
+                ->filter(fn($p)=>
+                    !empty($p->injury_status)
+                    && strtoupper((string)($p->roster_status??''))!=='INJURED_RESERVE'
+                    && strtoupper((string)($p->roster_status??''))!=='MINORS'
+                )
+                ->sortByDesc(fn($p)=>(float)($p->projected_fpts_per_game??0))
+                ->first();
+
+            if($irCandidate){
+                $pos=strtoupper((string)$irCandidate->position);
+                $target=collect($availableGroups[$pos]??[])->first();
                 if($target){
-                    $reason=$trailing
-                        ? 'Trailing this week'
-                        : ($isWeekend ? 'A weekend move could add another game' : 'You have a low-projection FA/1-year roster spot');
-                    $advice=$reason.'. Consider adding '.$target->player_name.' ('.$target->team.') and dropping '.$drop->player_name.'.';
+                    $suggestions[]='Move '.$irCandidate->player_name.' to IR and add '.$target['name'].' ('.$target['team'].')'
+                        .(!empty($target['projected_points'])?' — '.$target['projected_points'].' projected FPts':'').'.';
                 }
             }
         }
 
+        // If tonight's goalie slot is already covered but another eligible goalie
+        // is not playing, convert that expendable goalie roster spot into an open
+        // skater slot when a F/D starting slot is still available.
+        if($hasMoveAvailable && $playingCounts['G']>=1){
+            $surplusGoalie=$eligibleDrops
+                ->filter(fn($p)=>
+                    strtoupper((string)$p->position)==='G'
+                    && !(bool)($p->is_playing??false)
+                    && !(bool)($p->is_ir??false)
+                )
+                ->first();
+
+            if($surplusGoalie){
+                $targetPos=null;
+                if($playingCounts['F']<$slotLimits['F'])$targetPos='F';
+                elseif($playingCounts['D']<$slotLimits['D'])$targetPos='D';
+
+                if($targetPos){
+                    $target=collect($availableGroups[$targetPos]??[])->first();
+                    if($target){
+                        $suggestions[]='You already have a goalie playing tonight and have an open '.$targetPos.' spot. Consider dropping '
+                            .$surplusGoalie->player_name.' and adding '.$target['name'].' ('.$target['team'].')'
+                            .(!empty($target['projected_points'])?' — '.$target['projected_points'].' projected FPts':'').'.';
+                    }
+                }
+            }
+        }
+
+        // If no structural move was found, use a weak FA/1-year roster spot for
+        // the best same-position available player. Later-week/trailing teams are
+        // intentionally more aggressive.
+        if($hasMoveAvailable && empty($suggestions) && $eligibleDrops->isNotEmpty() && ($trailing || $lateWeek || $isWeekend)){
+            $drop=$eligibleDrops->first();
+            $pos=strtoupper((string)$drop->position);
+            $target=collect($availableGroups[$pos]??[])->first();
+            if($target){
+                $reason=$trailing
+                    ? 'Trailing this week'
+                    : ($isWeekend ? 'A weekend move could add another game' : 'You have a low-projection FA/1-year roster spot');
+                $suggestions[]=$reason.'. Consider adding '.$target['name'].' ('.$target['team'].') and dropping '.$drop->player_name.'.';
+            }
+        }
+
+        // Goalie streaming remains a priority when no active goalie is playing.
+        if($hasMoveAvailable && $playingCounts['G']===0){
+            $goalieTarget=collect($availableGroups['G']??[])
+                ->first(fn($g)=>!in_array(strtolower(trim((string)($g['starting_status']??''))),['not starting',''],true))
+                ?? collect($availableGroups['G']??[])->first();
+            $drop=$eligibleDrops->first(fn($p)=>strtoupper((string)$p->position)==='G')
+                ?? $eligibleDrops->first();
+
+            if($goalieTarget && $drop && ($trailing || $lateWeek || $isWeekend)){
+                array_unshift($suggestions,
+                    'No goalie is active tonight. Consider adding '.$goalieTarget['name'].' ('.$goalieTarget['team'].')'
+                    .(!empty($goalieTarget['starting_status'])?' — '.$goalieTarget['starting_status']:'')
+                    .' and dropping '.$drop->player_name.'.'
+                );
+            }
+        }
+
+        // Do not spend more moves in the advice than the team actually has left.
+        $suggestions=array_slice(array_values(array_unique($suggestions)),0,max(0,min($movesLeft,2)));
+
         if(!$hasMoveAvailable){
-            $advice=$movesLeft===0?'No moves left today.':'No moves to suggest.';
-        } elseif(!$hasEligibleDrop){
-            $advice='No eligible FA/1-year drop below your projection thresholds.';
+            $advice='No moves left today.';
+        } elseif(empty($suggestions)){
+            $advice=$eligibleDrops->isEmpty()
+                ? 'No eligible FA/1-year drop below your projection thresholds.'
+                : 'No moves to suggest.';
+        } else {
+            $advice=implode(' ', $suggestions);
         }
 
         DB::table('lineup_advice')->updateOrInsert(
