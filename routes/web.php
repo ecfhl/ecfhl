@@ -30,7 +30,38 @@ Route::get('/standings', function(EcfhlData $data){
     $standingsLastUpdate=DB::table('job_run_history')
         ->where('job_name','ecfhl:refresh-current-standings')
         ->max('completed_at');
-    return view('standings',compact('season','standings','standingsLastUpdate'));
+
+    $scoringPeriods=[];
+    try {
+        $today=\Carbon\CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();
+        $teamNamesById=DB::table('active_fantasy_rosters')
+            ->whereNotNull('fantasy_team_id')
+            ->whereNotNull('fantasy_team_name')
+            ->orderByDesc('game_date')
+            ->get(['fantasy_team_id','fantasy_team_name'])
+            ->unique('fantasy_team_id')
+            ->mapWithKeys(fn($r)=>[(string)$r->fantasy_team_id=>(string)$r->fantasy_team_name]);
+
+        $scoringPeriods=collect(app(\App\Support\FantraxSchedule::class)->periods())
+            ->filter(fn($period)=>\Carbon\CarbonImmutable::parse($period['start'],'America/Halifax')->lte($today))
+            ->map(function($period)use($teamNamesById){
+                $period['matchups']=collect($period['matchups']??[])->map(function($matchup)use($teamNamesById){
+                    $awayId=(string)($matchup['away_team_id']??'');
+                    $homeId=(string)($matchup['home_team_id']??'');
+                    $matchup['away_display']=$teamNamesById[$awayId]??($matchup['away_name']??'Away');
+                    $matchup['home_display']=$teamNamesById[$homeId]??($matchup['home_name']??'Home');
+                    return $matchup;
+                })->values()->all();
+                return $period;
+            })
+            ->sortByDesc('start')
+            ->values()
+            ->all();
+    } catch (\Throwable $e) {
+        report($e);
+    }
+
+    return view('standings',compact('season','standings','standingsLastUpdate','scoringPeriods'));
 });
 
 Route::get('/seasons/{season}', function(string $season,EcfhlData $data){
