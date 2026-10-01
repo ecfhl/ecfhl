@@ -445,6 +445,14 @@ html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#3
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
+  const liveMatchup=document.querySelector('.team-live-matchup-card');
+  if(liveMatchup){
+    const storageKey='ecfhl-live-matchup-expanded';
+    try{
+      if(sessionStorage.getItem(storageKey)==='1') liveMatchup.open=true;
+      liveMatchup.addEventListener('toggle',()=>sessionStorage.setItem(storageKey,liveMatchup.open?'1':'0'));
+    }catch(e){}
+  }
   const targetStatePrefix='ecfhl-team-targets:{{ $slug }}:{{ $date }}:';
   document.querySelectorAll('details.team-targets[data-target-position]').forEach(details=>{
     const key=targetStatePrefix+details.dataset.targetPosition;
