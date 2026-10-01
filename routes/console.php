@@ -478,7 +478,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                     : '';
                 array_unshift($suggestions,
                     $goalieReason.'No goalie is active tonight. Consider adding '.$goalieTarget['name'].' ('.$goalieTarget['team'].')'
-                    .(!empty($goalieTarget['starting_status'])?' — '.$goalieTarget['starting_status']:'')
+                    .(!empty($goalieTarget['starting_status'])?' [GOALIE_STATUS:'.$goalieTarget['starting_status'].']':'')
                     .' and dropping '.$drop->player_name.'.'
                 );
             }
