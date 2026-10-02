@@ -623,7 +623,39 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   }
 
-    setInterval(()=>location.reload(),60000);
+  const refreshLiveScoreboard=async()=>{
+    const current=document.querySelector('.team-live-matchup');
+    if(!current)return;
+
+    const mainOpen=current.querySelector('.team-live-matchup-card')?.open??false;
+    const subsectionStates=[...current.querySelectorAll('.team-live-subsection')].map((el,index)=>({index,open:el.open}));
+
+    try{
+      const response=await fetch(window.location.href,{
+        headers:{'X-Requested-With':'XMLHttpRequest','Accept':'text/html'},
+        cache:'no-store'
+      });
+      if(!response.ok)return;
+
+      const html=await response.text();
+      const doc=new DOMParser().parseFromString(html,'text/html');
+      const fresh=doc.querySelector('.team-live-matchup');
+      if(!fresh)return;
+
+      const freshMain=fresh.querySelector('.team-live-matchup-card');
+      if(freshMain)freshMain.open=mainOpen;
+      subsectionStates.forEach(state=>{
+        const subsection=fresh.querySelectorAll('.team-live-subsection')[state.index];
+        if(subsection)subsection.open=state.open;
+      });
+
+      current.replaceWith(fresh);
+    }catch(error){
+      console.warn('Live scoreboard refresh failed',error);
+    }
+  };
+
+  setInterval(refreshLiveScoreboard,60000);
   document.querySelectorAll('[data-target-more]').forEach(button=>{
     button.addEventListener('click',()=>{
       const list=button.closest('.team-target-list');
