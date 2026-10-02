@@ -745,14 +745,29 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         }
 
         if($advisorName==='Mike'){
+            // Mike: calm, demanding, process-first veteran coach tone.
             if($movesLeft===null){
-                $advice='I cannot see your claims remaining. Check Fantrax before you touch the roster.';
+                $advice='Here is the thing. I cannot see your claims remaining. Check Fantrax, get the information right, and do it the right way.';
             } elseif(!$hasMoveAvailable){
-                $advice='No moves left. You are done for today.';
+                $advice='At the end of the day, there are no moves left. Now the boys have to grind, stay structured, and be good pros.';
             } elseif(str_starts_with($advice,'Stand pat.')){
-                $advice='Do not force it. '.substr($advice,strlen('Stand pat. '));
+                $rest=substr($advice,strlen('Stand pat. '));
+                $openers=[
+                    'Here is the thing. Good teams do not chase noise. Stay with the process. ',
+                    'Listen, if you want to be a good pro, you do the little things every day. ',
+                    'At the end of the day, structure matters. Do it the right way. ',
+                    'Every day, you earn it. Stay heavy, stay responsible, and trust the process. ',
+                ];
+                $advice=$openers[array_rand($openers)].$rest;
             } else {
-                $advice='Here is the move. '.$advice;
+                $openers=[
+                    'Here is the thing. This is the right play. ',
+                    'Listen, if you want to be a good pro, make the simple move and execute it. ',
+                    'At the end of the day, elite teams make disciplined decisions. ',
+                    'Every day, it is process, structure, and doing it the right way. ',
+                    'That is a real good player to target. Make the move and keep the lineup heavy. ',
+                ];
+                $advice=$openers[array_rand($openers)].$advice;
             }
         } elseif($advisorName==='Pierre') {
             if($movesLeft===null){
