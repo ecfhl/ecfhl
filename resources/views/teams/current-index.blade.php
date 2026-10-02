@@ -381,11 +381,11 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
   .team-contract-sticker,.line-1,.line-2,.line-3,.line-4,.pp1,.pp2{display:none!important}
   .matchup-player-opponent{gap:5px;font-size:12px;flex-wrap:nowrap;white-space:nowrap}
   .matchup-player-opponent .team-playing-text{white-space:nowrap}
-  .matchup-player-cats{position:absolute;left:8px;bottom:10px;font-size:11px;white-space:nowrap}
+  .matchup-player-cats{position:absolute;left:8px;bottom:7px;font-size:11px;white-space:nowrap;display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}.matchup-player-cats-primary,.matchup-player-cats-special{display:block;white-space:nowrap;min-height:13px}
   .matchup-player-opponent{padding-bottom:0}
-  .matchup-player-row{position:relative;padding-bottom:29px}
+  .matchup-player-row{position:relative;padding-bottom:38px}
   .matchup-player-metrics{gap:6px}
-  .matchup-player-metrics>div:first-child{position:absolute;right:8px;bottom:10px;display:flex;align-items:baseline;gap:4px;color:#4b5563}
+  .matchup-player-metrics>div:first-child{position:absolute;right:8px;bottom:7px;display:flex;align-items:baseline;gap:4px;color:#4b5563}
   .matchup-player-metrics>div:first-child span{display:inline;color:#4b5563!important;font-size:9px}
   .matchup-player-metrics>div:first-child strong{display:inline;color:#4b5563!important;font-size:13px}
   .matchup-player-metrics span{font-size:13px}
