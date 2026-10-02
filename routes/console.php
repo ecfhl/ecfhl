@@ -156,6 +156,13 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
                     $previous=$previousScores[$key]??null;
                     if(!$previous)continue;
 
+                    // A live-scoring alert is only useful when this current roster
+                    // player's fantasy score increases. Stat corrections or category-only
+                    // changes that do not add fantasy points must stay silent.
+                    $previousFpts=(float)($previous->today_fpts??0);
+                    $currentFpts=(float)($row['today_fpts']??0);
+                    if($currentFpts<=$previousFpts+0.0001)continue;
+
                     $name=trim((string)$row['player_name']);
                     $team=$normTeam($row['nhl_team']??'');
                     $label=$name.($team!==''?' ('.$team.')':'');
@@ -1036,6 +1043,7 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
                 $oldStatus=trim((string)($previous->starting_status??''));
                 $newStatus=trim((string)($goalie->starting_status??''));
                 if($newStatus==='' || strcasecmp($oldStatus,$newStatus)===0)continue;
+                if(!in_array(strtolower($newStatus),['confirmed','likely'],true))continue;
 
                 $body=$goalie->player_name.' ('.$goalie->team.') is now '.$newStatus.'.';
                 try {
