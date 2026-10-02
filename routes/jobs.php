@@ -3,6 +3,29 @@
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use App\Support\WebPush;
+
+Route::post('/job-status/test-goalie-notification', function (WebPush $webPush) {
+    abort_unless(request()->ajax() && request()->headers->get('X-Requested-With') === 'XMLHttpRequest', 403);
+
+    $goalie = DB::table('active_starting_goalies')
+        ->whereIn('starting_status', ['Confirmed', 'Likely'])
+        ->orderByRaw("CASE WHEN starting_status = 'Confirmed' THEN 0 ELSE 1 END")
+        ->orderByDesc('game_date')
+        ->first();
+
+    $name = $goalie?->player_name ?: 'Test Goalie';
+    $team = $goalie?->team ?: 'NHL';
+    $status = $goalie?->starting_status ?: 'Confirmed';
+    $fantraxUrl = 'https://www.fantrax.com/fantasy/league/0s9n0t98ly3jpry7/players;searchName='.rawurlencode((string)$name).';positionOrGroup=ALL;';
+
+    $webPush->notify('goalie-status', 'Goalie Status — TEST', $name.' ('.$team.') is now '.$status.'.', $fantraxUrl);
+
+    return response()->json([
+        'ok' => true,
+        'message' => 'Test notification sent for '.$name.' ('.$team.'). Click it to verify the Fantrax player-search link.',
+    ]);
+});
 
 Route::post('/job-status/run/{job}', function (string $job) {
     abort_unless(request()->ajax() && request()->headers->get('X-Requested-With') === 'XMLHttpRequest', 403);
