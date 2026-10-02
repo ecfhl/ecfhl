@@ -711,11 +711,21 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                 $goalieReason=$goaliesOnRoster->count()>=2 && strtoupper((string)$drop->position)==='G'
                     ? 'You already carry 2 goalies. '
                     : '';
-                array_unshift($suggestions,
-                    $goalieReason.'No goalie tonight. Add '.$displayPlayerName($goalieTarget['name']).' ('.$goalieTarget['team'].')'
-                    .(!empty($goalieTarget['starting_status'])?' [GOALIE_STATUS:'.$goalieTarget['starting_status'].']':'')
-                    .'. Drop '.$displayPlayerName($drop->player_name).'.'
-                );
+                $goalieStatus=strtolower(trim((string)($goalieTarget['starting_status']??'')));
+                if($goalieStatus==='unconfirmed'){
+                    array_unshift($suggestions,
+                        $goalieReason.'No goalie tonight. '.$displayPlayerName($goalieTarget['name']).' ('.$goalieTarget['team'].')'
+                        .' [GOALIE_STATUS:'.$goalieTarget['starting_status'].']. Wait until this goalie is Confirmed before making the move. '
+                        .'Make sure notifications are turned on. If confirmed, add '.$displayPlayerName($goalieTarget['name'])
+                        .' and drop '.$displayPlayerName($drop->player_name).'.'
+                    );
+                } else {
+                    array_unshift($suggestions,
+                        $goalieReason.'No goalie tonight. Add '.$displayPlayerName($goalieTarget['name']).' ('.$goalieTarget['team'].')'
+                        .(!empty($goalieTarget['starting_status'])?' [GOALIE_STATUS:'.$goalieTarget['starting_status'].']':'')
+                        .'. Drop '.$displayPlayerName($drop->player_name).'.'
+                    );
+                }
             }
         }
 
