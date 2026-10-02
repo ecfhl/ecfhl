@@ -49,7 +49,11 @@ class NhlOdds
             if (!$home || !$away || !$commence) continue;
 
             $gameDate = CarbonImmutable::parse($commence)->setTimezone('America/Halifax')->toDateString();
-            $prices = [$homeName=>[], $awayName=>[]];
+            // Key prices by NHL abbreviation instead of the provider's display
+            // name. Some bookmakers use a different spelling/label for the same
+            // team (for example St Louis vs St. Louis), which previously caused
+            // one side of a game to be silently dropped.
+            $prices = [$home=>[], $away=>[]];
             foreach (($game['bookmakers'] ?? []) as $bookmaker) {
                 $bookUpdated = $bookmaker['last_update'] ?? null;
                 if ($bookUpdated && (!$sourceUpdated || CarbonImmutable::parse($bookUpdated)->gt(CarbonImmutable::parse($sourceUpdated)))) {
@@ -58,15 +62,27 @@ class NhlOdds
                 foreach (($bookmaker['markets'] ?? []) as $market) {
                     if (($market['key'] ?? null) !== 'h2h') continue;
                     foreach (($market['outcomes'] ?? []) as $outcome) {
-                        $name = $outcome['name'] ?? null;
+                        $name = trim((string)($outcome['name'] ?? ''));
                         $price = $outcome['price'] ?? null;
-                        if (isset($prices[$name]) && is_numeric($price)) $prices[$name][] = (int) round($price);
+                        $outcomeTeam = self::TEAMS[$name] ?? null;
+                        if (!$outcomeTeam && $name !== '') {
+                            $normalized = strtolower(preg_replace('/[^a-z0-9]+/i', '', $name));
+                            foreach (self::TEAMS as $teamName=>$abbr) {
+                                if (strtolower(preg_replace('/[^a-z0-9]+/i', '', $teamName)) === $normalized) {
+                                    $outcomeTeam = $abbr;
+                                    break;
+                                }
+                            }
+                        }
+                        if ($outcomeTeam && isset($prices[$outcomeTeam]) && is_numeric($price)) {
+                            $prices[$outcomeTeam][] = (int) round($price);
+                        }
                     }
                 }
             }
 
             foreach ([[$homeName,$home,$away,'HOME'],[$awayName,$away,$home,'AWAY']] as [$name,$team,$opponent,$homeAway]) {
-                $teamPrices = $prices[$name] ?? [];
+                $teamPrices = $prices[$team] ?? [];
                 if (!$teamPrices) continue;
                 sort($teamPrices, SORT_NUMERIC);
                 $count = count($teamPrices);
