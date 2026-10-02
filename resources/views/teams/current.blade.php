@@ -230,7 +230,7 @@
           <span>Minors: <strong>{{ $rosterCounts['Minors'] ?? 0 }}</strong></span>
         </div>
         @if($movesLeftToday!==null)
-          <div class="team-lineup-moves">Moves: <strong>{{ $movesLeftToday }}/7</strong></div>
+          <div class="team-lineup-moves">Moves: <strong>{{ max(0, 7 - $movesLeftToday) }}/7</strong></div>
         @endif
       </div>
     @php
