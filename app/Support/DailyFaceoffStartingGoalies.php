@@ -87,9 +87,12 @@ class DailyFaceoffStartingGoalies
             }
 
             foreach (['away', 'home'] as $side) {
-                $other = $side === 'away' ? 'home' : 'away';
-                $team = $game[$side.'TeamName'];
-                $opponent = $game[$other.'TeamName'];
+                // Use the canonicalized team names validated above. DFO sometimes
+                // changes display punctuation (for example "St Louis Blues"), and
+                // passing the raw display value downstream makes the abbreviation
+                // lookup fail even though the matchup itself was valid.
+                $team = $side === 'away' ? $awayTeam : $homeTeam;
+                $opponent = $side === 'away' ? $homeTeam : $awayTeam;
                 $name = $game[$side.'GoalieName'] ?? null;
 
                 // Future Daily Faceoff matchups are often published before one or both
