@@ -15,7 +15,7 @@ class AiTips
             $position = strtoupper(trim((string) $row->position));
             if (! in_array($position, ['F', 'D'], true)) continue;
             $status = self::availability($row);
-            if ($status === null || trim((string) $row->opponent) === '' || ! $row->team || ! $row->player_name) continue;
+            if ($status === null || ! self::availableByGameDate($row, $date) || trim((string) $row->opponent) === '' || ! $row->team || ! $row->player_name) continue;
             if ((bool)($row->game_started ?? false) || isset($startedTeams[strtoupper(trim((string)$row->team))]) || self::gameHasStarted($row, $date)) continue;
             $groups[$position][] = self::player($row, $position, $date, $status);
         }
@@ -38,7 +38,7 @@ class AiTips
         foreach ($goalies as $row) {
             if (isset($startedTeams[strtoupper(trim((string)$row->team))]) || self::gameHasStarted($row, $date)) continue;
             $status = self::availability($row);
-            if ($status === null || ! $row->team || ! $row->player_name) continue;
+            if ($status === null || ! self::availableByGameDate($row, $date) || ! $row->team || ! $row->player_name) continue;
             $player = self::player($row, 'G', $date, $status);
             $team = strtoupper(trim((string) $row->team));
             $name = $normalize($row->player_name);
@@ -108,6 +108,27 @@ class AiTips
         } catch (\Throwable) {
             return false;
         }
+    }
+
+    private static function availableByGameDate(object $row, string $date): bool
+    {
+        $availability = strtoupper(trim((string)($row->availability ?? '')));
+        if ($availability !== 'W') return true;
+
+        $waiverDay = trim((string)($row->waiver_day ?? ''));
+        if ($waiverDay === '') return true;
+
+        // Fantrax exposes waiver availability as W (Sat), W (Sun), etc. A player
+        // cannot be used for a Daily Targets date before that waiver day.
+        $target = \Carbon\CarbonImmutable::parse($date, 'America/Halifax');
+        $targetDow = strtolower($target->format('D'));
+        $waiverDow = strtolower(substr($waiverDay, 0, 3));
+        $days = ['sun'=>0,'mon'=>1,'tue'=>2,'wed'=>3,'thu'=>4,'fri'=>5,'sat'=>6];
+        if (!isset($days[$waiverDow])) return true;
+
+        // Compare within the displayed fantasy week. If W (Sat) is shown while
+        // viewing Friday, exclude it; when Saturday is selected it becomes usable.
+        return $days[$targetDow] >= $days[$waiverDow];
     }
 
     private static function availability(object $row): ?string
