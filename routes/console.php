@@ -743,17 +743,20 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             $advice=implode(' ', $suggestions);
         }
 
-        DB::table('lineup_advice')->updateOrInsert(
-            ['advice_date'=>$date,'fantasy_team_id'=>(string)$teamId],
-            [
-                'fantasy_team_name'=>$teamName,
-                'moves_left'=>$movesLeft,
-                'advice_text'=>$advice,
-                'generated_at'=>now(),
-                'created_at'=>now(),
-                'updated_at'=>now(),
-            ]
-        );
+        DB::table('lineup_advice')
+            ->whereDate('advice_date',$date)
+            ->where('fantasy_team_id',(string)$teamId)
+            ->delete();
+        DB::table('lineup_advice')->insert([
+            'advice_date'=>$date,
+            'fantasy_team_id'=>(string)$teamId,
+            'fantasy_team_name'=>$teamName,
+            'moves_left'=>$movesLeft,
+            'advice_text'=>$advice,
+            'generated_at'=>now(),
+            'created_at'=>now(),
+            'updated_at'=>now(),
+        ]);
     }
 
     $this->info($teams->count().' lineup advisor rows refreshed.');
