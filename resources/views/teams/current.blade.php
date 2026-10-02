@@ -219,18 +219,24 @@
 
   <section class="team-lineup-advisor" aria-label="Lineup Advisor">
     @php
-      $advisorName=$lineupAdvice->advisor_name ?? 'Mike';
+      $advisorKey=strtolower((string)($lineupAdvice->advisor_name ?? 'Mike'))==='pierre'?'pierre':'mike';
+      $advisorFirstName=$advisorProfiles[$advisorKey] ?? ucfirst($advisorKey);
+      $advisorImageSlug=$advisorKey==='pierre'?'lineup-advisor-pierre':'lineup-advisor';
     @endphp
-    <div class="team-lineup-advisor-title">Lineup Advisor · {{ $advisorName }}</div>
+    <div class="team-lineup-advisor-title">Lineup Advisor · <span data-advisor-display-name="{{ $advisorKey }}">{{ $advisorFirstName }}</span></div>
     <div class="team-lineup-advisor-body">
       <div class="team-lineup-advisor-photo">
-        @if($advisorName==='Pierre')
-          <img src="/images/pierre-advisor.webp?v=1" alt="Pierre, Lineup Advisor">
-        @else
-          <button type="button" class="team-lineup-advisor-photo-button" data-team-icon-viewer data-team-slug="lineup-advisor" title="View Mike advisor image" aria-label="View Mike Lineup Advisor image">
-            <img src="/team-icons/lineup-advisor?v=1" alt="Mike, Lineup Advisor">
-          </button>
-        @endif
+        <button
+          type="button"
+          class="team-lineup-advisor-photo-button"
+          data-team-icon-viewer
+          data-team-slug="{{ $advisorImageSlug }}"
+          data-advisor-key="{{ $advisorKey }}"
+          data-advisor-first-name="{{ $advisorFirstName }}"
+          title="View {{ $advisorFirstName }} advisor image"
+          aria-label="View {{ $advisorFirstName }} Lineup Advisor image">
+          <img src="/team-icons/{{ $advisorImageSlug }}?v=1" alt="{{ $advisorFirstName }}, Lineup Advisor">
+        </button>
       </div>
       <div class="team-lineup-content">
       <div class="team-lineup-meta">
