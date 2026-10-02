@@ -144,7 +144,7 @@
         $homeProjectedTotal=$projectedTotal($homeAll);
       @endphp
 
-      <details class="matchup-card" data-matchup-key="{{ ($away['id'] ?? $away['slug'] ?? 'away') }}::{{ ($home['id'] ?? $home['slug'] ?? 'home') }}">
+      <details class="matchup-card" data-matchup-key="{{ ($away['id'] ?? $away['slug'] ?? 'away') }}::{{ ($home['id'] ?? $home['slug'] ?? 'home') }}" data-away-team-id="{{ $away['id'] ?? '' }}" data-home-team-id="{{ $home['id'] ?? '' }}">
         <summary class="matchup-summary"><div class="matchup-side-header matchup-side-header-away">AWAY</div><div class="matchup-side-header matchup-side-header-home">HOME</div>
           <div class="matchup-summary-side matchup-summary-away">
             @if($away)
@@ -286,7 +286,7 @@
 .team-date-inactive:hover{background:#d1d5db!important;color:#111827!important}
 .matchup-period-label{margin:4px 0 10px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:flex;align-items:center;justify-content:space-between;gap:10px}.matchup-period-updated{font-size:10px;font-weight:700;letter-spacing:0;text-transform:none;white-space:nowrap}
 .current-matchup-list{display:flex;flex-direction:column;gap:7px;margin-bottom:20px}
-.matchup-card{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}.matchup-card[open]{border:3px solid #2563eb}
+.matchup-card.notification-team-matchup>.matchup-summary{background:#eaf5ff}.matchup-card.notification-team-matchup[open]>.matchup-summary{background:#eaf5ff}html[data-theme="dark"] .matchup-card.notification-team-matchup>.matchup-summary{background:#123452}.matchup-card{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}.matchup-card[open]{border:3px solid #2563eb}
 .matchup-side-header{display:none}.matchup-summary{display:grid;grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr);align-items:center;gap:8px;padding:9px 14px;cursor:pointer;list-style:none;background:#fff}
 .matchup-summary::-webkit-details-marker{display:none}
 .matchup-summary-side{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}
@@ -401,6 +401,16 @@ html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#3
 document.addEventListener('DOMContentLoaded',()=>{
   const stateKey='ecfhl-open-matchups:'+location.pathname+location.search;
   const cards=[...document.querySelectorAll('.matchup-card[data-matchup-key]')];
+
+  const highlightNotificationTeam=()=>{
+    const selected=localStorage.getItem('ecfhl-notification-team-id')||'';
+    cards.forEach(card=>{
+      card.classList.toggle('notification-team-matchup',!!selected && (card.dataset.awayTeamId===selected || card.dataset.homeTeamId===selected));
+    });
+  };
+  highlightNotificationTeam();
+  const teamSelect=document.getElementById('push-team-select');
+  teamSelect?.addEventListener('change',()=>setTimeout(highlightNotificationTeam,0));
 
   try{
     const saved=JSON.parse(sessionStorage.getItem(stateKey)||'[]');
