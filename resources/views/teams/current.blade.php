@@ -543,6 +543,10 @@ html[data-theme="dark"] .team-live-matchup-label{background:transparent!importan
 .team-player-lines{display:flex;align-items:center;gap:4px;margin-top:4px;min-height:18px}.team-player-lines:empty{display:none}.team-player-lines .pill{font-size:9px;padding:1px 5px}
 .team-roster-table .team-today-fpts{font-size:24px!important;font-weight:900!important;line-height:1!important}
 .team-roster-table .team-player-name-wrap>strong{font-size:18px!important;line-height:1.15!important}
+
+/* Non-playing roster rows use the same background treatment as bench rows. */
+.team-not-playing,.team-not-playing td{background:#f3f4f6!important}
+html[data-theme="dark"] .team-not-playing,html[data-theme="dark"] .team-not-playing td{background:#1d2735!important}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
