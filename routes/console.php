@@ -935,7 +935,27 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             return $result;
         };
 
-        $applyAdvisorStyle=function($profile,string $raw){
+        $applyAdvisorStyle=function($profile,string $raw)use($rosters,$displayPlayerName){
+            // Pierre occasionally adds an explicitly fictional ECFHL trade-rumour gag.
+            // It uses a real rostered player and fantasy-team pairing from the league.
+            if((string)($profile->advisor_key??'')==='pierre' && random_int(1,100)<=35 && $rosters->isNotEmpty()){
+                $rumourPlayer=$rosters->random();
+                $rumourName=$displayPlayerName($rumourPlayer->player_name??'');
+                $rumourTeam=trim((string)($rumourPlayer->fantasy_team_name??''));
+                if($rumourName!=='' && $rumourTeam!==''){
+                    $rumours=[
+                        "I'm hearing {player} from {team} could be on the market. Nothing concrete yet, but there has been some chatter.",
+                        "A couple of people around the league have mentioned {player} from {team} as a name to watch on the trade market.",
+                        "Don't be surprised if {team} starts taking calls on {player}. That's a situation worth monitoring.",
+                        "There's some buzz around {player}. I'm told {team} may be willing to listen to offers.",
+                        "One name quietly making the rounds: {player} from {team}. We'll see if anything develops.",
+                        "Hearing {team} has had some conversations involving {player}. No indication anything is imminent.",
+                    ];
+                    $rumour=$rumours[array_rand($rumours)];
+                    return str_replace(['{player}','{team}'],[$rumourName,$rumourTeam],$rumour);
+                }
+            }
+
             $style=trim((string)($profile->style_text??''));
             if($style==='')return $raw;
             $templates=array_values(array_filter(array_map('trim',preg_split('/\\R/u',$style)?:[])));
