@@ -390,7 +390,7 @@
                       @endif
                       <div class="team-score-columns">
                         <span class="team-projected-fpts">{{ $player->projected_fpts_per_game!==null?number_format($player->projected_fpts_per_game,2):'—' }}</span>
-                        <strong class="team-today-fpts">{{ number_format($player->today_fpts ?? 0, 0) }}</strong>
+                        <strong class="team-today-fpts">{{ $isPlaying ? number_format($player->today_fpts ?? 0, 0) : '' }}</strong>
                       </div>
                       <div class="team-proj-badges">
                         @if($player->line_number)
