@@ -5,7 +5,7 @@
 $prizeTotals = app(\App\Support\Archive::class)->prizeTotals();
 
 @endphp
-<section class="hero"><div class="shell"><div class="eyebrow">Established in 2007</div><h1>East Coast Fantasy Hockey League</h1><p>A complete record of champions, franchise identities, seasons, trades, and draft history.</p><div class="hero-actions home-hero-actions"><a class="button home-nav-button live-scoring-button" href="/teams/current">Live Scoring</a><a class="button home-nav-button standings-button" href="/standings">Standings</a><a class="button home-nav-button ai-tips-button" href="/daily-targets">Daily Targets</a></div></div></section>
+<section class="hero"><div class="shell"><div class="eyebrow">Established in 2007</div><h1>East Coast Fantasy Hockey League</h1><p>A complete record of champions, franchise identities, seasons, trades, and draft history.</p><div class="hero-actions home-hero-actions"><a class="button home-nav-button my-team-button" data-my-team-link href="#">My Team</a><a class="button home-nav-button live-scoring-button" href="/teams/current">Live Scoring</a><a class="button home-nav-button standings-button" href="/standings">Standings</a><a class="button home-nav-button ai-tips-button" href="/daily-targets">Daily Targets</a></div></div></section>
 <div class="stats-strip"><div class="shell stats-grid" style="grid-template-columns:repeat(4,minmax(0,1fr))">
 <div class="stat"><strong>{{ count($seasons) }}</strong><span>Seasons</span></div>
 <div class="stat"><strong>{{ $championships }}</strong><span>Champions</span></div>
@@ -27,12 +27,13 @@ $leaders['winnings'] = collect($prizeTotals)->map(fn($r) => [
 .home-hero-actions{position:relative;z-index:3}
 .home-hero-actions .home-nav-button{background:#1769aa;color:#fff;border-color:#2f7fbd;cursor:pointer;touch-action:manipulation;position:relative;z-index:4}
 .home-hero-actions .home-nav-button:hover{background:#1e78bd;color:#fff}
+.home-hero-actions .my-team-button{background:#1769aa;color:#fff;border-color:#2f7fbd}.home-hero-actions .my-team-button:hover{background:#1e78bd;color:#fff}
 .home-hero-actions .live-scoring-button{background:#c62828;color:#fff;border-color:#c62828}
 .home-hero-actions .live-scoring-button:hover{background:#b71c1c;color:#fff}
 .home-hero-actions .standings-button{background:#1769aa;color:#fff;border-color:#2f7fbd}
 .home-hero-actions .standings-button:hover{background:#1e78bd;color:#fff}
 .home-hero-actions .ai-tips-button{background:#f2c94c;color:#1f1a0d;border-color:#f2c94c}
 .home-hero-actions .ai-tips-button:hover{background:#ffd75e;color:#1f1a0d}
-@media(max-width:850px){.home-hero-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:8px}.home-hero-actions .home-nav-button{width:100%;min-height:44px;padding:10px 8px}}
+@media(max-width:850px){.home-hero-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:8px}.home-hero-actions .home-nav-button{width:100%;min-height:44px;padding:10px 8px}}
 </style>
 @endsection
