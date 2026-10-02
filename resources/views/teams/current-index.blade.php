@@ -377,13 +377,14 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
   .matchup-daily-cats{font-size:8px;color:#475569;overflow:hidden;text-overflow:ellipsis;max-width:170px}
   .matchup-roster-grid{grid-template-columns:1fr 1fr}
   .matchup-player-row{padding:7px 8px;align-items:flex-start}
-  .matchup-player-name{font-size:11px}
+  .matchup-player-name{font-size:13px;line-height:1.18}
   .team-contract-sticker,.line-1,.line-2,.line-3,.line-4,.pp1,.pp2{display:none!important}
-  .matchup-player-opponent{gap:5px}
-  .matchup-player-cats{font-size:7px}
+  .matchup-player-opponent{gap:5px;font-size:12px}
+  .matchup-player-cats{font-size:9px}
   .matchup-player-metrics{gap:6px}
-  .matchup-player-metrics strong{font-size:12px}
-  .matchup-player-today strong{font-size:14px}
+  .matchup-player-metrics span{font-size:9px}
+  .matchup-player-metrics strong{font-size:15px}
+  .matchup-player-today strong{font-size:16px}
 }
 .matchup-player-row.team-game-finished-row{background:#fffbea!important}
 html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#3a3217!important}
