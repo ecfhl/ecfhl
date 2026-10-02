@@ -509,7 +509,7 @@ document.addEventListener('DOMContentLoaded',()=>{
         <input id="team-icon-advisor-input" class="team-icon-advisor-input" type="text" maxlength="40" autocomplete="off">
         <button id="team-icon-advisor-save" class="team-icon-advisor-save" type="button">Save</button>
       </div>
-      <button id="team-icon-modal-upload" class="team-icon-modal-upload" type="button">Upload new image</button>
+
       <input id="team-icon-modal-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
     </div>
     <button id="team-icon-modal-close" class="team-icon-modal-close" type="button" aria-label="Close team icon preview">×</button>
@@ -526,7 +526,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const advisorNameInput=document.getElementById('team-icon-advisor-input');
   const advisorNameSave=document.getElementById('team-icon-advisor-save');
   const csrf=document.querySelector('meta[name="csrf-token"]')?.content||'';
-  if(!modal||!modalImage||!closeButton||!uploadButton||!fileInput)return;
+  if(!modal||!modalImage||!closeButton||!fileInput)return;
 
   let lastTrigger=null;
   let activeSlug='';
@@ -538,7 +538,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     document.body.style.removeProperty('overflow');
     fileInput.value='';
     fileInput.disabled=false;
-    uploadButton.hidden=false;
+    if(uploadButton)uploadButton.hidden=false;
     activeAdvisorKey='';
     advisorNameRow?.classList.remove('open');
     lastTrigger?.focus();
@@ -558,10 +558,10 @@ document.addEventListener('DOMContentLoaded',()=>{
         advisorNameRow.classList.remove('open');
       }
       if(activeAdvisorKey){
-        uploadButton.hidden=true;
+        if(uploadButton)uploadButton.hidden=true;
         fileInput.disabled=true;
       }else{
-        uploadButton.hidden=false;
+        if(uploadButton)uploadButton.hidden=false;
         fileInput.disabled=false;
       }
       modal.classList.add('open');
@@ -611,7 +611,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
 
-    uploadButton.addEventListener('click',()=>fileInput.click());
+  uploadButton?.addEventListener('click',()=>fileInput.click());
   fileInput.addEventListener('change',async()=>{
     const file=fileInput.files?.[0];
     if(!file||!activeSlug)return;
@@ -623,8 +623,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 
     const form=new FormData();
     form.append('image',file);
-    uploadButton.disabled=true;
-    uploadButton.textContent='Uploading...';
+    if(uploadButton)uploadButton.disabled=true;
+    if(uploadButton)uploadButton.textContent='Uploading...';
 
     try{
       const response=await fetch('/team-icons/'+encodeURIComponent(activeSlug),{
@@ -644,8 +644,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     }catch(error){
       alert(error.message||'Could not upload team icon.');
     }finally{
-      uploadButton.disabled=false;
-      uploadButton.textContent='Upload new image';
+      if(uploadButton)uploadButton.disabled=false;
+      if(uploadButton)uploadButton.textContent='Upload new image';
       fileInput.value='';
     }
   });
