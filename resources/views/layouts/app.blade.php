@@ -457,7 +457,14 @@ document.addEventListener('DOMContentLoaded',()=>{
 .team-icon-modal.open{display:flex}
 .team-icon-modal-card{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;max-width:min(92vw,760px);max-height:88vh}
 .team-icon-modal-image{display:block;max-width:100%;max-height:calc(88vh - 58px);width:auto;height:auto;border-radius:18px;box-shadow:0 18px 60px rgba(0,0,0,.45);background:#fff}
-.team-icon-modal-actions{display:flex;align-items:center;justify-content:center;gap:8px}
+.team-icon-modal-actions{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.team-icon-advisor-name{display:none;align-items:center;gap:7px}
+.team-icon-advisor-name.open{display:flex}
+.team-icon-advisor-label{font-size:11px;font-weight:800;color:#fff}
+.team-icon-advisor-input{width:150px;padding:8px 9px;border:1px solid rgba(255,255,255,.3);border-radius:8px;background:#fff;color:#0f172a;font-size:12px;font-weight:700}
+.team-icon-advisor-save,.team-icon-modal-upload{appearance:none;border:1px solid rgba(255,255,255,.22);background:#0b5f9e;color:#fff;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.team-icon-advisor-save:hover,.team-icon-modal-upload:hover{background:#0d6fb8}
+.team-icon-advisor-save:disabled,.team-icon-modal-upload:disabled{opacity:.6;cursor:wait}
 .team-icon-modal-upload{appearance:none;border:1px solid rgba(255,255,255,.22);background:#0b5f9e;color:#fff;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2)}
 .team-icon-modal-upload:hover{background:#0d6fb8}
 .team-icon-modal-upload:disabled{opacity:.6;cursor:wait}
@@ -470,6 +477,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   <div class="team-icon-modal-card">
     <img id="team-icon-modal-image" class="team-icon-modal-image" alt="">
     <div class="team-icon-modal-actions">
+      <div id="team-icon-advisor-name" class="team-icon-advisor-name">
+        <label class="team-icon-advisor-label" for="team-icon-advisor-input">First Name</label>
+        <input id="team-icon-advisor-input" class="team-icon-advisor-input" type="text" maxlength="40" autocomplete="off">
+        <button id="team-icon-advisor-save" class="team-icon-advisor-save" type="button">Save</button>
+      </div>
       <button id="team-icon-modal-upload" class="team-icon-modal-upload" type="button">Upload new image</button>
       <input id="team-icon-modal-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
     </div>
@@ -483,17 +495,23 @@ document.addEventListener('DOMContentLoaded',()=>{
   const closeButton=document.getElementById('team-icon-modal-close');
   const uploadButton=document.getElementById('team-icon-modal-upload');
   const fileInput=document.getElementById('team-icon-modal-file');
+  const advisorNameRow=document.getElementById('team-icon-advisor-name');
+  const advisorNameInput=document.getElementById('team-icon-advisor-input');
+  const advisorNameSave=document.getElementById('team-icon-advisor-save');
   const csrf=document.querySelector('meta[name="csrf-token"]')?.content||'';
   if(!modal||!modalImage||!closeButton||!uploadButton||!fileInput)return;
 
   let lastTrigger=null;
   let activeSlug='';
+  let activeAdvisorKey='';
 
   const closeModal=()=>{
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden','true');
     document.body.style.removeProperty('overflow');
     fileInput.value='';
+    activeAdvisorKey='';
+    advisorNameRow?.classList.remove('open');
     lastTrigger?.focus();
   };
 
@@ -503,8 +521,18 @@ document.addEventListener('DOMContentLoaded',()=>{
       if(!img)return;
       lastTrigger=button;
       activeSlug=button.dataset.teamSlug||'';
+      activeAdvisorKey=button.dataset.advisorKey||'';
       modalImage.src=img.currentSrc||img.src;
       modalImage.alt=img.alt||'Team icon';
+      if(advisorNameRow&&advisorNameInput){
+        if(activeAdvisorKey){
+          advisorNameInput.value=button.dataset.advisorFirstName||'';
+          advisorNameRow.classList.add('open');
+        }else{
+          advisorNameInput.value='';
+          advisorNameRow.classList.remove('open');
+        }
+      }
       modal.classList.add('open');
       modal.setAttribute('aria-hidden','false');
       document.body.style.overflow='hidden';
@@ -512,7 +540,47 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   });
 
-  uploadButton.addEventListener('click',()=>fileInput.click());
+  advisorNameSave?.addEventListener('click',async()=>{
+    if(!activeAdvisorKey||!advisorNameInput)return;
+    const firstName=advisorNameInput.value.trim();
+    if(!firstName){
+      alert('First name is required.');
+      advisorNameInput.focus();
+      return;
+    }
+
+    advisorNameSave.disabled=true;
+    advisorNameSave.textContent='Saving...';
+    try{
+      const response=await fetch('/lineup-advisors/'+encodeURIComponent(activeAdvisorKey)+'/profile',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
+        body:JSON.stringify({first_name:firstName})
+      });
+      if(!response.ok){
+        let message='Could not save advisor name.';
+        try{const data=await response.json();message=data.message||message;}catch(e){}
+        throw new Error(message);
+      }
+      const data=await response.json();
+      const savedName=data.first_name||firstName;
+      document.querySelectorAll('[data-advisor-display-name="'+CSS.escape(activeAdvisorKey)+'"]').forEach(el=>el.textContent=savedName);
+      document.querySelectorAll('[data-team-icon-viewer][data-advisor-key="'+CSS.escape(activeAdvisorKey)+'"]').forEach(button=>{
+        button.dataset.advisorFirstName=savedName;
+        button.title='View '+savedName+' advisor image';
+        button.setAttribute('aria-label','View '+savedName+' Lineup Advisor image');
+        const img=button.querySelector('img');
+        if(img)img.alt=savedName+', Lineup Advisor';
+      });
+    }catch(error){
+      alert(error.message||'Could not save advisor name.');
+    }finally{
+      advisorNameSave.disabled=false;
+      advisorNameSave.textContent='Save';
+    }
+  });
+
+    uploadButton.addEventListener('click',()=>fileInput.click());
   fileInput.addEventListener('change',async()=>{
     const file=fileInput.files?.[0];
     if(!file||!activeSlug)return;
