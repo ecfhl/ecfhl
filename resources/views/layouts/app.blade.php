@@ -11,8 +11,8 @@
         elseif(request()->is('teams/*')&&isset($team)){$browserTitle='ECFHL - '.($team['team']??'Franchise');}
         elseif(request()->is('seasons/*')&&isset($season)){$browserTitle='ECFHL - '.($season['season']??'Season');}
         elseif(request()->is('teams/current')){$browserTitle='ECFHL - Live Scoring';}
-        else{$pageTitles=['seasons'=>'Seasons','standings'=>'Standings','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','daily-targets'=>'Daily Targets','job-status'=>'Collector Status','rules'=>'Rules'];$browserTitle='ECFHL - '.($pageTitles[request()->segment(1)]??'East Coast Fantasy Hockey League');}
-        $showSeasonFilter=!request()->is('rules','players','daily-targets','job-status','teams/current','teams/current/*','seasons','seasons/*','standings');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
+        else{$pageTitles=['seasons'=>'Seasons','standings'=>'Standings','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','daily-targets'=>'Daily Targets','job-status'=>'Collector Status','admin'=>'Admin','rules'=>'Rules'];$browserTitle='ECFHL - '.($pageTitles[request()->segment(1)]??'East Coast Fantasy Hockey League');}
+        $showSeasonFilter=!request()->is('rules','players','daily-targets','job-status','admin','admin/*','teams/current','teams/current/*','seasons','seasons/*','standings');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
         $notificationTeams=\Illuminate\Support\Facades\DB::table('active_fantasy_rosters')->select('fantasy_team_id','fantasy_team_name')->distinct()->orderBy('fantasy_team_name')->get();
         $currentTeamMenu=\Illuminate\Support\Facades\DB::table('team_seasons as ts')
             ->join('seasons as s','s.season_id','=','ts.season_id')
@@ -63,6 +63,16 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
   </div>
 </div>
 <a href="/rules" class="{{ request()->is('rules')?'active':'' }}"><span class="nav-item-icon">🔨</span>Rules</a>
+<div class="nav-dropdown {{ request()->is('admin','admin/*','job-status')?'active':'' }}">
+  <div class="nav-dropdown-row">
+    <a class="nav-dropdown-main-link" href="/admin"><span class="nav-item-icon">⚙</span>Admin</a>
+    <button type="button" class="nav-dropdown-toggle" onclick="this.closest('.nav-dropdown').classList.toggle('open')" aria-label="Open Admin menu" aria-expanded="false"><span aria-hidden="true">▾</span></button>
+  </div>
+  <div class="nav-dropdown-menu archive-menu">
+    <a href="/job-status">Collector Status</a>
+    <a href="/admin/advisors">Advisors</a>
+  </div>
+</div>
 </nav></div></header>
 @if($showSeasonFilter)<div class="season-filter-bar"><div class="shell"><div class="header-season-filter" role="group" aria-label="Season type">@foreach(['h2h'=>'Head-to-Head','total'=>'Total Points'] as $value=>$label)<button type="button" class="header-filter-button season-type-choice {{ in_array($seasonMode,[$value,'all'])?'active':'' }}" data-value="{{ $value }}">{{ $label }}</button>@endforeach</div></div></div>@endif
 <main>@yield('content')</main>
