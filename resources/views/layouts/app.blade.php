@@ -81,6 +81,15 @@ html,body,main{max-width:100%;overflow-x:clip}.push-team-select{max-width:180px;
      localStorage.setItem(teamStorageKey,teamSelect.value);
      const reg=await navigator.serviceWorker.getRegistration('/push-sw.js');
      reg?.active?.postMessage({type:'set-notification-team',teamId:teamSelect.value});
+     const sub=reg?await reg.pushManager.getSubscription():null;
+     if(sub){
+       await fetch('/push/team',{
+         method:'POST',
+         credentials:'same-origin',
+         headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
+         body:JSON.stringify({endpoint:sub.endpoint,fantasy_team_id:teamSelect.value})
+       });
+     }
    });
  }
 
@@ -155,7 +164,14 @@ html,body,main{max-width:100%;overflow-x:clip}.push-team-select{max-width:180px;
      const saved=await saveResponse.json();
 
      reg.active?.postMessage({type:'set-last-notification-id',id:saved.latestId??config.latestId??0});
-     reg.active?.postMessage({type:'set-notification-team',teamId:localStorage.getItem(teamStorageKey)||''});
+     const selectedTeam=localStorage.getItem(teamStorageKey)||'';
+     reg.active?.postMessage({type:'set-notification-team',teamId:selectedTeam});
+     await fetch('/push/team',{
+       method:'POST',
+       credentials:'same-origin',
+       headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
+       body:JSON.stringify({endpoint:subscription.endpoint,fantasy_team_id:selectedTeam})
+     });
      await updateButton();
    }catch(e){
      console.error('ECFHL push setup failed',e);
