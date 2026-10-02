@@ -471,7 +471,6 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
     $advisorProfiles=collect();
     if(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles')){
         $advisorProfiles=DB::table('lineup_advisor_profiles')
-            ->orderBy('is_conservative')
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
@@ -481,6 +480,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             'advisor_key'=>'mike',
             'first_name'=>'Mike',
             'style_text'=>'Here is the thing. {advice}',
+            'recommendation_style'=>'neutral',
             'is_conservative'=>false,
             'sort_order'=>10,
         ]]);
@@ -764,24 +764,28 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             $baseAdvice=implode(' ', $suggestions);
         }
 
-        // At most one advisor may recommend saving the move. Pierre is the
-        // usual conservative voice; occasionally John gets fed up and does it.
-        // If either is removed in Admin, fall back to another conservative
-        // advisor, then to any current advisor.
-        $advisorKeys=$advisorProfiles->pluck('advisor_key')->map(fn($v)=>(string)$v)->all();
-        if(in_array('pierre',$advisorKeys,true) && in_array('john',$advisorKeys,true)){
-            $standPatAdvisorKey=random_int(1,100)<=80?'pierre':'john';
-        } elseif(in_array('pierre',$advisorKeys,true)){
-            $standPatAdvisorKey='pierre';
-        } elseif(in_array('john',$advisorKeys,true)){
-            $standPatAdvisorKey='john';
-        } else {
-            $fallbackConservative=$advisorProfiles->first(fn($p)=>(bool)($p->is_conservative??false));
-            $standPatAdvisorKey=(string)(($fallbackConservative??$advisorProfiles->random())->advisor_key);
+        // At most one advisor may recommend saving the move.
+        // Conservative advisors get most of those chances. Neutral advisors
+        // get an occasional chance. Aggressive advisors never stand pat.
+        $conservativeAdvisors=$advisorProfiles->filter(fn($p)=>
+            strtolower((string)($p->recommendation_style??((bool)($p->is_conservative??false)?'conservative':'neutral')))==='conservative'
+        )->values();
+        $neutralAdvisors=$advisorProfiles->filter(fn($p)=>
+            strtolower((string)($p->recommendation_style??((bool)($p->is_conservative??false)?'conservative':'neutral')))==='neutral'
+        )->values();
+
+        $standPatAdvisorKey=null;
+        $roll=random_int(1,100);
+        if($conservativeAdvisors->isNotEmpty() && $roll<=70){
+            $standPatAdvisorKey=(string)$conservativeAdvisors->random()->advisor_key;
+        } elseif($neutralAdvisors->isNotEmpty() && $roll<=85){
+            $standPatAdvisorKey=(string)$neutralAdvisors->random()->advisor_key;
+        } elseif($conservativeAdvisors->isEmpty() && $neutralAdvisors->isNotEmpty() && $roll<=20){
+            $standPatAdvisorKey=(string)$neutralAdvisors->random()->advisor_key;
         }
 
         $usedAdvisorTargets=[];
-        $distinctAdvisorAdvice=function(string $raw,string $advisorKey,bool $allowStandPat=false)use(
+        $distinctAdvisorAdvice=function(string $raw,string $advisorKey,string $recommendationStyle,bool $allowStandPat=false)use(
             &$usedAdvisorTargets,$availableGroups,$advisorNameKey,$rankTeam,$displayPlayerName,$eligibleDrops
         ){
             $standPatText=function()use($advisorKey){
@@ -790,6 +794,8 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                 }
                 return 'Stand pat. Save the move. There is not another distinct option strong enough to justify a transaction right now.';
             };
+
+            $aggressive=$recommendationStyle==='aggressive';
 
             $pickFallbackMove=function()use(
                 &$usedAdvisorTargets,$availableGroups,$advisorNameKey,$rankTeam,$displayPlayerName,$eligibleDrops,$allowStandPat,$standPatText
@@ -823,8 +829,16 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                 return $standPatText();
             };
 
+            if($raw==='No moves left.'){
+                if($aggressive){
+                    return "No moves left? You already burned through every move you had. Great. Now you're stuck with it. Next time, manage your moves.";
+                }
+                return $raw;
+            }
+
             if(!preg_match('/\\badd\\s+/i',$raw)){
                 if(str_starts_with($raw,'Stand pat.')){
+                    if($aggressive)return $pickFallbackMove();
                     return $allowStandPat?$standPatText():$pickFallbackMove();
                 }
                 return $raw;
@@ -901,6 +915,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             ) ?? $raw;
 
             if($failed){
+                if($aggressive)return $pickFallbackMove();
                 return $allowStandPat?$standPatText():$pickFallbackMove();
             }
 
@@ -942,12 +957,15 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         $advisorAdvice=[];
         foreach($advisorProfiles as $profile){
             $key=(string)$profile->advisor_key;
-            $allowStandPat=$key===$standPatAdvisorKey;
-            $raw=$distinctAdvisorAdvice($baseAdvice,$key,$allowStandPat);
+            $recommendationStyle=strtolower((string)($profile->recommendation_style??((bool)($profile->is_conservative??false)?'conservative':'neutral')));
+            if(!in_array($recommendationStyle,['conservative','neutral','aggressive'],true))$recommendationStyle='neutral';
+            $allowStandPat=$standPatAdvisorKey!==null && $key===$standPatAdvisorKey && $recommendationStyle!=='aggressive';
+            $raw=$distinctAdvisorAdvice($baseAdvice,$key,$recommendationStyle,$allowStandPat);
             $advisorAdvice[$key]=[
                 'name'=>(string)$profile->first_name,
                 'advice'=>$applyAdvisorStyle($profile,$raw),
-                'conservative'=>(bool)($profile->is_conservative??false),
+                'recommendation_style'=>$recommendationStyle,
+                'conservative'=>$recommendationStyle==='conservative',
                 'stand_pat_voice'=>$allowStandPat,
             ];
         }
