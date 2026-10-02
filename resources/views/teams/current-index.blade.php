@@ -362,7 +362,7 @@ html[data-theme="dark"] .team-bench-row{background:#1d2735}
 html[data-theme="dark"] .team-minors-row{background:#17263a}
 html[data-theme="dark"] .team-home{color:#4ade80}
 html[data-theme="dark"] .team-away{color:#fbbf24}
-@media(max-width:800px){.matchup-summary-side{position:relative;padding-bottom:18px}.matchup-summary-side .matchup-projected-score{position:absolute;bottom:0;margin:0}.matchup-summary-away .matchup-projected-score{left:0;right:auto;text-align:left}.matchup-summary-home .matchup-projected-score{left:0;right:auto;text-align:left}.matchup-summary{position:relative;padding-top:25px!important}.matchup-side-header{display:block;position:absolute;top:6px;font-size:9px;font-weight:900;letter-spacing:.08em;color:#64748b}.matchup-side-header-away{left:9px}.matchup-side-header-home{right:9px}
+@media(max-width:800px){.matchup-summary-side{position:relative;padding-bottom:18px}.matchup-summary-side .matchup-projected-score{position:absolute;bottom:0;margin:0}.matchup-summary-away .matchup-projected-score{left:0;right:auto;text-align:left}.matchup-summary-home .matchup-projected-score{left:auto;right:0;text-align:right}.matchup-summary{position:relative;padding-top:25px!important}.matchup-side-header{display:block;position:absolute;top:6px;font-size:9px;font-weight:900;letter-spacing:.08em;color:#64748b}.matchup-side-header-away{left:9px}.matchup-side-header-home{right:9px}
   .matchup-summary{grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr);padding:8px 10px}
   .matchup-summary-score{font-size:18px}
   .matchup-summary-name a{font-size:12px}
