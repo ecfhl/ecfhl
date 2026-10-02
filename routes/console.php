@@ -469,7 +469,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
     };
 
     foreach($teams as $teamId=>$teamRows){
-        $advisorName=random_int(0,1)===0?'Mike':'Pierre';
+        $advisorName=['Mike','Pierre','John'][random_int(0,2)];
         $teamName=(string)($teamRows->first()->fantasy_team_name??$teamId);
         $teamScore=$scheduleScores[(string)$teamId]??null;
         $opponentScore=null;
@@ -754,7 +754,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             } else {
                 $advice='Here is the move. '.$advice;
             }
-        } else {
+        } elseif($advisorName==='Pierre') {
             if($movesLeft===null){
                 $advice='I cannot see your claims remaining right now, so check Fantrax before making a move.';
             } elseif(!$hasMoveAvailable){
@@ -763,6 +763,16 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                 $advice='I would stay patient here. '.substr($advice,strlen('Stand pat. '));
             } else {
                 $advice='I like this option: '.$advice;
+            }
+        } else {
+            if($movesLeft===null){
+                $advice='I cannot confirm your moves remaining, so take a quick look at Fantrax first.';
+            } elseif(!$hasMoveAvailable){
+                $advice='No moves left today. Let us roll with this lineup.';
+            } elseif(str_starts_with($advice,'Stand pat.')){
+                $advice='I would stay with the current group for now. '.substr($advice,strlen('Stand pat. '));
+            } else {
+                $advice='Here is a solid option: '.$advice;
             }
         }
 
