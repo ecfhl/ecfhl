@@ -24,13 +24,13 @@
     <title>{{ $browserTitle }}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7"><link rel="shortcut icon" href="/favicon.svg?v=7"><link rel="apple-touch-icon" href="/ecfhl-logo.png?v=7"><link rel="stylesheet" href="/app.css?v=6"><link rel="stylesheet" href="/header-filters.css?v=3">
 <style>
-html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relative;display:flex;align-items:center}.push-team-picker{display:none;position:absolute;right:0;top:calc(100% + 8px);z-index:1200;width:230px;padding:10px;background:#082f4f;border:1px solid #6b88a0;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,.28)}.push-team-picker.open{display:block}.push-team-picker-label{display:block;margin:0 0 6px;color:#dce6f2;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}.push-team-select{width:100%;padding:7px 9px;border:1px solid rgba(255,255,255,.3);border-radius:8px;background:#0d3a5e;color:#fff;font-size:11px;font-weight:700}.push-disable-button{display:none;width:100%;margin-top:8px;padding:6px 8px;border:1px solid rgba(255,255,255,.22);border-radius:7px;background:transparent;color:#dce6f2;font:inherit;font-size:10px;font-weight:700;cursor:pointer}.push-disable-button.visible{display:block}.push-disable-button:hover{background:rgba(255,255,255,.08)}.push-notification-toggle{border:0;background:transparent;color:inherit;font-size:18px;line-height:1;cursor:pointer;padding:7px;border-radius:8px}.push-notification-toggle:hover{background:var(--surface-2,rgba(255,255,255,.08))}.push-notification-toggle.push-enabled{background:#dcfce7;color:#166534}.push-notification-toggle.push-blocked{opacity:.5}
+html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relative;display:flex;align-items:center}.push-team-picker{display:none;position:absolute;right:0;top:calc(100% + 8px);z-index:1200;width:230px;padding:10px;background:#082f4f;border:1px solid #6b88a0;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,.28)}.push-team-picker.open{display:block}.push-team-picker-label{display:block;margin:0 0 6px;color:#dce6f2;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}.push-team-select{width:100%;padding:7px 9px;border:1px solid rgba(255,255,255,.3);border-radius:8px;background:#0d3a5e;color:#fff;font-size:11px;font-weight:700}.push-switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;color:#dce6f2;font-size:10px;font-weight:800}.push-switch{position:relative;display:inline-flex;align-items:center;flex:0 0 auto;width:42px;height:22px;cursor:pointer}.push-switch input{position:absolute;opacity:0;pointer-events:none}.push-switch-track{position:absolute;inset:0;border-radius:999px;background:#64748b;border:1px solid rgba(255,255,255,.25);transition:.18s ease}.push-switch-thumb{position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.18s ease}.push-switch input:checked~.push-switch-track{background:#22c55e;border-color:#4ade80}.push-switch input:checked~.push-switch-thumb{transform:translateX(20px)}.push-switch input:focus-visible~.push-switch-track{outline:2px solid #93c5fd;outline-offset:2px}.push-notification-toggle{border:0;background:transparent;color:inherit;font-size:18px;line-height:1;cursor:pointer;padding:7px;border-radius:8px}.push-notification-toggle:hover{background:var(--surface-2,rgba(255,255,255,.08))}.push-notification-toggle.push-enabled{background:#dcfce7;color:#166534}.push-notification-toggle.push-blocked{opacity:.5}
 .nav-item-icon{display:inline-flex;width:20px;justify-content:center;align-items:center;margin-right:6px;font-size:15px;line-height:1;vertical-align:-1px}.main-nav>a,.nav-dropdown-main-link{white-space:nowrap}.main-nav{gap:2px}.main-nav a,.theme-toggle{padding-left:8px!important;padding-right:8px!important;font-size:13px}.nav-live-icon,.nav-live-text{color:#c94b52!important}.nav-live-text{font-weight:800}.nav-live-icon{font-size:14px;text-shadow:0 0 5px rgba(201,75,82,.45)}.nav-target-icon{font-size:19px}.nav-teams-icon{color:#14b8a6}.nav-dropdown{position:relative;display:flex;align-items:center}.nav-dropdown-row{display:flex;align-items:center}.nav-dropdown-main-link{display:block}.nav-dropdown-toggle{appearance:none;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;padding:8px 7px;cursor:pointer;border-radius:7px}.nav-dropdown.active>.nav-dropdown-row,.nav-dropdown-toggle:hover{background:var(--surface-2,rgba(255,255,255,.08));border-radius:7px}.nav-dropdown-menu{display:none;position:absolute;top:100%;left:0;z-index:1000;min-width:430px;grid-template-columns:repeat(2,minmax(190px,1fr));gap:2px;padding:8px;background:#082f4f;border:1px solid #6b88a0;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,.28);color:#fff}.nav-dropdown:hover .nav-dropdown-menu,.nav-dropdown.open .nav-dropdown-menu{display:grid}.nav-dropdown-menu a{display:block;padding:8px 10px!important;border-radius:7px;white-space:nowrap;text-decoration:none;color:#fff!important}.nav-dropdown-menu a:hover{background:#12486f}.archive-menu{min-width:180px!important;grid-template-columns:1fr!important}.nav-dropdown-menu .nav-all-teams-link,.nav-dropdown-menu .nav-history-link{grid-column:1/-1;font-weight:800}.nav-dropdown-menu .nav-all-teams-link{border-bottom:1px solid #6b88a0;margin-bottom:4px}.nav-dropdown-menu .nav-history-link{border-top:1px solid #6b88a0;margin-top:4px;padding-top:9px!important}
 @media(max-width:900px){.header-actions{min-width:0;gap:5px}.push-team-picker{position:fixed;right:10px;top:62px;width:min(240px,calc(100vw - 20px))}.push-team-select{font-size:11px}.push-notification-toggle,.header-theme-toggle{padding:5px}.nav-toggle{flex:0 0 auto}.main-nav{text-align:left}.main-nav>a{display:block;text-align:left!important;padding-left:24px!important}.nav-dropdown{display:block;width:100%}.nav-dropdown-row{display:grid;grid-template-columns:1fr auto;align-items:center;width:100%}.nav-dropdown-main-link{text-align:left!important;padding:10px 0 10px 24px!important}.nav-dropdown-toggle{width:44px;text-align:center;padding:10px 0}.nav-dropdown:hover .nav-dropdown-menu{display:none}.nav-dropdown.open .nav-dropdown-menu{display:grid!important;position:static;min-width:0;width:100%;grid-template-columns:1fr;background:transparent;border:0;box-shadow:none;padding:4px 0 8px 36px}.nav-dropdown-menu a{padding:8px 0!important;text-align:left!important}.nav-dropdown-menu .nav-history-link{border-top:1px solid var(--line);padding-top:10px!important}}
 </style>
 </head>
 <body>
-<header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a></div><div class="header-actions"><div class="push-picker-wrap"><button id="push-notifications-button" class="push-notification-toggle" type="button" aria-label="Scoring alerts" title="Scoring alerts">🔔</button><div id="push-team-picker" class="push-team-picker" role="dialog" aria-label="Scoring alert team"><label class="push-team-picker-label" for="push-team-select">Alert me for</label><select id="push-team-select" class="push-team-select" aria-label="Scoring notification team"><option value="">Select a team</option>@foreach($notificationTeams as $notificationTeam)<option value="{{ $notificationTeam->fantasy_team_id }}" data-team-url="/teams/current/{{ \Illuminate\Support\Str::slug($notificationTeam->fantasy_team_name) }}">{{ $notificationTeam->fantasy_team_name }}</option>@endforeach</select><button id="push-disable-button" class="push-disable-button" type="button">Turn off notifications</button></div></div><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav">
+<header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a></div><div class="header-actions"><div class="push-picker-wrap"><button id="push-notifications-button" class="push-notification-toggle" type="button" aria-label="Scoring alerts" title="Scoring alerts">🔔</button><div id="push-team-picker" class="push-team-picker" role="dialog" aria-label="Scoring alert team"><label class="push-team-picker-label" for="push-team-select">Alert me for</label><select id="push-team-select" class="push-team-select" aria-label="Scoring notification team"><option value="">Select a team</option>@foreach($notificationTeams as $notificationTeam)<option value="{{ $notificationTeam->fantasy_team_id }}" data-team-url="/teams/current/{{ \Illuminate\Support\Str::slug($notificationTeam->fantasy_team_name) }}">{{ $notificationTeam->fantasy_team_name }}</option>@endforeach</select><div class="push-switch-row"><span>Notifications</span><label class="push-switch" title="Turn notifications on or off"><input id="push-notifications-switch" type="checkbox" role="switch" aria-label="Notifications"><span class="push-switch-track" aria-hidden="true"></span><span class="push-switch-thumb" aria-hidden="true"></span></label></div></div></div><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav">
 <a href="/" class="{{ request()->is('/')?'active':'' }}"><span class="nav-item-icon">⌂</span>Overview</a>
 <a id="my-team-nav-link" href="#" hidden><span class="nav-item-icon">★</span>My Team</a>
 <a href="/teams/current" class="{{ request()->is('teams/current','teams/current/*')?'active':'' }}"><span class="nav-item-icon nav-live-icon">●</span><span class="nav-live-text">Live Scoring</span></a>
@@ -76,7 +76,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
  const supported=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
  const picker=document.getElementById('push-team-picker');
  const teamSelect=document.getElementById('push-team-select');
- const disableButton=document.getElementById('push-disable-button');
+ const notificationSwitch=document.getElementById('push-notifications-switch');
  const myTeamLink=document.getElementById('my-team-nav-link');
  const teamStorageKey='ecfhl-notification-team-id';
  const teamUrlStorageKey='ecfhl-notification-team-url';
@@ -142,7 +142,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
      button.classList.toggle('push-blocked',Notification.permission==='denied');
      button.title=enabled?'Scoring alerts enabled':'Enable scoring alerts';
      button.setAttribute('aria-label',button.title);
-     disableButton?.classList.toggle('visible',enabled);
+     if(notificationSwitch){notificationSwitch.checked=enabled;notificationSwitch.setAttribute('aria-checked',enabled?'true':'false');}
      return enabled;
    }catch(e){return false;}
  };
@@ -192,33 +192,38 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
    await updateButton();
  };
 
- button.addEventListener('click',async event=>{
+ button.addEventListener('click',event=>{
    event.stopPropagation();
    picker?.classList.toggle('open');
    if(picker?.classList.contains('open'))teamSelect?.focus();
-   try{await enableNotifications();}catch(e){
-     console.error('ECFHL push setup failed',e);
-     alert('Could not enable ECFHL notifications in this browser.');
-   }
  });
 
- disableButton?.addEventListener('click',async event=>{
+ notificationSwitch?.addEventListener('change',async event=>{
    event.stopPropagation();
+   notificationSwitch.disabled=true;
    try{
-     const reg=await navigator.serviceWorker.getRegistration('/push-sw.js');
-     const existing=reg?await reg.pushManager.getSubscription():null;
-     if(existing){
-       await fetch('/push/unsubscribe',{
-         method:'POST',
-         credentials:'same-origin',
-         headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
-         body:JSON.stringify({endpoint:existing.endpoint})
-       });
-       await existing.unsubscribe();
+     if(notificationSwitch.checked){
+       await enableNotifications();
+     }else{
+       const reg=await navigator.serviceWorker.getRegistration('/push-sw.js');
+       const existing=reg?await reg.pushManager.getSubscription():null;
+       if(existing){
+         await fetch('/push/unsubscribe',{
+           method:'POST',
+           credentials:'same-origin',
+           headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
+           body:JSON.stringify({endpoint:existing.endpoint})
+         });
+         await existing.unsubscribe();
+       }
+       await updateButton();
      }
-     await updateButton();
    }catch(e){
-     console.error('ECFHL push disable failed',e);
+     console.error('ECFHL push toggle failed',e);
+     alert(notificationSwitch.checked?'Could not enable ECFHL notifications in this browser.':'Could not disable ECFHL notifications in this browser.');
+     await updateButton();
+   }finally{
+     notificationSwitch.disabled=false;
    }
  });
 
