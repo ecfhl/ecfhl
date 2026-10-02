@@ -375,7 +375,7 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
   .matchup-summary-home .matchup-live-games{text-align:right}
   .matchup-summary-meta{gap:4px}
   .matchup-playing-counts{display:none!important}
-  .matchup-daily-cats{font-size:8px;color:#475569;max-width:170px;overflow:visible}.matchup-daily-cats-primary,.matchup-daily-cats-special{white-space:nowrap}
+  .matchup-daily-cats{font-size:10px;color:#475569;max-width:190px;overflow:visible}.matchup-daily-cats-primary,.matchup-daily-cats-special{white-space:nowrap}
   .matchup-roster-grid{grid-template-columns:1fr 1fr}
   .matchup-player-row{padding:7px 8px;align-items:flex-start}
   .matchup-player-name{font-size:13px;line-height:1.18}
