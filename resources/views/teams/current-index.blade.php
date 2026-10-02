@@ -377,9 +377,9 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
   .matchup-daily-cats{font-size:8px;color:#475569;overflow:hidden;text-overflow:ellipsis;max-width:170px}
   .matchup-roster-grid{grid-template-columns:1fr 1fr}
   .matchup-player-row{padding:7px 8px;align-items:flex-start}
-  .matchup-player-name{font-size:15px;line-height:1.18}
+  .matchup-player-name{font-size:13px;line-height:1.18}
   .team-contract-sticker,.line-1,.line-2,.line-3,.line-4,.pp1,.pp2{display:none!important}
-  .matchup-player-opponent{gap:5px;font-size:14px;flex-wrap:nowrap;white-space:nowrap}
+  .matchup-player-opponent{gap:5px;font-size:12px;flex-wrap:nowrap;white-space:nowrap}
   .matchup-player-opponent .team-playing-text{white-space:nowrap}
   .matchup-player-cats{position:absolute;left:8px;bottom:6px;font-size:11px;white-space:nowrap}
   .matchup-player-opponent{padding-bottom:0}
