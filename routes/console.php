@@ -1269,22 +1269,65 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
             $data = $dfo->fetch($date);
             $now = now();
             $rows = [];
+            $normalizeTeamName=static fn($value)=>preg_replace('/[^a-z0-9]+/','',strtolower(trim((string)$value)))??'';
+            $abbrNormalized=[];
+            foreach($abbr as $teamName=>$teamAbbr)$abbrNormalized[$normalizeTeamName($teamName)]=$teamAbbr;
+
+            $skippedRows=0;
             foreach ($data['rows'] as $g) {
-                $team = $abbr[$g['team_name']] ?? null;
-                $opponent = $abbr[$g['opponent_name']] ?? null;
-                if (! $team || ! $opponent) throw new \RuntimeException('Unknown Daily Faceoff team. Existing data preserved.');
+                $team = $abbr[$g['team_name']] ?? ($abbrNormalized[$normalizeTeamName($g['team_name']??'')] ?? null);
+                $opponent = $abbr[$g['opponent_name']] ?? ($abbrNormalized[$normalizeTeamName($g['opponent_name']??'')] ?? null);
+                if (! $team || ! $opponent) {
+                    $skippedRows++;
+                    Log::warning('Skipping unrecognized Daily Faceoff goalie matchup row',[
+                        'date'=>$day,
+                        'team_name'=>$g['team_name']??null,
+                        'opponent_name'=>$g['opponent_name']??null,
+                        'player_name'=>$g['player_name']??null,
+                    ]);
+                    continue;
+                }
+
+                $playerName=trim((string)($g['player_name']??''));
+                if($playerName===''){
+                    $skippedRows++;
+                    continue;
+                }
+
+                $status=trim((string)($g['starting_status']??'Unconfirmed'));
+                if(!in_array($status,['Confirmed','Likely','Unconfirmed'],true))$status='Unconfirmed';
+
                 $rows[] = [
                     'game_date'=>$day, 'team'=>$team, 'opponent'=>$opponent,
-                    'home_away'=>$g['home_away'], 'player_name'=>$g['player_name'],
-                    'starting_status'=>$g['starting_status'], 'source_url'=>$data['url'],
+                    'home_away'=>$g['home_away'], 'player_name'=>$playerName,
+                    'starting_status'=>$status, 'source_url'=>$data['url'],
                     'source_updated_at'=>$g['source_updated_at'], 'checked_at'=>$now,
                     'created_at'=>$now, 'updated_at'=>$now,
                 ];
             }
+
+            // Partial Daily Faceoff data is common, especially for tomorrow.
+            // Never erase good existing rows just because one matchup is not ready yet.
             DB::transaction(function () use ($day, $rows) {
-                DB::table('active_starting_goalies')->whereDate('game_date', $day)->delete();
-                if ($rows) DB::table('active_starting_goalies')->insert($rows);
+                foreach($rows as $row){
+                    DB::table('active_starting_goalies')->updateOrInsert(
+                        [
+                            'game_date'=>$day,
+                            'team'=>$row['team'],
+                            'player_name'=>$row['player_name'],
+                        ],
+                        $row
+                    );
+                }
             });
+
+            if($skippedRows>0){
+                Log::warning('Daily Faceoff goalie refresh completed with skipped rows',[
+                    'date'=>$day,
+                    'skipped'=>$skippedRows,
+                    'accepted'=>count($rows),
+                ]);
+            }
             $stored = DB::table('active_starting_goalies')->whereDate('game_date', $day)
                 ->get(['player_name','team','opponent','home_away','starting_status']);
             foreach($stored as $goalie){
