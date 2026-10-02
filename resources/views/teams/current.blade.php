@@ -530,6 +530,13 @@ html[data-theme="dark"] .matchup-roster-col,
 html[data-theme="dark"] .matchup-roster-grid{border-color:#e2e8f0!important}
 html[data-theme="dark"] .matchup-player-row .subtle,
 html[data-theme="dark"] .matchup-player-row .matchup-stat-label{color:#64748b!important}
+
+/* Dark-mode bridge between the page header and white matchup card. */
+html[data-theme="dark"] .team-live-matchup-wrap,
+html[data-theme="dark"] .team-matchup-section,
+html[data-theme="dark"] .team-current-matchup-section{background:transparent!important}
+html[data-theme="dark"] .team-live-matchup-label,
+html[data-theme="dark"] .team-matchup-period-label{color:#94a3b8!important}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
