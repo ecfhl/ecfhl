@@ -135,6 +135,19 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
                 ];
             },$data['rows']);
 
+            $fantasyTeamByPlayer=[];
+            try {
+                $rosterRows=DB::table('active_fantasy_rosters')
+                    ->whereDate('game_date',$date->toDateString())
+                    ->get(['player_name','nhl_team','fantasy_team_id']);
+                foreach($rosterRows as $rosterRow){
+                    $rosterKey=$normTeam($rosterRow->nhl_team??'').'|'.$normName($rosterRow->player_name??'');
+                    if($rosterKey!=='|')$fantasyTeamByPlayer[$rosterKey]=(string)$rosterRow->fantasy_team_id;
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Could not map live-score notifications to fantasy teams',['error'=>$e->getMessage()]);
+            }
+
             $scoreNotifications=[];
             $isCurrentFantasyDay=$date->toDateString()===CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay()->toDateString();
             if($isCurrentFantasyDay){
@@ -147,17 +160,20 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
                     $team=$normTeam($row['nhl_team']??'');
                     $label=$name.($team!==''?' ('.$team.')':'');
                     $delta=fn($field)=>(int)($row[$field]??0)-(int)($previous->{$field}??0);
+                    $fantasyTeamId=$fantasyTeamByPlayer[$key]??null;
+                    if(!$fantasyTeamId)continue;
+                    $queueNotification=function(string $body)use(&$scoreNotifications,$fantasyTeamId){$scoreNotifications[]=['body'=>$body,'fantasy_team_id'=>$fantasyTeamId];};
 
                     $goalDelta=max(0,$delta('g'));
                     $ppgDelta=max(0,$delta('ppg'));
                     $shgDelta=max(0,$delta('shg'));
-                    if($ppgDelta>0)$scoreNotifications[]='PPG by '.$label;
-                    if($shgDelta>0)$scoreNotifications[]='SHG by '.$label;
-                    if(max(0,$goalDelta-$ppgDelta-$shgDelta)>0)$scoreNotifications[]='Goal by '.$label;
-                    if($delta('a')>0)$scoreNotifications[]='Assist by '.$label;
-                    if($delta('gwg')>0)$scoreNotifications[]='GWG by '.$label;
-                    if($delta('w')>0)$scoreNotifications[]='Win by '.$label;
-                    if($delta('so')>0)$scoreNotifications[]='Shutout by '.$label;
+                    if($ppgDelta>0)$queueNotification('PPG by '.$label);
+                    if($shgDelta>0)$queueNotification('SHG by '.$label);
+                    if(max(0,$goalDelta-$ppgDelta-$shgDelta)>0)$queueNotification('Goal by '.$label);
+                    if($delta('a')>0)$queueNotification('Assist by '.$label);
+                    if($delta('gwg')>0)$queueNotification('GWG by '.$label);
+                    if($delta('w')>0)$queueNotification('Win by '.$label);
+                    if($delta('so')>0)$queueNotification('Shutout by '.$label);
                 }
             }
 
@@ -247,9 +263,10 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
                 'updated_at'=>now(),
             ]);
 
-            foreach($scoreNotifications as $body){
+            foreach($scoreNotifications as $notification){
                 try {
-                    $webPush->notify('live-score','ECFHL Live Scoring',$body,'/teams/current?date='.$date->toDateString());
+                    $body=$notification['body'];
+                    $webPush->notify('live-score','ECFHL Live Scoring',$body,'/teams/current?date='.$date->toDateString(),$notification['fantasy_team_id']);
                 } catch (\Throwable $e) {
                     Log::warning('Live scoring push notification failed',[
                         'date'=>$date->toDateString(),
