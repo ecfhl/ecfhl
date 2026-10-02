@@ -12,13 +12,16 @@
         @endforeach
       </select>
     </label>
-    <p>Current Fantrax roster for {{ \Carbon\CarbonImmutable::parse($date)->format('l, M j, Y') }}</p>
     @if($fantraxTeamUrl)
       <p class="team-fantrax-row">
+        Current
         <a class="team-fantrax-link" href="{{ $fantraxTeamUrl }}" target="_blank" rel="noopener noreferrer">
           <img src="/fantrax-icon.png" alt="">Fantrax ↗
         </a>
+        roster for {{ \Carbon\CarbonImmutable::parse($date)->format('l, M j, Y') }}
       </p>
+    @else
+      <p>Current Fantrax roster for {{ \Carbon\CarbonImmutable::parse($date)->format('l, M j, Y') }}</p>
     @endif
     @if($scoreLastUpdate)
       <p class="team-updated">Updated @include('partials.updated-time',['value'=>$scoreLastUpdate])</p>
