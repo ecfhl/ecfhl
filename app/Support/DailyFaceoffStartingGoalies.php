@@ -65,15 +65,25 @@ class DailyFaceoffStartingGoalies
             }
             $awayTeam = $game['awayTeamName'] ?? null;
             $homeTeam = $game['homeTeamName'] ?? null;
+            $normalizeTeam = static fn($name) => is_string($name)
+                ? preg_replace('/[^a-z0-9]+/', '', strtolower($name))
+                : '';
+            $canonicalTeams = [];
+            foreach (self::TEAMS as $canonicalTeam) {
+                $canonicalTeams[$normalizeTeam($canonicalTeam)] = $canonicalTeam;
+            }
+            // DFO occasionally changes punctuation/spacing (for example St Louis vs St. Louis).
+            // Canonicalize those harmless display-name differences before validation.
+            $awayTeam = $canonicalTeams[$normalizeTeam($awayTeam)] ?? $awayTeam;
+            $homeTeam = $canonicalTeams[$normalizeTeam($homeTeam)] ?? $homeTeam;
             $teamsValid = in_array($awayTeam, self::TEAMS, true)
                 && in_array($homeTeam, self::TEAMS, true)
                 && $awayTeam !== $homeTeam;
 
             if (! $teamsValid) {
-                if ($isFutureDate) {
-                    continue;
-                }
-                throw new RuntimeException('Incomplete matchup team data');
+                // One malformed/unpublished DFO matchup must not make the entire
+                // day's collector fail. Skip only that matchup; valid games still refresh.
+                continue;
             }
 
             foreach (['away', 'home'] as $side) {
@@ -95,7 +105,9 @@ class DailyFaceoffStartingGoalies
                 // The page renders null NewsStrengthName as Unconfirmed (verified in browser).
                 $status = $game[$side.'NewsStrengthName'] ?? 'Unconfirmed';
                 if (! in_array($status, ['Confirmed', 'Likely', 'Unconfirmed'], true)) {
-                    throw new RuntimeException('Unknown goalie starting status');
+                    // DFO can briefly publish internal/unknown status labels.
+                    // Treat them as Unconfirmed rather than failing the full refresh.
+                    $status = 'Unconfirmed';
                 }
                 $key = $team.'|'.mb_strtolower(trim($name));
                 if (isset($seen[$key])) {
