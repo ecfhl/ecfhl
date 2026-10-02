@@ -375,6 +375,20 @@
                         <span class="pill goalie-status {{ $player->starting_status_class }}">{{ $player->starting_status }}</span>
                       @endif
                     </div>
+                    <div class="team-player-lines">
+                      @if($player->line_number)
+                        @if(strtoupper((string)$player->position)==='G' && $player->line_number<=2)
+                          <span class="pill goalie-{{ $player->line_number }}">G{{ $player->line_number }}</span>
+                        @elseif($player->line_number<=4)
+                          <span class="pill line-{{ $player->line_number }}">L{{ $player->line_number }}</span>
+                        @endif
+                      @endif
+                      @if($player->pp_unit===1)
+                        <span class="pill pp1">PP1</span>
+                      @elseif($player->pp_unit===2)
+                        <span class="pill pp2">PP2</span>
+                      @endif
+                    </div>
                     <div class="team-player-opponent">
                       @if($player->opponent)
                         <span class="{{ $player->home_away==='AWAY'?'team-away':'team-home' }}">{{ $player->home_away==='AWAY'?'@':'vs' }} {{ $player->opponent }}@if($player->game_time) · {{ $player->game_time }}@endif</span>
@@ -392,20 +406,7 @@
                         <span class="team-projected-fpts">{{ $player->projected_fpts_per_game!==null?number_format($player->projected_fpts_per_game,2):'—' }}</span>
                         <strong class="team-today-fpts">{{ $isPlaying ? number_format($player->today_fpts ?? 0, 0) : '' }}</strong>
                       </div>
-                      <div class="team-proj-badges">
-                        @if($player->line_number)
-                          @if(strtoupper((string)$player->position)==='G' && $player->line_number<=2)
-                            <span class="pill goalie-{{ $player->line_number }}">G{{ $player->line_number }}</span>
-                          @elseif($player->line_number<=4)
-                            <span class="pill line-{{ $player->line_number }}">L{{ $player->line_number }}</span>
-                          @endif
-                        @endif
-                        @if($player->pp_unit===1)
-                          <span class="pill pp1">PP1</span>
-                        @elseif($player->pp_unit===2)
-                          <span class="pill pp2">PP2</span>
-                        @endif
-                      </div>
+
                     </div>
                   </td>
                 </tr>
@@ -539,6 +540,7 @@ html[data-theme="dark"] .team-matchup-period-label{color:#94a3b8!important}
 
 html[data-theme="dark"] .team-live-matchup{background:transparent!important}
 html[data-theme="dark"] .team-live-matchup-label{background:transparent!important;color:#94a3b8!important}
+.team-player-lines{display:flex;align-items:center;gap:4px;margin-top:4px;min-height:18px}.team-player-lines:empty{display:none}.team-player-lines .pill{font-size:9px;padding:1px 5px}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
