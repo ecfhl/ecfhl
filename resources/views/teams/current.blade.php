@@ -365,9 +365,6 @@
                       @if($player->is_ir)
                         <span class="pill team-ir">IR</span>
                       @endif
-                      @if($player->is_bench)
-                        <span class="pill team-bench">Bench</span>
-                      @endif
                       @if(strtoupper((string)$player->position)==='G' && !empty($player->starting_status))
                         <span class="pill goalie-status {{ $player->starting_status_class }}">{{ $player->starting_status }}</span>
                       @endif
@@ -387,6 +384,9 @@
                         <span class="pill pp1">PP1</span>
                       @elseif($player->pp_unit===2)
                         <span class="pill pp2">PP2</span>
+                      @endif
+                      @if($player->is_bench)
+                        <span class="pill team-bench">Bench</span>
                       @endif
                     </div>
                     <div class="team-player-opponent">
