@@ -337,6 +337,7 @@ document.addEventListener('DOMContentLoaded',()=>{
      rows.forEach(row=>row.style.display='none');
      eligible.slice(0,visible).forEach(row=>row.style.display='');
      moreButton.style.display=eligible.length>visible?'block':'none';
+     if(heading)heading.textContent=title+' ('+eligible.length+')';
    };
 
    searchWrap.querySelector('.tips-search').addEventListener('input',event=>{
@@ -367,8 +368,8 @@ document.addEventListener('DOMContentLoaded',()=>{
      searchWrap.insertAdjacentElement('afterend',filterWrap);
      bindInjuryButton(filterWrap.querySelector('.tips-injury-filter'));
      filterWrap.querySelectorAll('.tips-goalie-filter').forEach(filter=>{
-       filter.classList.add('active');
-       filter.setAttribute('aria-pressed','true');
+       filter.classList.remove('active');
+       filter.setAttribute('aria-pressed','false');
        filter.addEventListener('click',()=>{
        const value=filter.dataset.goalie;
        if(selectedGoalies.has(value)){selectedGoalies.delete(value);filter.classList.remove('active');filter.setAttribute('aria-pressed','false');}
