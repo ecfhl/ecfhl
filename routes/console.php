@@ -770,14 +770,29 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                 $advice=$openers[array_rand($openers)].$advice;
             }
         } elseif($advisorName==='Pierre') {
+            // Pierre: measured, objective NHL-insider reporting tone.
             if($movesLeft===null){
-                $advice='I cannot see your claims remaining right now, so check Fantrax before making a move.';
+                $advice='My understanding is the claims remaining are not available right now. Check Fantrax before making a move so the context is complete.';
             } elseif(!$hasMoveAvailable){
-                $advice='You are out of moves for today, so we will work with what you have.';
+                $advice='From what I am seeing, there are no moves left today. The focus now shifts to maximizing the current roster and keeping an eye on the next available window.';
             } elseif(str_starts_with($advice,'Stand pat.')){
-                $advice='I would stay patient here. '.substr($advice,strlen('Stand pat. '));
+                $rest=substr($advice,strlen('Stand pat. '));
+                $openers=[
+                    'Checking in on the situation, there is no need to force a move here. ',
+                    'My understanding is the better play is patience for now. ',
+                    'Keep an eye on the market, but the current roster does not need a reaction move. ',
+                    'From what I am seeing, the context favors holding rather than chasing a marginal upgrade. ',
+                ];
+                $advice=$openers[array_rand($openers)].$rest;
             } else {
-                $advice='I like this option: '.$advice;
+                $openers=[
+                    'Checking in on the options, this is the move that makes the most sense. ',
+                    'My understanding is this is the cleanest upgrade available right now. ',
+                    'Keep an eye on this one. The roster fit and opportunity line up. ',
+                    'From what I am seeing, there is a logical hockey reason to make this move. ',
+                    'The market context matters here, and this is the best fit among the current options. ',
+                ];
+                $advice=$openers[array_rand($openers)].$advice;
             }
         } else {
             // John: blunt, impatient, accountability-first hockey coach tone.
