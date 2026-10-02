@@ -785,14 +785,20 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                 ];
                 $advice=$openers[array_rand($openers)].$rest;
             } else {
-                $openers=[
-                    'Checking in on the options, this is the move that makes the most sense. ',
-                    'My understanding is this is the cleanest upgrade available right now. ',
-                    'Keep an eye on this one. The roster fit and opportunity line up. ',
-                    'From what I am seeing, there is a logical hockey reason to make this move. ',
-                    'The market context matters here, and this is the best fit among the current options. ',
+                $moveText=$advice;
+                if(str_starts_with($moveText,'Also consider: ')){
+                    $moveText=substr($moveText,strlen('Also consider: '));
+                    $moveText=lcfirst($moveText);
+                }
+
+                $templates=[
+                    fn($move)=>'Checking in on the options, the move that makes the most sense is to '.$move,
+                    fn($move)=>'My understanding is that the cleanest upgrade available right now is to '.$move,
+                    fn($move)=>'Keep an eye on this one. The roster fit and opportunity point to '.$move,
+                    fn($move)=>'From what I am seeing, the logical hockey move is to '.$move,
+                    fn($move)=>'The market context matters here, and the best fit among the current options is to '.$move,
                 ];
-                $advice=$openers[array_rand($openers)].$advice;
+                $advice=$templates[array_rand($templates)]($moveText);
             }
         } else {
             // John: blunt, impatient, accountability-first hockey coach tone.
