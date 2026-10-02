@@ -76,7 +76,15 @@ Route::post('/team-icons/{slug}', function(string $slug) {
         ->contains(fn($name)=>\Illuminate\Support\Str::slug((string)$name)===$slug);
     $validFranchise=DB::table('franchises')->pluck('franchise_name')
         ->contains(fn($name)=>\Illuminate\Support\Str::slug((string)$name)===$slug);
-    abort_unless(in_array($slug,['lineup-advisor','lineup-advisor-pierre','lineup-advisor-john'],true)||$validCurrent||$validFranchise,404);
+    $advisorSlugAllowed=false;
+    if(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles')){
+        $advisorKeys=DB::table('lineup_advisor_profiles')->pluck('advisor_key')->all();
+        foreach($advisorKeys as $advisorKey){
+            $advisorSlug=$advisorKey==='mike'?'lineup-advisor':'lineup-advisor-'.$advisorKey;
+            if($slug===$advisorSlug){$advisorSlugAllowed=true;break;}
+        }
+    }
+    abort_unless($advisorSlugAllowed||$validCurrent||$validFranchise,404);
 
     $validated=request()->validate(['image'=>'required|file|mimes:jpg,jpeg,png,webp|max:2048']);
     $file=$validated['image'];
@@ -92,20 +100,85 @@ Route::post('/team-icons/{slug}', function(string $slug) {
 })->where('slug','[A-Za-z0-9\-]+');
 
 Route::post('/lineup-advisors/{advisor}/profile', function(string $advisor) {
-    abort_unless(in_array($advisor,['mike','pierre','john'],true),404);
     abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles'),503);
+    $profile=DB::table('lineup_advisor_profiles')->where('advisor_key',$advisor)->first();
+    abort_unless($profile,404);
 
     $validated=request()->validate(['first_name'=>'required|string|max:40']);
     $firstName=trim((string)$validated['first_name']);
     abort_if($firstName==='',422,'First name is required.');
 
-    DB::table('lineup_advisor_profiles')->updateOrInsert(
-        ['advisor_key'=>$advisor],
-        ['first_name'=>$firstName,'updated_at'=>now(),'created_at'=>now()]
-    );
+    DB::table('lineup_advisor_profiles')->where('advisor_key',$advisor)->update([
+        'first_name'=>$firstName,
+        'updated_at'=>now(),
+    ]);
 
     return response()->json(['ok'=>true,'advisor'=>$advisor,'first_name'=>$firstName]);
-})->where('advisor','mike|pierre|john');
+})->where('advisor','[a-z0-9\-]+');
+
+Route::get('/admin', fn()=>redirect('/admin/advisors'));
+
+Route::get('/admin/advisors', function () {
+    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles'),503);
+    $advisors=DB::table('lineup_advisor_profiles')->orderBy('sort_order')->orderBy('id')->get();
+    return view('admin.advisors',compact('advisors'));
+});
+
+Route::post('/admin/advisors', function () {
+    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles'),503);
+    $validated=request()->validate([
+        'first_name'=>'required|string|max:40',
+        'style_text'=>'nullable|string|max:5000',
+        'is_conservative'=>'nullable|boolean',
+    ]);
+    $firstName=trim((string)$validated['first_name']);
+    $base=\Illuminate\Support\Str::slug($firstName)?:'advisor';
+    $key=$base;$suffix=2;
+    while(DB::table('lineup_advisor_profiles')->where('advisor_key',$key)->exists()){
+        $key=$base.'-'.$suffix++;
+    }
+    $nextOrder=((int)DB::table('lineup_advisor_profiles')->max('sort_order'))+10;
+    DB::table('lineup_advisor_profiles')->insert([
+        'advisor_key'=>$key,
+        'first_name'=>$firstName,
+        'style_text'=>trim((string)($validated['style_text']??'')),
+        'is_conservative'=>request()->boolean('is_conservative'),
+        'sort_order'=>$nextOrder,
+        'created_at'=>now(),
+        'updated_at'=>now(),
+    ]);
+    return redirect('/admin/advisors')->with('notice',$firstName.' added.');
+});
+
+Route::post('/admin/advisors/{advisor}', function(string $advisor) {
+    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles'),503);
+    abort_unless(DB::table('lineup_advisor_profiles')->where('advisor_key',$advisor)->exists(),404);
+    $validated=request()->validate([
+        'first_name'=>'required|string|max:40',
+        'style_text'=>'nullable|string|max:5000',
+        'is_conservative'=>'nullable|boolean',
+    ]);
+    DB::table('lineup_advisor_profiles')->where('advisor_key',$advisor)->update([
+        'first_name'=>trim((string)$validated['first_name']),
+        'style_text'=>trim((string)($validated['style_text']??'')),
+        'is_conservative'=>request()->boolean('is_conservative'),
+        'updated_at'=>now(),
+    ]);
+    return redirect('/admin/advisors')->with('notice','Advisor updated.');
+})->where('advisor','[a-z0-9\-]+');
+
+Route::delete('/admin/advisors/{advisor}', function(string $advisor) {
+    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles'),503);
+    abort_if(DB::table('lineup_advisor_profiles')->count()<=1,422,'At least one advisor is required.');
+    $profile=DB::table('lineup_advisor_profiles')->where('advisor_key',$advisor)->first();
+    abort_unless($profile,404);
+    DB::table('lineup_advisor_profiles')->where('advisor_key',$advisor)->delete();
+    if(\Illuminate\Support\Facades\Schema::hasTable('team_icons')){
+        $slug=$advisor==='mike'?'lineup-advisor':'lineup-advisor-'.$advisor;
+        DB::table('team_icons')->where('team_slug',$slug)->delete();
+    }
+    return redirect('/admin/advisors')->with('notice',$profile->first_name.' removed.');
+})->where('advisor','[a-z0-9\-]+');
 
 Route::get('/', function (EcfhlData $data) {
     $seasons=$data->seasons(); $teams=$data->teams(); $trades=$data->trades();
@@ -865,9 +938,11 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $fantasyTeamId=$rows->first()->fantasy_team_id??null;
     $fantraxTeamUrl=$fantasyTeamId?'https://www.fantrax.com/fantasy/league/092zcn40molvao69/team/roster;teamId='.$fantasyTeamId:null;
     $teamChoices=array_map(fn($name)=>['name'=>$name,'slug'=>\Illuminate\Support\Str::slug($name)],$currentNames);
-    $advisorProfiles=collect(['mike'=>'Mike','pierre'=>'Pierre','john'=>'John']);
+    $advisorProfiles=collect([
+        (object)['advisor_key'=>'mike','first_name'=>'Mike','style_text'=>'','is_conservative'=>false,'sort_order'=>10],
+    ]);
     if(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles')){
-        $advisorProfiles=DB::table('lineup_advisor_profiles')->pluck('first_name','advisor_key');
+        $advisorProfiles=DB::table('lineup_advisor_profiles')->orderBy('sort_order')->orderBy('id')->get();
     }
     return view('teams.current',compact('teamName','slug','date','yesterday','today','tomorrow','positions','targetGroups','lastUpdate','scoreLastUpdate','fantraxTeamUrl','teamChoices','teamTodayFpts','liveMatchup','nextWeekOpponent','lineupAdvice','movesLeftToday','rosterCounts','advisorProfiles'));
 });
