@@ -765,14 +765,29 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                 $advice='I like this option: '.$advice;
             }
         } else {
+            // John: blunt, impatient, accountability-first hockey coach tone.
             if($movesLeft===null){
-                $advice='I cannot confirm your moves remaining, so take a quick look at Fantrax first.';
+                $advice='Listen. I cannot see your claims remaining. Check Fantrax. Then we can talk about the lineup.';
             } elseif(!$hasMoveAvailable){
-                $advice='No moves left today. Let us roll with this lineup.';
+                $advice='No moves left. That is it. Stop looking for a magic fix. We gotta get to work with what we have.';
             } elseif(str_starts_with($advice,'Stand pat.')){
-                $advice='I would stay with the current group for now. '.substr($advice,strlen('Stand pat. '));
+                $rest=substr($advice,strlen('Stand pat. '));
+                $openers=[
+                    'Listen. Do not make a stupid move just to make a move. ',
+                    'Accountability. Earn it with the group you have. ',
+                    'Honestly, stop overthinking it. ',
+                    'We gotta get to work. No shortcuts. ',
+                ];
+                $advice=$openers[array_rand($openers)].$rest;
             } else {
-                $advice='Here is a solid option: '.$advice;
+                $openers=[
+                    'Listen. Here is the move. ',
+                    'Honestly, this is not complicated. ',
+                    'Earn it. Make the move and get to work. ',
+                    'Accountability. Fix the weak spot. ',
+                    'Are you kidding me with all the analysis? Do this. ',
+                ];
+                $advice=$openers[array_rand($openers)].$advice;
             }
         }
 
