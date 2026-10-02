@@ -547,6 +547,10 @@ html[data-theme="dark"] .team-live-matchup-label{background:transparent!importan
 /* Non-playing roster rows use the same background treatment as bench rows. */
 .team-not-playing,.team-not-playing td{background:#f3f4f6!important}
 html[data-theme="dark"] .team-not-playing,html[data-theme="dark"] .team-not-playing td{background:#1d2735!important}
+
+/* Keep player name/team and IR badge together on the first line on mobile. */
+.team-player-name-wrap>strong{display:inline!important}
+.team-player-name-wrap>.team-ir{display:inline-flex!important;flex:0 0 auto}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
