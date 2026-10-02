@@ -132,10 +132,11 @@ Route::post('/admin/advisors', function () {
         'is_conservative'=>'nullable|boolean',
     ]);
     $firstName=trim((string)$validated['first_name']);
-    $base=\Illuminate\Support\Str::slug($firstName)?:'advisor';
+    $base=substr(\Illuminate\Support\Str::slug($firstName)?:'advisor',0,20);
     $key=$base;$suffix=2;
     while(DB::table('lineup_advisor_profiles')->where('advisor_key',$key)->exists()){
-        $key=$base.'-'.$suffix++;
+        $suffixText='-'.$suffix++;
+        $key=substr($base,0,20-strlen($suffixText)).$suffixText;
     }
     $nextOrder=((int)DB::table('lineup_advisor_profiles')->max('sort_order'))+10;
     DB::table('lineup_advisor_profiles')->insert([
