@@ -2,6 +2,8 @@
   $liveOppText = trim((string)($player->live_opponent_display ?? ''));
   $rosterGameText = trim((string)($player->game_time ?? ''));
   $finalCheckText = trim($liveOppText.' '.$rosterGameText);
+  // Final-game marker is redundant on the player row and can wrap onto its own line as "F".
+  $liveOppText = preg_replace('/(?:\\s*[·|-]?\\s*)(?:F|Final)\\s*$/i', '', $liveOppText);
   $isGameFinished = !empty($player->game_finished)
     || ($finalCheckText !== '' && preg_match('/(?:\bF\b|\bFinal\b)\s*$/i', $finalCheckText));
 @endphp
@@ -27,7 +29,7 @@
         $showLiveOpp = (($player->today_gp ?? 0) > 0) && !empty($player->live_opponent_display);
       @endphp
       @if($showLiveOpp)
-        <span class="team-playing-text">{{ $player->live_opponent_display }}</span>
+        <span class="team-playing-text">{{ $liveOppText }}</span>
       @elseif($player->opponent)
         @php
           $displayGameTime = $player->game_time
