@@ -455,8 +455,12 @@ document.addEventListener('DOMContentLoaded',()=>{
 .team-icon-uploader img{display:block;width:46px;height:46px;object-fit:cover;border-radius:12px;box-shadow:0 2px 8px rgba(15,23,42,.12);background:#e2e8f0}
 .team-icon-modal{position:fixed;inset:0;z-index:5000;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(2,6,23,.82);backdrop-filter:blur(3px)}
 .team-icon-modal.open{display:flex}
-.team-icon-modal-card{position:relative;display:flex;align-items:center;justify-content:center;max-width:min(92vw,760px);max-height:88vh}
-.team-icon-modal-image{display:block;max-width:100%;max-height:88vh;width:auto;height:auto;border-radius:18px;box-shadow:0 18px 60px rgba(0,0,0,.45);background:#fff}
+.team-icon-modal-card{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;max-width:min(92vw,760px);max-height:88vh}
+.team-icon-modal-image{display:block;max-width:100%;max-height:calc(88vh - 58px);width:auto;height:auto;border-radius:18px;box-shadow:0 18px 60px rgba(0,0,0,.45);background:#fff}
+.team-icon-modal-actions{display:flex;align-items:center;justify-content:center;gap:8px}
+.team-icon-modal-upload{appearance:none;border:1px solid rgba(255,255,255,.22);background:#0b5f9e;color:#fff;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.team-icon-modal-upload:hover{background:#0d6fb8}
+.team-icon-modal-upload:disabled{opacity:.6;cursor:wait}
 .team-icon-modal-close{position:absolute;top:-14px;right:-14px;width:38px;height:38px;border:0;border-radius:50%;background:#fff;color:#0f172a;font-size:24px;font-weight:900;line-height:1;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.28)}
 .team-icon-modal-close:hover{background:#f1f5f9}
 .team-icon-modal-close:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
@@ -465,6 +469,10 @@ document.addEventListener('DOMContentLoaded',()=>{
 <div id="team-icon-modal" class="team-icon-modal" role="dialog" aria-modal="true" aria-label="Team icon preview" aria-hidden="true">
   <div class="team-icon-modal-card">
     <img id="team-icon-modal-image" class="team-icon-modal-image" alt="">
+    <div class="team-icon-modal-actions">
+      <button id="team-icon-modal-upload" class="team-icon-modal-upload" type="button">Upload new image</button>
+      <input id="team-icon-modal-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+    </div>
     <button id="team-icon-modal-close" class="team-icon-modal-close" type="button" aria-label="Close team icon preview">×</button>
   </div>
 </div>
@@ -473,13 +481,19 @@ document.addEventListener('DOMContentLoaded',()=>{
   const modal=document.getElementById('team-icon-modal');
   const modalImage=document.getElementById('team-icon-modal-image');
   const closeButton=document.getElementById('team-icon-modal-close');
-  if(!modal||!modalImage||!closeButton)return;
+  const uploadButton=document.getElementById('team-icon-modal-upload');
+  const fileInput=document.getElementById('team-icon-modal-file');
+  const csrf=document.querySelector('meta[name="csrf-token"]')?.content||'';
+  if(!modal||!modalImage||!closeButton||!uploadButton||!fileInput)return;
 
   let lastTrigger=null;
+  let activeSlug='';
+
   const closeModal=()=>{
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden','true');
     document.body.style.removeProperty('overflow');
+    fileInput.value='';
     lastTrigger?.focus();
   };
 
@@ -488,6 +502,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       const img=button.querySelector('img');
       if(!img)return;
       lastTrigger=button;
+      activeSlug=button.dataset.teamSlug||'';
       modalImage.src=img.currentSrc||img.src;
       modalImage.alt=img.alt||'Team icon';
       modal.classList.add('open');
@@ -495,6 +510,45 @@ document.addEventListener('DOMContentLoaded',()=>{
       document.body.style.overflow='hidden';
       closeButton.focus();
     });
+  });
+
+  uploadButton.addEventListener('click',()=>fileInput.click());
+  fileInput.addEventListener('change',async()=>{
+    const file=fileInput.files?.[0];
+    if(!file||!activeSlug)return;
+    if(file.size>2*1024*1024){
+      alert('Team icon must be 2 MB or smaller.');
+      fileInput.value='';
+      return;
+    }
+
+    const form=new FormData();
+    form.append('image',file);
+    uploadButton.disabled=true;
+    uploadButton.textContent='Uploading...';
+
+    try{
+      const response=await fetch('/team-icons/'+encodeURIComponent(activeSlug),{
+        method:'POST',
+        headers:{'X-CSRF-TOKEN':csrf,'Accept':'application/json'},
+        body:form
+      });
+      if(!response.ok){
+        let message='Could not upload team icon.';
+        try{const data=await response.json();message=data.message||message;}catch(e){}
+        throw new Error(message);
+      }
+      const data=await response.json();
+      const freshUrl=(data.url||('/team-icons/'+activeSlug))+(String(data.url||'').includes('?')?'&':'?')+'t='+Date.now();
+      modalImage.src=freshUrl;
+      document.querySelectorAll('[data-team-icon-viewer][data-team-slug="'+CSS.escape(activeSlug)+'"] img').forEach(img=>img.src=freshUrl);
+    }catch(error){
+      alert(error.message||'Could not upload team icon.');
+    }finally{
+      uploadButton.disabled=false;
+      uploadButton.textContent='Upload new image';
+      fileInput.value='';
+    }
   });
 
   closeButton.addEventListener('click',closeModal);
