@@ -168,6 +168,34 @@ Route::post('/admin/advisors/{advisor}', function(string $advisor) {
     return redirect('/admin/advisors')->with('notice','Advisor updated.');
 })->where('advisor','[a-z0-9\-]+');
 
+Route::post('/admin/advisors/{advisor}/image', function(string $advisor) {
+    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles'),503);
+    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('team_icons'),503);
+
+    $profile=DB::table('lineup_advisor_profiles')->where('advisor_key',$advisor)->first();
+    abort_unless($profile,404);
+
+    $validated=request()->validate([
+        'image'=>'required|file|mimes:jpg,jpeg,png,webp|max:2048',
+    ]);
+    $file=$validated['image'];
+    $bytes=file_get_contents($file->getRealPath());
+    abort_if($bytes===false,422,'Could not read image.');
+
+    $slug=$advisor==='mike'?'lineup-advisor':'lineup-advisor-'.$advisor;
+    DB::table('team_icons')->updateOrInsert(
+        ['team_slug'=>$slug],
+        [
+            'mime_type'=>$file->getMimeType()?:'image/png',
+            'image_data'=>base64_encode($bytes),
+            'updated_at'=>now(),
+            'created_at'=>now(),
+        ]
+    );
+
+    return redirect('/admin/advisors')->with('notice',$profile->first_name.' image updated.');
+})->where('advisor','[a-z0-9\-]+');
+
 Route::delete('/admin/advisors/{advisor}', function(string $advisor) {
     abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles'),503);
     abort_if(DB::table('lineup_advisor_profiles')->count()<=1,422,'At least one advisor is required.');
