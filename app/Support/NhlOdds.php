@@ -19,6 +19,21 @@ class NhlOdds
         'Vancouver Canucks'=>'VAN','Vegas Golden Knights'=>'VGK','Washington Capitals'=>'WSH','Winnipeg Jets'=>'WPG',
     ];
 
+    private function teamAbbreviation(string $name): ?string
+    {
+        $name=trim($name);
+        if($name==='')return null;
+        if(isset(self::TEAMS[$name]))return self::TEAMS[$name];
+
+        // The Odds API/bookmakers are not completely consistent about punctuation
+        // in team names (notably St. Louis / St Louis). Normalize both sides.
+        $normalized=strtolower(preg_replace('/[^a-z0-9]+/i','',$name));
+        foreach(self::TEAMS as $teamName=>$abbr){
+            if(strtolower(preg_replace('/[^a-z0-9]+/i','',$teamName))===$normalized)return $abbr;
+        }
+        return null;
+    }
+
     public function fetch(): array
     {
         $key = trim((string) env('THE_ODDS_API_KEY', ''));
@@ -43,8 +58,8 @@ class NhlOdds
         foreach ($games as $game) {
             $homeName = trim((string)($game['home_team'] ?? ''));
             $awayName = trim((string)($game['away_team'] ?? ''));
-            $home = self::TEAMS[$homeName] ?? null;
-            $away = self::TEAMS[$awayName] ?? null;
+            $home = $this->teamAbbreviation($homeName);
+            $away = $this->teamAbbreviation($awayName);
             $commence = $game['commence_time'] ?? null;
             if (!$home || !$away || !$commence) continue;
 
@@ -64,16 +79,7 @@ class NhlOdds
                     foreach (($market['outcomes'] ?? []) as $outcome) {
                         $name = trim((string)($outcome['name'] ?? ''));
                         $price = $outcome['price'] ?? null;
-                        $outcomeTeam = self::TEAMS[$name] ?? null;
-                        if (!$outcomeTeam && $name !== '') {
-                            $normalized = strtolower(preg_replace('/[^a-z0-9]+/i', '', $name));
-                            foreach (self::TEAMS as $teamName=>$abbr) {
-                                if (strtolower(preg_replace('/[^a-z0-9]+/i', '', $teamName)) === $normalized) {
-                                    $outcomeTeam = $abbr;
-                                    break;
-                                }
-                            }
-                        }
+                        $outcomeTeam = $this->teamAbbreviation($name);
                         if ($outcomeTeam && isset($prices[$outcomeTeam]) && is_numeric($price)) {
                             $prices[$outcomeTeam][] = (int) round($price);
                         }
