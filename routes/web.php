@@ -915,6 +915,26 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         report($e);
     }
 
+    $nextWeekLineup=['F'=>collect(),'D'=>collect(),'G'=>collect(),'Minors'=>collect()];
+    if(!empty($nextWeekOpponent)){
+        try{
+            $oppKey=preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower((string)$nextWeekOpponent['opponent']))??'';
+            $oppRows=DB::table('active_fantasy_rosters')
+                ->whereDate('game_date',$date)
+                ->get()
+                ->filter(fn($p)=>(preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower((string)($p->fantasy_team_name??'')))??'')===$oppKey);
+            foreach($oppRows as $p){
+                $status=strtoupper((string)($p->roster_status??''));
+                if($status==='MINORS'){
+                    $nextWeekLineup['Minors']->push($p);
+                    continue;
+                }
+                $pos=strtoupper((string)($p->position??''));
+                if(isset($nextWeekLineup[$pos]))$nextWeekLineup[$pos]->push($p);
+            }
+        }catch(\Throwable $e){report($e);}
+    }
+
     $rosterCounts=[
         'F'=>0,
         'D'=>0,
@@ -975,7 +995,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     if(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles')){
         $advisorProfiles=DB::table('lineup_advisor_profiles')->orderBy('sort_order')->orderBy('id')->get();
     }
-    return view('teams.current',compact('teamName','slug','date','yesterday','today','tomorrow','positions','targetGroups','lastUpdate','scoreLastUpdate','fantraxTeamUrl','teamChoices','teamTodayFpts','liveMatchup','nextWeekOpponent','lineupAdvice','movesLeftToday','rosterCounts','advisorProfiles'));
+    return view('teams.current',compact('teamName','slug','date','yesterday','today','tomorrow','positions','targetGroups','lastUpdate','scoreLastUpdate','fantraxTeamUrl','teamChoices','teamTodayFpts','liveMatchup','nextWeekOpponent','nextWeekLineup','lineupAdvice','movesLeftToday','rosterCounts','advisorProfiles'));
 });
 
 Route::get('/teams/{slug}', function(string $slug,EcfhlData $data){
