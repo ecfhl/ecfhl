@@ -645,7 +645,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                     $reason=$trailing
                         ? 'You are trailing. Make a move'
                         : ($isWeekend ? 'Use the weekend. Add another game' : 'This roster spot is not giving you enough');
-                    $suggestions[]=$reason.'. Add '.$displayPlayerName($target['name']).' ('.$target['team'].'). Drop '.$displayPlayerName($drop->player_name).'.';
+                    $suggestions[]='Also consider: Add '.$displayPlayerName($target['name']).' ('.$target['team'].') and drop '.$displayPlayerName($drop->player_name).' to improve your forward scoring potential.';
                 }
             }
         }
@@ -715,8 +715,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                 if($goalieStatus==='unconfirmed'){
                     array_unshift($suggestions,
                         $goalieReason.'No goalie tonight. '.$displayPlayerName($goalieTarget['name']).' ('.$goalieTarget['team'].')'
-                        .' [GOALIE_STATUS:'.$goalieTarget['starting_status'].']. Wait until this goalie is Confirmed before making the move. '
-                        .'Make sure notifications are turned on. If confirmed, add '.$displayPlayerName($goalieTarget['name'])
+                        .' [GOALIE_STATUS:'.$goalieTarget['starting_status'].']. Wait for him to be Confirmed before making a move. If confirmed, add '.$displayPlayerName($goalieTarget['name'])
                         .' and drop '.$displayPlayerName($drop->player_name).'.'
                     );
                 } else {
