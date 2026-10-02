@@ -278,10 +278,10 @@ document.addEventListener('DOMContentLoaded',()=>{
    let visible=5;
    let searchTerm='';
    const availableLines=withSkaterFilters?['1','2','3','4'].filter(line=>rows.some(row=>row.querySelector('.tips-line-'+line))):[];
-   const selectedLines=new Set(availableLines);
+   const selectedLines=new Set();
    const selectedPp=new Set();
    const selectedGoalies=new Set();
-   let includeInjured=true;
+   let filterInjured=false;
 
    const searchWrap=document.createElement('div');
    searchWrap.className='tips-search-wrap';
@@ -298,8 +298,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
    const matchesFilters=row=>{
      const isInjured=row.dataset.injured==='1';
-     if(!includeInjured && isInjured) return false;
-     if(includeInjured && isInjured) return true;
+     if(filterInjured && !isInjured) return false;
      if(withGoalieFilters&&selectedGoalies.size){
        const goaliePill=row.querySelector('.tips-g1,.tips-g2');
        if(!goaliePill)return false;
@@ -348,12 +347,12 @@ document.addEventListener('DOMContentLoaded',()=>{
 
    const bindInjuryButton=button=>{
      if(!button)return;
-     button.classList.toggle('active',includeInjured);
-     button.setAttribute('aria-pressed',includeInjured?'true':'false');
+     button.classList.remove('active');
+     button.setAttribute('aria-pressed','false');
      button.addEventListener('click',()=>{
-       includeInjured=!includeInjured;
-       button.classList.toggle('active',includeInjured);
-       button.setAttribute('aria-pressed',includeInjured?'true':'false');
+       filterInjured=!filterInjured;
+       button.classList.toggle('active',filterInjured);
+       button.setAttribute('aria-pressed',filterInjured?'true':'false');
        visible=5;
        render();
      });
@@ -386,8 +385,8 @@ document.addEventListener('DOMContentLoaded',()=>{
      filterWrap.setAttribute('aria-label',title+' line and power play filters');
      filterWrap.innerHTML=
        '<div class="tips-filter-row tips-line-filter-row">'+
-       availableLines.map(line=>'<button type="button" class="tips-filter-button tips-line-filter" data-line="'+line+'" aria-pressed="true">L'+line+'</button>').join('')+
-       '<button type="button" class="tips-filter-button tips-injury-filter active" aria-pressed="true">IR</button>'+
+       availableLines.map(line=>'<button type="button" class="tips-filter-button tips-line-filter" data-line="'+line+'" aria-pressed="false">L'+line+'</button>').join('')+
+       '<button type="button" class="tips-filter-button tips-injury-filter" aria-pressed="false">IR</button>'+
        '</div>'+
        '<div class="tips-filter-row tips-pp-filter-row">'+
        '<button type="button" class="tips-filter-button tips-pp-filter" data-pp="1" aria-pressed="false">PP1</button>'+
@@ -397,8 +396,8 @@ document.addEventListener('DOMContentLoaded',()=>{
      bindInjuryButton(filterWrap.querySelector('.tips-injury-filter'));
 
      filterWrap.querySelectorAll('.tips-line-filter').forEach(filter=>{
-       filter.classList.add('active');
-       filter.setAttribute('aria-pressed','true');
+       filter.classList.remove('active');
+       filter.setAttribute('aria-pressed','false');
        filter.addEventListener('click',()=>{
        const value=filter.dataset.line;
        if(selectedLines.has(value)){selectedLines.delete(value);filter.classList.remove('active');filter.setAttribute('aria-pressed','false');}
