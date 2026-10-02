@@ -361,10 +361,10 @@
                 <tr class="team-player-data-row {{ !$isPlaying?'team-not-playing':'' }} {{ $player->is_ir?'team-ir-row':'' }} {{ $player->is_bench?'team-bench-row':'' }} {{ strtoupper((string)$player->roster_status)==='MINORS'?'team-minors-row':'' }}" data-playing="{{ $isPlaying?'1':'0' }}">
                   <td data-label="Player">
                     <div class="team-player-name-wrap">
+                      <strong>{{ $player->player_name }}@if($player->nhl_team) ({{ $player->nhl_team }})@endif</strong>
                       @if($player->is_ir)
                         <span class="pill team-ir">IR</span>
                       @endif
-                      <strong>{{ $player->player_name }}@if($player->nhl_team) ({{ $player->nhl_team }})@endif</strong>
                       @if($player->is_bench)
                         <span class="pill team-bench">Bench</span>
                       @endif
