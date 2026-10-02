@@ -32,7 +32,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 <body>
 <header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a></div><div class="header-actions"><div class="push-picker-wrap"><button id="push-notifications-button" class="push-notification-toggle" type="button" aria-label="Scoring alerts" title="Scoring alerts">🔔</button><div id="push-team-picker" class="push-team-picker" role="dialog" aria-label="Scoring alert team"><label class="push-team-picker-label" for="push-team-select">Alert me for</label><select id="push-team-select" class="push-team-select" aria-label="Scoring notification team"><option value="">Select a team</option>@foreach($notificationTeams as $notificationTeam)<option value="{{ $notificationTeam->fantasy_team_id }}" data-team-url="/teams/current/{{ \Illuminate\Support\Str::slug($notificationTeam->fantasy_team_name) }}">{{ $notificationTeam->fantasy_team_name }}</option>@endforeach</select><div class="push-switch-row"><span>Notifications</span><label class="push-switch" title="Turn notifications on or off"><input id="push-notifications-switch" type="checkbox" role="switch" aria-label="Notifications"><span class="push-switch-track" aria-hidden="true"></span><span class="push-switch-thumb" aria-hidden="true"></span></label></div></div></div><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav">
 <a href="/" class="{{ request()->is('/')?'active':'' }}"><span class="nav-item-icon">⌂</span>Overview</a>
-<a id="my-team-nav-link" href="#" hidden><span class="nav-item-icon">★</span>My Team</a>
+<a id="my-team-nav-link" class="my-team-link" data-my-team-link href="#"><span class="nav-item-icon">★</span>My Team</a>
 <a href="/teams/current" class="{{ request()->is('teams/current','teams/current/*')?'active':'' }}"><span class="nav-item-icon nav-live-icon">●</span><span class="nav-live-text">Live Scoring</span></a>
 <a href="/standings" class="{{ request()->is('standings')?'active':'' }}"><span class="nav-item-icon">🏆</span>Standings</a>
 <a href="/daily-targets" class="{{ request()->is('daily-targets')?'active':'' }}"><span class="nav-item-icon nav-target-icon">🎯</span>Daily Targets</a>
@@ -77,23 +77,19 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
  const picker=document.getElementById('push-team-picker');
  const teamSelect=document.getElementById('push-team-select');
  const notificationSwitch=document.getElementById('push-notifications-switch');
- const myTeamLink=document.getElementById('my-team-nav-link');
+ const myTeamLinks=[...document.querySelectorAll('[data-my-team-link]')];
  const teamStorageKey='ecfhl-notification-team-id';
  const teamUrlStorageKey='ecfhl-notification-team-url';
 
  const syncMyTeamLink=()=>{
-   if(!myTeamLink)return;
    const storedId=localStorage.getItem(teamStorageKey)||'';
    const selectedOption=teamSelect?.querySelector('option[value="'+CSS.escape(storedId)+'"]');
    const url=selectedOption?.dataset.teamUrl||localStorage.getItem(teamUrlStorageKey)||'';
-   if(storedId&&url){
-     myTeamLink.href=url;
-     myTeamLink.hidden=false;
-     localStorage.setItem(teamUrlStorageKey,url);
-   }else{
-     myTeamLink.hidden=true;
-     myTeamLink.removeAttribute('href');
-   }
+   myTeamLinks.forEach(link=>{
+     link.href=storedId&&url?url:'#';
+     link.dataset.teamConfigured=storedId&&url?'1':'0';
+   });
+   if(storedId&&url)localStorage.setItem(teamUrlStorageKey,url);
  };
 
  if(teamSelect){
@@ -197,6 +193,14 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
    picker?.classList.toggle('open');
    if(picker?.classList.contains('open'))teamSelect?.focus();
  });
+
+ myTeamLinks.forEach(link=>link.addEventListener('click',event=>{
+   if(link.dataset.teamConfigured==='1')return;
+   event.preventDefault();
+   event.stopPropagation();
+   picker?.classList.add('open');
+   teamSelect?.focus();
+ }));
 
  notificationSwitch?.addEventListener('change',async event=>{
    event.stopPropagation();
