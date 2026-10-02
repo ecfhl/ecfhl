@@ -1,6 +1,7 @@
 const DB_NAME='ecfhl-push';
 const STORE='state';
 const KEY='lastNotificationId';
+const TEAM_KEY='notificationTeamId';
 
 function openDb(){
   return new Promise((resolve,reject)=>{
@@ -21,6 +22,26 @@ async function getLastId(){
   });
 }
 
+async function getNotificationTeamId(){
+  const db=await openDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(STORE,'readonly');
+    const req=tx.objectStore(STORE).get(TEAM_KEY);
+    req.onsuccess=()=>resolve(String(req.result||''));
+    req.onerror=()=>reject(req.error);
+  });
+}
+
+async function setNotificationTeamId(teamId){
+  const db=await openDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(STORE,'readwrite');
+    tx.objectStore(STORE).put(String(teamId||''),TEAM_KEY);
+    tx.oncomplete=()=>resolve();
+    tx.onerror=()=>reject(tx.error);
+  });
+}
+
 async function setLastId(id){
   const db=await openDb();
   return new Promise((resolve,reject)=>{
@@ -35,6 +56,9 @@ self.addEventListener('message',event=>{
   if(event.data?.type==='set-last-notification-id'){
     event.waitUntil(setLastId(event.data.id||0));
   }
+  if(event.data?.type==='set-notification-team'){
+    event.waitUntil(setNotificationTeamId(event.data.teamId||''));
+  }
 });
 
 self.addEventListener('push',event=>{
@@ -48,9 +72,11 @@ self.addEventListener('push',event=>{
     const data=await response.json();
     const notifications=Array.isArray(data.notifications)?data.notifications:[];
     let maxId=lastId;
+    const notificationTeamId=await getNotificationTeamId();
 
     for(const item of notifications){
       maxId=Math.max(maxId,Number(item.id||0));
+      if(item.category==='live-score' && (!notificationTeamId || String(item.fantasy_team_id||'')!==notificationTeamId))continue;
       await self.registration.showNotification(item.title||'ECFHL',{
         body:item.body||'',
         icon:'/ecfhl-logo.png',
