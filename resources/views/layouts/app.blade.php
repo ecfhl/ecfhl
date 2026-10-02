@@ -188,8 +188,28 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
    await updateButton();
  };
 
+ const resetPickerPosition=()=>{
+   if(!picker)return;
+   picker.style.removeProperty('position');
+   picker.style.removeProperty('left');
+   picker.style.removeProperty('right');
+   picker.style.removeProperty('top');
+ };
+
+ const positionPickerBelow=element=>{
+   if(!picker||!element)return;
+   const rect=element.getBoundingClientRect();
+   const pickerWidth=Math.min(230,window.innerWidth-20);
+   const left=Math.max(10,Math.min(rect.left,window.innerWidth-pickerWidth-10));
+   picker.style.position='fixed';
+   picker.style.left=left+'px';
+   picker.style.right='auto';
+   picker.style.top=(rect.bottom+8)+'px';
+ };
+
  button.addEventListener('click',event=>{
    event.stopPropagation();
+   resetPickerPosition();
    picker?.classList.toggle('open');
    if(picker?.classList.contains('open'))teamSelect?.focus();
  });
@@ -198,6 +218,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
    if(link.dataset.teamConfigured==='1')return;
    event.preventDefault();
    event.stopPropagation();
+   positionPickerBelow(link);
    picker?.classList.add('open');
    teamSelect?.focus();
  }));
@@ -232,8 +253,8 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
  });
 
  picker?.addEventListener('click',event=>event.stopPropagation());
- document.addEventListener('click',()=>picker?.classList.remove('open'));
- document.addEventListener('keydown',event=>{if(event.key==='Escape')picker?.classList.remove('open');});
+ document.addEventListener('click',()=>{picker?.classList.remove('open');resetPickerPosition();});
+ document.addEventListener('keydown',event=>{if(event.key==='Escape'){picker?.classList.remove('open');resetPickerPosition();}});
 
  if(supported && teamSelect){navigator.serviceWorker.ready.then(reg=>reg.active?.postMessage({type:'set-notification-team',teamId:localStorage.getItem(teamStorageKey)||''})).catch(()=>{});}
  syncMyTeamLink();
