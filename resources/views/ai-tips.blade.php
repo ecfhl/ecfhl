@@ -139,6 +139,6 @@
 .tips-section-heading .tips-source-button img[src="/dailyfaceoff-icon.png?v=4"]{width:14px!important;height:14px!important}
 .tips-section-heading .tips-source-button img[src="/fantrax-icon.png"]{width:12px!important;height:12px!important}
 @media(max-width:600px){.tips-section-heading{gap:1px!important}.tips-section-heading .tips-section-links{gap:3px!important}.tips-section-heading .tips-source-button{font-size:8px!important;padding:1px 2px!important;gap:2px!important}.tips-section-heading .tips-source-button img[src="/dailyfaceoff-icon.png?v=4"]{width:14px!important;height:14px!important}.tips-section-heading .tips-source-button img[src="/fantrax-icon.png"]{width:12px!important;height:12px!important}}
-</style>
+@media(max-width:800px){.tips-result-row{background:#fff!important}.tips-table tbody tr.tips-result-row{background:#fff!important}}</style>
 
 @endsection
