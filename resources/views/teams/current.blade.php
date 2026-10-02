@@ -219,40 +219,41 @@
 
   <section class="team-lineup-advisor" aria-label="Lineup Advisor">
     @php
-      $advisorRaw=strtolower((string)($lineupAdvice->advisor_name ?? 'Mike'));
-      $advisorKey=match($advisorRaw){
-        'pierre'=>'pierre',
-        'john'=>'john',
-        default=>'mike',
-      };
-      $advisorFirstName=$advisorProfiles[$advisorKey] ?? ucfirst($advisorKey);
-      $advisorImageSlug=match($advisorKey){
-        'pierre'=>'lineup-advisor-pierre',
-        'john'=>'lineup-advisor-john',
-        default=>'lineup-advisor',
-      };
-      $advisorAdviceVersions=[
-        'mike'=>$lineupAdvice->mike_advice_text ?? ($advisorKey==='mike' ? ($lineupAdvice->advice_text ?? null) : null),
-        'pierre'=>$lineupAdvice->pierre_advice_text ?? ($advisorKey==='pierre' ? ($lineupAdvice->advice_text ?? null) : null),
-        'john'=>$lineupAdvice->john_advice_text ?? ($advisorKey==='john' ? ($lineupAdvice->advice_text ?? null) : null),
-      ];
-      $advisorCycleData=[
-        'mike'=>[
-          'name'=>$advisorProfiles['mike'] ?? 'Mike',
-          'slug'=>'lineup-advisor',
-          'advice'=>$advisorAdviceVersions['mike'] ?? 'Run Update Advisors to generate Mike\'s version.',
-        ],
-        'pierre'=>[
-          'name'=>$advisorProfiles['pierre'] ?? 'Pierre',
-          'slug'=>'lineup-advisor-pierre',
-          'advice'=>$advisorAdviceVersions['pierre'] ?? 'Run Update Advisors to generate Pierre\'s version.',
-        ],
-        'john'=>[
-          'name'=>$advisorProfiles['john'] ?? 'John',
-          'slug'=>'lineup-advisor-john',
-          'advice'=>$advisorAdviceVersions['john'] ?? 'Run Update Advisors to generate John\'s version.',
-        ],
-      ];
+      $advisorProfilesByKey=$advisorProfiles->keyBy('advisor_key');
+      $advisorStoredKey=strtolower((string)($lineupAdvice->advisor_name ?? ''));
+      $advisorKey=$advisorProfilesByKey->has($advisorStoredKey)
+        ? $advisorStoredKey
+        : (string)($advisorProfiles->first()->advisor_key ?? 'mike');
+      $advisorProfile=$advisorProfilesByKey[$advisorKey] ?? $advisorProfiles->first();
+      $advisorFirstName=(string)($advisorProfile->first_name ?? ucfirst($advisorKey));
+      $advisorImageSlug=$advisorKey==='mike'?'lineup-advisor':'lineup-advisor-'.$advisorKey;
+
+      $storedAdvisorAdvice=[];
+      if(!empty($lineupAdvice?->advisor_advice_json)){
+        $decoded=json_decode((string)$lineupAdvice->advisor_advice_json,true);
+        if(is_array($decoded))$storedAdvisorAdvice=$decoded;
+      }
+
+      $advisorCycleData=[];
+      foreach($advisorProfiles as $profile){
+        $key=(string)$profile->advisor_key;
+        $name=(string)$profile->first_name;
+        $legacyAdvice=match($key){
+          'mike'=>$lineupAdvice->mike_advice_text ?? null,
+          'pierre'=>$lineupAdvice->pierre_advice_text ?? null,
+          'john'=>$lineupAdvice->john_advice_text ?? null,
+          default=>null,
+        };
+        $advice=$storedAdvisorAdvice[$key]['advice']
+          ?? $legacyAdvice
+          ?? ($key===$advisorKey ? ($lineupAdvice->advice_text ?? null) : null)
+          ?? ('Run Update Advisors to generate '.$name.'\'s version.');
+        $advisorCycleData[$key]=[
+          'name'=>$name,
+          'slug'=>$key==='mike'?'lineup-advisor':'lineup-advisor-'.$key,
+          'advice'=>$advice,
+        ];
+      }
     @endphp
     <div class="team-lineup-advisor-title">
       <button type="button" class="team-lineup-advisor-cycle" data-advisor-prev aria-label="Previous advisor">‹</button>
@@ -505,9 +506,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(advisorDataElement&&advisorCard){
     try{
       const advisorData=JSON.parse(advisorDataElement.textContent||'{}');
-      const order=['mike','pierre','john'];
       const advisors=advisorData.advisors||{};
-      let currentKey=order.includes(advisorData.current)?advisorData.current:'mike';
+      const order=Object.keys(advisors);
+      let currentKey=order.includes(advisorData.current)?advisorData.current:(order[0]||'');
       const nameSpan=advisorCard.querySelector('[data-advisor-display-name]');
       const imageButton=advisorCard.querySelector('[data-team-icon-viewer][data-advisor-key]');
       const image=imageButton?.querySelector('img');
