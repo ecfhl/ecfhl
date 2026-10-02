@@ -1361,7 +1361,7 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
                 if(!in_array(strtolower($newStatus),['confirmed','likely'],true))continue;
 
                 $body=$goalie->player_name.' ('.$goalie->team.') is now '.$newStatus.'.';
-                $fantraxGoalieUrl='https://www.fantrax.com/fantasy/league/0s9n0t98ly3jpry7/players';
+                $fantraxGoalieUrl='https://www.fantrax.com/fantasy/league/092zcn40molvao69/players;searchName='.rawurlencode(strtolower((string)$goalie->player_name)).';miscDisplayType=1;statusOrTeamFilter=ALL;positionOrGroup=ALL;pageNumber=1';
                 try {
                     $webPush->notify('goalie-status','Goalie Status',$body,$fantraxGoalieUrl);
                 } catch (\Throwable $e) {
