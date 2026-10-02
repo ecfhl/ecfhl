@@ -239,9 +239,9 @@
         $key=(string)$profile->advisor_key;
         $name=(string)$profile->first_name;
         $legacyAdvice=match($key){
-          'mike'=>$lineupAdvice->mike_advice_text ?? null,
-          'pierre'=>$lineupAdvice->pierre_advice_text ?? null,
-          'john'=>$lineupAdvice->john_advice_text ?? null,
+          'mike'=>$lineupAdvice?->mike_advice_text ?? null,
+          'pierre'=>$lineupAdvice?->pierre_advice_text ?? null,
+          'john'=>$lineupAdvice?->john_advice_text ?? null,
           default=>null,
         };
         $advice=$storedAdvisorAdvice[$key]['advice']
