@@ -288,9 +288,9 @@ document.addEventListener('DOMContentLoaded',()=>{
    let visible=5;
    let searchTerm='';
    const availableLines=withSkaterFilters?['1','2','3','4'].filter(line=>rows.some(row=>row.querySelector('.tips-line-'+line))):[];
-   const selectedLines=new Set();
+   const selectedLines=new Set(withSkaterFilters?availableLines:[]);
    const selectedPp=new Set();
-   const selectedGoalies=new Set();
+   const selectedGoalies=new Set(withGoalieFilters?['1','2']:[]);
    let filterInjured=false;
 
    const searchWrap=document.createElement('div');
@@ -308,32 +308,44 @@ document.addEventListener('DOMContentLoaded',()=>{
 
    const matchesFilters=row=>{
      const isInjured=row.dataset.injured==='1';
-     if(filterInjured && !isInjured) return false;
+     let matchesPositionFilters=true;
+
      if(withGoalieFilters&&selectedGoalies.size){
        const goaliePill=row.querySelector('.tips-g1,.tips-g2');
-       if(!goaliePill)return false;
-       const depth=goaliePill.classList.contains('tips-g1')?'1':'2';
-       if(!selectedGoalies.has(depth))return false;
+       if(!goaliePill){
+         matchesPositionFilters=false;
+       }else{
+         const depth=goaliePill.classList.contains('tips-g1')?'1':'2';
+         if(!selectedGoalies.has(depth))matchesPositionFilters=false;
+       }
      }
 
      if(withSkaterFilters){
        if(selectedLines.size){
          const linePill=row.querySelector('.tips-line');
-         if(!linePill)return false;
-         const match=[...linePill.classList].find(x=>/^tips-line-[1-4]$/.test(x));
-         const line=match?match.replace('tips-line-',''):null;
-         if(!line||!selectedLines.has(line))return false;
+         if(!linePill){
+           matchesPositionFilters=false;
+         }else{
+           const match=[...linePill.classList].find(x=>/^tips-line-[1-4]$/.test(x));
+           const line=match?match.replace('tips-line-',''):null;
+           if(!line||!selectedLines.has(line))matchesPositionFilters=false;
+         }
        }
 
        if(selectedPp.size){
          const ppPill=row.querySelector('.tips-pp1,.tips-pp2');
-         if(!ppPill)return false;
-         const pp=ppPill.classList.contains('tips-pp1')?'1':'2';
-         if(!selectedPp.has(pp))return false;
+         if(!ppPill){
+           matchesPositionFilters=false;
+         }else{
+           const pp=ppPill.classList.contains('tips-pp1')?'1':'2';
+           if(!selectedPp.has(pp))matchesPositionFilters=false;
+         }
        }
      }
 
-     return true;
+     // IR is additive: show injured players OR players matching the active
+     // goalie/line filters. It never narrows the current filter selection.
+     return filterInjured ? (isInjured || matchesPositionFilters) : matchesPositionFilters;
    };
 
    const moreButton=document.createElement('button');
@@ -377,8 +389,8 @@ document.addEventListener('DOMContentLoaded',()=>{
      searchWrap.insertAdjacentElement('afterend',filterWrap);
      bindInjuryButton(filterWrap.querySelector('.tips-injury-filter'));
      filterWrap.querySelectorAll('.tips-goalie-filter').forEach(filter=>{
-       filter.classList.remove('active');
-       filter.setAttribute('aria-pressed','false');
+       filter.classList.add('active');
+       filter.setAttribute('aria-pressed','true');
        filter.addEventListener('click',()=>{
        const value=filter.dataset.goalie;
        if(selectedGoalies.has(value)){selectedGoalies.delete(value);filter.classList.remove('active');filter.setAttribute('aria-pressed','false');}
@@ -406,8 +418,8 @@ document.addEventListener('DOMContentLoaded',()=>{
      bindInjuryButton(filterWrap.querySelector('.tips-injury-filter'));
 
      filterWrap.querySelectorAll('.tips-line-filter').forEach(filter=>{
-       filter.classList.remove('active');
-       filter.setAttribute('aria-pressed','false');
+       filter.classList.add('active');
+       filter.setAttribute('aria-pressed','true');
        filter.addEventListener('click',()=>{
        const value=filter.dataset.line;
        if(selectedLines.has(value)){selectedLines.delete(value);filter.classList.remove('active');filter.setAttribute('aria-pressed','false');}
