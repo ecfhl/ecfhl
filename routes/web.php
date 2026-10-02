@@ -31,6 +31,9 @@ Route::get('/team-icons/{slug}', function(string $slug) {
         if($slug==='lineup-advisor' && is_file(public_path('images/lineup-advisor-cartoon.svg'))){
             return response()->file(public_path('images/lineup-advisor-cartoon.svg'),['Cache-Control'=>'no-store, max-age=0']);
         }
+        if($slug==='lineup-advisor-pierre' && is_file(public_path('images/pierre-advisor.webp'))){
+            return response()->file(public_path('images/pierre-advisor.webp'),['Cache-Control'=>'no-store, max-age=0']);
+        }
         if($slug==='orcas' && is_file(public_path('images/team-icons/orcas.webp'))){
             return response()->file(public_path('images/team-icons/orcas.webp'),['Cache-Control'=>'no-store, max-age=0']);
         }
@@ -48,6 +51,9 @@ Route::get('/team-icons/{slug}', function(string $slug) {
     if($slug==='lineup-advisor' && is_file(public_path('images/lineup-advisor-cartoon.svg'))){
         return response()->file(public_path('images/lineup-advisor-cartoon.svg'),['Cache-Control'=>'no-store, max-age=0']);
     }
+    if($slug==='lineup-advisor-pierre' && is_file(public_path('images/pierre-advisor.webp'))){
+        return response()->file(public_path('images/pierre-advisor.webp'),['Cache-Control'=>'no-store, max-age=0']);
+    }
     if($slug==='orcas' && is_file(public_path('images/team-icons/orcas.webp'))){
         return response()->file(public_path('images/team-icons/orcas.webp'),['Cache-Control'=>'no-store, max-age=0']);
     }
@@ -64,7 +70,7 @@ Route::post('/team-icons/{slug}', function(string $slug) {
         ->contains(fn($name)=>\Illuminate\Support\Str::slug((string)$name)===$slug);
     $validFranchise=DB::table('franchises')->pluck('franchise_name')
         ->contains(fn($name)=>\Illuminate\Support\Str::slug((string)$name)===$slug);
-    abort_unless($slug==='lineup-advisor'||$validCurrent||$validFranchise,404);
+    abort_unless(in_array($slug,['lineup-advisor','lineup-advisor-pierre'],true)||$validCurrent||$validFranchise,404);
 
     $validated=request()->validate(['image'=>'required|file|mimes:jpg,jpeg,png,webp|max:2048']);
     $file=$validated['image'];
@@ -78,6 +84,22 @@ Route::post('/team-icons/{slug}', function(string $slug) {
 
     return response()->json(['ok'=>true,'url'=>'/team-icons/'.$slug.'?v='.now()->timestamp]);
 })->where('slug','[A-Za-z0-9\-]+');
+
+Route::post('/lineup-advisors/{advisor}/profile', function(string $advisor) {
+    abort_unless(in_array($advisor,['mike','pierre'],true),404);
+    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles'),503);
+
+    $validated=request()->validate(['first_name'=>'required|string|max:40']);
+    $firstName=trim((string)$validated['first_name']);
+    abort_if($firstName==='',422,'First name is required.');
+
+    DB::table('lineup_advisor_profiles')->updateOrInsert(
+        ['advisor_key'=>$advisor],
+        ['first_name'=>$firstName,'updated_at'=>now(),'created_at'=>now()]
+    );
+
+    return response()->json(['ok'=>true,'advisor'=>$advisor,'first_name'=>$firstName]);
+})->where('advisor','mike|pierre');
 
 Route::get('/', function (EcfhlData $data) {
     $seasons=$data->seasons(); $teams=$data->teams(); $trades=$data->trades();
@@ -837,7 +859,11 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $fantasyTeamId=$rows->first()->fantasy_team_id??null;
     $fantraxTeamUrl=$fantasyTeamId?'https://www.fantrax.com/fantasy/league/092zcn40molvao69/team/roster;teamId='.$fantasyTeamId:null;
     $teamChoices=array_map(fn($name)=>['name'=>$name,'slug'=>\Illuminate\Support\Str::slug($name)],$currentNames);
-    return view('teams.current',compact('teamName','slug','date','yesterday','today','tomorrow','positions','targetGroups','lastUpdate','scoreLastUpdate','fantraxTeamUrl','teamChoices','teamTodayFpts','liveMatchup','nextWeekOpponent','lineupAdvice','movesLeftToday','rosterCounts'));
+    $advisorProfiles=collect(['mike'=>'Mike','pierre'=>'Pierre']);
+    if(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles')){
+        $advisorProfiles=DB::table('lineup_advisor_profiles')->pluck('first_name','advisor_key');
+    }
+    return view('teams.current',compact('teamName','slug','date','yesterday','today','tomorrow','positions','targetGroups','lastUpdate','scoreLastUpdate','fantraxTeamUrl','teamChoices','teamTodayFpts','liveMatchup','nextWeekOpponent','lineupAdvice','movesLeftToday','rosterCounts','advisorProfiles'));
 });
 
 Route::get('/teams/{slug}', function(string $slug,EcfhlData $data){
