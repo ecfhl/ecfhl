@@ -404,9 +404,17 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   const highlightNotificationTeam=()=>{
     const selected=localStorage.getItem('ecfhl-notification-team-id')||'';
+    let selectedCard=null;
     cards.forEach(card=>{
-      card.classList.toggle('notification-team-matchup',!!selected && (card.dataset.awayTeamId===selected || card.dataset.homeTeamId===selected));
+      const matches=!!selected && (card.dataset.awayTeamId===selected || card.dataset.homeTeamId===selected);
+      card.classList.toggle('notification-team-matchup',matches);
+      if(matches)selectedCard=card;
     });
+    if(selectedCard){
+      const list=selectedCard.parentElement;
+      const firstCard=list?.querySelector('.matchup-card');
+      if(list && firstCard && firstCard!==selectedCard)list.insertBefore(selectedCard,firstCard);
+    }
   };
   highlightNotificationTeam();
   const teamSelect=document.getElementById('push-team-select');
