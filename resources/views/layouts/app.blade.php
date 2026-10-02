@@ -520,6 +520,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     modal.setAttribute('aria-hidden','true');
     document.body.style.removeProperty('overflow');
     fileInput.value='';
+    fileInput.disabled=false;
+    uploadButton.hidden=false;
     activeAdvisorKey='';
     advisorNameRow?.classList.remove('open');
     lastTrigger?.focus();
@@ -535,13 +537,15 @@ document.addEventListener('DOMContentLoaded',()=>{
       modalImage.src=img.currentSrc||img.src;
       modalImage.alt=img.alt||'Team icon';
       if(advisorNameRow&&advisorNameInput){
-        if(activeAdvisorKey){
-          advisorNameInput.value=button.dataset.advisorFirstName||'';
-          advisorNameRow.classList.add('open');
-        }else{
-          advisorNameInput.value='';
-          advisorNameRow.classList.remove('open');
-        }
+        advisorNameInput.value='';
+        advisorNameRow.classList.remove('open');
+      }
+      if(activeAdvisorKey){
+        uploadButton.hidden=true;
+        fileInput.disabled=true;
+      }else{
+        uploadButton.hidden=false;
+        fileInput.disabled=false;
       }
       modal.classList.add('open');
       modal.setAttribute('aria-hidden','false');
