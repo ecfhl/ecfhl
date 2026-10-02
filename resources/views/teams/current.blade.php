@@ -221,7 +221,7 @@
     <div class="team-lineup-advisor-title">Lineup Advisor</div>
     <div class="team-lineup-advisor-body">
       <div class="team-lineup-advisor-photo">
-        <img src="/images/babcock-advisor.webp" alt="Lineup Advisor">
+        <img src="/images/lineup-advisor-cartoon.svg" alt="Lineup Advisor">
       </div>
       <div class="team-lineup-content">
       <div class="team-lineup-meta">
