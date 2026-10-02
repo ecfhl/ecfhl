@@ -4,11 +4,17 @@
 <div class="shell job-status">
     <div class="status-actions">
         <a class="button status-back" href="/daily-targets">← Back to Daily Targets</a>
-        <form method="POST" action="/job-status/run/all" class="run-all-form job-ajax-form" data-job="all">
-            @csrf
-            <input type="hidden" name="return_to" value="job-status">
-            <button type="submit" class="button primary run-all">Refresh Data</button>
-        </form>
+        <div class="status-action-buttons">
+            <form method="POST" action="/job-status/test-goalie-notification" class="test-notification-form">
+                @csrf
+                <button type="submit" class="button test-notification">Send Test Notification</button>
+            </form>
+            <form method="POST" action="/job-status/run/all" class="run-all-form job-ajax-form" data-job="all">
+                @csrf
+                <input type="hidden" name="return_to" value="job-status">
+                <button type="submit" class="button primary run-all">Refresh Data</button>
+            </form>
+        </div>
     </div>
     <div id="job-live-results" class="job-live-results" hidden aria-live="polite"><button type="button" class="job-live-close" aria-label="Close message">×</button><pre class="job-live-text"></pre></div>
     <div class="status-grid">
@@ -48,7 +54,7 @@
     <p class="subtle status-footer">Times shown in Atlantic time. “Current” is based on the expected refresh interval; source data itself may not change on every check.</p>
 </div>
 <style>
-.status-actions{margin:20px 0 0;display:flex;align-items:center;justify-content:space-between;gap:12px}.status-back{text-decoration:none}.run-all-form{margin:0}.run-all{cursor:pointer;padding:7px 12px;font-size:12px}.run-all:disabled,.run-now:disabled{opacity:.65;cursor:wait}.status-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:18px 0 24px}.status-card{padding:20px;display:flex;flex-direction:column;height:100%}.status-card-success{border-color:#86efac;background:#f0fdf4}.status-card-warning{border-color:#fcd34d;background:#fffbeb}.status-card-failed{border-color:#fecaca;background:#fff1f2}.job-outcomes-cleared .status-card{background:#fff!important;border-color:var(--line)!important}.job-outcomes-cleared .status-card.job-run-active.status-card-success{background:#f0fdf4!important;border-color:#86efac!important}.job-outcomes-cleared .status-card.job-run-active.status-card-warning{background:#fffbeb!important;border-color:#fcd34d!important}.job-outcomes-cleared .status-card.job-run-active.status-card-failed{background:#fff1f2!important;border-color:#fecaca!important}.status-failed-pill{background:#fee2e2;color:#b91c1c;border-color:#fecaca}.status-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.status-head h2{margin:0;font-size:19px}.status-head p{margin:4px 0 0}.status-card dl{margin:20px 0 0}.status-card dl div{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-top:1px solid var(--line)}.status-card dt{color:var(--muted);font-size:13px}.status-card dd{margin:0;text-align:right;font-weight:800}.status-ok{background:#dcfce7;color:#166534;border-color:#86efac}.status-stale{background:#fef3c7;color:#92400e;border-color:#fcd34d}.status-empty{background:#e5e7eb;color:#4b5563;border-color:#d1d5db}.status-note{font-size:12px;margin:14px 0 0}.status-footer{font-size:12px;margin-bottom:28px}.run-form{margin-top:auto;padding-top:16px}.run-now{width:100%;cursor:pointer}.job-results{margin:0 0 22px}.job-results h2{font-size:17px;margin:0 0 10px}.job-message,.job-live-results{padding:12px 14px;border-radius:10px;font-weight:700;white-space:pre-wrap}.job-live-results{position:relative;padding-right:42px}.job-live-text{margin:0;font:inherit;white-space:pre-wrap}.job-live-close{position:absolute;top:7px;right:9px;width:26px;height:26px;border:0;border-radius:999px;background:transparent;color:inherit;font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}.job-live-close:hover{background:rgba(0,0,0,.08)}.job-message+.job-message{margin-top:10px}.job-message-ok,.job-live-results.ok{background:#dcfce7;color:#166534;border:1px solid #86efac}.job-message-error,.job-live-results.error{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}.job-live-results.warning{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}.job-live-results{margin:18px 0 0;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;line-height:1.55}@media(max-width:800px){.status-actions{align-items:flex-start}.status-grid{grid-template-columns:1fr}.status-card{padding:16px}}
+.status-actions{margin:20px 0 0;display:flex;align-items:center;justify-content:space-between;gap:12px}.status-action-buttons{display:flex;align-items:center;gap:8px}.test-notification-form{margin:0}.test-notification{cursor:pointer;padding:7px 12px;font-size:12px}.status-back{text-decoration:none}.run-all-form{margin:0}.run-all{cursor:pointer;padding:7px 12px;font-size:12px}.run-all:disabled,.run-now:disabled{opacity:.65;cursor:wait}.status-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:18px 0 24px}.status-card{padding:20px;display:flex;flex-direction:column;height:100%}.status-card-success{border-color:#86efac;background:#f0fdf4}.status-card-warning{border-color:#fcd34d;background:#fffbeb}.status-card-failed{border-color:#fecaca;background:#fff1f2}.job-outcomes-cleared .status-card{background:#fff!important;border-color:var(--line)!important}.job-outcomes-cleared .status-card.job-run-active.status-card-success{background:#f0fdf4!important;border-color:#86efac!important}.job-outcomes-cleared .status-card.job-run-active.status-card-warning{background:#fffbeb!important;border-color:#fcd34d!important}.job-outcomes-cleared .status-card.job-run-active.status-card-failed{background:#fff1f2!important;border-color:#fecaca!important}.status-failed-pill{background:#fee2e2;color:#b91c1c;border-color:#fecaca}.status-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.status-head h2{margin:0;font-size:19px}.status-head p{margin:4px 0 0}.status-card dl{margin:20px 0 0}.status-card dl div{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-top:1px solid var(--line)}.status-card dt{color:var(--muted);font-size:13px}.status-card dd{margin:0;text-align:right;font-weight:800}.status-ok{background:#dcfce7;color:#166534;border-color:#86efac}.status-stale{background:#fef3c7;color:#92400e;border-color:#fcd34d}.status-empty{background:#e5e7eb;color:#4b5563;border-color:#d1d5db}.status-note{font-size:12px;margin:14px 0 0}.status-footer{font-size:12px;margin-bottom:28px}.run-form{margin-top:auto;padding-top:16px}.run-now{width:100%;cursor:pointer}.job-results{margin:0 0 22px}.job-results h2{font-size:17px;margin:0 0 10px}.job-message,.job-live-results{padding:12px 14px;border-radius:10px;font-weight:700;white-space:pre-wrap}.job-live-results{position:relative;padding-right:42px}.job-live-text{margin:0;font:inherit;white-space:pre-wrap}.job-live-close{position:absolute;top:7px;right:9px;width:26px;height:26px;border:0;border-radius:999px;background:transparent;color:inherit;font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}.job-live-close:hover{background:rgba(0,0,0,.08)}.job-message+.job-message{margin-top:10px}.job-message-ok,.job-live-results.ok{background:#dcfce7;color:#166534;border:1px solid #86efac}.job-message-error,.job-live-results.error{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}.job-live-results.warning{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}.job-live-results{margin:18px 0 0;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;line-height:1.55}@media(max-width:800px){.status-actions{align-items:flex-start}.status-grid{grid-template-columns:1fr}.status-card{padding:16px}}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
@@ -87,6 +93,22 @@ document.addEventListener('DOMContentLoaded',()=>{
      card.style.background='#fff';
      card.style.borderColor='var(--line)';
    });
+ });
+ const testForm=document.querySelector('.test-notification-form');
+ if(testForm)testForm.addEventListener('submit',async e=>{
+   e.preventDefault();
+   const button=testForm.querySelector('button');
+   const csrf=testForm.querySelector('input[name="_token"]')?.value || document.querySelector('meta[name="csrf-token"]')?.content;
+   const original=button.textContent;
+   button.disabled=true;button.textContent='Sending…';
+   try{
+     const response=await fetch('/job-status/test-goalie-notification',{method:'POST',credentials:'same-origin',headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest','X-CSRF-TOKEN':csrf,'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:new URLSearchParams({_token:csrf}).toString()});
+     const data=await response.json();
+     if(!response.ok||!data.ok)throw new Error(data.message||'Could not send test notification.');
+     box.hidden=false;box.className='job-live-results ok';boxText.textContent=data.message;saveBox();
+   }catch(err){
+     box.hidden=false;box.className='job-live-results error';boxText.textContent='Test notification failed: '+err.message;saveBox();
+   }finally{button.disabled=false;button.textContent=original;}
  });
  const headings={players:'Getting available players in Fantrax...',goalies:'Getting goalie information from Daily Faceoff...',lines:'Getting Lines information from Daily Faceoff...',odds:'Getting NHL moneyline odds...',teams:'Getting current fantasy team rosters from Fantrax...',scores:'Refreshing live daily scores...',standings:'Refreshing current standings from Fantrax...',advisor:'Regenerating lineup advice for all teams...'};
  const colorCard=(job,status)=>{
