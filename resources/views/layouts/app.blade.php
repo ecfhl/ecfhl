@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded',()=>{
      filterWrap.className='tips-line-pp-filters';
      filterWrap.setAttribute('role','group');
      filterWrap.setAttribute('aria-label',title+' goalie depth filters');
-     filterWrap.innerHTML='<div class="tips-filter-row tips-goalie-filter-row"><button type="button" class="tips-filter-button tips-goalie-filter" data-goalie="1" aria-pressed="false">G1</button><button type="button" class="tips-filter-button tips-goalie-filter" data-goalie="2" aria-pressed="false">G2</button><button type="button" class="tips-filter-button tips-injury-filter active" aria-pressed="true">IR</button></div>';
+     filterWrap.innerHTML='<div class="tips-filter-row tips-goalie-filter-row"><button type="button" class="tips-filter-button tips-goalie-filter" data-goalie="1" aria-pressed="false">G1</button><button type="button" class="tips-filter-button tips-goalie-filter" data-goalie="2" aria-pressed="false">G2</button><button type="button" class="tips-filter-button tips-injury-filter" aria-pressed="false">IR</button></div>';
      searchWrap.insertAdjacentElement('afterend',filterWrap);
      bindInjuryButton(filterWrap.querySelector('.tips-injury-filter'));
      filterWrap.querySelectorAll('.tips-goalie-filter').forEach(filter=>{
