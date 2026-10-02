@@ -85,10 +85,16 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
    const storedId=localStorage.getItem(teamStorageKey)||'';
    const selectedOption=teamSelect?.querySelector('option[value="'+CSS.escape(storedId)+'"]');
    const url=selectedOption?.dataset.teamUrl||localStorage.getItem(teamUrlStorageKey)||'';
+   const currentPath=location.pathname.replace(/\/$/,'');
+   const teamPath=url?new URL(url,location.origin).pathname.replace(/\/$/,''):'';
+   const isMyTeamPage=!!(storedId&&url&&currentPath===teamPath);
    myTeamLinks.forEach(link=>{
      link.href=storedId&&url?url:'#';
      link.dataset.teamConfigured=storedId&&url?'1':'0';
+     link.classList.toggle('active',isMyTeamPage);
    });
+   const liveScoringLink=document.querySelector('.main-nav a[href="/teams/current"]');
+   if(liveScoringLink && isMyTeamPage)liveScoringLink.classList.remove('active');
    if(storedId&&url)localStorage.setItem(teamUrlStorageKey,url);
  };
 
