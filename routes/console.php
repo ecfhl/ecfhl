@@ -469,6 +469,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
     };
 
     foreach($teams as $teamId=>$teamRows){
+        $advisorName=random_int(0,1)===0?'Mike':'Pierre';
         $teamName=(string)($teamRows->first()->fantasy_team_name??$teamId);
         $teamScore=$scheduleScores[(string)$teamId]??null;
         $opponentScore=null;
@@ -743,6 +744,28 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             $advice=implode(' ', $suggestions);
         }
 
+        if($advisorName==='Mike'){
+            if($movesLeft===null){
+                $advice='I cannot see your claims remaining. Check Fantrax before you touch the roster.';
+            } elseif(!$hasMoveAvailable){
+                $advice='No moves left. You are done for today.';
+            } elseif(str_starts_with($advice,'Stand pat.')){
+                $advice='Do not force it. '.substr($advice,strlen('Stand pat. '));
+            } else {
+                $advice='Here is the move. '.$advice;
+            }
+        } else {
+            if($movesLeft===null){
+                $advice='I cannot see your claims remaining right now, so check Fantrax before making a move.';
+            } elseif(!$hasMoveAvailable){
+                $advice='You are out of moves for today, so we will work with what you have.';
+            } elseif(str_starts_with($advice,'Stand pat.')){
+                $advice='I would stay patient here. '.substr($advice,strlen('Stand pat. '));
+            } else {
+                $advice='I like this option: '.$advice;
+            }
+        }
+
         DB::table('lineup_advice')
             ->whereDate('advice_date',$date)
             ->where('fantasy_team_id',(string)$teamId)
@@ -752,6 +775,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             'fantasy_team_id'=>(string)$teamId,
             'fantasy_team_name'=>$teamName,
             'moves_left'=>$movesLeft,
+            'advisor_name'=>$advisorName,
             'advice_text'=>$advice,
             'generated_at'=>now(),
             'created_at'=>now(),
