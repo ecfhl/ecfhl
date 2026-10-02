@@ -32,6 +32,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 <body>
 <header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a></div><div class="header-actions"><div class="push-picker-wrap"><button id="push-notifications-button" class="push-notification-toggle" type="button" aria-label="Scoring alerts" title="Scoring alerts">🔔</button><div id="push-team-picker" class="push-team-picker" role="dialog" aria-label="Scoring alert team"><label class="push-team-picker-label" for="push-team-select">Alert me for</label><select id="push-team-select" class="push-team-select" aria-label="Scoring notification team"><option value="">Select a team</option>@foreach($notificationTeams as $notificationTeam)<option value="{{ $notificationTeam->fantasy_team_id }}" data-team-url="/teams/current/{{ \Illuminate\Support\Str::slug($notificationTeam->fantasy_team_name) }}">{{ $notificationTeam->fantasy_team_name }}</option>@endforeach</select><button id="push-disable-button" class="push-disable-button" type="button">Turn off notifications</button></div></div><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav">
 <a href="/" class="{{ request()->is('/')?'active':'' }}"><span class="nav-item-icon">⌂</span>Overview</a>
+<a id="my-team-nav-link" href="#" hidden><span class="nav-item-icon">★</span>My Team</a>
 <a href="/teams/current" class="{{ request()->is('teams/current','teams/current/*')?'active':'' }}"><span class="nav-item-icon nav-live-icon">●</span><span class="nav-live-text">Live Scoring</span></a>
 <a href="/standings" class="{{ request()->is('standings')?'active':'' }}"><span class="nav-item-icon">🏆</span>Standings</a>
 <a href="/daily-targets" class="{{ request()->is('daily-targets')?'active':'' }}"><span class="nav-item-icon nav-target-icon">🎯</span>Daily Targets</a>
@@ -47,7 +48,6 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
     <a class="nav-history-link" href="/teams">Franchise History</a>
   </div>
 </div>
-<a id="my-team-nav-link" href="#" hidden><span class="nav-item-icon">★</span>My Team</a>
 <div class="nav-dropdown {{ request()->is('seasons','seasons/*','prizes','trades','draft','players')?'active':'' }}">
   <div class="nav-dropdown-row">
     <a class="nav-dropdown-main-link" href="/teams"><span class="nav-item-icon">📖</span>Archive</a>
