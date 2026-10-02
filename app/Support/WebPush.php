@@ -41,13 +41,14 @@ class WebPush
             ->delete();
     }
 
-    public function notify(string $category,string $title,string $body,?string $url=null): void
+    public function notify(string $category,string $title,string $body,?string $url=null,?string $fantasyTeamId=null): void
     {
         $id=DB::table('push_notifications')->insertGetId([
             'category'=>$category,
             'title'=>$title,
             'body'=>$body,
             'url'=>$url,
+            'fantasy_team_id'=>$fantasyTeamId,
             'created_at'=>now(),
             'updated_at'=>now(),
         ]);
