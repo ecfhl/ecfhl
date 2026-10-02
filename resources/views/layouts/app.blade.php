@@ -448,5 +448,55 @@ document.addEventListener('DOMContentLoaded',()=>{
 </style>
 @endif
 <style>.header-actions{display:flex;align-items:center;gap:8px;margin-left:auto}.header-theme-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}@media(min-width:901px){.header-actions{order:3}.main-nav{order:2}.header-theme-toggle{margin-left:6px}}</style>
+<style>
+.team-icon-uploader{appearance:none;border:0;background:transparent;padding:0;margin:0;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;border-radius:12px}
+.team-icon-uploader:hover{filter:brightness(.96)}
+.team-icon-uploader:focus-visible{outline:2px solid #60a5fa;outline-offset:3px}
+.team-icon-uploader img{display:block;width:46px;height:46px;object-fit:cover;border-radius:12px;box-shadow:0 2px 8px rgba(15,23,42,.12);background:#e2e8f0}
+@media(max-width:700px){.team-icon-uploader img{width:40px;height:40px;border-radius:10px}}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+  const csrf=document.querySelector('meta[name="csrf-token"]')?.content||'';
+  document.querySelectorAll('[data-team-icon-upload]').forEach(button=>{
+    const slug=button.dataset.teamSlug;
+    const input=document.querySelector('[data-team-icon-input][data-team-slug="'+CSS.escape(slug)+'"]');
+    if(!input)return;
+    button.addEventListener('click',()=>input.click());
+    input.addEventListener('change',async()=>{
+      const file=input.files?.[0];
+      if(!file)return;
+      if(file.size>2*1024*1024){
+        alert('Team icon must be 2 MB or smaller.');
+        input.value='';
+        return;
+      }
+      const form=new FormData();
+      form.append('image',file);
+      button.disabled=true;
+      try{
+        const response=await fetch('/team-icons/'+encodeURIComponent(slug),{
+          method:'POST',
+          headers:{'X-CSRF-TOKEN':csrf,'Accept':'application/json'},
+          body:form
+        });
+        if(!response.ok){
+          let message='Could not upload team icon.';
+          try{const data=await response.json();message=data.message||message;}catch(e){}
+          throw new Error(message);
+        }
+        const data=await response.json();
+        const img=button.querySelector('img');
+        if(img)img.src=(data.url||('/team-icons/'+slug))+'&t='+Date.now();
+      }catch(error){
+        alert(error.message||'Could not upload team icon.');
+      }finally{
+        button.disabled=false;
+        input.value='';
+      }
+    });
+  });
+});
+</script>
 @stack('scripts')
 </body></html>
