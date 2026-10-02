@@ -511,6 +511,25 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
 }
 .matchup-player-row.team-game-finished-row{background:#fffbea!important}
 html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#3a3217!important}
+
+/* Keep the expanded matchup scoreboard readable in dark mode. */
+html[data-theme="dark"] .team-live-matchup,
+html[data-theme="dark"] .matchup-summary,
+html[data-theme="dark"] .matchup-roster-grid,
+html[data-theme="dark"] .matchup-roster-col,
+html[data-theme="dark"] .matchup-player-row{background:#fff!important;color:#172033!important}
+html[data-theme="dark"] .matchup-summary-side,
+html[data-theme="dark"] .matchup-team-name,
+html[data-theme="dark"] .matchup-player-name,
+html[data-theme="dark"] .matchup-player-row strong,
+html[data-theme="dark"] .matchup-player-row .matchup-stat-value{color:#172033!important}
+html[data-theme="dark"] .matchup-roster-section-title,
+html[data-theme="dark"] .matchup-roster-heading{background:#eef2f7!important;color:#475569!important}
+html[data-theme="dark"] .matchup-player-row,
+html[data-theme="dark"] .matchup-roster-col,
+html[data-theme="dark"] .matchup-roster-grid{border-color:#e2e8f0!important}
+html[data-theme="dark"] .matchup-player-row .subtle,
+html[data-theme="dark"] .matchup-player-row .matchup-stat-label{color:#64748b!important}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
