@@ -42,7 +42,7 @@
       @else
         <span class="team-playing-text">Playing</span>
       @endif
-      <span class="matchup-player-cats">@foreach(['today_gp'=>'GP','today_g'=>'G','today_a'=>'A','today_ppg'=>'PPG','today_shg'=>'SHG','today_gwg'=>'GWG','today_w'=>'W','today_so'=>'SO'] as $field=>$label)@if(($player->{$field} ?? 0) != 0)<span>{{ $label }}: {{ $player->{$field} }}</span>@endif @endforeach</span>
+      <span class="matchup-player-cats"><span class="matchup-player-cats-primary">@foreach(['today_gp'=>'GP','today_g'=>'G','today_a'=>'A'] as $field=>$label)@if(($player->{$field} ?? 0) != 0)<span>{{ $label }}: {{ $player->{$field} }}</span>@endif @endforeach</span><span class="matchup-player-cats-special">@foreach(['today_ppg'=>'PPG','today_shg'=>'SHG','today_gwg'=>'GWG','today_w'=>'W','today_so'=>'SO'] as $field=>$label)@if(($player->{$field} ?? 0) != 0)<span>{{ $label }}: {{ $player->{$field} }}</span>@endif @endforeach</span></span>
     </div>
   </div>
   <div class="matchup-player-metrics">
