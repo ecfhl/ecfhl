@@ -27,7 +27,7 @@ $leaders['winnings'] = collect($prizeTotals)->map(fn($r) => [
 .home-hero-actions{position:relative;z-index:3}
 .home-hero-actions .home-nav-button{background:#1769aa;color:#fff;border-color:#2f7fbd;cursor:pointer;touch-action:manipulation;position:relative;z-index:4}
 .home-hero-actions .home-nav-button:hover{background:#1e78bd;color:#fff}
-.home-hero-actions .my-team-button{background:#1769aa;color:#fff;border-color:#2f7fbd}.home-hero-actions .my-team-button:hover{background:#1e78bd;color:#fff}
+.home-hero-actions .my-team-button{background:#0f8b8d;color:#fff;border-color:#14a3a6}.home-hero-actions .my-team-button:hover{background:#0d7375;color:#fff}
 .home-hero-actions .live-scoring-button{background:#c62828;color:#fff;border-color:#c62828}
 .home-hero-actions .live-scoring-button:hover{background:#b71c1c;color:#fff}
 .home-hero-actions .standings-button{background:#1769aa;color:#fff;border-color:#2f7fbd}
