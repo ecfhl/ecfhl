@@ -804,6 +804,16 @@ Route::post('/push/subscribe', function () {
     }
 });
 
+Route::post('/push/team', function () {
+    $endpoint=trim((string)request('endpoint',''));
+    $teamId=trim((string)request('fantasy_team_id',''));
+    if($endpoint==='')return response()->json(['ok'=>false],422);
+    DB::table('push_subscriptions')
+        ->where('endpoint_hash',hash('sha256',$endpoint))
+        ->update(['fantasy_team_id'=>$teamId!==''?$teamId:null,'updated_at'=>now()]);
+    return response()->json(['ok'=>true]);
+});
+
 Route::post('/push/unsubscribe', function () {
     $endpoint=(string)request('endpoint','');
     if($endpoint!=='')app(\App\Support\WebPush::class)->unsubscribe($endpoint);
