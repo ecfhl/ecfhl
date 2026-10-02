@@ -385,10 +385,12 @@ html[data-theme="dark"] .team-away{color:#fbbf24}
   .matchup-player-row{position:relative;padding-bottom:29px}
   .matchup-player-metrics{gap:6px}
   .matchup-player-metrics>div:first-child{position:absolute;right:8px;bottom:6px;display:flex;align-items:baseline;gap:4px;color:#4b5563}
-  .matchup-player-metrics>div:first-child span,.matchup-player-metrics>div:first-child strong{display:inline;color:#4b5563!important}
-  .matchup-player-metrics span{font-size:11px}
+  .matchup-player-metrics>div:first-child span{display:inline;color:#4b5563!important;font-size:9px}
+  .matchup-player-metrics>div:first-child strong{display:inline;color:#4b5563!important;font-size:13px}
+  .matchup-player-metrics span{font-size:13px}
   .matchup-player-metrics strong{font-size:17px}
-  .matchup-player-today strong{font-size:18px}
+  .matchup-player-today span{font-size:13px}
+  .matchup-player-today strong{font-size:21px}
 }
 .matchup-player-row.team-game-finished-row{background:#fffbea!important}
 html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#3a3217!important}
