@@ -56,7 +56,11 @@ class WebPush
         // Keep the anonymous feed compact.
         DB::table('push_notifications')->where('id','<',$id-250)->delete();
 
-        foreach(DB::table('push_subscriptions')->where('enabled',true)->get() as $subscription){
+        $subscriptions=DB::table('push_subscriptions')->where('enabled',true);
+        if($category==='live-score' && $fantasyTeamId!==null){
+            $subscriptions->where('fantasy_team_id',$fantasyTeamId);
+        }
+        foreach($subscriptions->get() as $subscription){
             try {
                 $status=$this->sendEmptyPush((string)$subscription->endpoint);
                 if(in_array($status,[404,410],true)){
