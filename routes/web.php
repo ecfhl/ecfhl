@@ -919,8 +919,8 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     if(!empty($nextWeekOpponent)){
         try{
             $oppKey=preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower((string)$nextWeekOpponent['opponent']))??'';
+            // active_fantasy_rosters is the current snapshot and has no date column.
             $oppRows=DB::table('active_fantasy_rosters')
-                ->whereDate('roster_date',$date)
                 ->get()
                 ->filter(fn($p)=>(preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower((string)($p->fantasy_team_name??'')))??'')===$oppKey);
             foreach($oppRows as $p){
