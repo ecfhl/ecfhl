@@ -220,7 +220,9 @@
       <div class="team-next-lineup">
         <div class="team-next-lineup-label">Next week's current lineup</div>
         @foreach(['F'=>'Forwards','D'=>'Defense','G'=>'Goalies','Minors'=>'Minors'] as $nextCode=>$nextLabel)
-          @php($nextPlayers=collect($nextWeekLineup[$nextCode]??[]))
+          @php
+            $nextPlayers = collect($nextWeekLineup[$nextCode] ?? []);
+          @endphp
           <div class="team-next-lineup-group">
             <div class="team-next-lineup-heading">{{ $nextLabel }} ({{ $nextPlayers->count() }})</div>
             @forelse($nextPlayers as $nextPlayer)
