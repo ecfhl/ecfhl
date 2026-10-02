@@ -565,9 +565,9 @@ html[data-theme="dark"] .team-not-playing,html[data-theme="dark"] .team-not-play
 .team-target-lines .pill{padding:1px 5px!important;font-size:9px!important;line-height:1.05}
 
 /* Soften the advisor portrait inside the card. */
-.team-lineup-advisor-photo{padding:8px;box-sizing:border-box;overflow:visible}
-.team-lineup-advisor-photo-button{overflow:hidden;border-radius:8px;box-shadow:0 3px 10px rgba(15,23,42,.14)}
-.team-lineup-advisor-photo img{border-radius:8px!important}
+.team-lineup-advisor-photo{padding:0;box-sizing:border-box;overflow:visible;align-self:start;justify-self:start}
+.team-lineup-advisor-photo-button{overflow:hidden;border-radius:6%;box-shadow:0 3px 10px rgba(15,23,42,.14)}
+.team-lineup-advisor-photo img{border-radius:6%!important}
 html[data-theme="dark"] .team-lineup-advisor-photo-button{box-shadow:0 4px 14px rgba(0,0,0,.35)}
 </style>
 <script>
