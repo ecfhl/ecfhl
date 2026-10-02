@@ -300,7 +300,9 @@
     </div>
   </section>
 
-  @php($hasRows=collect($positions)->sum(fn($g)=>$g['rows']->count())>0)
+  @php
+    $hasRows=collect($positions)->sum(fn($g)=>$g['rows']->count())>0;
+  @endphp
   @if(!$hasRows)
     <div class="card"><h2>No roster data yet</h2><p class="subtle">Run the Fantasy Team Rosters collector from Collector Status to populate this team.</p><a class="button primary" href="/job-status">Collector Status</a></div>
   @else
@@ -328,7 +330,9 @@
               </td>
             </tr>
             @foreach($group['rows'] as $player)
-                @php($isPlaying=(bool)$player->is_playing)
+                @php
+                  $isPlaying=(bool)$player->is_playing;
+                @endphp
                 <tr class="team-player-data-row {{ !$isPlaying?'team-not-playing':'' }} {{ $player->is_ir?'team-ir-row':'' }} {{ $player->is_bench?'team-bench-row':'' }} {{ strtoupper((string)$player->roster_status)==='MINORS'?'team-minors-row':'' }}" data-playing="{{ $isPlaying?'1':'0' }}">
                   <td data-label="Player">
                     <div class="team-player-name-wrap">
