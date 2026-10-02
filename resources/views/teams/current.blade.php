@@ -218,7 +218,9 @@
   @endif
 
   <section class="team-lineup-advisor" aria-label="Lineup Advisor">
-    @php($advisorName=$lineupAdvice->advisor_name ?? 'Mike')
+    @php
+      $advisorName=$lineupAdvice->advisor_name ?? 'Mike';
+    @endphp
     <div class="team-lineup-advisor-title">Lineup Advisor · {{ $advisorName }}</div>
     <div class="team-lineup-advisor-body">
       <div class="team-lineup-advisor-photo">
