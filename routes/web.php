@@ -816,7 +816,7 @@ Route::get('/push/notifications', function () {
         ->where('id','>',$after)
         ->orderBy('id')
         ->limit(25)
-        ->get(['id','category','title','body','url']);
+        ->get(['id','category','title','body','url','fantasy_team_id']);
     return response()->json(['notifications'=>$rows])->header('Cache-Control','no-store');
 });
 
