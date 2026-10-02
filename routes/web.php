@@ -920,7 +920,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         try{
             $oppKey=preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower((string)$nextWeekOpponent['opponent']))??'';
             $oppRows=DB::table('active_fantasy_rosters')
-                ->whereDate('game_date',$date)
+                ->whereDate('roster_date',$date)
                 ->get()
                 ->filter(fn($p)=>(preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower((string)($p->fantasy_team_name??'')))??'')===$oppKey);
             foreach($oppRows as $p){
