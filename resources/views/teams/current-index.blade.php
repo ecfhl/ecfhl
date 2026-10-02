@@ -145,14 +145,14 @@
       @endphp
 
       <details class="matchup-card" data-matchup-key="{{ ($away['id'] ?? $away['slug'] ?? 'away') }}::{{ ($home['id'] ?? $home['slug'] ?? 'home') }}">
-        <summary class="matchup-summary">
+        <summary class="matchup-summary"><div class="matchup-side-header matchup-side-header-away">AWAY</div><div class="matchup-side-header matchup-side-header-home">HOME</div>
           <div class="matchup-summary-side matchup-summary-away">
             @if($away)
               <div class="matchup-summary-name">
                 <a href="/teams/current/{{ $away['slug'] }}?date={{ $date }}">{{ $away['name'] }}</a>
                 <div class="matchup-summary-meta matchup-summary-meta-away">
                   <div class="matchup-meta-row">
-                    <span class="matchup-side-pill away-pill">AWAY</span>
+                    
                     <span class="matchup-playing-counts">
                       @if($awayPlayingCounts['F']>0)<span class="position-count-pill {{ $awayPlayingCounts['F']>=8?'full':'' }}">{{ $awayPlayingCounts['F'] }} Forward{{ $awayPlayingCounts['F']==1?'':'s' }}</span>@endif
                       @if($awayPlayingCounts['D']>0)<span class="position-count-pill {{ $awayPlayingCounts['D']>=4?'full':'' }}">{{ $awayPlayingCounts['D'] }} {{ $awayPlayingCounts['D']==1?'Defenseman':'Defensemen' }}</span>@endif
@@ -186,7 +186,7 @@
                       @if($homePlayingCounts['G']>0)<span class="position-count-pill {{ $homePlayingCounts['G']>=1?'full':'' }}">{{ $homePlayingCounts['G'] }} Goaltender{{ $homePlayingCounts['G']==1?'':'s' }}</span>@endif
                       @if($homePlayingCounts['B']>0)<span class="position-count-pill bench-count-pill">{{ $homePlayingCounts['B'] }} Bench</span>@endif
                     </span>
-                    <span class="matchup-side-pill home-pill">HOME</span>
+                    
                   </div>
                   <div class="matchup-meta-row matchup-meta-row-home matchup-stat-row">
                     <span class="matchup-daily-cats">@foreach(['gp'=>'GP','g'=>'G','a'=>'A','ppg'=>'PPG','shg'=>'SHG','gwg'=>'GWG','w'=>'W','so'=>'SO'] as $key=>$label)@if(($home['today_stats'][$key] ?? 0) != 0)<span>{{ $label }}: {{ $home['today_stats'][$key] }}</span>@endif @endforeach</span>
@@ -287,7 +287,7 @@
 .matchup-period-label{margin:4px 0 10px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:flex;align-items:center;justify-content:space-between;gap:10px}.matchup-period-updated{font-size:10px;font-weight:700;letter-spacing:0;text-transform:none;white-space:nowrap}
 .current-matchup-list{display:flex;flex-direction:column;gap:7px;margin-bottom:20px}
 .matchup-card{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}.matchup-card[open]{border:3px solid #2563eb}
-.matchup-summary{display:grid;grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr);align-items:center;gap:8px;padding:9px 14px;cursor:pointer;list-style:none;background:#fff}
+.matchup-side-header{display:none}.matchup-summary{display:grid;grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr);align-items:center;gap:8px;padding:9px 14px;cursor:pointer;list-style:none;background:#fff}
 .matchup-summary::-webkit-details-marker{display:none}
 .matchup-summary-side{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}
 .matchup-summary-home{text-align:right;justify-content:flex-end}\n.matchup-summary-home .matchup-summary-name{margin-left:auto;width:auto;max-width:100%;align-items:flex-end;text-align:right;flex:0 1 auto}\n.matchup-summary-home .matchup-summary-name>a{display:block;width:100%;text-align:right}
@@ -361,7 +361,7 @@ html[data-theme="dark"] .team-bench-row{background:#1d2735}
 html[data-theme="dark"] .team-minors-row{background:#17263a}
 html[data-theme="dark"] .team-home{color:#4ade80}
 html[data-theme="dark"] .team-away{color:#fbbf24}
-@media(max-width:800px){
+@media(max-width:800px){.matchup-summary{position:relative;padding-top:25px!important}.matchup-side-header{display:block;position:absolute;top:6px;font-size:9px;font-weight:900;letter-spacing:.08em;color:#64748b}.matchup-side-header-away{left:9px}.matchup-side-header-home{right:9px}
   .matchup-summary{grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr);padding:8px 10px}
   .matchup-summary-score{font-size:18px}
   .matchup-summary-name a{font-size:12px}
