@@ -422,8 +422,10 @@
                 <div class="team-target-row" data-target-row @if($loop->iteration>5) hidden @endif>
                   <div class="team-target-main">
                     <div class="team-target-name">
-                      @if(!empty($target['injury_status']))<span class="pill team-ir">IR</span>@endif
                       <strong>{{ $target['name'] }} ({{ $target['team'] }})</strong>
+                      @if(!empty($target['injury_status']))<span class="pill team-ir">IR</span>@endif
+                    </div>
+                    <div class="team-target-lines">
                       <span class="pill team-target-status {{ str_starts_with($target['status'],'FA')?'target-fa':'target-waiver' }}">{{ $target['status'] }}</span>
                       @if(!empty($target['line_number']))
                         @if($code==='G' && $target['line_number']<=2)
@@ -551,6 +553,16 @@ html[data-theme="dark"] .team-not-playing,html[data-theme="dark"] .team-not-play
 /* Keep player name/team and IR badge together on the first line on mobile. */
 .team-player-name-wrap>strong{display:inline!important}
 .team-player-name-wrap>.team-ir{display:inline-flex!important;flex:0 0 auto}
+
+/* Roster name/IR line and target player typography. */
+.team-player-name-wrap{display:block!important}
+.team-player-name-wrap>strong,.team-player-name-wrap>.team-ir{vertical-align:middle}
+.team-player-name-wrap>.team-ir{display:inline-flex!important;margin-left:3px!important}
+.team-target-name{display:block!important;font-size:18px!important;line-height:1.15!important}
+.team-target-name>strong,.team-target-name>.team-ir{vertical-align:middle}
+.team-target-name>.team-ir{display:inline-flex!important;margin-left:3px!important}
+.team-target-lines{display:flex;align-items:center;gap:4px;margin-top:4px;min-height:18px}
+.team-target-lines .pill{padding:1px 5px!important;font-size:9px!important;line-height:1.05}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
