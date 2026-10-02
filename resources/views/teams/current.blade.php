@@ -541,7 +541,7 @@ html[data-theme="dark"] .team-matchup-period-label{color:#94a3b8!important}
 html[data-theme="dark"] .team-live-matchup{background:transparent!important}
 html[data-theme="dark"] .team-live-matchup-label{background:transparent!important;color:#94a3b8!important}
 .team-player-lines{display:flex;align-items:center;gap:4px;margin-top:4px;min-height:18px}.team-player-lines:empty{display:none}.team-player-lines .pill{font-size:9px;padding:1px 5px}
-.team-roster-table .team-today-fpts{font-size:20px!important;font-weight:900!important;line-height:1!important}
+.team-roster-table .team-today-fpts{font-size:24px!important;font-weight:900!important;line-height:1!important}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
