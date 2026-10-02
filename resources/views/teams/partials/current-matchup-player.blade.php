@@ -4,6 +4,8 @@
   $finalCheckText = trim($liveOppText.' '.$rosterGameText);
   // Final-game marker is redundant on the player row and can wrap onto its own line as "F".
   $liveOppText = preg_replace('/(?:\\s*[·|-]?\\s*)(?:F|Final)\\s*$/i', '', $liveOppText);
+  // Normalize live team scoring so only the first team is prefixed with @.
+  $liveOppText = preg_replace('/\\s+@(?=[A-Z]{2,4}\\b)/', ' ', $liveOppText);
   $isGameFinished = !empty($player->game_finished)
     || ($finalCheckText !== '' && preg_match('/(?:\bF\b|\bFinal\b)\s*$/i', $finalCheckText));
 @endphp
