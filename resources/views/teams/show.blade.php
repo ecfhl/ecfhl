@@ -3,20 +3,12 @@
 @section('content')
 <div class="shell">
 @php
-$teamIconKey=strtolower(preg_replace('/[^a-z0-9]+/','-',iconv('UTF-8','ASCII//TRANSLIT//IGNORE',$team['team']??'')));
-$teamIconThemes=[
-'orcas'=>['🐋','#111827'],'multiple-scoregasms'=>['⛸️','#ea580c'],'brasse-camarade'=>['🍺','#dc2626'],
-'bookhockey'=>['📖','#92400e'],'one-man-bang'=>['🏒','#ef4444'],'formenton-s-construction-company'=>['🛠️','#f97316'],
-'lone-tsar'=>['⚡','#eab308'],'north-shore-explorers'=>['🌊','#0e7490'],'mullet-mafia'=>['🏒','#2563eb'],
-'young-guns'=>['🥅','#6d28d9'],'ammon-keys-balls'=>['🦦','#78716c'],'green-machine'=>['🍁','#15803d'],
-'morning-sherwoods'=>['🌲','#166534'],'big-bogan-beaking'=>['🏒','#1e3a8a']
-];
-$teamIcon=$teamIconThemes[$teamIconKey]??['🏒','#0b5f9e'];
+$teamIconKey=\Illuminate\Support\Str::slug((string)($team['team']??'team'));
 @endphp
 <style>
-.franchise-title{display:flex;align-items:center;gap:12px}.franchise-team-image{object-fit:cover;padding:0}.franchise-team-icon{width:58px;height:58px;border-radius:16px;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--team-icon) 14%,white);border:2px solid color-mix(in srgb,var(--team-icon) 38%,white);font-size:34px;line-height:1;box-shadow:0 3px 10px rgba(15,23,42,.08);flex:0 0 58px}@media(max-width:700px){.franchise-team-icon{width:50px;height:50px;flex-basis:50px;font-size:30px}.franchise-title{gap:9px}}
+.franchise-title{display:flex;align-items:center;gap:12px}.franchise-title .team-icon-uploader img{width:58px;height:58px;border-radius:16px}.franchise-title .team-icon-uploader{flex:0 0 58px}@media(max-width:700px){.franchise-title .team-icon-uploader img{width:50px;height:50px;border-radius:14px}.franchise-title .team-icon-uploader{flex-basis:50px}.franchise-title{gap:9px}}
 </style>
-<div class="page-head"><div class="eyebrow">Franchise history</div><h1 class="franchise-title">@if(strtolower($team['team'] ?? '') === 'orcas')<img class="franchise-team-icon franchise-team-image" src="{{ asset('images/team-icons/orcas.webp') }}" alt="Orcas">@elseif($teamIconKey==='lone-tsar')<img class="franchise-team-icon franchise-team-image" src="{{ asset('images/team-icons/lone-tsar.png') }}" alt="Lone Tsar">@else<span class="franchise-team-icon" style="--team-icon:{{ $teamIcon[1] }}">{{ $teamIcon[0] }}</span>@endif<span>{{ $team['team'] }}</span></h1><p>Complete recorded franchise history.</p></div>
+<div class="page-head"><div class="eyebrow">Franchise history</div><h1 class="franchise-title">@include('teams.partials.team-icon-uploader',['slug'=>$teamIconKey,'name'=>$team['team']])<span>{{ $team['team'] }}</span></h1><p>Complete recorded franchise history.</p></div>
 @php
 $archive=app(\App\Support\Archive::class);
 $franchiseOptions=$archive->teamLedger($archive->mode(),'all');
