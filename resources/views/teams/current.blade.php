@@ -7,7 +7,7 @@
       $isLoneTsarTeam=str_contains((string)$teamName,'Ꮮ૦ท૯') || stripos((string)$teamName,'Lone Tsar')!==false;
     @endphp
     <label class="team-title-switcher">
-      @if($isLoneTsarTeam)<img class="team-title-logo" src="{{ asset('images/team-icons/lone-tsar.webp') }}" alt="Lone Tsar">@endif
+      @if($isLoneTsarTeam)<img class="team-title-logo" src="{{ asset('images/team-icons/lone-tsar.png') }}" alt="Lone Tsar">@endif
       <span class="sr-only">Team</span>
       <select aria-label="Team" onchange="if(this.value) location.href='/teams/current/'+this.value+'?date={{ $date }}'">
         @foreach($teamChoices as $choice)
