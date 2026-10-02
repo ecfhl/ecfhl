@@ -71,6 +71,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
   <div class="nav-dropdown-menu archive-menu">
     <a href="/job-status">Collector Status</a>
     <a href="/admin/advisors">Advisors</a>
+    <a href="/admin/team-images">Team Images</a>
   </div>
 </div>
 </nav></div></header>
