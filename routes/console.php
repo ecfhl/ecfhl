@@ -944,6 +944,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                 $rumourTeam=trim((string)($rumourPlayer->fantasy_team_name??''));
                 if($rumourName!=='' && $rumourTeam!==''){
                     $rumours=[
+                        "Keep an eye on this one. {player} from {team} could be had for the right price.",
                         "I'm hearing {player} from {team} could be on the market. Nothing concrete yet, but there has been some chatter.",
                         "A couple of people around the league have mentioned {player} from {team} as a name to watch on the trade market.",
                         "Don't be surprised if {team} starts taking calls on {player}. That's a situation worth monitoring.",
