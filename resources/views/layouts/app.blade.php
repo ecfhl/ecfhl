@@ -280,7 +280,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    const availableLines=withSkaterFilters?['1','2','3','4'].filter(line=>rows.some(row=>row.querySelector('.tips-line-'+line))):[];
    const selectedLines=new Set(availableLines);
    const selectedPp=new Set();
-   const selectedGoalies=new Set(withGoalieFilters?['1','2']:[]);
+   const selectedGoalies=new Set();
    let includeInjured=true;
 
    const searchWrap=document.createElement('div');
