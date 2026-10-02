@@ -764,18 +764,78 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             $baseAdvice=implode(' ', $suggestions);
         }
 
+        // At most one advisor may recommend saving the move. Pierre is the
+        // usual conservative voice; occasionally John gets fed up and does it.
+        // If either is removed in Admin, fall back to another conservative
+        // advisor, then to any current advisor.
+        $advisorKeys=$advisorProfiles->pluck('advisor_key')->map(fn($v)=>(string)$v)->all();
+        if(in_array('pierre',$advisorKeys,true) && in_array('john',$advisorKeys,true)){
+            $standPatAdvisorKey=random_int(1,100)<=80?'pierre':'john';
+        } elseif(in_array('pierre',$advisorKeys,true)){
+            $standPatAdvisorKey='pierre';
+        } elseif(in_array('john',$advisorKeys,true)){
+            $standPatAdvisorKey='john';
+        } else {
+            $fallbackConservative=$advisorProfiles->first(fn($p)=>(bool)($p->is_conservative??false));
+            $standPatAdvisorKey=(string)(($fallbackConservative??$advisorProfiles->random())->advisor_key);
+        }
+
         $usedAdvisorTargets=[];
-        $distinctAdvisorAdvice=function(string $raw,bool $conservative=false)use(
-            &$usedAdvisorTargets,$availableGroups,$advisorNameKey,$rankTeam,$displayPlayerName
+        $distinctAdvisorAdvice=function(string $raw,string $advisorKey,bool $allowStandPat=false)use(
+            &$usedAdvisorTargets,$availableGroups,$advisorNameKey,$rankTeam,$displayPlayerName,$eligibleDrops
         ){
-            if(!preg_match('/\\badd\\s+/i',$raw))return $raw;
+            $standPatText=function()use($advisorKey){
+                if($advisorKey==='john'){
+                    return "Stand pat. I'm done doing the work for you. Save the move and figure out what your roster actually needs.";
+                }
+                return 'Stand pat. Save the move. There is not another distinct option strong enough to justify a transaction right now.';
+            };
+
+            $pickFallbackMove=function()use(
+                &$usedAdvisorTargets,$availableGroups,$advisorNameKey,$rankTeam,$displayPlayerName,$eligibleDrops,$allowStandPat,$standPatText
+            ){
+                $drop=$eligibleDrops
+                    ->sortBy(fn($p)=>(float)($p->projected_fpts_per_game??0))
+                    ->first();
+                if(!$drop)return $standPatText();
+
+                foreach(['F','D','G'] as $position){
+                    $pool=array_values($availableGroups[$position]??[]);
+                    if(!$pool)continue;
+                    $bestProjected=max(array_map(fn($p)=>(float)($p['projected_points']??0),$pool));
+                    foreach($pool as $player){
+                        $key=$advisorNameKey($player['name']??'').'|'.$rankTeam($player['team']??'').'|'.$position;
+                        if(isset($usedAdvisorTargets[$key]))continue;
+
+                        if($allowStandPat){
+                            $projected=(float)($player['projected_points']??0);
+                            if($bestProjected>0 && $projected<($bestProjected*0.70))continue;
+                            if($position==='G'){
+                                $status=strtolower(trim((string)($player['starting_status']??'')));
+                                if(!in_array($status,['confirmed','likely','probable'],true))continue;
+                            }
+                        }
+
+                        $usedAdvisorTargets[$key]=true;
+                        return 'Add '.$displayPlayerName($player['name']??'').' ('.strtoupper((string)($player['team']??'')).') and drop '.$displayPlayerName($drop->player_name).'.';
+                    }
+                }
+                return $standPatText();
+            };
+
+            if(!preg_match('/\\badd\\s+/i',$raw)){
+                if(str_starts_with($raw,'Stand pat.')){
+                    return $allowStandPat?$standPatText():$pickFallbackMove();
+                }
+                return $raw;
+            }
 
             $replacementMap=[];
             $failed=false;
             $result=preg_replace_callback(
                 '/\\b(Add|add)\\s+(.+?)\\s+\\(([A-Z]{2,3})\\)(?:,\\s*([0-9.]+)\\s+projected FPts)?/u',
                 function($m)use(
-                    $conservative,&$usedAdvisorTargets,&$replacementMap,&$failed,
+                    $allowStandPat,&$usedAdvisorTargets,&$replacementMap,&$failed,
                     $availableGroups,$advisorNameKey,$rankTeam,$displayPlayerName
                 ){
                     $oldName=trim((string)$m[2]);
@@ -799,7 +859,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                         }
                         if(!$position){$failed=true;return $m[0];}
 
-                        $pool=array_slice(array_values($availableGroups[$position]??[]),0,5);
+                        $pool=array_values($availableGroups[$position]??[]);
                         $bestProjected=0.0;
                         foreach($pool as $player){
                             $bestProjected=max($bestProjected,(float)($player['projected_points']??0));
@@ -810,7 +870,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                             $key=$advisorNameKey($player['name']??'').'|'.$rankTeam($player['team']??'').'|'.$position;
                             if(isset($usedAdvisorTargets[$key]))continue;
 
-                            if($conservative){
+                            if($allowStandPat){
                                 $projected=(float)($player['projected_points']??0);
                                 if($bestProjected>0 && $projected<($bestProjected*0.70))continue;
                                 if($position==='G'){
@@ -841,7 +901,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             ) ?? $raw;
 
             if($failed){
-                return 'Stand pat. Save the move. There is not another distinct option strong enough to justify a transaction right now.';
+                return $allowStandPat?$standPatText():$pickFallbackMove();
             }
 
             foreach($replacementMap as $originalKey=>$candidate){
@@ -882,11 +942,13 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         $advisorAdvice=[];
         foreach($advisorProfiles as $profile){
             $key=(string)$profile->advisor_key;
-            $raw=$distinctAdvisorAdvice($baseAdvice,(bool)($profile->is_conservative??false));
+            $allowStandPat=$key===$standPatAdvisorKey;
+            $raw=$distinctAdvisorAdvice($baseAdvice,$key,$allowStandPat);
             $advisorAdvice[$key]=[
                 'name'=>(string)$profile->first_name,
                 'advice'=>$applyAdvisorStyle($profile,$raw),
                 'conservative'=>(bool)($profile->is_conservative??false),
+                'stand_pat_voice'=>$allowStandPat,
             ];
         }
 
