@@ -118,6 +118,22 @@ Route::post('/lineup-advisors/{advisor}/profile', function(string $advisor) {
 
 Route::get('/admin', fn()=>redirect('/admin/advisors'));
 
+Route::get('/admin/team-images', function () {
+    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('team_icons'),503);
+    $teams=DB::table('team_seasons as ts')
+        ->join('seasons as s','s.season_id','=','ts.season_id')
+        ->where('s.season_name','2026-27')
+        ->select('ts.original_name')
+        ->distinct()
+        ->orderBy('ts.original_name')
+        ->get()
+        ->map(fn($team)=>(object)[
+            'name'=>(string)$team->original_name,
+            'slug'=>\Illuminate\Support\Str::slug((string)$team->original_name),
+        ]);
+    return view('admin.team-images',compact('teams'));
+});
+
 Route::get('/admin/advisors', function () {
     abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles'),503);
     $advisors=DB::table('lineup_advisor_profiles')->orderBy('sort_order')->orderBy('id')->get();
