@@ -28,6 +28,9 @@ Route::get('/team-icons/{slug}', function(string $slug) {
     };
 
     if(!\Illuminate\Support\Facades\Schema::hasTable('team_icons')){
+        if($slug==='lineup-advisor' && is_file(public_path('images/lineup-advisor-cartoon.svg'))){
+            return response()->file(public_path('images/lineup-advisor-cartoon.svg'),['Cache-Control'=>'no-store, max-age=0']);
+        }
         if($slug==='orcas' && is_file(public_path('images/team-icons/orcas.webp'))){
             return response()->file(public_path('images/team-icons/orcas.webp'),['Cache-Control'=>'no-store, max-age=0']);
         }
@@ -42,6 +45,9 @@ Route::get('/team-icons/{slug}', function(string $slug) {
         }
     }
 
+    if($slug==='lineup-advisor' && is_file(public_path('images/lineup-advisor-cartoon.svg'))){
+        return response()->file(public_path('images/lineup-advisor-cartoon.svg'),['Cache-Control'=>'no-store, max-age=0']);
+    }
     if($slug==='orcas' && is_file(public_path('images/team-icons/orcas.webp'))){
         return response()->file(public_path('images/team-icons/orcas.webp'),['Cache-Control'=>'no-store, max-age=0']);
     }
@@ -58,7 +64,7 @@ Route::post('/team-icons/{slug}', function(string $slug) {
         ->contains(fn($name)=>\Illuminate\Support\Str::slug((string)$name)===$slug);
     $validFranchise=DB::table('franchises')->pluck('franchise_name')
         ->contains(fn($name)=>\Illuminate\Support\Str::slug((string)$name)===$slug);
-    abort_unless($validCurrent||$validFranchise,404);
+    abort_unless($slug==='lineup-advisor'||$validCurrent||$validFranchise,404);
 
     $validated=request()->validate(['image'=>'required|file|mimes:jpg,jpeg,png,webp|max:2048']);
     $file=$validated['image'];
