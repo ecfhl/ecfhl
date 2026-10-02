@@ -744,7 +744,124 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             $baseAdvice=implode(' ', $suggestions);
         }
 
-        $styleAdvice=function(string $name,string $raw)use($movesLeft,$hasMoveAvailable){
+        // Build a different recommendation for each advisor. Mike gets the
+        // strongest distinct option first, John gets the next one, and Pierre
+        // is deliberately conservative: if a third clearly useful option is
+        // not available, he recommends saving the move instead.
+        $usedAdvisorTargets=[];
+        $distinctAdvisorAdvice=function(string $raw,string $advisor)use(
+            &$usedAdvisorTargets,$availableGroups,$advisorNameKey,$rankTeam,$displayPlayerName
+        ){
+            if(!preg_match('/\\badd\\s+/i',$raw))return $raw;
+
+            $replacementMap=[];
+            $failed=false;
+            $result=preg_replace_callback(
+                '/\\b(Add|add)\\s+(.+?)\\s+\\(([A-Z]{2,3})\\)(?:,\\s*([0-9.]+)\\s+projected FPts)?/u',
+                function($m)use(
+                    $advisor,&$usedAdvisorTargets,&$replacementMap,&$failed,
+                    $availableGroups,$advisorNameKey,$rankTeam,$displayPlayerName
+                ){
+                    $oldName=trim((string)$m[2]);
+                    $oldTeam=$rankTeam($m[3]??'');
+                    $originalKey=$advisorNameKey($oldName).'|'.$oldTeam;
+
+                    if(isset($replacementMap[$originalKey])){
+                        $candidate=$replacementMap[$originalKey];
+                    } else {
+                        $position=null;
+                        foreach(['F','D','G'] as $pos){
+                            foreach(($availableGroups[$pos]??[]) as $player){
+                                if(
+                                    $advisorNameKey($player['name']??'')===$advisorNameKey($oldName)
+                                    && $rankTeam($player['team']??'')===$oldTeam
+                                ){
+                                    $position=$pos;
+                                    break 2;
+                                }
+                            }
+                        }
+
+                        if(!$position){
+                            $failed=true;
+                            return $m[0];
+                        }
+
+                        $pool=array_slice(array_values($availableGroups[$position]??[]),0,5);
+                        $bestProjected=0.0;
+                        foreach($pool as $player){
+                            $bestProjected=max($bestProjected,(float)($player['projected_points']??0));
+                        }
+
+                        $candidate=null;
+                        foreach($pool as $player){
+                            $key=$advisorNameKey($player['name']??'').'|'.$rankTeam($player['team']??'').'|'.$position;
+                            if(isset($usedAdvisorTargets[$key]))continue;
+
+                            if($advisor==='Pierre'){
+                                $projected=(float)($player['projected_points']??0);
+                                if($bestProjected>0 && $projected<($bestProjected*0.70))continue;
+
+                                if($position==='G'){
+                                    $status=strtolower(trim((string)($player['starting_status']??'')));
+                                    if(!in_array($status,['confirmed','likely','probable'],true))continue;
+                                }
+                            }
+
+                            $candidate=$player;
+                            $usedAdvisorTargets[$key]=true;
+                            break;
+                        }
+
+                        if(!$candidate){
+                            $failed=true;
+                            return $m[0];
+                        }
+                        $replacementMap[$originalKey]=$candidate;
+                    }
+
+                    $newName=$displayPlayerName($candidate['name']??$oldName);
+                    $newTeam=strtoupper((string)($candidate['team']??$oldTeam));
+                    $replacement=$m[1].' '.$newName.' ('.$newTeam.')';
+                    if(isset($m[4]) && $m[4]!==''){
+                        $projected=$candidate['projected_points']??null;
+                        if($projected!==null && $projected!==''){
+                            $replacement.=', '.$projected.' projected FPts';
+                        }
+                    }
+                    return $replacement;
+                },
+                $raw
+            ) ?? $raw;
+
+            if($failed){
+                return 'Stand pat. Save the move. There is not another distinct option strong enough to justify a transaction right now.';
+            }
+
+            foreach($replacementMap as $originalKey=>$candidate){
+                [$oldKey,$oldTeam]=array_pad(explode('|',$originalKey,2),2,'');
+                // Replace repeated goalie references such as "If confirmed, add NAME"
+                // that do not repeat the team abbreviation.
+                foreach(['F','D','G'] as $pos){
+                    foreach(($availableGroups[$pos]??[]) as $player){
+                        if($advisorNameKey($player['name']??'')===$oldKey && $rankTeam($player['team']??'')===$oldTeam){
+                            $oldDisplay=$displayPlayerName($player['name']??'');
+                            $newDisplay=$displayPlayerName($candidate['name']??'');
+                            $result=preg_replace('/\\badd\\s+'.preg_quote($oldDisplay,'/').'\\b/iu','add '.$newDisplay,$result)??$result;
+                            break 2;
+                        }
+                    }
+                }
+            }
+
+            return $result;
+        };
+
+        $mikeRawAdvice=$distinctAdvisorAdvice($baseAdvice,'Mike');
+        $johnRawAdvice=$distinctAdvisorAdvice($baseAdvice,'John');
+        $pierreRawAdvice=$distinctAdvisorAdvice($baseAdvice,'Pierre');
+
+                $styleAdvice=function(string $name,string $raw)use($movesLeft,$hasMoveAvailable){
             if($name==='Mike'){
                 if($movesLeft===null)return 'Here is the thing. I cannot see your claims remaining. Check Fantrax, get the information right, and do it the right way.';
                 if(!$hasMoveAvailable)return 'At the end of the day, there are no moves left. Now the boys have to grind, stay structured, and be good pros.';
@@ -817,9 +934,9 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             return $openers[array_rand($openers)].$raw;
         };
 
-        $mikeAdvice=$styleAdvice('Mike',$baseAdvice);
-        $pierreAdvice=$styleAdvice('Pierre',$baseAdvice);
-        $johnAdvice=$styleAdvice('John',$baseAdvice);
+        $mikeAdvice=$styleAdvice('Mike',$mikeRawAdvice);
+        $johnAdvice=$styleAdvice('John',$johnRawAdvice);
+        $pierreAdvice=$styleAdvice('Pierre',$pierreRawAdvice);
         $advice=match($advisorName){
             'Pierre'=>$pierreAdvice,
             'John'=>$johnAdvice,
