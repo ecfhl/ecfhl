@@ -468,8 +468,28 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         };
     };
 
+    $advisorProfiles=collect();
+    if(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles')){
+        $advisorProfiles=DB::table('lineup_advisor_profiles')
+            ->orderBy('is_conservative')
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+    }
+    if($advisorProfiles->isEmpty()){
+        $advisorProfiles=collect([(object)[
+            'advisor_key'=>'mike',
+            'first_name'=>'Mike',
+            'style_text'=>'Here is the thing. {advice}',
+            'is_conservative'=>false,
+            'sort_order'=>10,
+        ]]);
+    }
+
     foreach($teams as $teamId=>$teamRows){
-        $advisorName=['Mike','Pierre','John'][random_int(0,2)];
+        $selectedAdvisor=$advisorProfiles->random();
+        $advisorKey=(string)$selectedAdvisor->advisor_key;
+        $advisorName=(string)$selectedAdvisor->first_name;
         $teamName=(string)($teamRows->first()->fantasy_team_name??$teamId);
         $teamScore=$scheduleScores[(string)$teamId]??null;
         $opponentScore=null;
@@ -744,12 +764,8 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             $baseAdvice=implode(' ', $suggestions);
         }
 
-        // Build a different recommendation for each advisor. Mike gets the
-        // strongest distinct option first, John gets the next one, and Pierre
-        // is deliberately conservative: if a third clearly useful option is
-        // not available, he recommends saving the move instead.
         $usedAdvisorTargets=[];
-        $distinctAdvisorAdvice=function(string $raw,string $advisor)use(
+        $distinctAdvisorAdvice=function(string $raw,bool $conservative=false)use(
             &$usedAdvisorTargets,$availableGroups,$advisorNameKey,$rankTeam,$displayPlayerName
         ){
             if(!preg_match('/\\badd\\s+/i',$raw))return $raw;
@@ -759,7 +775,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             $result=preg_replace_callback(
                 '/\\b(Add|add)\\s+(.+?)\\s+\\(([A-Z]{2,3})\\)(?:,\\s*([0-9.]+)\\s+projected FPts)?/u',
                 function($m)use(
-                    $advisor,&$usedAdvisorTargets,&$replacementMap,&$failed,
+                    $conservative,&$usedAdvisorTargets,&$replacementMap,&$failed,
                     $availableGroups,$advisorNameKey,$rankTeam,$displayPlayerName
                 ){
                     $oldName=trim((string)$m[2]);
@@ -781,11 +797,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                                 }
                             }
                         }
-
-                        if(!$position){
-                            $failed=true;
-                            return $m[0];
-                        }
+                        if(!$position){$failed=true;return $m[0];}
 
                         $pool=array_slice(array_values($availableGroups[$position]??[]),0,5);
                         $bestProjected=0.0;
@@ -798,10 +810,9 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                             $key=$advisorNameKey($player['name']??'').'|'.$rankTeam($player['team']??'').'|'.$position;
                             if(isset($usedAdvisorTargets[$key]))continue;
 
-                            if($advisor==='Pierre'){
+                            if($conservative){
                                 $projected=(float)($player['projected_points']??0);
                                 if($bestProjected>0 && $projected<($bestProjected*0.70))continue;
-
                                 if($position==='G'){
                                     $status=strtolower(trim((string)($player['starting_status']??'')));
                                     if(!in_array($status,['confirmed','likely','probable'],true))continue;
@@ -813,10 +824,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                             break;
                         }
 
-                        if(!$candidate){
-                            $failed=true;
-                            return $m[0];
-                        }
+                        if(!$candidate){$failed=true;return $m[0];}
                         $replacementMap[$originalKey]=$candidate;
                     }
 
@@ -825,9 +833,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                     $replacement=$m[1].' '.$newName.' ('.$newTeam.')';
                     if(isset($m[4]) && $m[4]!==''){
                         $projected=$candidate['projected_points']??null;
-                        if($projected!==null && $projected!==''){
-                            $replacement.=', '.$projected.' projected FPts';
-                        }
+                        if($projected!==null && $projected!=='')$replacement.=', '.$projected.' projected FPts';
                     }
                     return $replacement;
                 },
@@ -840,8 +846,6 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
 
             foreach($replacementMap as $originalKey=>$candidate){
                 [$oldKey,$oldTeam]=array_pad(explode('|',$originalKey,2),2,'');
-                // Replace repeated goalie references such as "If confirmed, add NAME"
-                // that do not repeat the team abbreviation.
                 foreach(['F','D','G'] as $pos){
                     foreach(($availableGroups[$pos]??[]) as $player){
                         if($advisorNameKey($player['name']??'')===$oldKey && $rankTeam($player['team']??'')===$oldTeam){
@@ -853,95 +857,45 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                     }
                 }
             }
-
             return $result;
         };
 
-        $mikeRawAdvice=$distinctAdvisorAdvice($baseAdvice,'Mike');
-        $johnRawAdvice=$distinctAdvisorAdvice($baseAdvice,'John');
-        $pierreRawAdvice=$distinctAdvisorAdvice($baseAdvice,'Pierre');
+        $applyAdvisorStyle=function($profile,string $raw){
+            $style=trim((string)($profile->style_text??''));
+            if($style==='')return $raw;
+            $templates=array_values(array_filter(array_map('trim',preg_split('/\\R/u',$style)?:[])));
+            if(!$templates)return $raw;
+            $template=$templates[array_rand($templates)];
 
-                $styleAdvice=function(string $name,string $raw)use($movesLeft,$hasMoveAvailable){
-            if($name==='Mike'){
-                if($movesLeft===null)return 'Here is the thing. I cannot see your claims remaining. Check Fantrax, get the information right, and do it the right way.';
-                if(!$hasMoveAvailable)return 'At the end of the day, there are no moves left. Now the boys have to grind, stay structured, and be good pros.';
-                if(str_starts_with($raw,'Stand pat.')){
-                    $rest=substr($raw,strlen('Stand pat. '));
-                    $openers=[
-                        'Here is the thing. Good teams do not chase noise. Stay with the process. ',
-                        'Listen, if you want to be a good pro, you do the little things every day. ',
-                        'At the end of the day, structure matters. Do it the right way. ',
-                        'Every day, you earn it. Stay heavy, stay responsible, and trust the process. ',
-                    ];
-                    return $openers[array_rand($openers)].$rest;
-                }
-                $openers=[
-                    'Here is the thing. This is the right play. ',
-                    'Listen, if you want to be a good pro, make the simple move and execute it. ',
-                    'At the end of the day, elite teams make disciplined decisions. ',
-                    'Every day, it is process, structure, and doing it the right way. ',
-                    'That is a real good player to target. Make the move and keep the lineup heavy. ',
-                ];
-                return $openers[array_rand($openers)].$raw;
+            $clean=$raw;
+            if(str_starts_with($clean,'Also consider: ')){
+                $clean=substr($clean,strlen('Also consider: '));
             }
+            $lower=lcfirst($clean);
 
-            if($name==='Pierre'){
-                if($movesLeft===null)return 'My understanding is the claims remaining are not available right now. Check Fantrax before making a move so the context is complete.';
-                if(!$hasMoveAvailable)return 'From what I am seeing, there are no moves left today. The focus now shifts to maximizing the current roster and keeping an eye on the next available window.';
-                if(str_starts_with($raw,'Stand pat.')){
-                    $rest=substr($raw,strlen('Stand pat. '));
-                    $openers=[
-                        'Checking in on the situation, there is no need to force a move here. ',
-                        'My understanding is the better play is patience for now. ',
-                        'Keep an eye on the market, but the current roster does not need a reaction move. ',
-                        'From what I am seeing, the context favors holding rather than chasing a marginal upgrade. ',
-                    ];
-                    return $openers[array_rand($openers)].$rest;
-                }
-                $moveText=$raw;
-                if(str_starts_with($moveText,'Also consider: ')){
-                    $moveText=lcfirst(substr($moveText,strlen('Also consider: ')));
-                }
-                $templates=[
-                    fn($move)=>'Checking in on the options, the move that makes the most sense is to '.$move,
-                    fn($move)=>'My understanding is that the cleanest upgrade available right now is to '.$move,
-                    fn($move)=>'Keep an eye on this one. The roster fit and opportunity point to '.$move,
-                    fn($move)=>'From what I am seeing, the logical hockey move is to '.$move,
-                    fn($move)=>'The market context matters here, and the best fit among the current options is to '.$move,
-                ];
-                return $templates[array_rand($templates)]($moveText);
+            if(str_contains($template,'{advice}')||str_contains($template,'{advice_lower}')){
+                return str_replace(['{advice_lower}','{advice}'],[$lower,$clean],$template);
             }
+            return rtrim($template).' '.$clean;
+        };
 
-            if($movesLeft===null)return 'Listen. I cannot see your claims remaining. Check Fantrax. Then we can talk about the lineup.';
-            if(!$hasMoveAvailable)return 'No moves left. That is it. Stop looking for a magic fix. We gotta get to work with what we have.';
-            if(str_starts_with($raw,'Stand pat.')){
-                $rest=substr($raw,strlen('Stand pat. '));
-                $openers=[
-                    'Listen. Do not make a stupid move just to make a move. ',
-                    'Accountability. Earn it with the group you have. ',
-                    'Honestly, stop overthinking it. ',
-                    'We gotta get to work. No shortcuts. ',
-                ];
-                return $openers[array_rand($openers)].$rest;
-            }
-            $openers=[
-                'Listen. Here is the move. ',
-                'Honestly, this is not complicated. ',
-                'Earn it. Make the move and get to work. ',
-                'Accountability. Fix the weak spot. ',
-                'Are you kidding me with all the analysis? Do this. ',
+        $advisorAdvice=[];
+        foreach($advisorProfiles as $profile){
+            $key=(string)$profile->advisor_key;
+            $raw=$distinctAdvisorAdvice($baseAdvice,(bool)($profile->is_conservative??false));
+            $advisorAdvice[$key]=[
+                'name'=>(string)$profile->first_name,
+                'advice'=>$applyAdvisorStyle($profile,$raw),
+                'conservative'=>(bool)($profile->is_conservative??false),
             ];
-            return $openers[array_rand($openers)].$raw;
-        };
+        }
 
-        $mikeAdvice=$styleAdvice('Mike',$mikeRawAdvice);
-        $johnAdvice=$styleAdvice('John',$johnRawAdvice);
-        $pierreAdvice=$styleAdvice('Pierre',$pierreRawAdvice);
-        $advice=match($advisorName){
-            'Pierre'=>$pierreAdvice,
-            'John'=>$johnAdvice,
-            default=>$mikeAdvice,
-        };
+        if(!isset($advisorAdvice[$advisorKey])){
+            $selectedAdvisor=$advisorProfiles->first();
+            $advisorKey=(string)$selectedAdvisor->advisor_key;
+            $advisorName=(string)$selectedAdvisor->first_name;
+        }
+        $advice=$advisorAdvice[$advisorKey]['advice']??$baseAdvice;
 
         DB::table('lineup_advice')
             ->whereDate('advice_date',$date)
@@ -952,11 +906,12 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             'fantasy_team_id'=>(string)$teamId,
             'fantasy_team_name'=>$teamName,
             'moves_left'=>$movesLeft,
-            'advisor_name'=>$advisorName,
+            'advisor_name'=>$advisorKey,
             'advice_text'=>$advice,
-            'mike_advice_text'=>$mikeAdvice,
-            'pierre_advice_text'=>$pierreAdvice,
-            'john_advice_text'=>$johnAdvice,
+            'advisor_advice_json'=>json_encode($advisorAdvice,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES),
+            'mike_advice_text'=>$advisorAdvice['mike']['advice']??null,
+            'pierre_advice_text'=>$advisorAdvice['pierre']['advice']??null,
+            'john_advice_text'=>$advisorAdvice['john']['advice']??null,
             'generated_at'=>now(),
             'created_at'=>now(),
             'updated_at'=>now(),
