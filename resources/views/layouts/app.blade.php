@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    let searchTerm='';
    const availableLines=withSkaterFilters?['1','2','3','4'].filter(line=>rows.some(row=>row.querySelector('.tips-line-'+line))):[];
    const selectedLines=new Set(withSkaterFilters?availableLines:[]);
-   const selectedPp=new Set();
+   const selectedPp=new Set(withSkaterFilters?['1','2']:[]);
    const selectedGoalies=new Set(withGoalieFilters?['1','2']:[]);
    let filterInjured=false;
 
@@ -428,12 +428,16 @@ document.addEventListener('DOMContentLoaded',()=>{
        });
      });
 
-     filterWrap.querySelectorAll('.tips-pp-filter').forEach(filter=>filter.addEventListener('click',()=>{
-       const value=filter.dataset.pp;
-       if(selectedPp.has(value)){selectedPp.delete(value);filter.classList.remove('active');filter.setAttribute('aria-pressed','false');}
-       else{selectedPp.add(value);filter.classList.add('active');filter.setAttribute('aria-pressed','true');}
-       visible=5;render();
-     }));
+     filterWrap.querySelectorAll('.tips-pp-filter').forEach(filter=>{
+       filter.classList.add('active');
+       filter.setAttribute('aria-pressed','true');
+       filter.addEventListener('click',()=>{
+         const value=filter.dataset.pp;
+         if(selectedPp.has(value)){selectedPp.delete(value);filter.classList.remove('active');filter.setAttribute('aria-pressed','false');}
+         else{selectedPp.add(value);filter.classList.add('active');filter.setAttribute('aria-pressed','true');}
+         visible=5;render();
+       });
+     });
    }
 
    moreButton.addEventListener('click',()=>{visible+=10;render();});
