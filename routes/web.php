@@ -5,6 +5,58 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
+Route::get('/team-icons/{slug}', function(string $slug) {
+    $generic=function(){
+        $svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="#e2e8f0"/><path d="M24 31l16-10 10 8 10-8 16 10-8 14-8-5v36H40V40l-8 5-8-14z" fill="#0b5f9e"/><path d="M43 34h14v8H43z" fill="#fff"/><circle cx="50" cy="59" r="11" fill="#fff" opacity=".9"/><path d="M44 59h12M50 53v12" stroke="#0b5f9e" stroke-width="5" stroke-linecap="round"/></svg>';
+        return response($svg,200,['Content-Type'=>'image/svg+xml','Cache-Control'=>'no-store, max-age=0']);
+    };
+
+    if(!\Illuminate\Support\Facades\Schema::hasTable('team_icons')){
+        if($slug==='orcas' && is_file(public_path('images/team-icons/orcas.webp'))){
+            return response()->file(public_path('images/team-icons/orcas.webp'),['Cache-Control'=>'no-store, max-age=0']);
+        }
+        return $generic();
+    }
+
+    $icon=DB::table('team_icons')->where('team_slug',$slug)->first();
+    if($icon){
+        $bytes=base64_decode((string)$icon->image_data,true);
+        if($bytes!==false){
+            return response($bytes,200,['Content-Type'=>$icon->mime_type,'Cache-Control'=>'no-store, max-age=0']);
+        }
+    }
+
+    if($slug==='orcas' && is_file(public_path('images/team-icons/orcas.webp'))){
+        return response()->file(public_path('images/team-icons/orcas.webp'),['Cache-Control'=>'no-store, max-age=0']);
+    }
+    return $generic();
+})->where('slug','[A-Za-z0-9\-]+');
+
+Route::post('/team-icons/{slug}', function(string $slug) {
+    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('team_icons'),503);
+
+    $validCurrent=DB::table('team_seasons as ts')
+        ->join('seasons as s','s.season_id','=','ts.season_id')
+        ->where('s.season_name','2026-27')
+        ->pluck('ts.original_name')
+        ->contains(fn($name)=>\Illuminate\Support\Str::slug((string)$name)===$slug);
+    $validFranchise=DB::table('franchises')->pluck('franchise_name')
+        ->contains(fn($name)=>\Illuminate\Support\Str::slug((string)$name)===$slug);
+    abort_unless($validCurrent||$validFranchise,404);
+
+    $validated=request()->validate(['image'=>'required|file|mimes:jpg,jpeg,png,webp|max:2048']);
+    $file=$validated['image'];
+    $bytes=file_get_contents($file->getRealPath());
+    abort_if($bytes===false,422,'Could not read image.');
+
+    DB::table('team_icons')->updateOrInsert(
+        ['team_slug'=>$slug],
+        ['mime_type'=>$file->getMimeType()?:'image/png','image_data'=>base64_encode($bytes),'updated_at'=>now(),'created_at'=>now()]
+    );
+
+    return response()->json(['ok'=>true,'url'=>'/team-icons/'.$slug.'?v='.now()->timestamp]);
+})->where('slug','[A-Za-z0-9\-]+');
+
 Route::get('/', function (EcfhlData $data) {
     $seasons=$data->seasons(); $teams=$data->teams(); $trades=$data->trades();
     $latest=null; foreach($seasons as $season){if(!empty($season['champion'])){$latest=$season;break;}}
