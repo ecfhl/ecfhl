@@ -922,7 +922,15 @@ Route::get('/teams/current/{slug}', function(string $slug) {
             // active_fantasy_rosters is the current snapshot and has no date column.
             $oppRows=DB::table('active_fantasy_rosters')
                 ->get()
-                ->filter(fn($p)=>(preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower((string)($p->fantasy_team_name??'')))??'')===$oppKey);
+                ->filter(fn($p)=>(preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower((string)($p->fantasy_team_name??'')))??'')===$oppKey)
+                // The snapshot can contain repeated rows for the same player.
+                // The opponent card should show each current roster player once.
+                ->unique(function($p){
+                    $playerId=trim((string)($p->player_id??''));
+                    if($playerId!=='')return 'id:'.$playerId;
+                    return 'name:'.mb_strtolower(trim((string)($p->player_name??'')));
+                })
+                ->values();
             foreach($oppRows as $p){
                 $status=strtoupper((string)($p->roster_status??''));
                 if($status==='MINORS'){
