@@ -126,9 +126,14 @@ class AiTips
         $days = ['sun'=>0,'mon'=>1,'tue'=>2,'wed'=>3,'thu'=>4,'fri'=>5,'sat'=>6];
         if (!isset($days[$waiverDow])) return true;
 
-        // Compare within the displayed fantasy week. If W (Sat) is shown while
-        // viewing Friday, exclude it; when Saturday is selected it becomes usable.
-        return $days[$targetDow] >= $days[$waiverDow];
+        // Waiver labels are weekday-only, so resolve the next occurrence of that
+        // weekday from the current fantasy day. This avoids treating W (Sun) as
+        // already cleared just because Sunday has a smaller numeric weekday value.
+        $today=\Carbon\CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();
+        $daysUntil=($days[$waiverDow]-(int)$today->format('w')+7)%7;
+        $clearDate=$today->addDays($daysUntil)->toDateString();
+
+        return $date >= $clearDate;
     }
 
     private static function availability(object $row): ?string
