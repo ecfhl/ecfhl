@@ -733,33 +733,31 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         $suggestions=array_slice(array_values(array_unique($suggestions)),0,max(0,min($movesLeft,2)));
 
         if($movesLeft===null){
-            $advice='Claims remaining unavailable from Fantrax.';
+            $baseAdvice='Claims remaining unavailable from Fantrax.';
         } elseif(!$hasMoveAvailable){
-            $advice='No moves left.';
+            $baseAdvice='No moves left.';
         } elseif(empty($suggestions)){
-            $advice=$eligibleDrops->isEmpty()
+            $baseAdvice=$eligibleDrops->isEmpty()
                 ? 'Stand pat. No eligible FA or 1-year player falls below your drop thresholds.'
                 : 'Stand pat. No move improves the lineup enough right now.';
         } else {
-            $advice=implode(' ', $suggestions);
+            $baseAdvice=implode(' ', $suggestions);
         }
 
-        if($advisorName==='Mike'){
-            // Mike: calm, demanding, process-first veteran coach tone.
-            if($movesLeft===null){
-                $advice='Here is the thing. I cannot see your claims remaining. Check Fantrax, get the information right, and do it the right way.';
-            } elseif(!$hasMoveAvailable){
-                $advice='At the end of the day, there are no moves left. Now the boys have to grind, stay structured, and be good pros.';
-            } elseif(str_starts_with($advice,'Stand pat.')){
-                $rest=substr($advice,strlen('Stand pat. '));
-                $openers=[
-                    'Here is the thing. Good teams do not chase noise. Stay with the process. ',
-                    'Listen, if you want to be a good pro, you do the little things every day. ',
-                    'At the end of the day, structure matters. Do it the right way. ',
-                    'Every day, you earn it. Stay heavy, stay responsible, and trust the process. ',
-                ];
-                $advice=$openers[array_rand($openers)].$rest;
-            } else {
+        $styleAdvice=function(string $name,string $raw)use($movesLeft,$hasMoveAvailable){
+            if($name==='Mike'){
+                if($movesLeft===null)return 'Here is the thing. I cannot see your claims remaining. Check Fantrax, get the information right, and do it the right way.';
+                if(!$hasMoveAvailable)return 'At the end of the day, there are no moves left. Now the boys have to grind, stay structured, and be good pros.';
+                if(str_starts_with($raw,'Stand pat.')){
+                    $rest=substr($raw,strlen('Stand pat. '));
+                    $openers=[
+                        'Here is the thing. Good teams do not chase noise. Stay with the process. ',
+                        'Listen, if you want to be a good pro, you do the little things every day. ',
+                        'At the end of the day, structure matters. Do it the right way. ',
+                        'Every day, you earn it. Stay heavy, stay responsible, and trust the process. ',
+                    ];
+                    return $openers[array_rand($openers)].$rest;
+                }
                 $openers=[
                     'Here is the thing. This is the right play. ',
                     'Listen, if you want to be a good pro, make the simple move and execute it. ',
@@ -767,30 +765,26 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                     'Every day, it is process, structure, and doing it the right way. ',
                     'That is a real good player to target. Make the move and keep the lineup heavy. ',
                 ];
-                $advice=$openers[array_rand($openers)].$advice;
+                return $openers[array_rand($openers)].$raw;
             }
-        } elseif($advisorName==='Pierre') {
-            // Pierre: measured, objective NHL-insider reporting tone.
-            if($movesLeft===null){
-                $advice='My understanding is the claims remaining are not available right now. Check Fantrax before making a move so the context is complete.';
-            } elseif(!$hasMoveAvailable){
-                $advice='From what I am seeing, there are no moves left today. The focus now shifts to maximizing the current roster and keeping an eye on the next available window.';
-            } elseif(str_starts_with($advice,'Stand pat.')){
-                $rest=substr($advice,strlen('Stand pat. '));
-                $openers=[
-                    'Checking in on the situation, there is no need to force a move here. ',
-                    'My understanding is the better play is patience for now. ',
-                    'Keep an eye on the market, but the current roster does not need a reaction move. ',
-                    'From what I am seeing, the context favors holding rather than chasing a marginal upgrade. ',
-                ];
-                $advice=$openers[array_rand($openers)].$rest;
-            } else {
-                $moveText=$advice;
-                if(str_starts_with($moveText,'Also consider: ')){
-                    $moveText=substr($moveText,strlen('Also consider: '));
-                    $moveText=lcfirst($moveText);
-                }
 
+            if($name==='Pierre'){
+                if($movesLeft===null)return 'My understanding is the claims remaining are not available right now. Check Fantrax before making a move so the context is complete.';
+                if(!$hasMoveAvailable)return 'From what I am seeing, there are no moves left today. The focus now shifts to maximizing the current roster and keeping an eye on the next available window.';
+                if(str_starts_with($raw,'Stand pat.')){
+                    $rest=substr($raw,strlen('Stand pat. '));
+                    $openers=[
+                        'Checking in on the situation, there is no need to force a move here. ',
+                        'My understanding is the better play is patience for now. ',
+                        'Keep an eye on the market, but the current roster does not need a reaction move. ',
+                        'From what I am seeing, the context favors holding rather than chasing a marginal upgrade. ',
+                    ];
+                    return $openers[array_rand($openers)].$rest;
+                }
+                $moveText=$raw;
+                if(str_starts_with($moveText,'Also consider: ')){
+                    $moveText=lcfirst(substr($moveText,strlen('Also consider: ')));
+                }
                 $templates=[
                     fn($move)=>'Checking in on the options, the move that makes the most sense is to '.$move,
                     fn($move)=>'My understanding is that the cleanest upgrade available right now is to '.$move,
@@ -798,34 +792,39 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                     fn($move)=>'From what I am seeing, the logical hockey move is to '.$move,
                     fn($move)=>'The market context matters here, and the best fit among the current options is to '.$move,
                 ];
-                $advice=$templates[array_rand($templates)]($moveText);
+                return $templates[array_rand($templates)]($moveText);
             }
-        } else {
-            // John: blunt, impatient, accountability-first hockey coach tone.
-            if($movesLeft===null){
-                $advice='Listen. I cannot see your claims remaining. Check Fantrax. Then we can talk about the lineup.';
-            } elseif(!$hasMoveAvailable){
-                $advice='No moves left. That is it. Stop looking for a magic fix. We gotta get to work with what we have.';
-            } elseif(str_starts_with($advice,'Stand pat.')){
-                $rest=substr($advice,strlen('Stand pat. '));
+
+            if($movesLeft===null)return 'Listen. I cannot see your claims remaining. Check Fantrax. Then we can talk about the lineup.';
+            if(!$hasMoveAvailable)return 'No moves left. That is it. Stop looking for a magic fix. We gotta get to work with what we have.';
+            if(str_starts_with($raw,'Stand pat.')){
+                $rest=substr($raw,strlen('Stand pat. '));
                 $openers=[
                     'Listen. Do not make a stupid move just to make a move. ',
                     'Accountability. Earn it with the group you have. ',
                     'Honestly, stop overthinking it. ',
                     'We gotta get to work. No shortcuts. ',
                 ];
-                $advice=$openers[array_rand($openers)].$rest;
-            } else {
-                $openers=[
-                    'Listen. Here is the move. ',
-                    'Honestly, this is not complicated. ',
-                    'Earn it. Make the move and get to work. ',
-                    'Accountability. Fix the weak spot. ',
-                    'Are you kidding me with all the analysis? Do this. ',
-                ];
-                $advice=$openers[array_rand($openers)].$advice;
+                return $openers[array_rand($openers)].$rest;
             }
-        }
+            $openers=[
+                'Listen. Here is the move. ',
+                'Honestly, this is not complicated. ',
+                'Earn it. Make the move and get to work. ',
+                'Accountability. Fix the weak spot. ',
+                'Are you kidding me with all the analysis? Do this. ',
+            ];
+            return $openers[array_rand($openers)].$raw;
+        };
+
+        $mikeAdvice=$styleAdvice('Mike',$baseAdvice);
+        $pierreAdvice=$styleAdvice('Pierre',$baseAdvice);
+        $johnAdvice=$styleAdvice('John',$baseAdvice);
+        $advice=match($advisorName){
+            'Pierre'=>$pierreAdvice,
+            'John'=>$johnAdvice,
+            default=>$mikeAdvice,
+        };
 
         DB::table('lineup_advice')
             ->whereDate('advice_date',$date)
@@ -838,6 +837,9 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             'moves_left'=>$movesLeft,
             'advisor_name'=>$advisorName,
             'advice_text'=>$advice,
+            'mike_advice_text'=>$mikeAdvice,
+            'pierre_advice_text'=>$pierreAdvice,
+            'john_advice_text'=>$johnAdvice,
             'generated_at'=>now(),
             'created_at'=>now(),
             'updated_at'=>now(),
