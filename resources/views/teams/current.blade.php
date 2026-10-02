@@ -14,7 +14,6 @@
     </label>
     @if($fantraxTeamUrl)
       <p class="team-fantrax-row">
-        Current
         <a class="team-fantrax-link" href="{{ $fantraxTeamUrl }}" target="_blank" rel="noopener noreferrer">
           <img src="/fantrax-icon.png" alt="">Fantrax ↗
         </a>
@@ -537,6 +536,9 @@ html[data-theme="dark"] .team-matchup-section,
 html[data-theme="dark"] .team-current-matchup-section{background:transparent!important}
 html[data-theme="dark"] .team-live-matchup-label,
 html[data-theme="dark"] .team-matchup-period-label{color:#94a3b8!important}
+
+html[data-theme="dark"] .team-live-matchup{background:transparent!important}
+html[data-theme="dark"] .team-live-matchup-label{background:transparent!important;color:#94a3b8!important}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
