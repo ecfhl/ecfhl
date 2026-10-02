@@ -368,14 +368,14 @@
                       @if($player->is_bench)
                         <span class="pill team-bench">Bench</span>
                       @endif
-                      @if(!empty($player->contract_label))
-                        <span class="pill team-contract-sticker {{ $player->contract_class }}">{{ $player->contract_label }}</span>
-                      @endif
                       @if(strtoupper((string)$player->position)==='G' && !empty($player->starting_status))
                         <span class="pill goalie-status {{ $player->starting_status_class }}">{{ $player->starting_status }}</span>
                       @endif
                     </div>
                     <div class="team-player-lines">
+                      @if(!empty($player->contract_label))
+                        <span class="pill team-contract-sticker {{ $player->contract_class }}">{{ $player->contract_label }}</span>
+                      @endif
                       @if($player->line_number)
                         @if(strtoupper((string)$player->position)==='G' && $player->line_number<=2)
                           <span class="pill goalie-{{ $player->line_number }}">G{{ $player->line_number }}</span>
