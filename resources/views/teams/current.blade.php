@@ -219,9 +219,18 @@
 
   <section class="team-lineup-advisor" aria-label="Lineup Advisor">
     @php
-      $advisorKey=strtolower((string)($lineupAdvice->advisor_name ?? 'Mike'))==='pierre'?'pierre':'mike';
+      $advisorRaw=strtolower((string)($lineupAdvice->advisor_name ?? 'Mike'));
+      $advisorKey=match($advisorRaw){
+        'pierre'=>'pierre',
+        'john'=>'john',
+        default=>'mike',
+      };
       $advisorFirstName=$advisorProfiles[$advisorKey] ?? ucfirst($advisorKey);
-      $advisorImageSlug=$advisorKey==='pierre'?'lineup-advisor-pierre':'lineup-advisor';
+      $advisorImageSlug=match($advisorKey){
+        'pierre'=>'lineup-advisor-pierre',
+        'john'=>'lineup-advisor-john',
+        default=>'lineup-advisor',
+      };
     @endphp
     <div class="team-lineup-advisor-title">Lineup Advisor · <span data-advisor-display-name="{{ $advisorKey }}">{{ $advisorFirstName }}</span></div>
     <div class="team-lineup-advisor-body">
