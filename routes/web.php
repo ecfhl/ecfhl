@@ -5,6 +5,22 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
+Route::post('/admin/lineup-advisor/reset-and-refresh', function () {
+    abort_unless(request()->ajax() && request()->headers->get('X-Requested-With') === 'XMLHttpRequest', 403);
+    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advice'), 503);
+
+    DB::table('lineup_advice')->truncate();
+    $exitCode=\Illuminate\Support\Facades\Artisan::call('ecfhl:refresh-lineup-advice');
+    $output=trim(\Illuminate\Support\Facades\Artisan::output());
+    $count=DB::table('lineup_advice')->count();
+
+    return response()->json([
+        'ok'=>$exitCode===0,
+        'count'=>$count,
+        'output'=>$output,
+    ],$exitCode===0?200:500);
+});
+
 Route::get('/team-icons/{slug}', function(string $slug) {
     $generic=function(){
         $svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="#e2e8f0"/><path d="M24 31l16-10 10 8 10-8 16 10-8 14-8-5v36H40V40l-8 5-8-14z" fill="#0b5f9e"/><path d="M43 34h14v8H43z" fill="#fff"/><circle cx="50" cy="59" r="11" fill="#fff" opacity=".9"/><path d="M44 59h12M50 53v12" stroke="#0b5f9e" stroke-width="5" stroke-linecap="round"/></svg>';
