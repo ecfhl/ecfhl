@@ -129,7 +129,7 @@ Route::post('/admin/advisors', function () {
     $validated=request()->validate([
         'first_name'=>'required|string|max:40',
         'style_text'=>'nullable|string|max:5000',
-        'is_conservative'=>'nullable|boolean',
+        'recommendation_style'=>'required|in:conservative,neutral,aggressive',
     ]);
     $firstName=trim((string)$validated['first_name']);
     $base=substr(\Illuminate\Support\Str::slug($firstName)?:'advisor',0,20);
@@ -143,7 +143,8 @@ Route::post('/admin/advisors', function () {
         'advisor_key'=>$key,
         'first_name'=>$firstName,
         'style_text'=>trim((string)($validated['style_text']??'')),
-        'is_conservative'=>request()->boolean('is_conservative'),
+        'recommendation_style'=>(string)$validated['recommendation_style'],
+        'is_conservative'=>$validated['recommendation_style']==='conservative',
         'sort_order'=>$nextOrder,
         'created_at'=>now(),
         'updated_at'=>now(),
@@ -157,12 +158,13 @@ Route::post('/admin/advisors/{advisor}', function(string $advisor) {
     $validated=request()->validate([
         'first_name'=>'required|string|max:40',
         'style_text'=>'nullable|string|max:5000',
-        'is_conservative'=>'nullable|boolean',
+        'recommendation_style'=>'required|in:conservative,neutral,aggressive',
     ]);
     DB::table('lineup_advisor_profiles')->where('advisor_key',$advisor)->update([
         'first_name'=>trim((string)$validated['first_name']),
         'style_text'=>trim((string)($validated['style_text']??'')),
-        'is_conservative'=>request()->boolean('is_conservative'),
+        'recommendation_style'=>(string)$validated['recommendation_style'],
+        'is_conservative'=>$validated['recommendation_style']==='conservative',
         'updated_at'=>now(),
     ]);
     return redirect('/admin/advisors')->with('notice','Advisor updated.');
