@@ -24,13 +24,13 @@
     <title>{{ $browserTitle }}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7"><link rel="shortcut icon" href="/favicon.svg?v=7"><link rel="apple-touch-icon" href="/ecfhl-logo.png?v=7"><link rel="stylesheet" href="/app.css?v=6"><link rel="stylesheet" href="/header-filters.css?v=3">
 <style>
-html,body,main{max-width:100%;overflow-x:clip}.push-team-select{max-width:180px;padding:5px 7px;border:1px solid rgba(255,255,255,.3);border-radius:8px;background:#082f4f;color:#fff;font-size:11px;font-weight:700}.push-notification-toggle{border:0;background:transparent;color:inherit;font-size:18px;line-height:1;cursor:pointer;padding:7px;border-radius:8px}.push-notification-toggle:hover{background:var(--surface-2,rgba(255,255,255,.08))}.push-notification-toggle.push-enabled{background:#dcfce7;color:#166534}.push-notification-toggle.push-blocked{opacity:.5}
+html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relative;display:flex;align-items:center}.push-team-picker{display:none;position:absolute;right:0;top:calc(100% + 8px);z-index:1200;width:230px;padding:10px;background:#082f4f;border:1px solid #6b88a0;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,.28)}.push-team-picker.open{display:block}.push-team-picker-label{display:block;margin:0 0 6px;color:#dce6f2;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}.push-team-select{width:100%;padding:7px 9px;border:1px solid rgba(255,255,255,.3);border-radius:8px;background:#0d3a5e;color:#fff;font-size:11px;font-weight:700}.push-disable-button{display:none;width:100%;margin-top:8px;padding:6px 8px;border:1px solid rgba(255,255,255,.22);border-radius:7px;background:transparent;color:#dce6f2;font:inherit;font-size:10px;font-weight:700;cursor:pointer}.push-disable-button.visible{display:block}.push-disable-button:hover{background:rgba(255,255,255,.08)}.push-notification-toggle{border:0;background:transparent;color:inherit;font-size:18px;line-height:1;cursor:pointer;padding:7px;border-radius:8px}.push-notification-toggle:hover{background:var(--surface-2,rgba(255,255,255,.08))}.push-notification-toggle.push-enabled{background:#dcfce7;color:#166534}.push-notification-toggle.push-blocked{opacity:.5}
 .nav-item-icon{display:inline-flex;width:22px;justify-content:center;align-items:center;margin-right:8px;font-size:16px;line-height:1;vertical-align:-1px}.nav-live-icon,.nav-live-text{color:#c94b52!important}.nav-live-text{font-weight:800}.nav-live-icon{font-size:14px;text-shadow:0 0 5px rgba(201,75,82,.45)}.nav-target-icon{font-size:19px}.nav-teams-icon{color:#14b8a6}.nav-dropdown{position:relative;display:flex;align-items:center}.nav-dropdown-row{display:flex;align-items:center}.nav-dropdown-main-link{display:block}.nav-dropdown-toggle{appearance:none;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;padding:8px 7px;cursor:pointer;border-radius:7px}.nav-dropdown.active>.nav-dropdown-row,.nav-dropdown-toggle:hover{background:var(--surface-2,rgba(255,255,255,.08));border-radius:7px}.nav-dropdown-menu{display:none;position:absolute;top:100%;left:0;z-index:1000;min-width:430px;grid-template-columns:repeat(2,minmax(190px,1fr));gap:2px;padding:8px;background:#082f4f;border:1px solid #6b88a0;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,.28);color:#fff}.nav-dropdown:hover .nav-dropdown-menu,.nav-dropdown.open .nav-dropdown-menu{display:grid}.nav-dropdown-menu a{display:block;padding:8px 10px!important;border-radius:7px;white-space:nowrap;text-decoration:none;color:#fff!important}.nav-dropdown-menu a:hover{background:#12486f}.archive-menu{min-width:180px!important;grid-template-columns:1fr!important}.nav-dropdown-menu .nav-all-teams-link,.nav-dropdown-menu .nav-history-link{grid-column:1/-1;font-weight:800}.nav-dropdown-menu .nav-all-teams-link{border-bottom:1px solid #6b88a0;margin-bottom:4px}.nav-dropdown-menu .nav-history-link{border-top:1px solid #6b88a0;margin-top:4px;padding-top:9px!important}
-@media(max-width:900px){body:has(#push-team-select) #push-notifications-button{display:none}.header-actions{min-width:0;gap:5px}.push-team-select{width:118px;max-width:118px;padding:4px 22px 4px 6px;font-size:10px}.push-notification-toggle,.header-theme-toggle{padding:5px}.nav-toggle{flex:0 0 auto}.main-nav{text-align:left}.main-nav>a{display:block;text-align:left!important;padding-left:24px!important}.nav-dropdown{display:block;width:100%}.nav-dropdown-row{display:grid;grid-template-columns:1fr auto;align-items:center;width:100%}.nav-dropdown-main-link{text-align:left!important;padding:10px 0 10px 24px!important}.nav-dropdown-toggle{width:44px;text-align:center;padding:10px 0}.nav-dropdown:hover .nav-dropdown-menu{display:none}.nav-dropdown.open .nav-dropdown-menu{display:grid!important;position:static;min-width:0;width:100%;grid-template-columns:1fr;background:transparent;border:0;box-shadow:none;padding:4px 0 8px 36px}.nav-dropdown-menu a{padding:8px 0!important;text-align:left!important}.nav-dropdown-menu .nav-history-link{border-top:1px solid var(--line);padding-top:10px!important}}
+@media(max-width:900px){.header-actions{min-width:0;gap:5px}.push-team-picker{position:fixed;right:10px;top:62px;width:min(240px,calc(100vw - 20px))}.push-team-select{font-size:11px}.push-notification-toggle,.header-theme-toggle{padding:5px}.nav-toggle{flex:0 0 auto}.main-nav{text-align:left}.main-nav>a{display:block;text-align:left!important;padding-left:24px!important}.nav-dropdown{display:block;width:100%}.nav-dropdown-row{display:grid;grid-template-columns:1fr auto;align-items:center;width:100%}.nav-dropdown-main-link{text-align:left!important;padding:10px 0 10px 24px!important}.nav-dropdown-toggle{width:44px;text-align:center;padding:10px 0}.nav-dropdown:hover .nav-dropdown-menu{display:none}.nav-dropdown.open .nav-dropdown-menu{display:grid!important;position:static;min-width:0;width:100%;grid-template-columns:1fr;background:transparent;border:0;box-shadow:none;padding:4px 0 8px 36px}.nav-dropdown-menu a{padding:8px 0!important;text-align:left!important}.nav-dropdown-menu .nav-history-link{border-top:1px solid var(--line);padding-top:10px!important}}
 </style>
 </head>
 <body>
-<header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a></div><div class="header-actions">@if(request()->is('teams/current','teams/current/*'))<select id="push-team-select" class="push-team-select" aria-label="Scoring notification team" title="Scoring notification team"><option value="">Notifications: Off</option>@foreach($notificationTeams as $notificationTeam)<option value="{{ $notificationTeam->fantasy_team_id }}">{{ $notificationTeam->fantasy_team_name }}</option>@endforeach</select>@endif<button id="push-notifications-button" class="push-notification-toggle" type="button" aria-label="Enable browser notifications" title="Enable browser notifications">🔔</button><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav">
+<header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a></div><div class="header-actions"><div class="push-picker-wrap"><button id="push-notifications-button" class="push-notification-toggle" type="button" aria-label="Scoring alerts" title="Scoring alerts">🔔</button><div id="push-team-picker" class="push-team-picker" role="dialog" aria-label="Scoring alert team"><label class="push-team-picker-label" for="push-team-select">Alert me for</label><select id="push-team-select" class="push-team-select" aria-label="Scoring notification team"><option value="">Select a team</option>@foreach($notificationTeams as $notificationTeam)<option value="{{ $notificationTeam->fantasy_team_id }}" data-team-url="/teams/current/{{ \Illuminate\Support\Str::slug($notificationTeam->fantasy_team_name) }}">{{ $notificationTeam->fantasy_team_name }}</option>@endforeach</select><button id="push-disable-button" class="push-disable-button" type="button">Turn off notifications</button></div></div><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav">
 <a href="/" class="{{ request()->is('/')?'active':'' }}"><span class="nav-item-icon">⌂</span>Overview</a>
 <a href="/teams/current" class="{{ request()->is('teams/current','teams/current/*')?'active':'' }}"><span class="nav-item-icon nav-live-icon">●</span><span class="nav-live-text">Live Scoring</span></a>
 <a href="/standings" class="{{ request()->is('standings')?'active':'' }}"><span class="nav-item-icon">🏆</span>Standings</a>
@@ -47,6 +47,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-team-select{max-width:180px;
     <a class="nav-history-link" href="/teams">Franchise History</a>
   </div>
 </div>
+<a id="my-team-nav-link" href="#" hidden><span class="nav-item-icon">★</span>My Team</a>
 <div class="nav-dropdown {{ request()->is('seasons','seasons/*','prizes','trades','draft','players')?'active':'' }}">
   <div class="nav-dropdown-row">
     <a class="nav-dropdown-main-link" href="/teams"><span class="nav-item-icon">📖</span>Archive</a>
@@ -73,12 +74,38 @@ html,body,main{max-width:100%;overflow-x:clip}.push-team-select{max-width:180px;
  if(!button)return;
  const csrf=document.querySelector('meta[name="csrf-token"]')?.content||'';
  const supported=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
+ const picker=document.getElementById('push-team-picker');
  const teamSelect=document.getElementById('push-team-select');
+ const disableButton=document.getElementById('push-disable-button');
+ const myTeamLink=document.getElementById('my-team-nav-link');
  const teamStorageKey='ecfhl-notification-team-id';
+ const teamUrlStorageKey='ecfhl-notification-team-url';
+
+ const syncMyTeamLink=()=>{
+   if(!myTeamLink)return;
+   const storedId=localStorage.getItem(teamStorageKey)||'';
+   const selectedOption=teamSelect?.querySelector('option[value="'+CSS.escape(storedId)+'"]');
+   const url=selectedOption?.dataset.teamUrl||localStorage.getItem(teamUrlStorageKey)||'';
+   if(storedId&&url){
+     myTeamLink.href=url;
+     myTeamLink.hidden=false;
+     localStorage.setItem(teamUrlStorageKey,url);
+   }else{
+     myTeamLink.hidden=true;
+     myTeamLink.removeAttribute('href');
+   }
+ };
+
  if(teamSelect){
    teamSelect.value=localStorage.getItem(teamStorageKey)||'';
+   syncMyTeamLink();
    teamSelect.addEventListener('change',async()=>{
+     const selected=teamSelect.selectedOptions[0];
      localStorage.setItem(teamStorageKey,teamSelect.value);
+     if(selected?.dataset.teamUrl)localStorage.setItem(teamUrlStorageKey,selected.dataset.teamUrl);
+     else localStorage.removeItem(teamUrlStorageKey);
+     syncMyTeamLink();
+
      const reg=await navigator.serviceWorker.getRegistration('/push-sw.js');
      reg?.active?.postMessage({type:'set-notification-team',teamId:teamSelect.value});
      const sub=reg?await reg.pushManager.getSubscription():null;
@@ -105,7 +132,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-team-select{max-width:180px;
      button.classList.add('push-blocked');
      button.title='Browser notifications are not supported here';
      button.setAttribute('aria-label','Browser notifications unavailable');
-     return;
+     return false;
    }
    try{
      const reg=await navigator.serviceWorker.getRegistration('/push-sw.js');
@@ -113,23 +140,73 @@ html,body,main{max-width:100%;overflow-x:clip}.push-team-select{max-width:180px;
      const enabled=!!sub && Notification.permission==='granted';
      button.classList.toggle('push-enabled',enabled);
      button.classList.toggle('push-blocked',Notification.permission==='denied');
-     button.title=enabled?'Disable ECFHL notifications':(Notification.permission==='denied'?'Notifications are blocked in this browser':'Enable ECFHL notifications');
+     button.title=enabled?'Scoring alerts enabled':'Enable scoring alerts';
      button.setAttribute('aria-label',button.title);
-   }catch(e){}
+     disableButton?.classList.toggle('visible',enabled);
+     return enabled;
+   }catch(e){return false;}
  };
 
- button.addEventListener('click',async()=>{
+ const enableNotifications=async()=>{
    if(!supported)return;
    if(Notification.permission==='denied'){
      alert('Notifications are blocked for this site. Enable them in your browser site settings first.');
      return;
    }
 
-   try{
-     const reg=await navigator.serviceWorker.register('/push-sw.js',{scope:'/'});
-     await navigator.serviceWorker.ready;
-     const existing=await reg.pushManager.getSubscription();
+   const reg=await navigator.serviceWorker.register('/push-sw.js',{scope:'/'});
+   await navigator.serviceWorker.ready;
+   const existing=await reg.pushManager.getSubscription();
+   if(existing){await updateButton();return;}
 
+   const permission=await Notification.requestPermission();
+   if(permission!=='granted'){await updateButton();return;}
+
+   const configResponse=await fetch('/push/config',{credentials:'same-origin',cache:'no-store'});
+   if(!configResponse.ok)throw new Error('Could not load push configuration.');
+   const config=await configResponse.json();
+
+   const subscription=await reg.pushManager.subscribe({
+     userVisibleOnly:true,
+     applicationServerKey:b64ToUint8(config.publicKey)
+   });
+
+   const saveResponse=await fetch('/push/subscribe',{
+     method:'POST',
+     credentials:'same-origin',
+     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
+     body:JSON.stringify({endpoint:subscription.endpoint})
+   });
+   if(!saveResponse.ok)throw new Error('Could not save push subscription.');
+   const saved=await saveResponse.json();
+
+   reg.active?.postMessage({type:'set-last-notification-id',id:saved.latestId??config.latestId??0});
+   const selectedTeam=localStorage.getItem(teamStorageKey)||'';
+   reg.active?.postMessage({type:'set-notification-team',teamId:selectedTeam});
+   await fetch('/push/team',{
+     method:'POST',
+     credentials:'same-origin',
+     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
+     body:JSON.stringify({endpoint:subscription.endpoint,fantasy_team_id:selectedTeam})
+   });
+   await updateButton();
+ };
+
+ button.addEventListener('click',async event=>{
+   event.stopPropagation();
+   picker?.classList.toggle('open');
+   if(picker?.classList.contains('open'))teamSelect?.focus();
+   try{await enableNotifications();}catch(e){
+     console.error('ECFHL push setup failed',e);
+     alert('Could not enable ECFHL notifications in this browser.');
+   }
+ });
+
+ disableButton?.addEventListener('click',async event=>{
+   event.stopPropagation();
+   try{
+     const reg=await navigator.serviceWorker.getRegistration('/push-sw.js');
+     const existing=reg?await reg.pushManager.getSubscription():null;
      if(existing){
        await fetch('/push/unsubscribe',{
          method:'POST',
@@ -138,48 +215,19 @@ html,body,main{max-width:100%;overflow-x:clip}.push-team-select{max-width:180px;
          body:JSON.stringify({endpoint:existing.endpoint})
        });
        await existing.unsubscribe();
-       await updateButton();
-       return;
      }
-
-     const permission=await Notification.requestPermission();
-     if(permission!=='granted'){await updateButton();return;}
-
-     const configResponse=await fetch('/push/config',{credentials:'same-origin',cache:'no-store'});
-     if(!configResponse.ok)throw new Error('Could not load push configuration.');
-     const config=await configResponse.json();
-
-     const subscription=await reg.pushManager.subscribe({
-       userVisibleOnly:true,
-       applicationServerKey:b64ToUint8(config.publicKey)
-     });
-
-     const saveResponse=await fetch('/push/subscribe',{
-       method:'POST',
-       credentials:'same-origin',
-       headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
-       body:JSON.stringify({endpoint:subscription.endpoint})
-     });
-     if(!saveResponse.ok)throw new Error('Could not save push subscription.');
-     const saved=await saveResponse.json();
-
-     reg.active?.postMessage({type:'set-last-notification-id',id:saved.latestId??config.latestId??0});
-     const selectedTeam=localStorage.getItem(teamStorageKey)||'';
-     reg.active?.postMessage({type:'set-notification-team',teamId:selectedTeam});
-     await fetch('/push/team',{
-       method:'POST',
-       credentials:'same-origin',
-       headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
-       body:JSON.stringify({endpoint:subscription.endpoint,fantasy_team_id:selectedTeam})
-     });
      await updateButton();
    }catch(e){
-     console.error('ECFHL push setup failed',e);
-     alert('Could not enable ECFHL notifications in this browser.');
+     console.error('ECFHL push disable failed',e);
    }
  });
 
+ picker?.addEventListener('click',event=>event.stopPropagation());
+ document.addEventListener('click',()=>picker?.classList.remove('open'));
+ document.addEventListener('keydown',event=>{if(event.key==='Escape')picker?.classList.remove('open');});
+
  if(supported && teamSelect){navigator.serviceWorker.ready.then(reg=>reg.active?.postMessage({type:'set-notification-team',teamId:localStorage.getItem(teamStorageKey)||''})).catch(()=>{});}
+ syncMyTeamLink();
  updateButton();
 })();
 </script>
