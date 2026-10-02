@@ -3,7 +3,9 @@
 <div class="page-head">
   <div class="shell">
     <div class="eyebrow">2026-27 roster</div>
-    @php($isLoneTsarTeam=$slug==='lone-tsar'||collect($teamChoices)->contains(fn($choice)=>($choice['slug']??'')===$slug&&(str_contains((string)($choice['name']??''),'Ꮮ૦ท૯')||stripos((string)($choice['name']??''),'Lone Tsar')!==false)))
+    @php
+      $isLoneTsarTeam=str_contains((string)$teamName,'Ꮮ૦ท૯') || stripos((string)$teamName,'Lone Tsar')!==false;
+    @endphp
     <label class="team-title-switcher">
       @if($isLoneTsarTeam)<img class="team-title-logo" src="{{ asset('images/team-icons/lone-tsar.webp') }}" alt="Lone Tsar">@endif
       <span class="sr-only">Team</span>
