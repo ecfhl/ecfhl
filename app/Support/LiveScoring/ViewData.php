@@ -25,6 +25,7 @@ final class ViewData
                 'today_stats'=>$stats,'today_fpts'=>$team['daily_fpts'],'week_fpts'=>$team['period_fpts'],
                 'daily_projected_fpts'=>$active->contains(fn($p)=>property_exists($p, 'custom_projection'))
                     ? $active->sum(fn($p)=>$p->projected_fpts_per_game ?? 0) : $team['daily_projected_fpts'],
+                'today_fpts_change'=>$team['daily_fpts_change'] ?? 'same','week_fpts_change'=>$team['period_fpts_change'] ?? 'same',
                 'today_fpts_changed'=>$team['daily_fpts_changed'] ?? false,'week_fpts_changed'=>$team['period_fpts_changed'] ?? false,
                 'games_in_progress'=>$players->where('game_status','2')->pluck('game_id')->unique()->count(),
             ];
@@ -40,7 +41,7 @@ final class ViewData
             'daily_participant'=>true, 'is_bench'=>$bench, 'is_ir'=>$p['roster_status']==='INJURED_RESERVE',
             'last_update'=>$p['collected_at'] ?? null,
             'roster_status'=>$p['roster_status'],
-            'today_fpts'=>$p['daily_fpts'], 'today_fpts_changed'=>$p['fpts_changed'] ?? false,
+            'today_fpts'=>$p['daily_fpts'], 'today_fpts_change'=>$p['fpts_change'] ?? 'same', 'today_fpts_changed'=>$p['fpts_changed'] ?? false,
             'projected_fpts_per_game'=>$p['daily_projected_fpts'], 'live_opponent_display'=>$p['game_display'],
             'opponent_display'=>$p['game_display'], 'game_time'=>null,
             'game_finished'=>$p['game_status']==='3', 'game_in_progress'=>$p['game_status']==='2',
