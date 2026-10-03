@@ -294,6 +294,39 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
     return $failed?1:0;
 });
 
+Artisan::command('ecfhl:refresh-live-scoring {date?}', function () {
+    $base=CarbonImmutable::now('America/Vancouver')->startOfDay();
+    $requested=trim((string)($this->argument('date')??''));
+    if($requested!==''){
+        try{$base=CarbonImmutable::createFromFormat('!Y-m-d',$requested,'America/Vancouver');}
+        catch(\Throwable){$this->error('Use date format YYYY-MM-DD.');return 1;}
+    }
+
+    $dates=[$base->subDay(),$base,$base->addDay()];
+    $failed=false;
+    foreach($dates as $date){
+        $day=$date->toDateString();
+        $this->info('Refreshing Fantrax live-scoring snapshot for '.$day);
+        foreach([
+            ['ecfhl:refresh-daily-scores',['date'=>$day]],
+        ] as [$command,$args]){
+            $code=Artisan::call($command,$args);
+            $out=trim(Artisan::output());
+            if($out!=='')$this->line($out);
+            if($code!==0)$failed=true;
+        }
+    }
+
+    // Rosters are ownership/lineup metadata; refresh once after the three
+    // independent Fantrax BY_DATE score snapshots.
+    $code=Artisan::call('ecfhl:refresh-fantasy-rosters');
+    $out=trim(Artisan::output());
+    if($out!=='')$this->line($out);
+    if($code!==0)$failed=true;
+
+    return $failed?1:0;
+});
+
 Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dailyMoves) {
     $tz='America/Vancouver';
     $day=CarbonImmutable::now($tz)->startOfDay();
