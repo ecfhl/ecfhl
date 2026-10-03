@@ -16,10 +16,10 @@
 </section>
 <section class="card owner-goalie-watch"><h2>Watch specific available goalies</h2><p class="subtle">Receive status changes for selected goalies while they are available and have a game today or tomorrow.</p>
 @foreach(['Today','Tomorrow'] as $day)
-<div class="owner-goalie-day"><h3>{{ $day }}</h3>
+<details class="owner-goalie-day"><summary>{{ $day }}</summary>
 @if($goalies->where('day',$day)->isEmpty())<p class="subtle">No goalies awaiting a starting decision for upcoming games.</p>@endif
 <div class="owner-goalie-grid">@foreach($goalies->where('day',$day) as $g)<label class="owner-goalie-choice"><input type="checkbox" name="goalies[]" value="{{ $g['key'] }}" @checked(in_array($g['key'],$preferences['goalies'],true))><span><strong>{{ $g['name'] }}</strong><small>{{ $g['team'] }} · {{ $g['start_time'] }}</small></span></label>@endforeach</div>
-</div>
+</details>
 @endforeach
 @foreach(array_diff($preferences['goalies'],$goalies->pluck('key')->all()) as $key)<input type="hidden" name="goalies[]" value="{{ $key }}">@endforeach
 </section>

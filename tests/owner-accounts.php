@@ -131,7 +131,7 @@ verifyOwner($options->firstWhere('name','Late Night')['start']==='2026-10-03T00:
 verifyOwner(app(App\Support\OwnerGoalies::class)->available($day)->contains('player_name','Confirmed Starter'),'Confirmation alert eligibility was incorrectly removed');
 $a->notification_preferences=['team_scores'=>false,'opponent_scores'=>true,'goalies'=>['CAR|confirmedstarter']];$a->save();
 $response=ownerRequest('GET','/notifications',[],$alpha,['HTTP_ACCEPT'=>'text/html']);$html=$response->getContent();
-verifyOwner(str_contains($html,'<h3>Today</h3>')&&str_contains($html,'<h3>Tomorrow</h3>'),'Day headings missing');
+verifyOwner(str_contains($html,'<details class="owner-goalie-day"><summary>Today</summary>')&&str_contains($html,'<details class="owner-goalie-day"><summary>Tomorrow</summary>'),'Collapsed day groups missing');
 verifyOwner(!str_contains($html,'<strong>Confirmed Starter</strong>')&&str_contains($html,'type="hidden" name="goalies[]" value="CAR|confirmedstarter"'),'Hidden saved watch leaked into display / lost');
 verifyOwner(ownerRequest('POST','/notifications/goalie',['key'=>'TOR|zearly','enabled'=>true],$guest)->getStatusCode()===401,'Guest goalie watch accepted');
 foreach([true,true,false,true] as $enabled){
