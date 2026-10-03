@@ -316,7 +316,41 @@ Route::get('/standings', function(EcfhlData $data){
         report($e);
     }
 
-    return view('standings',compact('season','standings','standingsLastUpdate','scoringPeriods','currentPeriodNumber'));
+    $awardRaces=[];
+    try {
+        if(\Illuminate\Support\Facades\Schema::hasTable('player_projections') && \Illuminate\Support\Facades\Schema::hasTable('player_projection_baselines')){
+            $rosterDate=DB::table('active_fantasy_rosters')->max('game_date');
+            $rosters=$rosterDate
+                ? DB::table('active_fantasy_rosters')->whereDate('game_date',$rosterDate)->get()->keyBy(fn($r)=>(string)$r->player_id)
+                : collect();
+            $stats=DB::table('player_projections as p')
+                ->join('player_projection_baselines as b','b.player_id','=','p.player_id')
+                ->select('p.player_id','p.season_fpts','p.season_gp','p.season_fpts_per_game','b.player_name','b.nhl_team','b.position')
+                ->get()->map(function($p)use($rosters){
+                    $roster=$rosters->get((string)$p->player_id);
+                    $p->fantasy_team=$roster?->fantasy_team_name;
+                    return $p;
+                });
+            $leaders=function($rows,$limit=3){
+                return $rows->sort(function($a,$b){
+                    $cmp=(float)$b->season_fpts<=>(float)$a->season_fpts;
+                    return $cmp!==0?$cmp:((float)$b->season_fpts_per_game<=>(float)$a->season_fpts_per_game);
+                })->take($limit)->values()->map(fn($p)=>[
+                    'name'=>$p->player_name,'nhl_team'=>$p->nhl_team,'fantasy_team'=>$p->fantasy_team,
+                    'fpts'=>(float)$p->season_fpts,'gp'=>(int)$p->season_gp,'fpts_g'=>(float)$p->season_fpts_per_game,
+                ])->all();
+            };
+            $awardRaces=[
+                'art_ross'=>['label'=>'Art Ross','icon'=>'🏒','detail'=>'Forwards','leaders'=>$leaders($stats->filter(fn($p)=>strtoupper((string)$p->position)==='F'))],
+                'norris'=>['label'=>'Norris','icon'=>'🛡️','detail'=>'Defensemen','leaders'=>$leaders($stats->filter(fn($p)=>strtoupper((string)$p->position)==='D'))],
+                'vezina'=>['label'=>'Vezina','icon'=>'🥅','detail'=>'Goalies','leaders'=>$leaders($stats->filter(fn($p)=>strtoupper((string)$p->position)==='G'))],
+            ];
+        }
+    } catch (\Throwable $e) {
+        report($e);
+    }
+
+    return view('standings',compact('season','standings','standingsLastUpdate','scoringPeriods','currentPeriodNumber','awardRaces'));
 });
 
 Route::get('/seasons/{season}', function(string $season,EcfhlData $data){
