@@ -619,6 +619,20 @@ html[data-theme="dark"] .team-next-lineup-player .team-minors{background:#15365f
 .team-live-expanded .matchup-player-today strong{font-size:22px!important;line-height:1!important}
 }
 
+/* Compact mobile matchup scoreboard */
+@media(max-width:700px){
+ .team-live-matchup-summary{min-height:0!important;padding:8px 24px 8px 8px!important;gap:4px!important}
+ .team-live-side{gap:3px!important}
+ .team-live-name-row a{font-size:10px!important;line-height:1.05!important}
+ .team-live-body{min-height:52px!important;align-items:center!important;gap:4px!important}
+ .team-live-logo{width:38px!important;height:38px!important;flex-basis:38px!important;border-radius:7px!important}
+ .team-live-scores{gap:1px!important}
+ .team-live-score strong,.team-live-score+.team-live-score strong{font-size:18px!important;line-height:.9!important}
+ .team-live-score small,.team-live-score+.team-live-score small{font-size:6px!important;margin-top:1px!important}
+ .team-live-vs{font-size:7px!important;padding:5px 4px!important;margin-top:7px!important}
+ .team-live-chevron{right:7px!important;font-size:9px!important}
+}
+
 /* Dark scoreboard treatment */
 html[data-theme="dark"] .team-live-matchup-card{background:linear-gradient(135deg,#0b1728 0%,#07111f 100%)!important;border:1px solid #1d4f91!important;box-shadow:0 10px 28px rgba(0,0,0,.28)}
 html[data-theme="dark"] .team-live-matchup-card[open]{border:2px solid #2563eb!important;box-shadow:0 0 0 1px rgba(37,99,235,.22),0 12px 32px rgba(0,0,0,.34)}
