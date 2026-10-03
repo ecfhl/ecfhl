@@ -25,6 +25,9 @@ final class RefreshPlayerProjections
         $seasonStart = $baseline[0]['season_start'];
         $windows = [];
         $cache = [];
+        $seasonActual = $seasonStart <= $end ? $this->source->actual($seasonStart, $end) : [];
+        if ($seasonStart <= $end) foreach ($baseline as $player) if (!isset($seasonActual[$player['player_id']])) throw new RuntimeException('Missing season actual stats for baseline player '.$player['player_id'].'.');
+        if ($log) $log('Season actual FPts/GP collected through '.$end.'.');
         foreach ([7, 14, 21] as $days) {
             $start = max(CarbonImmutable::parse($end)->subDays($days - 1)->toDateString(), $seasonStart);
             if ($start > $end) $windows[$days] = [];
@@ -39,6 +42,10 @@ final class RefreshPlayerProjections
         $rows = [];
         foreach ($baseline as $player) {
             $row = ['player_id'=>$player['player_id'], 'as_of_date'=>$date, 'window_end_date'=>$end, 'refreshed_at'=>$now];
+            $seasonStat = $seasonActual[$player['player_id']] ?? ['fpts'=>0, 'gp'=>0];
+            $row['season_fpts'] = $seasonStat['fpts'];
+            $row['season_gp'] = $seasonStat['gp'];
+            $row['season_fpts_per_game'] = ProjectionMath::rate((float)$seasonStat['fpts'], (int)$seasonStat['gp']);
             $rates = [];
             foreach ([7, 14, 21] as $days) {
                 $stat = $windows[$days][$player['player_id']] ?? ['fpts'=>0, 'gp'=>0];
