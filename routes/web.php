@@ -526,17 +526,16 @@ Route::get('/teams/current/{slug}', function(string $slug) {
                 $rank=function($player){
                     $pp=$player['pp_unit']??null;
                     $line=$player['line_number']??null;
-                    return [
-                        $pp===1?1:($pp===2?2:3),
-                        in_array($line,[1,2,3,4],true)?$line:99,
-                    ];
+                    return $pp===1?1:($pp===2?2:3);
                 };
                 $ar=$rank($a);$br=$rank($b);
-                if($ar[0]!==$br[0])return $ar[0]<=>$br[0];
-                if($ar[1]!==$br[1])return $ar[1]<=>$br[1];
+                if($ar!==$br)return $ar<=>$br;
                 $ap=$a['projected_points']??-PHP_FLOAT_MAX;
                 $bp=$b['projected_points']??-PHP_FLOAT_MAX;
                 if($ap!==$bp)return $bp<=>$ap;
+                $al=$a['line_number']??99;
+                $bl=$b['line_number']??99;
+                if($al!==$bl)return $al<=>$bl;
                 $as=$a['source_rank']??PHP_INT_MAX;
                 $bs=$b['source_rank']??PHP_INT_MAX;
                 if($as!==$bs)return $as<=>$bs;
