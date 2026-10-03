@@ -99,6 +99,30 @@ verifyOwner(ownerRequest('POST','/login',['email'=>'b@example.org','password'=>'
 // Reverse-proxy redirects preserve HTTPS for secure session cookies.
 $response=ownerRequest('GET','/admin',[],$guest,['HTTP_ACCEPT'=>'text/html','HTTP_X_FORWARDED_PROTO'=>'https','REMOTE_ADDR'=>'10.0.0.1']);
 verifyOwner(str_starts_with((string)$response->headers->get('Location'),'https://'),'Proxy HTTPS was lost on a redirect');
+// Own-goalie alerts include every roster slot and are independent of free-agent alerts.
+$ownGoalieKey='LAK|ownedgoalie';$ownContext=['game_date'=>$day,'available'=>false,'goalie_key'=>$ownGoalieKey];
+foreach([$day,'2026-10-03'] as $rosterDay)foreach(['ACTIVE','BENCH','MINORS','INJURED_RESERVE'] as $slot){
+ DB::table('active_fantasy_rosters')->insert(['game_date'=>$rosterDay,'fantasy_team_id'=>'a','fantasy_team_name'=>'Alpha','player_id'=>'g-'.$slot,'player_name'=>$slot==='ACTIVE'?'Owned Goalie':'Owned '.$slot,'nhl_team'=>'LA','position'=>'G','roster_status'=>$slot]);
+}
+$a->notification_preferences=['own_goalies'=>true,'goalies'=>[]];$a->save();$ownPolicy=new OwnerNotificationPolicy;
+verifyOwner($ownPolicy->accepts($a,'goalie-status',null,$ownContext),'Roster goalie rejected unless a free agent');
+verifyOwner($ownPolicy->accepts($a,'goalie-status',null,array_replace($ownContext,['game_date'=>'2026-10-03'])),'Tomorrow roster goalie rejected');
+foreach(['BENCH','MINORS','INJURED_RESERVE'] as $slot)verifyOwner($ownPolicy->accepts($a,'goalie-status',null,array_replace($ownContext,['goalie_key'=>OwnerNotificationPolicy::goalieKey('LAK','Owned '.$slot)])),'Roster slot ignored: '.$slot);
+verifyOwner(!$ownPolicy->accepts($a,'goalie-status',null,array_replace($ownContext,['goalie_key'=>'TOR|otherowner'])),'Other owner goalie leaked');
+verifyOwner(!$ownPolicy->accepts($a,'goalie-status',null,array_replace($ownContext,['game_date'=>'2026-10-04'])),'Own-goalie future event accepted');
+$b->notification_preferences=['own_goalies'=>true];$b->save();verifyOwner(!$ownPolicy->accepts($b,'goalie-status',null,$ownContext),'Own goalie sent to another owner');
+$unclaimed=User::create(['name'=>'No team','email'=>'unclaimed@example.org','password'=>'strong-example-d','notification_preferences'=>['own_goalies'=>true]]);
+verifyOwner(!$ownPolicy->accepts($unclaimed,'goalie-status',null,$ownContext),'Unclaimed owner received own-goalie alert');
+$a->notification_preferences=['own_goalies'=>false];$a->save();verifyOwner(!$ownPolicy->accepts($a,'goalie-status',null,$ownContext),'Own-goalie switch off ignored');
+$response=ownerRequest('POST','/notifications',['own_goalies'=>'1'],$alpha);
+verifyOwner($response->getStatusCode()===302&&$a->fresh()->notification_preferences['own_goalies']===true,'Own-goalie preference did not save');
+$response=ownerRequest('GET','/notifications',[],$alpha,['HTTP_ACCEPT'=>'text/html']);
+verifyOwner(str_contains($response->getContent(),'name="own_goalies" value="1" checked'),'Own-goalie saved switch not checked');
+$push->notify('goalie-status','Goalie Status','Owned goalie confirmed','/notifications',null,$ownContext);
+$feed=ownerRequest('GET','/push/notifications',[],$guest,['HTTP_AUTHORIZATION'=>'Bearer token-alpha']);
+verifyOwner(count(json_decode($feed->getContent(),true)['notifications'])===1,'Own-goalie push delivery missing');
+$feed=ownerRequest('GET','/push/notifications',[],$guest,['HTTP_AUTHORIZATION'=>'Bearer token-beta']);
+verifyOwner(count(json_decode($feed->getContent(),true)['notifications'])===0,'Own-goalie push leaked to another team');
 // Goalie watch list uses dated statuses and game instants, independent of alert eligibility.
 foreach(['2026_09_30_210000_add_game_time_to_active_daily_players_table.php','2026_10_01_001900_add_game_started_to_active_daily_players.php','2026_09_30_000009_add_game_time_to_active_fantasy_rosters.php'] as $migration)(require __DIR__.'/../database/migrations/'.$migration)->up();
 CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-10-02T16:00:00-03:00'));
@@ -123,6 +147,12 @@ DB::table('live_scoring_snapshots')->insert(['league_id'=>App\Support\LiveScorin
  ['nhl_team'=>'EDM','game_status'=>'3','starts_at'=>null],
  ['nhl_team'=>'MTL','game_status'=>'1','starts_at'=>'2026-10-02T23:00:00Z'],
 ]])]);
+$snapshotRow=DB::table('live_scoring_snapshots')->where('fantasy_date',$day)->first();$snapshotPayload=json_decode($snapshotRow->payload,true);
+$snapshotPayload['players'][]=['nhl_team'=>'LA','player_name'=>'New Snapshot Goalie','position'=>'G','fantasy_team_id'=>'a','roster_status'=>'BENCH'];
+DB::table('live_scoring_snapshots')->where('id',$snapshotRow->id)->update(['payload'=>json_encode($snapshotPayload)]);
+$snapshotPolicy=new OwnerNotificationPolicy;
+verifyOwner($snapshotPolicy->accepts($a->fresh(),'goalie-status',null,array_replace($ownContext,['goalie_key'=>'LAK|newsnapshotgoalie'])),'Snapshot roster membership ignored');
+verifyOwner(!$snapshotPolicy->accepts($a->fresh(),'goalie-status',null,$ownContext),'Stale roster used over current snapshot');
 $options=app(App\Support\OwnerGoalies::class)->options();
 verifyOwner($options->where('day','Today')->pluck('name')->values()->all()===['Z Early','Sam Goalie','Late Night','Unknown Time'],'Start-time ordering / confirmed / backup / live / final / exact-start filtering failed: '.$options->toJson());
 verifyOwner($options->where('day','Tomorrow')->pluck('name')->values()->all()===['Sam Goalie'],'Today/tomorrow grouping lost a repeated goalie');
@@ -151,4 +181,4 @@ $guestBell=view('account.goalie-bell',['goalie'=>['name'=>'Z Early','team'=>'TOR
 verifyOwner(str_contains($guestBell,'href="/login"'),'Guest bell lacks sign-in link');
 verifyOwner(str_contains(view('account.goalie-bell',['goalie'=>['name'=>'Sam Goalie','team'=>'MTL'],'date'=>'2026-10-03'])->render(),'goalie-watch-bell'),'Tomorrow unknown status bell missing');
 CarbonImmutable::setTestNow();
-echo "Owner account checks passed: pages, optional browsing, exclusive claims, reserved admin invitation, admin routes/actions, password hashing/login, Google state/linking, own/opponent scoring, goalie filters, date groups/start-time ordering, confirmed/nonstarter/started-game exclusions, bell toggle/auth/preference preservation, waiver dates, isolated push delivery, and SSRF rejection.\n";
+echo "Owner account checks passed: pages, optional browsing, exclusive claims, reserved admin invitation, admin routes/actions, password hashing/login, Google state/linking, own/opponent scoring, goalie filters, date groups/start-time ordering, confirmed/nonstarter/started-game exclusions, bell toggle/auth/preference preservation, waiver dates, own-goalie roster slots/current snapshot/toggle/delivery, isolated push delivery, and SSRF rejection.\n";
