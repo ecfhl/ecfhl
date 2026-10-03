@@ -476,6 +476,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 @endif
 <style>.header-actions{display:flex;align-items:center;gap:8px;margin-left:auto}.header-theme-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}@media(min-width:901px){.header-actions{order:3}.main-nav{order:2}.header-theme-toggle{margin-left:6px}}</style>
 <style>
+.score-up{color:#16834f!important}.score-down{color:#dc2626!important}.score-same{color:#111827!important}
 .team-icon-uploader{appearance:none;border:0;background:transparent;padding:0;margin:0;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;border-radius:12px}
 .team-icon-uploader:hover{filter:brightness(.96)}
 .team-icon-uploader:focus-visible{outline:2px solid #60a5fa;outline-offset:3px}
