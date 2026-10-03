@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('content')
-<div class="page-head current-teams-head"><div class="shell"><div class="eyebrow">2026-27 rosters</div><h1><span style="color:#c94b52">●</span> Live Scoring</h1><p>Current Matchups for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}.</p>@if($scoreLastUpdate)<p class="team-updated">Updated @include('partials.updated-time',['value'=>$scoreLastUpdate]){{ $autoRefresh ? ' · Updates every minute' : '' }}</p>@endif</div></div>
+<div class="page-head current-teams-head"><div class="shell"><div class="eyebrow">2026-27 rosters</div><h1><span style="color:#c94b52">●</span> Live Scoring</h1><p>Current Matchups for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}.</p>@if($scoreLastUpdate)<p class="team-updated">Updated @include('partials.updated-time',['value'=>$scoreLastUpdate]){{ $autoRefresh ? ' · Refreshes every 2 minutes during games' : '' }}</p>@endif</div></div>
 
 <div class="shell current-teams-page">
   <div class="team-toolbar">
@@ -35,6 +35,7 @@
     })->values();
   @endphp
 
+  @if(!$scoreLastUpdate)<p>No valid Fantrax snapshot is available for this fantasy date yet.</p>@endif
   <div class="current-matchup-list">
     @foreach($matchups as $matchup)
       @php
@@ -61,25 +62,19 @@
         $homeAll=$allPlayers($home);
 
         $sectionGroups=function($rows){
-          $playing=$rows->filter(fn($p)=>(bool)$p->is_playing)->values();
+          $playing=$rows->filter(fn($p)=>(bool)$p->daily_participant)->values();
 
           return [
             'Forwards'=>$playing->filter(fn($p)=>
-              !(bool)$p->is_bench
-              && !(bool)$p->is_ir
-              && strtoupper((string)$p->roster_status)!=='MINORS'
+              $p->scoring_status==='ACTIVE'
               && strtoupper((string)$p->position)==='F'
             )->values(),
             'Defensemen'=>$playing->filter(fn($p)=>
-              !(bool)$p->is_bench
-              && !(bool)$p->is_ir
-              && strtoupper((string)$p->roster_status)!=='MINORS'
+              $p->scoring_status==='ACTIVE'
               && strtoupper((string)$p->position)==='D'
             )->values(),
             'Goalies'=>$playing->filter(fn($p)=>
-              !(bool)$p->is_bench
-              && !(bool)$p->is_ir
-              && strtoupper((string)$p->roster_status)!=='MINORS'
+              $p->scoring_status==='ACTIVE'
               && strtoupper((string)$p->position)==='G'
             )->values(),
             'Bench'=>$playing->filter(fn($p)=>
@@ -112,17 +107,15 @@
 
         $activePlayingCounts=function($rows){
           $eligible=$rows->filter(fn($p)=>
-            (bool)$p->is_playing
-            && !(bool)$p->is_bench
-            && !(bool)$p->is_ir
-            && strtoupper((string)$p->roster_status)!=='MINORS'
+            (bool)$p->daily_participant
+            && $p->scoring_status==='ACTIVE'
           );
           return [
             'F'=>$eligible->where('position','F')->count(),
             'D'=>$eligible->where('position','D')->count(),
             'G'=>$eligible->where('position','G')->count(),
             'B'=>$rows->filter(fn($p)=>
-              (bool)$p->is_playing
+              (bool)$p->daily_participant
               && (bool)$p->is_bench
               && !(bool)$p->is_ir
               && strtoupper((string)$p->roster_status)!=='MINORS'
@@ -132,16 +125,8 @@
         $awayPlayingCounts=$activePlayingCounts($awayAll);
         $homePlayingCounts=$activePlayingCounts($homeAll);
 
-        $projectedTotal=function($rows){
-          return $rows->filter(fn($p)=>
-            (bool)$p->is_playing
-            && !(bool)$p->is_bench
-            && !(bool)$p->is_ir
-            && strtoupper((string)$p->roster_status)!=='MINORS'
-          )->sum(fn($p)=>(float)($p->projected_fpts_per_game??0));
-        };
-        $awayProjectedTotal=$projectedTotal($awayAll);
-        $homeProjectedTotal=$projectedTotal($homeAll);
+        $awayProjectedTotal=$away['daily_projected_fpts']??0;
+        $homeProjectedTotal=$home['daily_projected_fpts']??0;
       @endphp
 
       <details class="matchup-card" data-matchup-key="{{ ($away['id'] ?? $away['slug'] ?? 'away') }}::{{ ($home['id'] ?? $home['slug'] ?? 'home') }}" data-away-team-id="{{ $away['id'] ?? '' }}" data-home-team-id="{{ $home['id'] ?? '' }}">

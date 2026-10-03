@@ -1,0 +1,139 @@
+<?php
+
+// Disposable SQLite and real, sanitized Fantrax response fixtures. No network or production writes.
+putenv('DB_CONNECTION=sqlite'); putenv('DB_DATABASE=:memory:');
+putenv('SESSION_DRIVER=array'); putenv('CACHE_STORE=array'); putenv('APP_ENV=testing');
+putenv('APP_KEY=base64:'.base64_encode(str_repeat('x',32)));
+require __DIR__.'/../vendor/autoload.php';
+$app = require __DIR__.'/../bootstrap/app.php';
+$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+set_exception_handler(function (Throwable $e) { fwrite(STDERR, $e->getMessage()."\n".$e->getTraceAsString()."\n"); exit(1); });
+
+use App\Support\FantasyDay;
+use App\Support\LiveScoring\FantraxClient;
+use App\Support\LiveScoring\RefreshLiveScoring;
+use App\Support\LiveScoring\SnapshotBuilder;
+use App\Support\LiveScoring\SnapshotRepository;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+
+function checkLive(bool $condition, string $message): void { if (!$condition) throw new RuntimeException($message); }
+function liveFixture(string $date): array { return json_decode(gzdecode(file_get_contents(__DIR__.'/fixtures/live-scoring/'.$date.'.json.gz')), true, 512, JSON_THROW_ON_ERROR); }
+config(['database.connections.sqlite'=>['driver'=>'sqlite','database'=>':memory:','prefix'=>'','foreign_key_constraints'=>true]]);
+foreach (glob(__DIR__.'/../database/migrations/*create*.php') as $file) (require $file)->up();
+
+$days = new FantasyDay;
+$expected = ['yesterday'=>'2026-10-01','today'=>'2026-10-02','tomorrow'=>'2026-10-03'];
+checkLive($days->dates(CarbonImmutable::parse('2026-10-03 00:30','America/Halifax')) === $expected, 'Atlantic midnight shifted the fantasy day');
+checkLive($days->dates(CarbonImmutable::parse('2026-10-03T06:59:59Z')) === $expected, 'Day rolled over before Pacific midnight');
+checkLive($days->dates(CarbonImmutable::parse('2026-10-03T07:00:00Z')) === ['yesterday'=>'2026-10-02','today'=>'2026-10-03','tomorrow'=>'2026-10-04'], 'Pacific midnight did not roll over');
+checkLive($days->today(CarbonImmutable::parse('2026-11-01T06:30:00Z'))->toDateString() === '2026-10-31', 'DST day boundary failed');
+try { $days->parse('2026-02-30'); throw new RuntimeException('Invalid date accepted'); } catch (InvalidArgumentException) {}
+
+$builder = new SnapshotBuilder;
+$repository = new SnapshotRepository;
+$snapshots = [];
+foreach ($expected as $date) {
+    $source = liveFixture($date);
+    $snapshot = $builder->build($date, $source['day'], $source['period'], $source['details']);
+    $snapshots[$date] = $snapshot;
+    checkLive(count($snapshot['matchups']) === 7 && count($snapshot['teams']) === 14, 'Incomplete matchups for '.$date);
+    $repository->publish($snapshot, $source, CarbonImmutable::parse('2026-10-03T04:30:00Z'));
+    foreach ($snapshot['teams'] as $id=>$team) {
+        $players = array_filter($snapshot['players'], fn($p)=>$p['fantasy_team_id'] === $id && $p['scoring_status'] === 'ACTIVE');
+        checkLive(abs(array_sum(array_column($players,'daily_fpts')) - $team['daily_fpts']) < 0.02, 'Bench/minor points entered team total');
+        $raw = $source['day']['statsPerTeam']['allTeamsStats'][$id]['ACTIVE'];
+        checkLive($team['daily_fpts'] === (float)$raw['totalFpts'], 'Daily total changed');
+        checkLive($team['period_fpts'] === (float)$source['period']['statsPerTeam']['allTeamsStats'][$id]['ACTIVE']['totalFpts'] + (float)($source['period']['statsPerTeam']['allTeamsStats'][$id]['ACTIVE']['pointsAdjustment'] ?? 0), 'Period total changed');
+        $projectedTotal = 0;
+        foreach ($players as $player) {
+            checkLive($player['fantasy_date'] === $date && $player['source_date'] === $date, 'Player date changed');
+            checkLive($player['daily_fpts'] === (float)($raw['statsMap'][$player['player_id']]['object1'] ?? 0), 'Player points changed');
+            checkLive($player['game_id'] !== '', 'Event identity lost');
+            $pid = $player['player_id'];
+            $original = $raw['projectedTotalsMap'][$pid];
+            $calculated = $raw['calculatedProjectedTotalsMap'][$pid] ?? $original;
+            $finished = !empty($source['day']['allEventsFinished']) || ($raw['remainingEventPercent'][$pid] ?? null) === 0 || ($raw['remainingEventPercent'][$pid] ?? null) === 0.0;
+            checkLive($player['daily_projected_fpts'] === ($finished ? $original : $calculated), 'Player daily projection changed');
+            $projectedTotal += $calculated;
+            $game = explode('|',$raw['gameStatusMap'][$pid]);
+            checkLive($player['game_id'] === $game[1] && $player['game_status'] === $game[2], 'Game status changed');
+        }
+        checkLive($team['daily_projected_fpts'] === round($projectedTotal,2), 'Team daily projection changed');
+    }
+}
+$lone = array_values(array_filter($snapshots['2026-10-02']['players'], fn($p)=>$p['fantasy_team_id']==='65yfc2nwmolvao6q' && $p['scoring_status']==='ACTIVE'));
+$byId = array_column($lone, null, 'player_id');
+checkLive(count($lone) === 4, 'Lone Tsar daily lineup does not match Fantrax');
+checkLive($byId['05y3a']['daily_fpts'] === 2.0 && $byId['03wpi']['daily_fpts'] === 2.0, 'Carlsson/Dubois regression');
+checkLive(isset($byId['03924']) && $byId['03rf2']['daily_fpts'] === 0.0, 'Zero-point active player disappeared');
+checkLive($byId['05y3a']['gp'] === 1, 'Carlsson GP missing');
+$tomorrow = array_filter($snapshots['2026-10-03']['players'], fn($p)=>$p['fantasy_team_id']==='65yfc2nwmolvao6q' && $p['scoring_status']==='ACTIVE');
+checkLive(count($tomorrow) === 13, 'Tomorrow was not populated before games started');
+checkLive(!in_array('05y3a', array_column($tomorrow,'player_id'),true), 'Tomorrow copied today');
+checkLive($snapshots['2026-10-03']['teams']['65yfc2nwmolvao6q']['daily_projected_fpts'] > 0, 'Tomorrow projections missing');
+
+// Injury icons must not change Fantrax ACTIVE membership or team scoring.
+$source = liveFixture('2026-10-02');
+$source['day']['scorerMap']['ACTIVE']['65yfc2nwmolvao6q']['2010'][0]['scorer']['icons'][] = ['typeId'=>'2'];
+$injured = $builder->build('2026-10-02',$source['day'],$source['period'],$source['details']);
+checkLive($injured['teams']['65yfc2nwmolvao6q']['daily_fpts'] === $snapshots['2026-10-02']['teams']['65yfc2nwmolvao6q']['daily_fpts'], 'Injury flag removed ACTIVE scoring');
+
+Http::preventStrayRequests();
+$badDate = true;
+Http::fake(function ($request) use (&$badDate) {
+    $message = $request->data()['msgs'][0];
+    $date = $message['data']['date'] ?? $message['data']['startDate'];
+    $fixture = liveFixture($date);
+    if ($message['method'] === 'getLiveScoringStats') {
+        $data = $fixture[$message['data']['viewType']==='1'?'day':'period'];
+        if ($badDate && $date==='2026-10-02') $data['date'] = '2026-10-03';
+    } else {
+        $key = $message['data']['positionOrGroup'].':1';
+        if (isset($message['data']['searchName'])) {
+            foreach ($fixture['details'] as $candidateKey=>$candidate) {
+                foreach ($candidate['statsTable'] as $entry) {
+                    if ($entry['scorer']['name'] === $message['data']['searchName']) $key = $candidateKey;
+                }
+            }
+        }
+        $data = $fixture['details'][$key];
+    }
+    return Http::response(['responses'=>[['data'=>$data]]],200);
+});
+CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-10-03 00:30','America/Halifax'));
+$before = $repository->get('2026-10-02');
+$messages = [];
+$refresh = new RefreshLiveScoring(new FantraxClient,$repository,$builder);
+checkLive(!$refresh->refresh('2026-10-02', function($m)use(&$messages){$messages[]=$m;}), 'Wrong-date response accepted');
+checkLive($repository->get('2026-10-02') === $before, 'Failed date destroyed previous valid snapshot');
+checkLive(count($messages) === 3 && str_contains($messages[0],'published') && str_contains($messages[2],'published'), 'One failed date prevented independent dates publishing');
+$badDate = false;
+checkLive($refresh->refresh('2026-10-02', fn($m)=>null), 'Valid independent refresh failed');
+
+$kernel=$app->make(Illuminate\Contracts\Http\Kernel::class);
+$loneSlug=Illuminate\Support\Str::slug($snapshots['2026-10-02']['teams']['65yfc2nwmolvao6q']['name']);
+DB::table('seasons')->insert(['season_id'=>'test-current','season_name'=>'2026-27']);
+foreach ($snapshots['2026-10-02']['teams'] as $id=>$team) {
+    DB::table('team_seasons')->insert(['team_season_id'=>'test-'.$id,'season_id'=>'test-current','franchise_id'=>$id,'original_name'=>$team['name']]);
+}
+foreach ($expected as $date) {
+    $app->forgetScopedInstances();
+    $request=Illuminate\Http\Request::create('/teams/current?date='.$date);
+    $response=$kernel->handle($request);
+    checkLive($response->getStatusCode()===200, 'Live scoring render failed: '.$date.' '.$response->getContent());
+    $html=$response->getContent();
+    checkLive(substr_count($html,'class="matchup-card"')===7, 'Rendered matchups incomplete');
+    checkLive(str_contains($html,'date=2026-10-01') && str_contains($html,'date=2026-10-02') && str_contains($html,'date=2026-10-03'), 'Date buttons wrong after Atlantic midnight');
+    if ($date==='2026-10-02') checkLive(str_contains($html,'Leo Carlsson') && str_contains($html,'Roope Hintz'), 'Regression players missing in rendered page');
+    $kernel->terminate($request,$response);
+    $app->forgetScopedInstances();
+    $request=Illuminate\Http\Request::create('/teams/current/'.$loneSlug.'?date='.$date);
+    $response=$kernel->handle($request);
+    checkLive($response->getStatusCode()===200, 'My Team matchup render failed: '.$date.' '.substr(strip_tags($response->getContent()),0,1500));
+    if ($date==='2026-10-02') checkLive(str_contains($response->getContent(),'Leo Carlsson'), 'My Team still depended on old participation flags');
+    $kernel->terminate($request,$response);
+}
+CarbonImmutable::setTestNow();
+echo "Live scoring checks passed: Pacific midnight/DST, three Fantrax dates, seven matchups, IDs, zero-point players, future projections, injury flags, failed-date preservation, independent publication, and page rendering.\n";

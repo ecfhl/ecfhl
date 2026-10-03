@@ -19,3 +19,4 @@ jobs:
       - run: php tests/archive-smoke.php
       - run: php tests/ai-tips.php
       - run: php tests/starting-goalies.php
+      - run: php tests/live-scoring.php

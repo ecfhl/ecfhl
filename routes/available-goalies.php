@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('ecfhl:refresh-available-goalies', function () {
-    $base = CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();
+    $base = app(\App\Support\FantasyDay::class)->today();
     $failed = false;
 
     foreach ([$base, $base->addDay()] as $date) {

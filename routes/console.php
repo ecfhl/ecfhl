@@ -3,13 +3,11 @@
 use App\Support\DailyFaceoffPowerPlay;
 use App\Support\DailyFaceoffStartingGoalies;
 use App\Support\FantraxAvailablePlayers;
-use App\Support\FantraxDailyScores;
 use App\Support\FantraxDailyMoves;
 use App\Support\FantraxTeamRosters;
 use App\Support\FantraxStandings;
 use App\Support\FantraxSchedule;
 use App\Support\NhlOdds;
-use App\Support\NhlDailyStats;
 use App\Support\WebPush;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Artisan;
@@ -58,7 +56,7 @@ Artisan::command('ecfhl:refresh-pp-lines {--team=}', function (DailyFaceoffPower
 });
 
 Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayers $fantrax) {
-    $base=CarbonImmutable::now('America/Vancouver')->startOfDay();$failed=false;
+    $base=app(\App\Support\FantasyDay::class)->today();$failed=false;
     foreach([$base,$base->addDay()] as $date){try{
         Log::info('Fantrax daily players refresh started',['date'=>$date->format('Y-m-d'),'url'=>$fantrax->url($date)]);
         $all=$fantrax->fetch($date,'ALL');
@@ -71,265 +69,11 @@ Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayer
     return $failed?1:0;
 });
 
-Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailyScores $fantrax, NhlDailyStats $nhlStats, FantraxSchedule $fantraxSchedule, WebPush $webPush) {
-    $tz='America/Vancouver';
-    $requested=trim((string)($this->argument('date')??''));
-    if($requested!==''){
-        try{$dates=[CarbonImmutable::createFromFormat('!Y-m-d',$requested,$tz)];}
-        catch(\Throwable){$this->error('Use date format YYYY-MM-DD.');return 1;}
-    }else{
-        $today=CarbonImmutable::now('America/Vancouver')->startOfDay();
-        $dates=[$today];
-        $yesterday=$today->subDay();
-        $hasYesterday=DB::table('active_daily_scores')->whereDate('game_date',$yesterday->toDateString())->exists();
-        if(!$hasYesterday)$dates=array_merge([$yesterday],$dates);
-    }
-
-    $failed=false;
-    foreach($dates as $date){
-        try {
-            $data=$fantrax->fetch($date);
-            $nhlRows=$nhlStats->fetch($date);
-            $cowanNhl=collect($nhlRows)->first(fn($r)=>str_contains(mb_strtolower((string)($r['player_name']??'')),'cowan'));
-            Log::info('NHL daily stat merge diagnostic',[
-                'date'=>$date->toDateString(),
-                'nhl_rows'=>count($nhlRows),
-                'cowan'=>$cowanNhl,
-            ]);
-            $normName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower($name))??'';};
-            $normTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
-            $nhlByKey=[];
-            foreach($nhlRows as $stat)$nhlByKey[$normTeam($stat['nhl_team']??'').'|'.$normName($stat['player_name']??'')]=$stat;
-
-            $previousScores=DB::table('active_daily_scores')
-                ->whereDate('game_date',$date->toDateString())
-                ->get()
-                ->keyBy(fn($r)=>$normTeam($r->nhl_team).'|'.$normName($r->player_name));
-
-            $now=now();
-            $rows=array_map(function($r)use($date,$now,$data,$nhlByKey,$normName,$normTeam,$previousScores){
-                $stat=$nhlByKey[$normTeam($r['nhl_team']??'').'|'.$normName($r['player_name']??'')]??[];
-                return [
-                    'game_date'=>$date->toDateString(),
-                    'player_name'=>$r['player_name'],
-                    'nhl_team'=>$r['nhl_team'],
-                    'position'=>$r['position'],
-                    'fantasy_status'=>$r['fantasy_status'],
-                    'opponent_display'=>$r['opponent_display']??null,
-                    'today_fpts'=>$r['today_fpts'],
-                    'fpts_changed'=>($previous=$previousScores[$normTeam($r['nhl_team']??'').'|'.$normName($r['player_name']??'')]??null)
-                        ? abs((float)$previous->today_fpts-(float)$r['today_fpts'])>0.0001
-                        : false,
-                    'gp'=>$stat['gp']??0,
-                    'g'=>$stat['g']??0,
-                    'a'=>$stat['a']??0,
-                    'ppg'=>$stat['ppg']??0,
-                    'shg'=>$stat['shg']??0,
-                    'gwg'=>$stat['gwg']??0,
-                    'w'=>$stat['w']??0,
-                    'so'=>$stat['so']??0,
-                    'source_url'=>$data['url'],
-                    'checked_at'=>$now,
-                    'created_at'=>$now,
-                    'updated_at'=>$now,
-                ];
-            },$data['rows']);
-
-            $fantasyTeamByPlayer=[];
-            try {
-                $rosterRows=DB::table('active_fantasy_rosters')
-                    ->whereDate('game_date',$date->toDateString())
-                    ->get(['player_name','nhl_team','fantasy_team_id']);
-                foreach($rosterRows as $rosterRow){
-                    $rosterKey=$normTeam($rosterRow->nhl_team??'').'|'.$normName($rosterRow->player_name??'');
-                    if($rosterKey!=='|')$fantasyTeamByPlayer[$rosterKey]=(string)$rosterRow->fantasy_team_id;
-                }
-            } catch (\Throwable $e) {
-                Log::warning('Could not map live-score notifications to fantasy teams',['error'=>$e->getMessage()]);
-            }
-
-            $scoreNotifications=[];
-            $isCurrentFantasyDay=$date->toDateString()===CarbonImmutable::now('America/Vancouver')->startOfDay()->toDateString();
-            if($isCurrentFantasyDay){
-                foreach($rows as $row){
-                    $key=$normTeam($row['nhl_team']??'').'|'.$normName($row['player_name']??'');
-                    $previous=$previousScores[$key]??null;
-                    if(!$previous)continue;
-
-                    // A live-scoring alert is only useful when this current roster
-                    // player's fantasy score increases. Stat corrections or category-only
-                    // changes that do not add fantasy points must stay silent.
-                    $previousFpts=(float)($previous->today_fpts??0);
-                    $currentFpts=(float)($row['today_fpts']??0);
-                    if($currentFpts<=$previousFpts+0.0001)continue;
-
-                    $name=trim((string)$row['player_name']);
-                    $team=$normTeam($row['nhl_team']??'');
-                    $label=$name.($team!==''?' ('.$team.')':'');
-                    $delta=fn($field)=>(int)($row[$field]??0)-(int)($previous->{$field}??0);
-                    $fantasyTeamId=$fantasyTeamByPlayer[$key]??null;
-                    if(!$fantasyTeamId)continue;
-                    $queueNotification=function(string $body)use(&$scoreNotifications,$fantasyTeamId){$scoreNotifications[]=['body'=>$body,'fantasy_team_id'=>$fantasyTeamId];};
-
-                    $goalDelta=max(0,$delta('g'));
-                    $ppgDelta=max(0,$delta('ppg'));
-                    $shgDelta=max(0,$delta('shg'));
-                    if($ppgDelta>0)$queueNotification('PPG by '.$label);
-                    if($shgDelta>0)$queueNotification('SHG by '.$label);
-                    if(max(0,$goalDelta-$ppgDelta-$shgDelta)>0)$queueNotification('Goal by '.$label);
-                    if($delta('a')>0)$queueNotification('Assist by '.$label);
-                    if($delta('gwg')>0)$queueNotification('GWG by '.$label);
-                    if($delta('w')>0)$queueNotification('Win by '.$label);
-                    if($delta('so')>0)$queueNotification('Shutout by '.$label);
-                }
-            }
-
-            $matchupRows=null;
-            try {
-                $schedule=$fantraxSchedule->forDate($date,true);
-
-                if(\Illuminate\Support\Facades\Schema::hasTable('fantrax_scoring_period_matchups')){
-                    $caption=trim((string)($schedule['caption']??''));
-                    preg_match('/(\d+)/',$caption,$periodMatch);
-                    $periodNumber=(int)($periodMatch[1]??0);
-                    if($periodNumber>0){
-                        $normalizeMatchupName=fn($v)=>mb_strtolower(trim(preg_replace('/\s+/u',' ',str_replace(["’","‘"],"'",(string)$v))));
-                        $storedPeriodRows=DB::table('fantrax_scoring_period_matchups')
-                            ->where('season_id','2026-27')
-                            ->where('period_number',$periodNumber)
-                            ->get();
-                        foreach(($schedule['matchups']??[]) as $periodMatchup){
-                            $awayName=(string)($periodMatchup['away_name']??'');
-                            $homeName=(string)($periodMatchup['home_name']??'');
-                            $storedPeriodRow=$storedPeriodRows->first(fn($r)=>
-                                $normalizeMatchupName($r->away_team_name)===$normalizeMatchupName($awayName)
-                                && $normalizeMatchupName($r->home_team_name)===$normalizeMatchupName($homeName)
-                            );
-                            if($storedPeriodRow){
-                                DB::table('fantrax_scoring_period_matchups')
-                                    ->where('id',$storedPeriodRow->id)
-                                    ->update([
-                                        'start_date'=>$schedule['start']??null,
-                                        'end_date'=>$schedule['end']??null,
-                                        'away_score'=>$periodMatchup['away_score']??0,
-                                        'home_score'=>$periodMatchup['home_score']??0,
-                                        'updated_at'=>now(),
-                                    ]);
-                            }
-                        }
-                    }
-                }
-
-                $previousMatchups=DB::table('active_matchup_scores')
-                    ->whereDate('game_date',$date->toDateString())
-                    ->get()
-                    ->keyBy(fn($r)=>(string)$r->fantasy_team_id);
-                $matchupRows=[];
-                foreach(($schedule['matchups']??[]) as $pair){
-                    foreach([
-                        [(string)($pair['away_team_id']??''),$pair['away_score']??null],
-                        [(string)($pair['home_team_id']??''),$pair['home_score']??null],
-                    ] as [$teamId,$score]){
-                        if($teamId==='')continue;
-                        $previous=$previousMatchups[$teamId]??null;
-                        $matchupRows[]=[
-                            'game_date'=>$date->toDateString(),
-                            'fantasy_team_id'=>$teamId,
-                            'week_fpts'=>$score,
-                            'week_fpts_changed'=>$previous && $score!==null
-                                ? abs((float)$previous->week_fpts-(float)$score)>0.0001
-                                : false,
-                            'checked_at'=>$now,
-                            'created_at'=>$now,
-                            'updated_at'=>$now,
-                        ];
-                    }
-                }
-            } catch (\Throwable $e) {
-                Log::warning('Fantrax matchup score snapshot failed',[
-                    'date'=>$date->toDateString(),
-                    'error'=>$e->getMessage(),
-                ]);
-            }
-
-            DB::transaction(function()use($date,$rows,$matchupRows){
-                DB::table('active_daily_scores')->whereDate('game_date',$date->toDateString())->delete();
-                if($rows)DB::table('active_daily_scores')->insert($rows);
-                if($matchupRows!==null){
-                    DB::table('active_matchup_scores')->whereDate('game_date',$date->toDateString())->delete();
-                    if($matchupRows)DB::table('active_matchup_scores')->insert($matchupRows);
-                }
-            });
-
-            DB::table('job_run_history')->insert([
-                'job_name'=>'ecfhl:refresh-daily-scores',
-                'target_date'=>$date->toDateString(),
-                'rows_processed'=>count($rows),
-                'completed_at'=>now(),
-                'created_at'=>now(),
-                'updated_at'=>now(),
-            ]);
-
-            foreach($scoreNotifications as $notification){
-                try {
-                    $body=$notification['body'];
-                    $webPush->notify('live-score','ECFHL Live Scoring',$body,'/teams/current?date='.$date->toDateString(),$notification['fantasy_team_id']);
-                } catch (\Throwable $e) {
-                    Log::warning('Live scoring push notification failed',[
-                        'date'=>$date->toDateString(),
-                        'body'=>$body,
-                        'error'=>$e->getMessage(),
-                    ]);
-                }
-            }
-
-            $this->info($date->toDateString().': '.count($rows).' Fantrax daily scores refreshed');
-        } catch (\Throwable $e) {
-            $failed=true;
-            Log::error('Fantrax daily score refresh failed',['date'=>$date->toDateString(),'error'=>$e->getMessage()]);
-            $this->error($date->toDateString().': '.$e->getMessage().'. Existing scores preserved.');
-        }
-    }
-
-    return $failed?1:0;
-});
-
-Artisan::command('ecfhl:refresh-live-scoring {date?}', function () {
-    $base=CarbonImmutable::now('America/Vancouver')->startOfDay();
-    $requested=trim((string)($this->argument('date')??''));
-    if($requested!==''){
-        try{$base=CarbonImmutable::createFromFormat('!Y-m-d',$requested,'America/Vancouver');}
-        catch(\Throwable){$this->error('Use date format YYYY-MM-DD.');return 1;}
-    }
-
-    $dates=[$base->subDay(),$base,$base->addDay()];
-    $failed=false;
-    foreach($dates as $date){
-        $day=$date->toDateString();
-        $this->info('Refreshing Fantrax live-scoring snapshot for '.$day);
-        foreach([
-            ['ecfhl:refresh-daily-scores',['date'=>$day]],
-        ] as [$command,$args]){
-            $code=Artisan::call($command,$args);
-            $out=trim(Artisan::output());
-            if($out!=='')$this->line($out);
-            if($code!==0)$failed=true;
-        }
-    }
-
-    // Rosters are ownership/lineup metadata; refresh once after the three
-    // independent Fantrax BY_DATE score snapshots.
-    $code=Artisan::call('ecfhl:refresh-fantasy-rosters');
-    $out=trim(Artisan::output());
-    if($out!=='')$this->line($out);
-    if($code!==0)$failed=true;
-
-    return $failed?1:0;
-});
+require __DIR__.'/live-scoring-console.php';
 
 Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dailyMoves) {
     $tz='America/Vancouver';
-    $day=CarbonImmutable::now($tz)->startOfDay();
+    $day=app(FantasyDay::class)->today();
     $date=$day->toDateString();
     $dow=(int)$day->format('N');
     $isWeekend=$dow>=6;
@@ -1196,7 +940,7 @@ Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $
 
         DB::table('job_run_history')->insert([
             'job_name'=>'ecfhl:refresh-current-standings',
-            'target_date'=>CarbonImmutable::now('America/Halifax')->toDateString(),
+            'target_date'=>app(FantasyDay::class)->today()->toDateString(),
             'rows_processed'=>count($updates),
             'completed_at'=>now(),
             'created_at'=>now(),
@@ -1213,7 +957,7 @@ Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $
 });
 
 Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $fantrax, FantraxDailyMoves $dailyMoves) {
-    $base=CarbonImmutable::now('America/Vancouver')->startOfDay();
+    $base=app(\App\Support\FantasyDay::class)->today();
     $failed=false;
 
     $todayFrozen=false;
@@ -1311,7 +1055,7 @@ Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $
 });
 
 Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartingGoalies $dfo, WebPush $webPush) {
-    $abbr=['Anaheim Ducks'=>'ANA','Boston Bruins'=>'BOS','Buffalo Sabres'=>'BUF','Calgary Flames'=>'CGY','Carolina Hurricanes'=>'CAR','Chicago Blackhawks'=>'CHI','Colorado Avalanche'=>'COL','Columbus Blue Jackets'=>'CBJ','Dallas Stars'=>'DAL','Detroit Red Wings'=>'DET','Edmonton Oilers'=>'EDM','Florida Panthers'=>'FLA','Los Angeles Kings'=>'LAK','Minnesota Wild'=>'MIN','Montreal Canadiens'=>'MTL','Nashville Predators'=>'NSH','New Jersey Devils'=>'NJD','New York Islanders'=>'NYI','New York Rangers'=>'NYR','Ottawa Senators'=>'OTT','Philadelphia Flyers'=>'PHI','Pittsburgh Penguins'=>'PIT','San Jose Sharks'=>'SJS','Seattle Kraken'=>'SEA','St. Louis Blues'=>'STL','Tampa Bay Lightning'=>'TBL','Toronto Maple Leafs'=>'TOR','Utah Mammoth'=>'UTA','Vancouver Canucks'=>'VAN','Vegas Golden Knights'=>'VGK','Washington Capitals'=>'WSH','Winnipeg Jets'=>'WPG'];$base=CarbonImmutable::now('America/Vancouver')->startOfDay();$failed=false;
+    $abbr=['Anaheim Ducks'=>'ANA','Boston Bruins'=>'BOS','Buffalo Sabres'=>'BUF','Calgary Flames'=>'CGY','Carolina Hurricanes'=>'CAR','Chicago Blackhawks'=>'CHI','Colorado Avalanche'=>'COL','Columbus Blue Jackets'=>'CBJ','Dallas Stars'=>'DAL','Detroit Red Wings'=>'DET','Edmonton Oilers'=>'EDM','Florida Panthers'=>'FLA','Los Angeles Kings'=>'LAK','Minnesota Wild'=>'MIN','Montreal Canadiens'=>'MTL','Nashville Predators'=>'NSH','New Jersey Devils'=>'NJD','New York Islanders'=>'NYI','New York Rangers'=>'NYR','Ottawa Senators'=>'OTT','Philadelphia Flyers'=>'PHI','Pittsburgh Penguins'=>'PIT','San Jose Sharks'=>'SJS','Seattle Kraken'=>'SEA','St. Louis Blues'=>'STL','Tampa Bay Lightning'=>'TBL','Toronto Maple Leafs'=>'TOR','Utah Mammoth'=>'UTA','Vancouver Canucks'=>'VAN','Vegas Golden Knights'=>'VGK','Washington Capitals'=>'WSH','Winnipeg Jets'=>'WPG'];$base=app(\App\Support\FantasyDay::class)->today();$failed=false;
     foreach ([$base, $base->addDay()] as $date) {
         $day = $date->format('Y-m-d');
         try {
@@ -1422,7 +1166,7 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
 });
 
 Artisan::command('ecfhl:refresh-odds', function (NhlOdds $odds) {
-    $base = CarbonImmutable::now('America/Vancouver')->startOfDay();
+    $base = app(\App\Support\FantasyDay::class)->today();
     $wanted = [$base->toDateString(), $base->addDay()->toDateString()];
     try {
         $data = $odds->fetch();
@@ -1452,41 +1196,6 @@ Artisan::command('ecfhl:refresh-odds', function (NhlOdds $odds) {
     }
 });
 
-Schedule::command('ecfhl:refresh-daily-scores')
-    ->cron('* * * * *')
-    ->withoutOverlapping(2)
-    ->runInBackground()
-    ->when(function () {
-        $fantasyDay=CarbonImmutable::now('America/Vancouver')->startOfDay();
-        $day=$fantasyDay->toDateString();
-
-        try {
-            $response=Http::timeout(12)->retry(1,500)->get('https://api-web.nhle.com/v1/score/'.$day);
-            $response->throw();
-            $starts=collect($response->json('games')??[])
-                ->map(function($game){
-                    $utc=$game['startTimeUTC']??null;
-                    if(!$utc)return null;
-                    try{return CarbonImmutable::parse($utc)->utc();}catch(\Throwable){return null;}
-                })
-                ->filter();
-
-            if($starts->isEmpty())return false;
-
-            $now=CarbonImmutable::now('UTC');
-            $first=$starts->sort()->first();
-            $last=$starts->sortDesc()->first();
-
-            return $now->betweenIncluded($first,$last->addHours(4));
-        } catch (\Throwable $e) {
-            Log::warning('Live scoring window check failed',[
-                'date'=>$day,
-                'error'=>$e->getMessage(),
-            ]);
-            return false;
-        }
-    });
-
 Schedule::command('ecfhl:refresh-lineup-advice')
     ->hourly()
     ->timezone('America/Halifax')
@@ -1504,7 +1213,7 @@ Schedule::command('ecfhl:refresh-current-standings')
     ->withoutOverlapping(4)
     ->runInBackground()
     ->when(function () {
-        $fantasyDay=CarbonImmutable::now('America/Vancouver')->startOfDay();
+        $fantasyDay=app(\App\Support\FantasyDay::class)->today();
         $day=$fantasyDay->toDateString();
 
         try {

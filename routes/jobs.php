@@ -35,7 +35,7 @@ Route::post('/job-status/run/{job}', function (string $job) {
         'lines' => 'ecfhl:refresh-pp-lines',
         'odds' => 'ecfhl:refresh-odds',
         'teams' => 'ecfhl:refresh-fantasy-rosters',
-        'scores' => 'ecfhl:refresh-daily-scores',
+        'scores' => 'ecfhl:refresh-live-scoring',
         'standings' => 'ecfhl:refresh-current-standings',
         'advisor' => 'ecfhl:refresh-lineup-advice',
     ];

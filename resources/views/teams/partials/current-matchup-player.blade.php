@@ -28,7 +28,7 @@
     </div>
     <div class="matchup-player-opponent">
       @php
-        $showLiveOpp = (($player->today_gp ?? 0) > 0) && !empty($player->live_opponent_display);
+        $showLiveOpp = !empty($player->live_opponent_display);
       @endphp
       @if($showLiveOpp)
         <span class="team-playing-text">{{ $liveOppText }}</span>
@@ -42,11 +42,14 @@
       @else
         <span class="team-playing-text">Playing</span>
       @endif
+      @if($isGameFinished)<span class="pill">Final</span>@elseif(!empty($player->game_in_progress))<span class="pill">In progress</span>@endif
+      @if(($player->today_ol ?? 0) != 0)<span class="matchup-player-cats">OL+ShL: {{ $player->today_ol }}</span>@endif
       <span class="matchup-player-cats"><span class="matchup-player-cats-primary">@foreach(['today_gp'=>'GP','today_g'=>'G','today_a'=>'A'] as $field=>$label)@if(($player->{$field} ?? 0) != 0)<span>{{ $label }}: {{ $player->{$field} }}</span>@endif @endforeach</span><span class="matchup-player-cats-special">@foreach(['today_ppg'=>'PPG','today_shg'=>'SHG','today_gwg'=>'GWG','today_w'=>'W','today_so'=>'SO'] as $field=>$label)@if(($player->{$field} ?? 0) != 0)<span>{{ $label }}: {{ $player->{$field} }}</span>@endif @endforeach</span></span>
+      @if(strtoupper((string)$player->position)==='G' && !empty($player->goalie_stats))<span class="matchup-player-cats">@foreach($player->goalie_stats as $label=>$value)@if($value!==null && $value!=='')<span>{{ $label }}: {{ $value }}</span>@endif @endforeach</span>@endif
     </div>
   </div>
   <div class="matchup-player-metrics">
-    <div><span>Proj./G</span><strong>{{ $player->projected_fpts_per_game!==null?number_format($player->projected_fpts_per_game,2):'—' }}</strong></div>
-    <div class="matchup-player-today"><span>Today</span><strong class="{{ !empty($player->today_fpts_changed)?'score-changed':'' }}">{{ number_format($player->today_fpts ?? 0,0) }}</strong></div>
+    <div><span>Proj.</span><strong>{{ $player->projected_fpts_per_game!==null?number_format($player->projected_fpts_per_game,2):'—' }}</strong></div>
+    <div class="matchup-player-today"><span>Day</span><strong class="{{ !empty($player->today_fpts_changed)?'score-changed':'' }}">{{ rtrim(rtrim(number_format($player->today_fpts ?? 0,2), '0'), '.') }}</strong></div>
   </div>
 </div>

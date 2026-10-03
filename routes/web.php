@@ -296,7 +296,7 @@ Route::get('/standings', function(EcfhlData $data){
                 ];
             })->values()->all();
 
-            $fantasyToday=\Carbon\CarbonImmutable::now('America/Vancouver')->startOfDay();
+            $fantasyToday=app(\App\Support\FantasyDay::class)->today();
             foreach($scoringPeriods as $period){
                 if(empty($period['start'])||empty($period['end']))continue;
                 $periodStart=\Carbon\CarbonImmutable::parse($period['start'],'America/Halifax')->startOfDay();
@@ -324,282 +324,19 @@ Route::get('/seasons/{season}', function(string $season,EcfhlData $data){
     return view('seasons.show',['season'=>$row,'tradeLeaders'=>$tradeLeaders,'standings'=>$standings,'awards'=>$data->seasonAwards($season),'tradeCount'=>$data->seasonTradeCount($season),'topPicks'=>$firstRoundPicks,'standingsLastUpdate'=>$standingsLastUpdate]);
 })->where('season','.*');
 Route::get('/teams', function(EcfhlData $data){$type=$data->mode();$status=request('status','all');$allTeams=$data->teamLedger($type,'all');$teams=$data->teamLedger($type,$status);$overview=$data->overviewLeaders();$totals=[];foreach($data->teamSeasons() as $r){$id=$r['franchise_id']??null;if($id&&$r['fantasy_points_for']!==null)$totals[$id]=($totals[$id]??0)+(float)$r['fantasy_points_for'];}foreach($teams as &$t)$t['total_fpts']=$totals[$t['id']]??null;unset($t);$pres=[];foreach($allTeams as $t)if(($t['president']??0)>0)$pres[]=['team'=>$t['team'],'value'=>$t['president'],'score'=>$t['president']];usort($pres,fn($a,$b)=>$b['score']<=>$a['score']);$franchiseLeaders=['championships'=>$overview['championships'],'presidents'=>$pres,'winning_pct'=>$overview['winning_pct'],'first_picks'=>$overview['first_picks'],'trades'=>$overview['trades'],'awards'=>$overview['awards']];return view('teams.index',compact('teams','allTeams','type','status','franchiseLeaders'));});
-Route::get('/teams/current', function() {
-    $tz='America/Halifax';
-    $fantasyDay=\Carbon\CarbonImmutable::now('America/Vancouver')->startOfDay();
-    $today=$fantasyDay->toDateString();
-    $yesterday=$fantasyDay->subDay()->toDateString();
-    $tomorrow=$fantasyDay->addDay()->toDateString();
-    $date=(string)request('date',$today);
-    if(!in_array($date,[$yesterday,$today,$tomorrow],true))$date=$today;
+Route::get('/teams/current', \App\Http\Controllers\LiveScoringController::class);
 
-    $autoRefresh=false;
-    if($date===$today){
-        try {
-            $response=Http::timeout(8)->get('https://api-web.nhle.com/v1/score/'.$today);
-            $starts=collect($response->json('games')??[])
-                ->map(function($game){
-                    $utc=$game['startTimeUTC']??null;
-                    if(!$utc)return null;
-                    try{return \Carbon\CarbonImmutable::parse($utc)->utc();}catch(\Throwable){return null;}
-                })
-                ->filter();
-            if($starts->isNotEmpty()){
-                $nowUtc=\Carbon\CarbonImmutable::now('UTC');
-                $first=$starts->sort()->first();
-                $last=$starts->sortDesc()->first();
-                $autoRefresh=$nowUtc->betweenIncluded($first,$last->addHours(4));
-            }
-        } catch (\Throwable $e) {
-            report($e);
-        }
-    }
-
-    $currentNames=DB::table('team_seasons as ts')
-        ->join('seasons as s','s.season_id','=','ts.season_id')
-        ->where('s.season_name','2026-27')
-        ->orderBy('ts.original_name')
-        ->pluck('ts.original_name')
-        ->all();
-
-    $rows=DB::table('active_fantasy_rosters')
-        ->whereDate('game_date',$date)
-        ->whereIn('fantasy_team_name',$currentNames)
-        ->get();
-
-    $scheduleByTeam=DB::table('active_starting_goalies')
-        ->whereDate('game_date',$date)
-        ->get()
-        ->keyBy(fn($g)=>strtoupper(trim((string)$g->team)));
-
-    // Fantrax daily scoring is authoritative for the selected fantasy date.
-    // Do not depend on the roster collector's is_playing flag: a player with a
-    // Fantrax daily-score row (including 0 FPts) belongs to that day's matchup.
-    $dailyScoreRows=DB::table('active_daily_scores')->whereDate('game_date',$date)->get();
-    $scoreName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower($name))??'';};
-    $scoreTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
-    $dailyScores=$dailyScoreRows->keyBy(fn($r)=>$scoreTeam($r->nhl_team).'|'.$scoreName($r->player_name));
-
-    $rows=$rows->map(function($p)use($scheduleByTeam,$dailyScores,$scoreName,$scoreTeam){
-        $team=$scoreTeam($p->nhl_team);
-        $score=$dailyScores[$team.'|'.$scoreName($p->player_name)]??null;
-        $p->is_playing=$score!==null;
-        if($score){
-            $liveOpp=trim((string)($score->opponent_display??''));
-            if($liveOpp!=='')$p->opponent_display=$liveOpp;
-        }
-        if((bool)$p->is_playing && $team!=='' && isset($scheduleByTeam[$team])){
-            $game=$scheduleByTeam[$team];
-            if(empty($p->opponent))$p->opponent=$game->opponent;
-            if(empty($p->home_away))$p->home_away=$game->home_away;
-        }
-        return $p;
-    });
-
-    $scoreLastUpdate=DB::table('job_run_history')
-        ->where('job_name','ecfhl:refresh-daily-scores')
-        ->whereDate('target_date',$date)
-        ->max('completed_at');
-    $dailyScores=$dailyScoreRows->keyBy(fn($r)=>$scoreTeam($r->nhl_team).'|'.$scoreName($r->player_name));
-    $finishedNhlTeams=$dailyScoreRows
-        ->filter(function($r){
-            $opp=trim((string)($r->opponent_display??''));
-            return $opp!=='' && (bool)preg_match('/(?:\\bF\\b|\\bFinal\\b)\\s*$/i',$opp);
-        })
-        ->map(fn($r)=>$scoreTeam($r->nhl_team));
-
-    $finishedNhlTeams=$finishedNhlTeams
-        ->merge(
-            $rows->filter(function($p){
-                $text=trim((string)($p->game_time??''));
-                return $text!=='' && (bool)preg_match('/(?:\\bF\\b|\\bFinal\\b)\\s*$/i',$text);
-            })->map(fn($p)=>$scoreTeam($p->nhl_team))
-        )
-        ->filter()
-        ->unique()
-        ->flip();
-
-    $rows=$rows->map(function($p)use($dailyScores,$scoreName,$scoreTeam,$finishedNhlTeams){
-        $score=$dailyScores[$scoreTeam($p->nhl_team).'|'.$scoreName($p->player_name)]??null;
-        $p->today_fpts=$score?(float)$score->today_fpts:0.0;
-        $p->today_fpts_changed=$score?(bool)($score->fpts_changed??false):false;
-        $p->live_opponent_display=$score?($score->opponent_display??null):null;
-        $liveOpp=trim((string)($p->live_opponent_display??''));
-        $p->game_finished=isset($finishedNhlTeams[$scoreTeam($p->nhl_team)])
-            || ($liveOpp!=='' && (bool)preg_match('/(?:\\bF\\b|\\bFinal\\b)\\s*$/i',$liveOpp));
-        $p->game_in_progress=$liveOpp!=='' && !$p->game_finished
-            && (bool)preg_match('/\\b\\d+\\s+@?[A-Z]{2,4}\\s+\\d+\\b/i',$liveOpp);
-        foreach(['gp','g','a','ppg','shg','gwg','w','so'] as $stat){
-            $p->{'today_'.$stat}=$score?(int)($score->{$stat}??0):0;
-        }
-        return $p;
-    });
-
-    $normName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\pL\pN]+/u','',mb_strtolower($name))??'';};
-    $normTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
-    $pp=DB::table('active_pp_lines')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name));
-    $lines=DB::table('active_line_combinations')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name).'|'.strtoupper(trim($r->position_group)));
-    $oddsByTeam=DB::table('todays_odds')->whereDate('game_date',$date)->get()->keyBy(fn($r)=>$normTeam($r->team));
-    $goalieStatusByPlayer=DB::table('active_starting_goalies')
-        ->whereDate('game_date',$date)
-        ->get()
-        ->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name));
-
-    $rows=$rows->map(function($p)use($pp,$lines,$normName,$normTeam,$oddsByTeam,$goalieStatusByPlayer){
-        $team=$normTeam($p->nhl_team);
-        $name=$normName($p->player_name);
-        $pos=strtoupper(trim((string)$p->position));
-        $line=$lines[$team.'|'.$name.'|'.$pos]??null;
-        $power=$pp[$team.'|'.$name]??null;
-        $p->line_number=$line?(int)$line->line_number:null;
-        $p->pp_unit=$power?(int)$power->pp_unit:null;
-        $p->starting_status=null;
-        $p->starting_status_class='goalie-status-na';
-        if($pos==='G'){
-            $goalieRow=$goalieStatusByPlayer[$team.'|'.$name]??null;
-            if($goalieRow){
-                $rawStatus=ucfirst(strtolower(trim((string)$goalieRow->starting_status)));
-                if($rawStatus==='Probable')$rawStatus='Likely';
-                $p->starting_status=$rawStatus;
-                $p->starting_status_class=match(strtolower($rawStatus)){
-                    'confirmed'=>'goalie-status-confirmed',
-                    'likely'=>'goalie-status-likely',
-                    'unconfirmed'=>'goalie-status-unconfirmed',
-                    'not starting'=>'goalie-status-not-starting',
-                    default=>'goalie-status-na',
-                };
-            }
-        }
-        $p->vegas_odds=null;
-        $p->vegas_odds_class=null;
-        if($pos==='G' && isset($oddsByTeam[$team]) && $oddsByTeam[$team]->american_odds!==null){
-            $p->vegas_odds=(int)$oddsByTeam[$team]->american_odds;
-            $p->vegas_odds_class=$p->vegas_odds<=-130?'vegas-odds-good':($p->vegas_odds>=130?'vegas-odds-bad':'vegas-odds-even');
-        }
-        $contractLabel=strtoupper((string)$p->roster_status)==='MINORS'?'Minors':trim((string)$p->contract);
-        $contractKey=strtoupper($contractLabel);
-        $p->contract_label=$contractLabel;
-        $p->contract_class=$contractKey==='MINORS'
-            ? 'team-minors'
-            : (in_array($contractKey,['FA','1 YEAR','1 YEAR(S)','1 YR'],true)
-                ? 'contract-green'
-                : ($contractKey==='TBD'
-                    ? 'contract-yellow'
-                    : (preg_match('/^[234]\s*(?:YEAR|YEARS|YR|YRS)/',$contractKey)?'contract-red':'')));
-        return $p;
-    });
-
-    $teams=[];
-    foreach($currentNames as $teamName){
-        $teamRows=$rows->where('fantasy_team_name',$teamName);
-        $positions=[];
-        foreach(['F'=>'Forwards','D'=>'Defensemen','G'=>'Goalies'] as $code=>$label){
-            $positionRows=$teamRows->where('position',$code)->reject(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){
-                $rank=fn($p)=>(!empty($p->is_playing)?0:2)+((bool)$p->is_ir?1:0);
-                $ar=$rank($a);$br=$rank($b);
-                if($ar!==$br)return $ar<=>$br;
-                return strnatcasecmp((string)$a->player_name,(string)$b->player_name);
-            })->values();
-            $positions[$code]=['label'=>$label,'rows'=>$positionRows];
-        }
-        $minorRows=$teamRows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){$ar=(bool)$a->is_ir?3:(!empty($a->opponent)?0:1);$br=(bool)$b->is_ir?3:(!empty($b->opponent)?0:1);return $ar!==$br?$ar<=>$br:strnatcasecmp((string)$a->player_name,(string)$b->player_name);})->values();
-        $positions['M']=['label'=>'Minors','rows'=>$minorRows];
-        $scoringRows=$teamRows->reject(fn($p)=>(bool)$p->is_bench || (bool)$p->is_ir || strtoupper((string)$p->roster_status)==='MINORS');
-        $dailyStats=[];
-        foreach(['gp','g','a','ppg','shg','gwg','w','so'] as $stat){
-            $dailyStats[$stat]=(int)$scoringRows->sum(fn($p)=>(int)($p->{'today_'.$stat}??0));
-        }
-        $inProgressGames=$teamRows
-            ->filter(fn($p)=>(bool)($p->game_in_progress??false))
-            ->map(function($p){
-                $a=strtoupper(trim((string)($p->nhl_team??'')));
-                $b=strtoupper(trim((string)($p->opponent??'')));
-                $pair=array_filter([$a,$b]);
-                sort($pair,SORT_STRING);
-                return implode('|',$pair);
-            })
-            ->filter()
-            ->unique()
-            ->count();
-
-        $teams[]=[
-            'id'=>(string)($teamRows->first()?->fantasy_team_id ?? ''),
-            'name'=>$teamName,
-            'slug'=>\Illuminate\Support\Str::slug($teamName),
-            'positions'=>$positions,
-            'count'=>$teamRows->count(),
-            'today_stats'=>$dailyStats,
-            'today_fpts'=>$scoringRows->sum(fn($p)=>(float)($p->today_fpts??0)),
-            'today_fpts_changed'=>$scoringRows->contains(fn($p)=>(bool)($p->today_fpts_changed??false)),
-            'games_in_progress'=>$inProgressGames,
-        ];
-    }
-
-    $matchupScoreChanges=DB::table('active_matchup_scores')
-        ->whereDate('game_date',$date)
-        ->get()
-        ->keyBy(fn($r)=>(string)$r->fantasy_team_id);
-
-    $matchups=[];
-    $scheduleLabel=null;
-    try {
-        $schedule=app(\App\Support\FantraxSchedule::class)->forDate(\Carbon\CarbonImmutable::parse($date,$tz));
-        $scheduleLabel=trim((string)($schedule['caption']??''));
-        $teamsById=collect($teams)->filter(fn($t)=>$t['id']!=='')->keyBy('id');
-        $used=[];
-        foreach(($schedule['matchups']??[]) as $pair){
-            $away=$teamsById[$pair['away_team_id']]??null;
-            $home=$teamsById[$pair['home_team_id']]??null;
-            if(!$away || !$home)continue;
-            $away['week_fpts']=$pair['away_score']??null;
-            $home['week_fpts']=$pair['home_score']??null;
-            $away['week_fpts_changed']=(bool)($matchupScoreChanges[(string)$away['id']]->week_fpts_changed??false);
-            $home['week_fpts_changed']=(bool)($matchupScoreChanges[(string)$home['id']]->week_fpts_changed??false);
-            $matchups[]=['away'=>$away,'home'=>$home];
-            $used[$away['id']]=true;
-            $used[$home['id']]=true;
-        }
-        foreach($teams as $team){
-            if($team['id']!=='' && isset($used[$team['id']]))continue;
-            $team['week_fpts']=$team['today_fpts']??0;
-            $matchups[]=['away'=>$team,'home'=>null];
-        }
-    } catch (\Throwable $e) {
-        report($e);
-        foreach($teams as $team){$team['week_fpts']=$team['today_fpts']??0;$matchups[]=['away'=>$team,'home'=>null];}
-    }
-
-    $matchupRank=function($matchup){
-        $names=[
-            strtolower((string)($matchup['away']['name']??'')),
-            strtolower((string)($matchup['home']['name']??'')),
-        ];
-        $hasLoneTsar=(bool)collect($names)->first(function($name){
-            return (str_contains($name,'lone')&&str_contains($name,'tsar'))
-                || str_contains($name,mb_strtolower('Ꮮ૦ท૯⚡️𐌕รคг'));
-        });
-        $hasOneManBang=(bool)collect($names)->first(fn($name)=>str_contains($name,'one man bang'));
-        if($hasLoneTsar&&$hasOneManBang)return 0;
-        if($hasLoneTsar)return 1;
-        if($hasOneManBang)return 2;
-        return 3;
-    };
-    usort($matchups,function($a,$b)use($matchupRank){
-        $ar=$matchupRank($a);
-        $br=$matchupRank($b);
-        if($ar!==$br)return $ar<=>$br;
-        $an=strtolower((string)($a['away']['name']??$a['home']['name']??''));
-        $bn=strtolower((string)($b['away']['name']??$b['home']['name']??''));
-        return $an<=>$bn;
-    });
-
-    $lastUpdate=$rows->max('last_update');
-    return view('teams.current-index',compact('teams','matchups','scheduleLabel','date','yesterday','today','tomorrow','lastUpdate','scoreLastUpdate','autoRefresh'));
+Route::get('/api/live-scoring', function (\App\Support\FantasyDay $days, \App\Support\LiveScoring\SnapshotRepository $repository) {
+    $dates = $days->dates();
+    $date = (string)request('date', $dates['today']);
+    abort_unless(in_array($date, $dates, true), 422);
+    return response()->json(['fantasy_timezone'=>\App\Support\FantasyDay::TIMEZONE, 'dates'=>$dates, 'selected_date'=>$date, 'snapshot'=>$repository->get($date)])
+        ->header('Cache-Control','no-store, no-cache, must-revalidate');
 });
 
 Route::get('/teams/current/{slug}', function(string $slug) {
     $tz='America/Halifax';
-    $fantasyDay=\Carbon\CarbonImmutable::now('America/Vancouver')->startOfDay();
+    $fantasyDay=app(\App\Support\FantasyDay::class)->today();
     $today=$fantasyDay->toDateString();
     $yesterday=$fantasyDay->subDay()->toDateString();
     $tomorrow=$fantasyDay->addDay()->toDateString();
@@ -624,53 +361,26 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         ->where('fantasy_team_name',$teamName)
         ->get();
 
-    $scheduleByTeam=DB::table('active_starting_goalies')
-        ->whereDate('game_date',$date)
-        ->get()
-        ->keyBy(fn($g)=>strtoupper(trim((string)$g->team)));
-
-    // Fantrax daily scoring is authoritative for the selected fantasy date.
-    // Do not depend on the roster collector's is_playing flag: a player with a
-    // Fantrax daily-score row (including 0 FPts) belongs to that day's matchup.
-    $dailyScoreRows=DB::table('active_daily_scores')->whereDate('game_date',$date)->get();
-    $scoreName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower($name))??'';};
-    $scoreTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
-    $dailyScores=$dailyScoreRows->keyBy(fn($r)=>$scoreTeam($r->nhl_team).'|'.$scoreName($r->player_name));
-
-    $rows=$rows->map(function($p)use($scheduleByTeam,$dailyScores,$scoreName,$scoreTeam){
-        $team=$scoreTeam($p->nhl_team);
-        $score=$dailyScores[$team.'|'.$scoreName($p->player_name)]??null;
-        $p->is_playing=$score!==null;
-        if($score){
-            $liveOpp=trim((string)($score->opponent_display??''));
-            if($liveOpp!=='')$p->opponent_display=$liveOpp;
-        }
-        if((bool)$p->is_playing && $team!=='' && isset($scheduleByTeam[$team])){
-            $game=$scheduleByTeam[$team];
-            if(empty($p->opponent))$p->opponent=$game->opponent;
-            if(empty($p->home_away))$p->home_away=$game->home_away;
-        }
+    $snapshot=app(\App\Support\LiveScoring\SnapshotRepository::class)->get($date);
+    $presenter=app(\App\Support\LiveScoring\ViewData::class);
+    $fantasyTeamId=(string)(collect($snapshot['teams']??[])->first(fn($t)=>$t['name']===$teamName)['id']??$rows->first()->fantasy_team_id??'');
+    $dailyPlayers=collect($snapshot['players']??[])->where('fantasy_team_id',$fantasyTeamId)->map(fn($p)=>$presenter->player($p))->keyBy('player_id');
+    $scoreLastUpdate=$snapshot['collected_at']??null;
+    $rows=$rows->map(function($p)use($dailyPlayers){
+        $daily=$dailyPlayers[(string)$p->player_id]??null;
+        if($daily)return (object)array_merge((array)$p,(array)$daily);
+        $p->daily_participant=false;
+        $p->today_fpts=0;
+        $p->today_fpts_changed=false;
+        $p->live_opponent_display=null;
+        $p->game_finished=false;
+        $p->game_in_progress=false;
+        foreach(['gp','g','a','ppg','shg','gwg','w','so'] as $stat)$p->{'today_'.$stat}=0;
         return $p;
     });
-
-    $scoreLastUpdate=DB::table('job_run_history')
-        ->where('job_name','ecfhl:refresh-daily-scores')
-        ->whereDate('target_date',$date)
-        ->max('completed_at');
-    $dailyScores=$dailyScoreRows->keyBy(fn($r)=>$scoreTeam($r->nhl_team).'|'.$scoreName($r->player_name));
-    $rows=$rows->map(function($p)use($dailyScores,$scoreName,$scoreTeam){
-        $score=$dailyScores[$scoreTeam($p->nhl_team).'|'.$scoreName($p->player_name)]??null;
-        $p->today_fpts=$score?(float)$score->today_fpts:0.0;
-        $p->live_opponent_display=$score?($score->opponent_display??null):null;
-        $liveOpp=trim((string)($p->live_opponent_display??''));
-        $p->game_finished=$liveOpp!=='' && (bool)preg_match('/(?:\bF\b|\bFinal\b)\s*$/i',$liveOpp);
-        $p->game_in_progress=$liveOpp!=='' && !$p->game_finished
-            && (bool)preg_match('/\b\d+\s+@?[A-Z]{2,4}\s+\d+\b/i',$liveOpp);
-        foreach(['gp','g','a','ppg','shg','gwg','w','so'] as $stat){
-            $p->{'today_'.$stat}=$score?(int)($score->{$stat}??0):0;
-        }
-        return $p;
-    });
+    foreach($dailyPlayers as $id=>$daily){
+        if(!$rows->contains(fn($p)=>(string)$p->player_id===(string)$id))$rows->push($daily);
+    }
 
     $normName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\pL\pN]+/u','',mb_strtolower($name))??'';};
     $normTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
@@ -730,7 +440,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $positions=[];
     foreach(['F'=>'Forwards','D'=>'Defensemen','G'=>'Goalies'] as $code=>$label){
         $positionRows=$rows->where('position',$code)->reject(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){
-            $rank=fn($p)=>(!empty($p->is_playing)?0:2)+((bool)$p->is_ir?1:0);
+            $rank=fn($p)=>(!empty($p->daily_participant)?0:2)+((bool)$p->is_ir?1:0);
             $ar=$rank($a);$br=$rank($b);
             if($ar!==$br)return $ar<=>$br;
             return strnatcasecmp((string)$a->player_name,(string)$b->player_name);
@@ -739,82 +449,27 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     }
     $minorRows=$rows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){$ar=(bool)$a->is_ir?3:(!empty($a->opponent)?0:1);$br=(bool)$b->is_ir?3:(!empty($b->opponent)?0:1);return $ar!==$br?$ar<=>$br:strnatcasecmp((string)$a->player_name,(string)$b->player_name);})->values();
     $positions['M']=['label'=>'Minors','rows'=>$minorRows];
-    $teamTodayFpts=$rows
-        ->reject(fn($p)=>(bool)$p->is_bench || (bool)$p->is_ir || strtoupper((string)$p->roster_status)==='MINORS')
-        ->sum(fn($p)=>(float)($p->today_fpts??0));
-
-    $matchupScoreChanges=DB::table('active_matchup_scores')
-        ->whereDate('game_date',$date)
-        ->get()
-        ->keyBy(fn($r)=>(string)$r->fantasy_team_id);
+    $teamTodayFpts=$snapshot['teams'][$fantasyTeamId]['daily_fpts']??0;
 
     $liveMatchup=null;
-    $fantasyTeamId=(string)($rows->first()->fantasy_team_id??'');
-    if($fantasyTeamId!==''){
-        try {
-            $schedule=app(\App\Support\FantraxSchedule::class)->forDate(\Carbon\CarbonImmutable::parse($date,$tz));
-            foreach(($schedule['matchups']??[]) as $pair){
-                $isAway=(string)($pair['away_team_id']??'')===$fantasyTeamId;
-                $isHome=(string)($pair['home_team_id']??'')===$fantasyTeamId;
-                if(!$isAway && !$isHome)continue;
-
-                $opponentId=(string)($isAway?($pair['home_team_id']??''):($pair['away_team_id']??''));
-                $opponentName=(string)($isAway?($pair['home_name']??''):($pair['away_name']??''));
-                $opponentRows=DB::table('active_fantasy_rosters')
-                    ->whereDate('game_date',$date)
-                    ->where('fantasy_team_id',$opponentId)
-                    ->get()
-                    ->map(function($p)use($scheduleByTeam){
-                        $team=strtoupper(trim((string)$p->nhl_team));
-                        if($team!=='' && isset($scheduleByTeam[$team])){
-                            $game=$scheduleByTeam[$team];
-                            $p->is_playing=true;
-                            if(empty($p->opponent))$p->opponent=$game->opponent;
-                            if(empty($p->home_away))$p->home_away=$game->home_away;
-                        }
-                        return $p;
-                    })
-                    ->map(function($p)use($dailyScores,$scoreName,$scoreTeam){
-                        $score=$dailyScores[$scoreTeam($p->nhl_team).'|'.$scoreName($p->player_name)]??null;
-                        $p->today_fpts=$score?(float)$score->today_fpts:0.0;
-                        $p->live_opponent_display=$score?($score->opponent_display??null):null;
-                        $liveOpp=trim((string)($p->live_opponent_display??''));
-                        $p->game_finished=$liveOpp!=='' && (bool)preg_match('/(?:\bF\b|\bFinal\b)\s*$/i',$liveOpp);
-                        $p->game_in_progress=$liveOpp!=='' && !$p->game_finished
-                            && (bool)preg_match('/\b\d+\s+@?[A-Z]{2,4}\s+\d+\b/i',$liveOpp);
-                        foreach(['gp','g','a','ppg','shg','gwg','w','so'] as $stat){
-                            $p->{'today_'.$stat}=$score?(int)($score->{$stat}??0):0;
-                        }
-                        return $p;
-                    })
-                    ->map($decorate);
-
-                $opponentTodayFpts=$opponentRows
-                    ->reject(fn($p)=>(bool)$p->is_bench || (bool)$p->is_ir || strtoupper((string)$p->roster_status)==='MINORS')
-                    ->sum(fn($p)=>(float)($p->today_fpts??0));
-
-                $liveMatchup=[
-                    'team_name'=>$teamName,
-                    'team_side'=>$isAway?'AWAY':'HOME',
-                    'team_week'=>(float)($isAway?($pair['away_score']??0):($pair['home_score']??0)),
-                    'team_week_changed'=>(bool)($matchupScoreChanges[$fantasyTeamId]->week_fpts_changed??false),
-                    'team_today'=>(float)$teamTodayFpts,
-                    'team_today_changed'=>$rows->reject(fn($p)=>(bool)$p->is_bench || (bool)$p->is_ir || strtoupper((string)$p->roster_status)==='MINORS')->contains(fn($p)=>(bool)($p->today_fpts_changed??false)),
-                    'team_rows'=>$rows,
-                    'opponent_name'=>$opponentName,
-                    'opponent_side'=>$isAway?'HOME':'AWAY',
-                    'opponent_week'=>(float)($isAway?($pair['home_score']??0):($pair['away_score']??0)),
-                    'opponent_week_changed'=>(bool)($matchupScoreChanges[$opponentId]->week_fpts_changed??false),
-                    'opponent_today'=>(float)$opponentTodayFpts,
-                    'opponent_today_changed'=>$opponentRows->reject(fn($p)=>(bool)$p->is_bench || (bool)$p->is_ir || strtoupper((string)$p->roster_status)==='MINORS')->contains(fn($p)=>(bool)($p->today_fpts_changed??false)),
-                    'opponent_rows'=>$opponentRows,
-                    'caption'=>trim((string)($schedule['caption']??'')),
-                ];
-                break;
-            }
-        } catch (\Throwable $e) {
-            report($e);
-        }
+    $liveTeams=$snapshot?$presenter->teams($snapshot):[];
+    foreach(($snapshot['matchups']??[]) as $pair){
+        $isAway=$pair['away_team_id']===$fantasyTeamId;
+        if(!$isAway && $pair['home_team_id']!==$fantasyTeamId)continue;
+        $own=$liveTeams[$fantasyTeamId];
+        $opponentId=$isAway?$pair['home_team_id']:$pair['away_team_id'];
+        $other=$liveTeams[$opponentId];
+        $allPlayers=fn($team)=>collect($team['positions'])->flatMap(fn($group)=>$group['rows'])->values();
+        $liveMatchup=[
+            'team_name'=>$own['name'],'team_side'=>$isAway?'AWAY':'HOME',
+            'team_week'=>$own['week_fpts'],'team_week_changed'=>$own['week_fpts_changed'],
+            'team_today'=>$own['today_fpts'],'team_today_changed'=>$own['today_fpts_changed'],'team_rows'=>$allPlayers($own),
+            'opponent_name'=>$other['name'],'opponent_side'=>$isAway?'HOME':'AWAY',
+            'opponent_week'=>$other['week_fpts'],'opponent_week_changed'=>$other['week_fpts_changed'],
+            'opponent_today'=>$other['today_fpts'],'opponent_today_changed'=>$other['today_fpts_changed'],'opponent_rows'=>$allPlayers($other),
+            'caption'=>'Scoring period '.$snapshot['period'].' '.$snapshot['period_label'],
+        ];
+        break;
     }
 
     $targetGroups=\App\Support\AiTips::groups([], $date);
@@ -905,7 +560,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $nextWeekOpponent=null;
     try {
         if(\Illuminate\Support\Facades\Schema::hasTable('fantrax_scoring_period_matchups')){
-            $fantasyToday=\Carbon\CarbonImmutable::now('America/Vancouver')->startOfDay();
+            $fantasyToday=app(\App\Support\FantasyDay::class)->today();
             $currentPeriod=DB::table('fantrax_scoring_period_matchups')
                 ->where('season_id','2026-27')
                 ->whereNotNull('start_date')
@@ -1159,7 +814,8 @@ Route::get('/job-status', function () {
     $linesLast = DB::table('active_pp_lines')->max('checked_at');
     $oddsLast = DB::table('todays_odds')->max('checked_at');
     $teamsLast = DB::table('active_fantasy_rosters')->max('last_update');
-    $scoresLast = DB::table('active_daily_scores')->max('checked_at');
+    $scoresLast = DB::table('live_scoring_snapshots')->max('collected_at');
+    $scoresLast = $scoresLast ? \Carbon\CarbonImmutable::parse($scoresLast, 'UTC')->setTimezone($tz)->format('Y-m-d H:i:s') : null;
     $standingsLast = DB::table('job_run_history')->where('job_name','ecfhl:refresh-current-standings')->max('completed_at');
     $advisorLast = \Illuminate\Support\Facades\Schema::hasTable('lineup_advice') ? DB::table('lineup_advice')->max('generated_at') : null;
     $collectorStates = \Illuminate\Support\Facades\Schema::hasTable('collector_job_statuses')
@@ -1178,9 +834,9 @@ Route::get('/job-status', function () {
         ['key'=>'lines','name'=>'Daily Faceoff Lines','schedule'=>'Every hour at :00','last_update'=>$format($linesLast),'records'=>DB::table('active_pp_lines')->count(),'next_run'=>$nextHourly(0),'state'=>$state($linesLast,90),'description'=>'Current line combinations and PP1/PP2 assignments for all NHL teams.'],
         ['key'=>'odds','name'=>'NHL Odds','schedule'=>'Every 2 hours at :00','last_update'=>$format($oddsLast),'records'=>DB::table('todays_odds')->count(),'next_run'=>($now->hour%2===0 && $now->minute===0 ? $now->format('M j · g:i a T') : $now->addHours($now->hour%2===0?2:1)->startOfHour()->format('M j · g:i a T')),'state'=>$state($oddsLast,150),'description'=>'Consensus NHL moneyline odds for today and tomorrow from The Odds API.'],
         ['key'=>'teams','name'=>'Fantasy Team Rosters','schedule'=>'Every 15 minutes (:00, :15, :30, :45)','last_update'=>$format($teamsLast),'records'=>DB::table('active_fantasy_rosters')->count(),'next_run'=>$nextQuarterHourly(),'state'=>$state($teamsLast,30),'description'=>'Current Fantrax rosters for every fantasy team, enriched with projections, opponents, injuries, line and power-play assignments.'],
-        ['key'=>'scores','name'=>'Live Daily Scores','schedule'=>'Every minute during games','last_update'=>$format($scoresLast),'records'=>DB::table('active_daily_scores')->count(),'next_run'=>'During live game window','state'=>$state($scoresLast,6),'description'=>'Fantrax player FPts and live NHL category stats from first game start until 4 hours after the last game starts.'],
+        ['key'=>'scores','name'=>'Fantrax Live Scoring','schedule'=>'Every 2 minutes during games; every 15 minutes otherwise','last_update'=>$format($scoresLast),'records'=>(int)DB::table('live_scoring_snapshots')->sum('player_count'),'next_run'=>'2 min live / 15 min idle','state'=>$state($scoresLast,20),'description'=>'Independent yesterday, today and tomorrow Fantrax lineups, daily scores, period scores, projections and game states. Fantasy dates roll over at Pacific midnight.'],
         ['key'=>'standings','name'=>'Current Standings','schedule'=>'Every 5 minutes during games','last_update'=>$format($standingsLast),'records'=>DB::table('team_seasons')->where('season_id','2026-27')->count(),'next_run'=>'Every 5 min during live game window','state'=>$state($standingsLast,15),'description'=>'2026-27 standings and fantasy points from Fantrax scoring-period data, refreshed during the live game window.'],
-        ['key'=>'advisor','name'=>'Regenerate Lineup Advisor','schedule'=>'Every hour','last_update'=>$format($advisorLast),'records'=>\Illuminate\Support\Facades\Schema::hasTable('lineup_advice')?DB::table('lineup_advice')->whereDate('advice_date',\Carbon\CarbonImmutable::now('America/Halifax')->subHours(4)->toDateString())->count():0,'next_run'=>(function()use($now){return $now->addHour()->startOfHour()->format('M j · g:i a T');})(),'state'=>$state($advisorLast,90),'description'=>'Rebuilds lineup recommendations for every current fantasy team using moves left, roster construction, injuries, available players, projections, goalie coverage, and matchup context.'],
+        ['key'=>'advisor','name'=>'Regenerate Lineup Advisor','schedule'=>'Every hour','last_update'=>$format($advisorLast),'records'=>\Illuminate\Support\Facades\Schema::hasTable('lineup_advice')?DB::table('lineup_advice')->whereDate('advice_date',app(\App\Support\FantasyDay::class)->today()->toDateString())->count():0,'next_run'=>(function()use($now){return $now->addHour()->startOfHour()->format('M j · g:i a T');})(),'state'=>$state($advisorLast,90),'description'=>'Rebuilds lineup recommendations for every current fantasy team using moves left, roster construction, injuries, available players, projections, goalie coverage, and matchup context.'],
     ]);
     return response()
         ->view('job-status', compact('jobs'))
@@ -1189,7 +845,7 @@ Route::get('/job-status', function () {
 });
 
 Route::get('/ai-tips', function () {
-    $fantasyDay = \Carbon\CarbonImmutable::now('America/Vancouver')->startOfDay();
+    $fantasyDay = app(\App\Support\FantasyDay::class)->today();
     $today = $fantasyDay->toDateString();
     $tomorrow = $fantasyDay->addDay()->toDateString();
     $date = request('date', $today);

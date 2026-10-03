@@ -79,21 +79,18 @@
           $oppAll=collect($liveMatchup['opponent_rows'] ?? []);
 
           $sectionGroups=function($rows){
-            $playing=$rows->filter(fn($p)=>(bool)$p->is_playing)->values();
+            $playing=$rows->filter(fn($p)=>(bool)$p->daily_participant)->values();
             return [
               'Forwards'=>$playing->filter(fn($p)=>
-                !(bool)$p->is_bench && !(bool)$p->is_ir
-                && strtoupper((string)$p->roster_status)!=='MINORS'
+                $p->scoring_status==='ACTIVE'
                 && strtoupper((string)$p->position)==='F'
               )->values(),
               'Defensemen'=>$playing->filter(fn($p)=>
-                !(bool)$p->is_bench && !(bool)$p->is_ir
-                && strtoupper((string)$p->roster_status)!=='MINORS'
+                $p->scoring_status==='ACTIVE'
                 && strtoupper((string)$p->position)==='D'
               )->values(),
               'Goalies'=>$playing->filter(fn($p)=>
-                !(bool)$p->is_bench && !(bool)$p->is_ir
-                && strtoupper((string)$p->roster_status)!=='MINORS'
+                $p->scoring_status==='ACTIVE'
                 && strtoupper((string)$p->position)==='G'
               )->values(),
               'Bench'=>$playing->filter(fn($p)=>
@@ -340,7 +337,7 @@
     </div>
     @foreach($positions as $code=>$group)
       @php
-        $playingCount=$group['rows']->filter(fn($p)=>(bool)$p->is_playing)->reject(fn($p)=>(bool)$p->is_ir)->count();
+        $playingCount=$group['rows']->filter(fn($p)=>(bool)$p->daily_participant)->reject(fn($p)=>(bool)$p->is_ir)->count();
         $totalCount=$group['rows']->reject(fn($p)=>(bool)$p->is_ir)->count();
       @endphp
       <section class="team-position-section" data-roster-position="{{ $code }}">
@@ -356,7 +353,7 @@
             </tr>
             @foreach($group['rows'] as $player)
                 @php
-                  $isPlaying=(bool)$player->is_playing;
+                  $isPlaying=(bool)$player->daily_participant;
                 @endphp
                 <tr class="team-player-data-row {{ !$isPlaying?'team-not-playing':'' }} {{ $player->is_ir?'team-ir-row':'' }} {{ $player->is_bench?'team-bench-row':'' }} {{ strtoupper((string)$player->roster_status)==='MINORS'?'team-minors-row':'' }}" data-playing="{{ $isPlaying?'1':'0' }}">
                   <td data-label="Player">
@@ -392,7 +389,7 @@
                     <div class="team-player-opponent">
                       @if($player->opponent)
                         <span class="{{ $player->home_away==='AWAY'?'team-away':'team-home' }}">{{ $player->home_away==='AWAY'?'@':'vs' }} {{ $player->opponent }}@if($player->game_time) · {{ $player->game_time }}@endif</span>
-                      @elseif($player->is_playing)
+                      @elseif($player->daily_participant)
                         <span class="team-playing-text">Playing</span>
                       @endif
                     </div>

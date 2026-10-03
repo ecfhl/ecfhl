@@ -57,7 +57,7 @@ class DailyFaceoffStartingGoalies
         // Missing/invalid payloads must never be mistaken for an empty schedule.
         $rows = [];
         $seen = [];
-        $fantasyToday = CarbonImmutable::now('America/Vancouver')->startOfDay()->toDateString();
+        $fantasyToday = (new FantasyDay)->today()->toDateString();
         $isFutureDate = $day > $fantasyToday;
         foreach ($props['data'] as $game) {
             if (! is_array($game) || ($game['date'] ?? null) !== $day) {

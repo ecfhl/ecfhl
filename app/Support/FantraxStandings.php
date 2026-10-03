@@ -38,7 +38,7 @@ class FantraxStandings
         $data=$json['responses'][0]['data']??null;
         if(!is_array($data))throw new RuntimeException('Fantrax standings schedule returned no response data.');
 
-        $today=CarbonImmutable::now('America/Halifax')->startOfDay();
+        $today=(new FantasyDay)->today();
         $teams=[];
 
         foreach(($data['tableList']??[]) as $table){

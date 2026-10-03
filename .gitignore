@@ -1,0 +1,7 @@
+/vendor/
+/composer.lock
+/.env
+/bootstrap/cache/*.php
+/storage/logs/*
+/storage/framework/views/*
+/storage/app/*.lock

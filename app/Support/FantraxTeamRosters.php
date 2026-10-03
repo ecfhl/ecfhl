@@ -108,7 +108,7 @@ class FantraxTeamRosters
         $day = $date->format('Y-m-d');
 
         // Roster metadata/projections are date-independent. Daily participation
-        // is intentionally NOT inferred here; FantraxDailyScores owns that.
+        // is intentionally NOT inferred here; the LiveScoring snapshot pipeline owns that.
         $projections = $this->fetchStatsPage([
             'statusOrTeamFilter'=>'ALL_TAKEN',
             'pageNumber'=>'1',

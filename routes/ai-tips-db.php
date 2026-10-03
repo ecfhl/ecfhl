@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/daily-targets', function () {
-    $fantasyDay = \Carbon\CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();
+    $fantasyDay = app(\App\Support\FantasyDay::class)->today();
     $today = $fantasyDay->toDateString();
     $tomorrow = $fantasyDay->addDay()->toDateString();
     $date = request('date', $today);

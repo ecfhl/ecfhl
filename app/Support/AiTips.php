@@ -64,7 +64,7 @@ class AiTips
 
     private static function startedTeams(string $date): array
     {
-        if ($date !== now('America/Halifax')->toDateString()) return [];
+        if ($date !== (new FantasyDay)->today()->toDateString()) return [];
 
         $teams = [];
         $rows = DB::table('active_fantasy_rosters')
@@ -94,7 +94,7 @@ class AiTips
 
     private static function gameHasStarted(object $row, string $date): bool
     {
-        if ($date !== now('America/Halifax')->toDateString()) return false;
+        if ($date !== (new FantasyDay)->today()->toDateString()) return false;
         $gameTime = trim((string)($row->game_time ?? ''));
         if ($gameTime === '') return false;
         if (!preg_match('/(\d{1,2}:\d{2}\s*(?:AM|PM))/i', $gameTime, $m)) return false;
@@ -129,7 +129,7 @@ class AiTips
         // Waiver labels are weekday-only, so resolve the next occurrence of that
         // weekday from the current fantasy day. This avoids treating W (Sun) as
         // already cleared just because Sunday has a smaller numeric weekday value.
-        $today=\Carbon\CarbonImmutable::now('America/Halifax')->subHours(4)->startOfDay();
+        $today=(new FantasyDay)->today();
         $daysUntil=($days[$waiverDow]-(int)$today->format('w')+7)%7;
         $clearDate=$today->addDays($daysUntil)->toDateString();
 
