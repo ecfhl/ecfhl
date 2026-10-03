@@ -576,6 +576,33 @@ html[data-theme="dark"] .team-not-playing,html[data-theme="dark"] .team-not-play
 .team-lineup-advisor-photo img{border-radius:6%!important}
 html[data-theme="dark"] .team-lineup-advisor-photo-button{box-shadow:0 4px 14px rgba(0,0,0,.35)}
 
+/* Dark-friendly next-week lineup */
+html[data-theme="dark"] .team-next-opponent{background:#0b1728!important;border:1px solid #1d4f91!important;border-radius:16px!important;box-shadow:0 8px 24px rgba(0,0,0,.22)}
+html[data-theme="dark"] .team-next-opponent-summary{background:linear-gradient(135deg,#0d1d32,#081524)!important;border-bottom-color:#1e3a5f!important}
+html[data-theme="dark"] .team-next-opponent-label{color:#93c5fd!important}
+html[data-theme="dark"] .team-next-opponent-summary>strong{color:#f8fafc!important}
+html[data-theme="dark"] .team-next-opponent .subtle{color:#94a3b8!important}
+html[data-theme="dark"] .team-next-opponent-chevron{color:#60a5fa!important}
+html[data-theme="dark"] .team-next-lineup{background:#081321!important;border-top:1px solid #1e3a5f!important;gap:8px!important}
+html[data-theme="dark"] .team-next-lineup-label{color:#cbd5e1!important;font-size:11px!important}
+html[data-theme="dark"] .team-next-lineup-group{background:#0c1929!important;border:1px solid #203d5d!important;border-radius:10px!important}
+html[data-theme="dark"] .team-next-lineup-heading{background:#15365f!important;color:#bfdbfe!important;padding:7px 8px!important}
+html[data-theme="dark"] .team-next-lineup-player{background:#0c1929!important;color:#f1f5f9!important;border-top:1px solid #20354d!important;padding:7px 8px!important}
+html[data-theme="dark"] .team-next-lineup-player:nth-child(odd){background:#0e1d30!important}
+html[data-theme="dark"] .team-next-lineup-empty{color:#64748b!important}
+html[data-theme="dark"] .team-next-lineup-player .team-minors{background:#15365f!important;color:#bfdbfe!important;border-color:#3b82f6!important}
+@media(max-width:700px){
+ html[data-theme="dark"] .team-next-opponent{border-radius:14px!important}
+ html[data-theme="dark"] .team-next-opponent-summary{padding:12px 38px 12px 12px!important}
+ html[data-theme="dark"] .team-next-opponent-label{font-size:9px!important}
+ html[data-theme="dark"] .team-next-opponent-summary>strong{font-size:14px!important}
+ html[data-theme="dark"] .team-next-opponent .subtle{font-size:10px!important;margin-top:2px}
+ html[data-theme="dark"] .team-next-lineup{padding:10px!important;gap:9px!important}
+ html[data-theme="dark"] .team-next-lineup-group{border-radius:10px!important}
+ html[data-theme="dark"] .team-next-lineup-heading{font-size:10px!important}
+ html[data-theme="dark"] .team-next-lineup-player{font-size:10px!important;line-height:1.2!important}
+}
+
 /* Dark scoreboard treatment */
 html[data-theme="dark"] .team-live-matchup-card{background:linear-gradient(135deg,#0b1728 0%,#07111f 100%)!important;border:1px solid #1d4f91!important;box-shadow:0 10px 28px rgba(0,0,0,.28)}
 html[data-theme="dark"] .team-live-matchup-card[open]{border:2px solid #2563eb!important;box-shadow:0 0 0 1px rgba(37,99,235,.22),0 12px 32px rgba(0,0,0,.34)}
