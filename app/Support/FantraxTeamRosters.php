@@ -107,23 +107,8 @@ class FantraxTeamRosters
     {
         $day = $date->format('Y-m-d');
 
-        // Fantrax's datePlaying filter is the reliable way to identify players
-        // actually scheduled to play on a given day. Keep projections separate
-        // so players without a game still retain their season projected FPts.
-        // Fantrax matchup/roster scoring is authoritative for the selected
-        // fantasy date. BY_DATE returns the players and stats Fantrax itself
-        // displays for that day; datePlaying can drift to the next scheduled game.
-        $playing = $this->fetchStatsPage([
-            'statusOrTeamFilter'=>'ALL_TAKEN',
-            'pageNumber'=>'1',
-            'datePlaying'=>'ALL',
-            'startDate'=>$day,
-            'endDate'=>$day,
-            'timeframeTypeCode'=>'BY_DATE',
-            'maxResultsPerPage'=>500,
-            'positionOrGroup'=>'ALL',
-        ]);
-
+        // Roster metadata/projections are date-independent. Daily participation
+        // is intentionally NOT inferred here; FantraxDailyScores owns that.
         $projections = $this->fetchStatsPage([
             'statusOrTeamFilter'=>'ALL_TAKEN',
             'pageNumber'=>'1',
@@ -140,45 +125,22 @@ class FantraxTeamRosters
             'positionOrGroup'=>'ALL',
             'miscDisplayType'=>'1',
         ]);
+
         $contractsByKey = [];
         foreach ($contracts as $row) {
             $contractsByKey[$this->key($row['player_name'] ?? '', $row['nhl_team'] ?? '')] = $row['contract'] ?? null;
         }
 
-        $projectionByKey = [];
+        $rows = [];
         foreach ($projections as $row) {
+            $key = $this->key($row['player_name'] ?? '', $row['nhl_team'] ?? '');
+            $row['contract'] = $contractsByKey[$key] ?? ($row['contract'] ?? null);
             $row['is_playing'] = false;
-            // Projection rows can carry Fantrax's next/previous Opp value, which is
-            // not necessarily for $day. Only the datePlaying request is authoritative
-            // for whether a player plays on this specific date.
             $row['opponent'] = null;
             $row['opponent_display'] = null;
             $row['home_away'] = null;
             $row['game_time'] = null;
-            $key = $this->key($row['player_name'] ?? '', $row['nhl_team'] ?? '');
-            $row['contract'] = $contractsByKey[$key] ?? ($row['contract'] ?? null);
-            $projectionByKey[$key] = $row;
-        }
-
-        $rows = $projectionByKey;
-        foreach ($playing as $row) {
-            $row['is_playing'] = true;
-            $key = $this->key($row['player_name'] ?? '', $row['nhl_team'] ?? '');
-            $base = $rows[$key] ?? $row;
-            $base['contract'] = $contractsByKey[$key] ?? ($base['contract'] ?? null);
-            $base['is_playing'] = true;
-            $base['opponent'] = $row['opponent'] ?? null;
-            $base['opponent_display'] = $row['opponent_display'] ?? null;
-            $base['home_away'] = $row['home_away'] ?? null;
-            $base['game_time'] = $row['game_time'] ?? null;
-            $base['injury_status'] = $row['injury_status'] ?? ($base['injury_status'] ?? null);
-            if (($base['contract'] ?? null) === null && ($row['contract'] ?? null) !== null) {
-                $base['contract'] = $row['contract'];
-            }
-            if (($base['projected_fpts'] ?? null) === null && ($row['projected_fpts'] ?? null) !== null) {
-                $base['projected_fpts'] = $row['projected_fpts'];
-            }
-            $rows[$key] = $base;
+            $rows[$key] = $row;
         }
 
         return array_values($rows);
