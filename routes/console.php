@@ -1138,12 +1138,15 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
                 $oldStatus=trim((string)($previous->starting_status??''));
                 $newStatus=trim((string)($goalie->starting_status??''));
                 if($newStatus==='' || strcasecmp($oldStatus,$newStatus)===0)continue;
-                if(!in_array(strtolower($newStatus),['confirmed','likely'],true))continue;
 
                 $body=$goalie->player_name.' ('.$goalie->team.') is now '.$newStatus.'.';
                 $fantraxGoalieUrl='https://www.fantrax.com/fantasy/league/092zcn40molvao69/players;searchName='.rawurlencode(strtolower((string)$goalie->player_name)).';miscDisplayType=1;statusOrTeamFilter=ALL;positionOrGroup=ALL;pageNumber=1';
                 try {
-                    $webPush->notify('goalie-status','Goalie Status',$body,$fantraxGoalieUrl);
+                    $available=app(\App\Support\OwnerGoalies::class)->available($day)->contains(fn($g)=>\App\Support\OwnerNotificationPolicy::goalieKey($g->team,$g->player_name)===\App\Support\OwnerNotificationPolicy::goalieKey($goalie->team,$goalie->player_name));
+                    $webPush->notify('goalie-status','Goalie Status',$body,$fantraxGoalieUrl,null,[
+                        'game_date'=>$day,'available'=>$available,
+                        'goalie_key'=>\App\Support\OwnerNotificationPolicy::goalieKey($goalie->team,$goalie->player_name),
+                    ]);
                 } catch (\Throwable $e) {
                     Log::warning('Goalie status push notification failed',[
                         'date'=>$day,

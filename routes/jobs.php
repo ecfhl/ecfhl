@@ -17,9 +17,9 @@ Route::post('/job-status/test-goalie-notification', function (WebPush $webPush) 
     $name = $goalie?->player_name ?: 'Test Goalie';
     $team = $goalie?->team ?: 'NHL';
     $status = $goalie?->starting_status ?: 'Confirmed';
-    $fantraxUrl = 'https://www.fantrax.com/fantasy/league/0s9n0t98ly3jpry7/players;searchName='.rawurlencode((string)$name).';positionOrGroup=ALL;';
+    $fantraxUrl = 'https://www.fantrax.com/fantasy/league/092zcn40molvao69/players;searchName='.rawurlencode((string)$name).';positionOrGroup=ALL;';
 
-    $webPush->notify('goalie-status', 'Goalie Status — TEST', $name.' ('.$team.') is now '.$status.'.', $fantraxUrl);
+    $webPush->notify('goalie-status', 'Goalie Status — TEST', $name.' ('.$team.') is now '.$status.'.', $fantraxUrl,null,['game_date'=>(new \App\Support\FantasyDay)->today()->toDateString(),'available'=>true,'goalie_key'=>\App\Support\OwnerNotificationPolicy::goalieKey($team,$name)]);
 
     return response()->json([
         'ok' => true,

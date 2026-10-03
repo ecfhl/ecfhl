@@ -11,9 +11,8 @@
         elseif(request()->is('teams/*')&&isset($team)){$browserTitle='ECFHL - '.($team['team']??'Franchise');}
         elseif(request()->is('seasons/*')&&isset($season)){$browserTitle='ECFHL - '.($season['season']??'Season');}
         elseif(request()->is('teams/current')){$browserTitle='ECFHL - Live Scoring';}
-        else{$pageTitles=['seasons'=>'Seasons','standings'=>'Standings','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','daily-targets'=>'Daily Targets','job-status'=>'Collector Status','admin'=>'Admin','rules'=>'Rules'];$browserTitle='ECFHL - '.($pageTitles[request()->segment(1)]??'East Coast Fantasy Hockey League');}
-        $showSeasonFilter=!request()->is('rules','players','daily-targets','job-status','admin','admin/*','teams/current','teams/current/*','seasons','seasons/*','standings');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
-        $notificationTeams=\Illuminate\Support\Facades\DB::table('active_fantasy_rosters')->select('fantasy_team_id','fantasy_team_name')->distinct()->orderBy('fantasy_team_name')->get();
+        else{$pageTitles=['seasons'=>'Seasons','standings'=>'Standings','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','daily-targets'=>'Daily Targets','job-status'=>'Collector Status','admin'=>'Admin','login'=>'Sign In','register'=>'Create Account','account'=>'Account','notifications'=>'Notifications','rules'=>'Rules'];$browserTitle='ECFHL - '.($pageTitles[request()->segment(1)]??'East Coast Fantasy Hockey League');}
+        $showSeasonFilter=!request()->is('login','register','account','account/*','notifications','auth/*','rules','players','daily-targets','job-status','admin','admin/*','teams/current','teams/current/*','seasons','seasons/*','standings');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
         $currentTeamMenu=\Illuminate\Support\Facades\DB::table('team_seasons as ts')
             ->join('seasons as s','s.season_id','=','ts.season_id')
             ->where('s.season_name','2026-27')
@@ -30,7 +29,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 </style>
 </head>
 <body>
-<header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a></div><div class="header-actions"><div class="push-picker-wrap"><button id="push-notifications-button" class="push-notification-toggle" type="button" aria-label="Scoring alerts" title="Scoring alerts">🔔</button><div id="push-team-picker" class="push-team-picker" role="dialog" aria-label="Scoring alert team"><label class="push-team-picker-label" for="push-team-select">Alert me for</label><select id="push-team-select" class="push-team-select" aria-label="Scoring notification team"><option value="">Select a team</option>@foreach($notificationTeams as $notificationTeam)<option value="{{ $notificationTeam->fantasy_team_id }}" data-team-url="/teams/current/{{ \Illuminate\Support\Str::slug($notificationTeam->fantasy_team_name) }}">{{ $notificationTeam->fantasy_team_name }}</option>@endforeach</select><div class="push-switch-row"><span>Notifications</span><label class="push-switch" title="Turn notifications on or off"><input id="push-notifications-switch" type="checkbox" role="switch" aria-label="Notifications"><span class="push-switch-track" aria-hidden="true"></span><span class="push-switch-thumb" aria-hidden="true"></span></label></div></div></div><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav">
+<header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a></div><div class="header-actions"><a class="push-notification-toggle" href="/notifications" aria-label="Notification settings" title="Notification settings">🔔</a><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav">
 <a href="/" class="{{ request()->is('/')?'active':'' }}"><span class="nav-item-icon">⌂</span>Overview</a>
 <a id="my-team-nav-link" class="my-team-link" data-my-team-link href="#"><span class="nav-item-icon">★</span>My Team</a>
 <a href="/teams/current" class="{{ request()->is('teams/current','teams/current/*')?'active':'' }}"><span class="nav-item-icon nav-live-icon">●</span><span class="nav-live-text">Live Scoring</span></a>
@@ -63,6 +62,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
   </div>
 </div>
 <a href="/rules" class="{{ request()->is('rules')?'active':'' }}"><span class="nav-item-icon">🔨</span>Rules</a>
+@if(auth()->user()?->is_admin)
 <div class="nav-dropdown {{ request()->is('admin','admin/*','job-status')?'active':'' }}">
   <div class="nav-dropdown-row">
     <a class="nav-dropdown-main-link" href="/admin"><span class="nav-item-icon">⚙</span>Admin</a>
@@ -74,6 +74,9 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
     <a href="/admin/team-images">Team Images</a>
   </div>
 </div>
+@endif
+<a href="/notifications" class="{{ request()->is('notifications')?'active':'' }}">Notifications</a>
+@auth<a href="/account" class="{{ request()->is('account','account/*')?'active':'' }}">Account</a>@else<a href="/login">Sign in</a>@endauth
 </nav></div></header>
 @if($showSeasonFilter)<div class="season-filter-bar"><div class="shell"><div class="header-season-filter" role="group" aria-label="Season type">@foreach(['h2h'=>'Head-to-Head','total'=>'Total Points'] as $value=>$label)<button type="button" class="header-filter-button season-type-choice {{ in_array($seasonMode,[$value,'all'])?'active':'' }}" data-value="{{ $value }}">{{ $label }}</button>@endforeach</div></div></div>@endif
 <main>@yield('content')</main>
@@ -81,201 +84,12 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 <script>(function(){const saved=localStorage.getItem('ecfhl-theme');if(saved)document.documentElement.dataset.theme=saved;if(location.pathname==='/draft'&&location.hash){history.replaceState(null,'',location.pathname+location.search);window.scrollTo(0,0);}})();function toggleTheme(){const next=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=next;localStorage.setItem('ecfhl-theme',next);}</script>
 <script>
 (function(){
- const button=document.getElementById('push-notifications-button');
- if(!button)return;
- const csrf=document.querySelector('meta[name="csrf-token"]')?.content||'';
- const supported=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
- const picker=document.getElementById('push-team-picker');
- const teamSelect=document.getElementById('push-team-select');
- const notificationSwitch=document.getElementById('push-notifications-switch');
- const myTeamLinks=[...document.querySelectorAll('[data-my-team-link]')];
- const teamStorageKey='ecfhl-notification-team-id';
- const teamUrlStorageKey='ecfhl-notification-team-url';
-
- const syncMyTeamLink=()=>{
-   const storedId=localStorage.getItem(teamStorageKey)||'';
-   const selectedOption=teamSelect?.querySelector('option[value="'+CSS.escape(storedId)+'"]');
-   const url=selectedOption?.dataset.teamUrl||localStorage.getItem(teamUrlStorageKey)||'';
-   const currentPath=location.pathname.replace(/\/$/,'');
-   const teamPath=url?new URL(url,location.origin).pathname.replace(/\/$/,''):'';
-   const isMyTeamPage=!!(storedId&&url&&currentPath===teamPath);
-   myTeamLinks.forEach(link=>{
-     link.href=storedId&&url?url:'#';
-     link.dataset.teamConfigured=storedId&&url?'1':'0';
-     link.classList.toggle('active',isMyTeamPage);
-   });
-   const liveScoringLink=document.querySelector('.main-nav a[href="/teams/current"]');
-   if(liveScoringLink && isMyTeamPage)liveScoringLink.classList.remove('active');
-   if(storedId&&url)localStorage.setItem(teamUrlStorageKey,url);
- };
-
- if(teamSelect){
-   teamSelect.value=localStorage.getItem(teamStorageKey)||'';
-   syncMyTeamLink();
-   teamSelect.addEventListener('change',async()=>{
-     const selected=teamSelect.selectedOptions[0];
-     localStorage.setItem(teamStorageKey,teamSelect.value);
-     if(selected?.dataset.teamUrl)localStorage.setItem(teamUrlStorageKey,selected.dataset.teamUrl);
-     else localStorage.removeItem(teamUrlStorageKey);
-     syncMyTeamLink();
-
-     const reg=await navigator.serviceWorker.getRegistration('/push-sw.js');
-     reg?.active?.postMessage({type:'set-notification-team',teamId:teamSelect.value});
-     const sub=reg?await reg.pushManager.getSubscription():null;
-     if(sub){
-       await fetch('/push/team',{
-         method:'POST',
-         credentials:'same-origin',
-         headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
-         body:JSON.stringify({endpoint:sub.endpoint,fantasy_team_id:teamSelect.value})
-       });
-     }
-   });
- }
-
- const b64ToUint8=value=>{
-   const padding='='.repeat((4-value.length%4)%4);
-   const base64=(value+padding).replace(/-/g,'+').replace(/_/g,'/');
-   const raw=atob(base64);
-   return Uint8Array.from([...raw].map(ch=>ch.charCodeAt(0)));
- };
-
- const updateButton=async()=>{
-   if(!supported){
-     button.classList.add('push-blocked');
-     button.title='Browser notifications are not supported here';
-     button.setAttribute('aria-label','Browser notifications unavailable');
-     return false;
-   }
-   try{
-     const reg=await navigator.serviceWorker.getRegistration('/push-sw.js');
-     const sub=reg?await reg.pushManager.getSubscription():null;
-     const enabled=!!sub && Notification.permission==='granted';
-     button.classList.toggle('push-enabled',enabled);
-     button.classList.toggle('push-blocked',Notification.permission==='denied');
-     button.title=enabled?'Scoring alerts enabled':'Enable scoring alerts';
-     button.setAttribute('aria-label',button.title);
-     if(notificationSwitch){notificationSwitch.checked=enabled;notificationSwitch.setAttribute('aria-checked',enabled?'true':'false');}
-     return enabled;
-   }catch(e){return false;}
- };
-
- const enableNotifications=async()=>{
-   if(!supported)return;
-   if(Notification.permission==='denied'){
-     alert('Notifications are blocked for this site. Enable them in your browser site settings first.');
-     return;
-   }
-
-   const reg=await navigator.serviceWorker.register('/push-sw.js',{scope:'/'});
-   await navigator.serviceWorker.ready;
-   const existing=await reg.pushManager.getSubscription();
-   if(existing){await updateButton();return;}
-
-   const permission=await Notification.requestPermission();
-   if(permission!=='granted'){await updateButton();return;}
-
-   const configResponse=await fetch('/push/config',{credentials:'same-origin',cache:'no-store'});
-   if(!configResponse.ok)throw new Error('Could not load push configuration.');
-   const config=await configResponse.json();
-
-   const subscription=await reg.pushManager.subscribe({
-     userVisibleOnly:true,
-     applicationServerKey:b64ToUint8(config.publicKey)
-   });
-
-   const saveResponse=await fetch('/push/subscribe',{
-     method:'POST',
-     credentials:'same-origin',
-     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
-     body:JSON.stringify({endpoint:subscription.endpoint})
-   });
-   if(!saveResponse.ok)throw new Error('Could not save push subscription.');
-   const saved=await saveResponse.json();
-
-   reg.active?.postMessage({type:'set-last-notification-id',id:saved.latestId??config.latestId??0});
-   const selectedTeam=localStorage.getItem(teamStorageKey)||'';
-   reg.active?.postMessage({type:'set-notification-team',teamId:selectedTeam});
-   await fetch('/push/team',{
-     method:'POST',
-     credentials:'same-origin',
-     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
-     body:JSON.stringify({endpoint:subscription.endpoint,fantasy_team_id:selectedTeam})
-   });
-   await updateButton();
- };
-
- const resetPickerPosition=()=>{
-   if(!picker)return;
-   picker.style.removeProperty('position');
-   picker.style.removeProperty('left');
-   picker.style.removeProperty('right');
-   picker.style.removeProperty('top');
- };
-
- const positionPickerBelow=element=>{
-   if(!picker||!element)return;
-   const rect=element.getBoundingClientRect();
-   const pickerWidth=Math.min(230,window.innerWidth-20);
-   const left=Math.max(10,Math.min(rect.left,window.innerWidth-pickerWidth-10));
-   picker.style.position='fixed';
-   picker.style.left=left+'px';
-   picker.style.right='auto';
-   picker.style.top=(rect.bottom+8)+'px';
- };
-
- button.addEventListener('click',event=>{
-   event.stopPropagation();
-   resetPickerPosition();
-   picker?.classList.toggle('open');
-   if(picker?.classList.contains('open'))teamSelect?.focus();
- });
-
- myTeamLinks.forEach(link=>link.addEventListener('click',event=>{
-   if(link.dataset.teamConfigured==='1')return;
-   event.preventDefault();
-   event.stopPropagation();
-   positionPickerBelow(link);
-   picker?.classList.add('open');
-   teamSelect?.focus();
- }));
-
- notificationSwitch?.addEventListener('change',async event=>{
-   event.stopPropagation();
-   notificationSwitch.disabled=true;
-   try{
-     if(notificationSwitch.checked){
-       await enableNotifications();
-     }else{
-       const reg=await navigator.serviceWorker.getRegistration('/push-sw.js');
-       const existing=reg?await reg.pushManager.getSubscription():null;
-       if(existing){
-         await fetch('/push/unsubscribe',{
-           method:'POST',
-           credentials:'same-origin',
-           headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
-           body:JSON.stringify({endpoint:existing.endpoint})
-         });
-         await existing.unsubscribe();
-       }
-       await updateButton();
-     }
-   }catch(e){
-     console.error('ECFHL push toggle failed',e);
-     alert(notificationSwitch.checked?'Could not enable ECFHL notifications in this browser.':'Could not disable ECFHL notifications in this browser.');
-     await updateButton();
-   }finally{
-     notificationSwitch.disabled=false;
-   }
- });
-
- picker?.addEventListener('click',event=>event.stopPropagation());
- document.addEventListener('click',()=>{picker?.classList.remove('open');resetPickerPosition();});
- document.addEventListener('keydown',event=>{if(event.key==='Escape'){picker?.classList.remove('open');resetPickerPosition();}});
-
- if(supported && teamSelect){navigator.serviceWorker.ready.then(reg=>reg.active?.postMessage({type:'set-notification-team',teamId:localStorage.getItem(teamStorageKey)||''})).catch(()=>{});}
- syncMyTeamLink();
- updateButton();
+ const teamId=@json(auth()->user()?->claim?->fantasy_team_id);
+ const teamUrl=@json(auth()->user()?->claim ? '/teams/current/'.\Illuminate\Support\Str::slug(auth()->user()->claim->team_name) : null);
+ if(teamId&&teamUrl){localStorage.setItem('ecfhl-notification-team-id',teamId);localStorage.setItem('ecfhl-notification-team-url',teamUrl);}
+ const link=document.getElementById('my-team-nav-link');
+ if(link){const url=teamUrl||localStorage.getItem('ecfhl-notification-team-url');link.href=url||'/account/claim-team';link.style.display=url||@json((bool)auth()->user())?'':'none';}
+ if('serviceWorker' in navigator)navigator.serviceWorker.register('/push-sw.js',{scope:'/'}).catch(()=>{});
 })();
 </script>
 <script>document.querySelectorAll('.season-type-choice').forEach(button=>button.addEventListener('click',()=>{const value=button.dataset.value;const buttons=[...document.querySelectorAll('.season-type-choice')];const selected=buttons.filter(x=>x.classList.contains('active')).map(x=>x.dataset.value);const next=selected.includes(value)?selected.filter(x=>x!==value):[...selected,value];const mode=next.length===2?'all':(next[0]||'none');document.cookie='ecfhl-season-type='+mode+'; Path=/; Max-Age=31536000; SameSite=Lax';const url=new URL(location.href);url.searchParams.set('type',mode);if(/^\/seasons\//.test(url.pathname))url.pathname='/seasons';url.searchParams.delete('season');location.assign(url);}));</script>
@@ -505,11 +319,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   <div class="team-icon-modal-card">
     <img id="team-icon-modal-image" class="team-icon-modal-image" alt="">
     <div class="team-icon-modal-actions">
-      <div id="team-icon-advisor-name" class="team-icon-advisor-name">
+      @if(auth()->user()?->is_admin)<div id="team-icon-advisor-name" class="team-icon-advisor-name">
         <label class="team-icon-advisor-label" for="team-icon-advisor-input">First Name</label>
         <input id="team-icon-advisor-input" class="team-icon-advisor-input" type="text" maxlength="40" autocomplete="off">
         <button id="team-icon-advisor-save" class="team-icon-advisor-save" type="button">Save</button>
-      </div>
+      </div>@endif
 
       <input id="team-icon-modal-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
     </div>

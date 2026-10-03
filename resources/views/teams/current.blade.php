@@ -343,7 +343,7 @@
     $hasRows=collect($positions)->sum(fn($g)=>$g['rows']->count())>0;
   @endphp
   @if(!$hasRows)
-    <div class="card"><h2>No roster data yet</h2><p class="subtle">Run the Fantasy Team Rosters collector from Collector Status to populate this team.</p><a class="button primary" href="/job-status">Collector Status</a></div>
+    <div class="card"><h2>No roster data yet</h2><p class="subtle">Run the Fantasy Team Rosters collector from Collector Status to populate this team.</p>@if(auth()->user()?->is_admin)<a class="button primary" href="/job-status">Collector Status</a>@endif</div>
   @else
     <div class="team-roster-filter-bar">
       <label class="team-roster-filter-switch">

@@ -2,6 +2,7 @@ const DB_NAME='ecfhl-push';
 const STORE='state';
 const KEY='lastNotificationId';
 const TEAM_KEY='notificationTeamId';
+const FEED_KEY='ownerFeedToken';
 
 function openDb(){
   return new Promise((resolve,reject)=>{
@@ -52,7 +53,12 @@ async function setLastId(id){
   });
 }
 
+async function getFeedToken(){const db=await openDb();return new Promise((resolve,reject)=>{const req=db.transaction(STORE,'readonly').objectStore(STORE).get(FEED_KEY);req.onsuccess=()=>resolve(String(req.result||''));req.onerror=()=>reject(req.error);});}
+async function setOwnerFeed(token,id){const db=await openDb();await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(token,FEED_KEY);tx.objectStore(STORE).put(Number(id||0),KEY);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}
+self.addEventListener('install',event=>{self.skipWaiting();});
+self.addEventListener('activate',event=>{event.waitUntil(clients.claim());});
 self.addEventListener('message',event=>{
+  if(event.data?.type==='set-owner-feed'){event.waitUntil(setOwnerFeed(String(event.data.token||''),event.data.lastId).then(()=>event.ports[0]?.postMessage({ok:true})));}
   if(event.data?.type==='set-last-notification-id'){
     event.waitUntil(setLastId(event.data.id||0));
   }
@@ -63,20 +69,23 @@ self.addEventListener('message',event=>{
 
 self.addEventListener('push',event=>{
   event.waitUntil((async()=>{
+    const token=await getFeedToken();
+    if(!token)return;
     const lastId=await getLastId();
     const response=await fetch('/push/notifications?after='+encodeURIComponent(lastId),{
       credentials:'same-origin',
+      headers:{Authorization:'Bearer '+token},
       cache:'no-store'
     });
     if(!response.ok)return;
     const data=await response.json();
     const notifications=Array.isArray(data.notifications)?data.notifications:[];
     let maxId=lastId;
-    const notificationTeamId=await getNotificationTeamId();
+
 
     for(const item of notifications){
       maxId=Math.max(maxId,Number(item.id||0));
-      if(item.category==='live-score' && (!notificationTeamId || String(item.fantasy_team_id||'')!==notificationTeamId))continue;
+
       await self.registration.showNotification(item.title||'ECFHL',{
         body:item.body||'',
         icon:'/ecfhl-logo.png',

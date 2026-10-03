@@ -12,8 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['ecfhl-season-type']);
-        $middleware->validateCsrfTokens(except: ['job-status/run/*']);
-        $middleware->web(append: [\App\Http\Middleware\SeasonSelection::class]);
+        $middleware->web(append: [\App\Http\Middleware\AdminAccess::class, \App\Http\Middleware\SeasonSelection::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

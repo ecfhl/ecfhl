@@ -780,41 +780,39 @@ Route::get('/push/config', function () {
 });
 
 Route::post('/push/subscribe', function () {
-    $endpoint=(string)request('endpoint','');
-    try {
-        $latestId=app(\App\Support\WebPush::class)->subscribe($endpoint);
-        return response()->json(['ok'=>true,'latestId'=>$latestId]);
-    } catch (\Throwable $e) {
-        report($e);
-        return response()->json(['ok'=>false,'message'=>$e->getMessage()],422);
-    }
-});
+    $v=request()->validate(['endpoint'=>'required|string|max:2048|url:https']);
+    // Only known push gateways may be contacted; never send HTTP requests to user-supplied hosts.
+    $host=strtolower((string)parse_url($v['endpoint'],PHP_URL_HOST));
+    abort_unless($host==='fcm.googleapis.com' || $host==='updates.push.services.mozilla.com' || $host==='web.push.apple.com' || str_ends_with($host,'.notify.windows.com'),422,'Unsupported browser push gateway.');
+    $token=\Illuminate\Support\Str::random(64);
+    $latestId=app(\App\Support\WebPush::class)->subscribe($v['endpoint'],request()->user()->id,$token);
+    request()->session()->put('push_endpoint_hash',hash('sha256',$v['endpoint']));
+    return response()->json(['ok'=>true,'latestId'=>$latestId,'feedToken'=>$token])->cookie('ecfhl_push_device',hash('sha256',$v['endpoint']),525600,'/',null,true,true,false,'lax');
+})->middleware(['auth','throttle:20,1,push-subscribe']);
 
-Route::post('/push/team', function () {
-    $endpoint=trim((string)request('endpoint',''));
-    $teamId=trim((string)request('fantasy_team_id',''));
-    if($endpoint==='')return response()->json(['ok'=>false],422);
-    DB::table('push_subscriptions')
-        ->where('endpoint_hash',hash('sha256',$endpoint))
-        ->update(['fantasy_team_id'=>$teamId!==''?$teamId:null,'updated_at'=>now()]);
-    return response()->json(['ok'=>true]);
-});
+Route::get('/push/device',function(){
+ $enabled=DB::table('push_subscriptions')->where('user_id',request()->user()->id)->where('endpoint_hash',request()->cookie('ecfhl_push_device'))->where('enabled',true)->whereNotNull('feed_token_hash')->exists();
+ return response()->json(['enabled'=>$enabled]);
+})->middleware('auth');
+
+Route::post('/push/team', fn()=>response()->json(['ok'=>true]))->middleware('auth');
 
 Route::post('/push/unsubscribe', function () {
     $endpoint=(string)request('endpoint','');
-    if($endpoint!=='')app(\App\Support\WebPush::class)->unsubscribe($endpoint);
+    DB::table('push_subscriptions')->where('user_id',request()->user()->id)->where('endpoint_hash',hash('sha256',$endpoint))->delete();
     return response()->json(['ok'=>true]);
-});
+})->middleware('auth');
 
 Route::get('/push/notifications', function () {
+    $token=request()->bearerToken();
+    $subscription=$token?DB::table('push_subscriptions')->where('feed_token_hash',hash('sha256',$token))->where('enabled',true)->first():null;
+    if(!$subscription)return response()->json(['notifications'=>[],'latestId'=>0])->header('Cache-Control','no-store');
     $after=max(0,(int)request('after',0));
-    $rows=DB::table('push_notifications')
-        ->where('id','>',$after)
-        ->orderBy('id')
-        ->limit(25)
-        ->get(['id','category','title','body','url','fantasy_team_id']);
+    $rows=DB::table('push_deliveries as d')->join('push_notifications as n','n.id','=','d.notification_id')
+        ->where('d.subscription_id',$subscription->id)->where('n.id','>',$after)->orderBy('n.id')->limit(100)
+        ->get(['n.id','n.category','n.title','n.body','n.url','n.fantasy_team_id']);
     return response()->json(['notifications'=>$rows])->header('Cache-Control','no-store');
-});
+})->middleware('throttle:120,1,push-feed');
 
 Route::get('/api/player-projections', function () {
     $players=DB::table('player_projections as p')
@@ -935,3 +933,5 @@ Route::get('/ai-tips', function () {
 
 require __DIR__.'/ai-tips-db.php';
 require __DIR__.'/jobs.php';
+
+require __DIR__.'/accounts.php';

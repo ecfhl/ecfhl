@@ -14,7 +14,7 @@ class WebPush
         return $publicKey;
     }
 
-    public function subscribe(string $endpoint): int
+    public function subscribe(string $endpoint, int $userId, string $feedToken): int
     {
         $endpoint=trim($endpoint);
         if($endpoint==='' || !str_starts_with($endpoint,'https://')){
@@ -26,6 +26,8 @@ class WebPush
             [
                 'endpoint'=>$endpoint,
                 'enabled'=>true,
+                'user_id'=>$userId,
+                'feed_token_hash'=>hash('sha256',$feedToken),
                 'updated_at'=>now(),
                 'created_at'=>now(),
             ]
@@ -41,7 +43,7 @@ class WebPush
             ->delete();
     }
 
-    public function notify(string $category,string $title,string $body,?string $url=null,?string $fantasyTeamId=null): void
+    public function notify(string $category,string $title,string $body,?string $url=null,?string $fantasyTeamId=null,array $context=[]): void
     {
         $id=DB::table('push_notifications')->insertGetId([
             'category'=>$category,
@@ -53,14 +55,16 @@ class WebPush
             'updated_at'=>now(),
         ]);
 
-        // Keep the anonymous feed compact.
+        // Delivery records cascade when old events are pruned.
         DB::table('push_notifications')->where('id','<',$id-250)->delete();
 
-        $subscriptions=DB::table('push_subscriptions')->where('enabled',true);
-        if($category==='live-score' && $fantasyTeamId!==null){
-            $subscriptions->where('fantasy_team_id',$fantasyTeamId);
-        }
+        $subscriptions=DB::table('push_subscriptions')->where('enabled',true)->whereNotNull('user_id')->whereNotNull('feed_token_hash');
+        $owners=\App\Models\User::with('claim')->whereIn('id',$subscriptions->pluck('user_id'))->get()->keyBy('id');
+        $policy=new OwnerNotificationPolicy;
         foreach($subscriptions->get() as $subscription){
+            $owner=$owners->get($subscription->user_id);
+            if(!$owner || !$policy->accepts($owner,$category,$fantasyTeamId,$context))continue;
+            DB::table('push_deliveries')->insert(['subscription_id'=>$subscription->id,'notification_id'=>$id]);
             try {
                 $status=$this->sendEmptyPush((string)$subscription->endpoint);
                 if(in_array($status,[404,410],true)){
@@ -108,7 +112,7 @@ class WebPush
         }
         $jwt=$input.'.'.$this->b64($this->derToJose($der,64));
 
-        $response=Http::timeout(15)
+        $response=Http::timeout(15)->withoutRedirecting()
             ->withHeaders([
                 'Authorization'=>'vapid t='.$jwt.', k='.$publicKey,
                 'Crypto-Key'=>'p256ecdsa='.$publicKey,
