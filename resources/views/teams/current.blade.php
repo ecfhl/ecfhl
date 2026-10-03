@@ -642,6 +642,13 @@ html[data-theme="dark"] .team-next-lineup-player .team-minors{background:#15365f
  html[data-theme="dark"] .team-next-lineup-player{font-size:10px!important;line-height:1.2!important}
 }
 
+/* Tighten mobile player rows and lift day score */
+@media(max-width:700px){
+ .team-live-expanded .matchup-player-row{min-height:82px!important;padding-bottom:7px!important}
+ .team-live-expanded .matchup-player-today{bottom:18px!important}
+ .team-live-expanded .matchup-player-opponent{margin-top:3px!important}
+}
+
 /* Mobile player metric layout */
 @media(max-width:700px){
 .team-live-expanded .matchup-player-row{position:relative!important;display:block!important;padding:9px 9px 10px!important;min-height:96px!important}
