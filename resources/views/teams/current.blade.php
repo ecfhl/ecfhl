@@ -233,6 +233,9 @@
         @foreach(['F'=>'Forwards','D'=>'Defense','G'=>'Goalies','Minors'=>'Minors'] as $nextCode=>$nextLabel)
           @php
             $nextPlayers = collect($nextWeekLineup[$nextCode] ?? []);
+            if($nextCode!=='Minors'){
+              $nextPlayers = $nextPlayers->sortBy(fn($p) => $p->is_ir ? 1 : 0)->values();
+            }
           @endphp
           <div class="team-next-lineup-group">
             <div class="team-next-lineup-heading">{{ $nextLabel }} ({{ $nextPlayers->count() }})</div>
@@ -242,8 +245,7 @@
                 <span class="team-next-lineup-status">
                   @if($nextCode!=='Minors' && $nextPlayer->is_ir)<span class="pill team-ir">IR</span>@endif
                   @if($nextCode!=='Minors' && $nextPlayer->is_bench)<span class="pill team-bench">Bench</span>@endif
-                  @if($nextCode==='Minors')<span class="pill team-minors">Minor</span>@endif
-                </span>
+                 </span>
               </div>
             @empty
               <div class="team-next-lineup-empty">None</div>
@@ -582,6 +584,14 @@ html[data-theme="dark"] .team-not-playing,html[data-theme="dark"] .team-not-play
 .team-lineup-advisor-photo-button{overflow:hidden;border-radius:6%;box-shadow:0 3px 10px rgba(15,23,42,.14)}
 .team-lineup-advisor-photo img{border-radius:6%!important}
 html[data-theme="dark"] .team-lineup-advisor-photo-button{box-shadow:0 4px 14px rgba(0,0,0,.35)}
+
+/* Next-week lineup: forwards left; defense, goalies and minors stacked right */
+.team-next-lineup{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;align-items:start!important}
+.team-next-lineup-label{grid-column:1/-1!important}
+.team-next-lineup-group:nth-of-type(2){grid-column:1!important;grid-row:2 / span 3!important}
+.team-next-lineup-group:nth-of-type(3){grid-column:2!important;grid-row:2!important}
+.team-next-lineup-group:nth-of-type(4){grid-column:2!important;grid-row:3!important}
+.team-next-lineup-group:nth-of-type(5){grid-column:2!important;grid-row:4!important}
 
 /* Redesigned next-week opponent header */
 .team-next-opponent-summary{display:grid!important;grid-template-columns:minmax(120px,.8fr) minmax(0,1.6fr)!important;align-items:center!important;gap:12px!important;padding:12px 42px 12px 14px!important}
