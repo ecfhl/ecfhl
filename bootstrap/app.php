@@ -11,6 +11,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(at: '*');
         $middleware->encryptCookies(except: ['ecfhl-season-type']);
         $middleware->web(append: [\App\Http\Middleware\AdminAccess::class, \App\Http\Middleware\SeasonSelection::class]);
     })

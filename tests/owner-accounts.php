@@ -96,5 +96,8 @@ verifyOwner(ownerRequest('GET','/auth/google/callback?state=wrong&code=code',[],
 // Correct password signs in; wrong password fails without an authenticated session.
 $login=[];verifyOwner(ownerRequest('POST','/login',['email'=>'b@example.org','password'=>'wrong'],$login)->getStatusCode()===422,'Invalid password accepted');
 verifyOwner(ownerRequest('POST','/login',['email'=>'b@example.org','password'=>'strong-example-b'],$login)->getStatusCode()===302,'Password sign-in failed');
+// Reverse-proxy redirects preserve HTTPS for secure session cookies.
+$response=ownerRequest('GET','/admin',[],$guest,['HTTP_ACCEPT'=>'text/html','HTTP_X_FORWARDED_PROTO'=>'https','REMOTE_ADDR'=>'10.0.0.1']);
+verifyOwner(str_starts_with((string)$response->headers->get('Location'),'https://'),'Proxy HTTPS was lost on a redirect');
 CarbonImmutable::setTestNow();
 echo "Owner account checks passed: pages, optional browsing, exclusive claims, reserved admin invitation, admin routes/actions, password hashing/login, Google state/linking, own/opponent scoring, goalie filters, waiver dates, isolated push delivery, and SSRF rejection.\n";
