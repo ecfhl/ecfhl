@@ -63,7 +63,7 @@
                     <strong>{{ $leader['name'] }}@if($leader['nhl_team']) <small>({{ $leader['nhl_team'] }})</small>@endif</strong>
                     <span>{{ $leader['fantasy_team'] ?: 'Free Agent' }}</span>
                   </div>
-                  <div class="standings-award-score"><strong>{{ number_format($leader['fpts'],1) }}</strong><span>FPTS</span><small>{{ number_format($leader['fpts_g'],2) }}/G · {{ $leader['gp'] }} GP</small></div>
+                  <div class="standings-award-score"><strong>{{ number_format($leader['fpts'],0) }}</strong><span>FPTS</span><small>{{ rtrim(rtrim(number_format($leader['fpts_g'],2), '0'), '.') }}/G · {{ $leader['gp'] }} GP</small></div>
                 </div>
               @endforeach
             </div>
