@@ -361,6 +361,9 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         ->where('fantasy_team_name',$teamName)
         ->get();
 
+    // Keep actual roster slots before daily scoring membership is merged into display rows.
+    $rosterCountRows=$rows->unique('player_id')->values();
+
     $snapshot=app(\App\Support\LiveScoring\SnapshotRepository::class)->get($date);
     $presenter=app(\App\Support\LiveScoring\ViewData::class);
     $fantasyTeamId=(string)(collect($snapshot['teams']??[])->first(fn($t)=>$t['name']===$teamName)['id']??$rows->first()->fantasy_team_id??'');
@@ -642,13 +645,13 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         'IR'=>0,
         'Minors'=>0,
     ];
-    foreach($rows as $rosterPlayer){
+    foreach($rosterCountRows as $rosterPlayer){
         $status=strtoupper((string)($rosterPlayer->roster_status??''));
         if($status==='MINORS'){
             $rosterCounts['Minors']++;
-        } elseif((bool)($rosterPlayer->is_ir??false)){
+        } elseif($status==='INJURED_RESERVE'){
             $rosterCounts['IR']++;
-        } elseif((bool)($rosterPlayer->is_bench??false)){
+        } elseif(in_array($status,['RESERVE','BENCH'],true)){
             $rosterCounts['Bench']++;
         } else {
             $position=strtoupper((string)($rosterPlayer->position??''));
