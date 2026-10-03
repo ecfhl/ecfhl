@@ -576,6 +576,31 @@ html[data-theme="dark"] .team-not-playing,html[data-theme="dark"] .team-not-play
 .team-lineup-advisor-photo img{border-radius:6%!important}
 html[data-theme="dark"] .team-lineup-advisor-photo-button{box-shadow:0 4px 14px rgba(0,0,0,.35)}
 
+/* Dark scoreboard treatment */
+html[data-theme="dark"] .team-live-matchup-card{background:linear-gradient(135deg,#0b1728 0%,#07111f 100%)!important;border:1px solid #1d4f91!important;box-shadow:0 10px 28px rgba(0,0,0,.28)}
+html[data-theme="dark"] .team-live-matchup-card[open]{border:2px solid #2563eb!important;box-shadow:0 0 0 1px rgba(37,99,235,.22),0 12px 32px rgba(0,0,0,.34)}
+html[data-theme="dark"] .team-live-matchup-summary{background:linear-gradient(135deg,#0d1d32 0%,#07111f 58%,#0b192b 100%)!important}
+html[data-theme="dark"] .team-live-name-row a{color:#f8fafc!important}
+html[data-theme="dark"] .team-live-score strong,
+html[data-theme="dark"] .team-live-score+.team-live-score strong{color:#f8fafc!important;text-shadow:0 1px 8px rgba(255,255,255,.06)}
+html[data-theme="dark"] .team-live-score small{color:#94a3b8!important}
+html[data-theme="dark"] .team-live-vs{color:#bfdbfe!important;background:#0b1f3a;border:1px solid #2563eb;border-radius:999px;padding:7px 6px;box-shadow:0 0 12px rgba(37,99,235,.25)}
+html[data-theme="dark"] .team-live-chevron{color:#94a3b8!important}
+html[data-theme="dark"] .team-live-logo{box-shadow:0 3px 12px rgba(0,0,0,.4)}
+html[data-theme="dark"] .team-live-expanded{background:#081321!important;border-top:1px solid #1e3a5f!important}
+html[data-theme="dark"] .team-live-section-title,
+html[data-theme="dark"] .team-live-expanded .matchup-section-title{background:#142943!important;color:#dbeafe!important;border-color:#24415f!important}
+html[data-theme="dark"] .team-live-expanded .matchup-roster-col{border-color:#20354d!important}
+html[data-theme="dark"] .team-live-expanded .matchup-player-row{background:#0a1625!important;border-color:#20354d!important;color:#f8fafc!important}
+html[data-theme="dark"] .team-live-expanded .matchup-player-row:nth-child(even){background:#0c1a2b!important}
+html[data-theme="dark"] .team-live-expanded .matchup-player-name,
+html[data-theme="dark"] .team-live-expanded .matchup-player-name strong,
+html[data-theme="dark"] .team-live-expanded .matchup-player-metrics strong{color:#f8fafc!important}
+html[data-theme="dark"] .team-live-expanded .matchup-player-metrics span,
+html[data-theme="dark"] .team-live-expanded .matchup-player-cats{color:#94a3b8!important}
+html[data-theme="dark"] .team-live-expanded .matchup-bench{background:#0b1726!important;border-top-color:#142943!important}
+html[data-theme="dark"] .team-live-expanded .matchup-bench-title{color:#cbd5e1!important}
+
 /* Symmetric team-page scoreboard layout */
 .team-live-matchup-summary{align-items:stretch}
 .team-live-side{display:flex;flex-direction:column!important;align-items:stretch!important;gap:7px;min-width:0}
