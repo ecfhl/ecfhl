@@ -135,5 +135,12 @@ foreach ($expected as $date) {
     if ($date==='2026-10-02') checkLive(str_contains($response->getContent(),'Leo Carlsson'), 'My Team still depended on old participation flags');
     $kernel->terminate($request,$response);
 }
+CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-10-03T07:00:00Z'));
+$app->forgetScopedInstances();
+$request=Illuminate\Http\Request::create('/api/live-scoring');
+$response=$kernel->handle($request);
+$calendar=json_decode($response->getContent(),true,512,JSON_THROW_ON_ERROR);
+checkLive($response->getStatusCode()===200 && $calendar['selected_date']==='2026-10-03' && $calendar['dates']===['yesterday'=>'2026-10-02','today'=>'2026-10-03','tomorrow'=>'2026-10-04'], 'HTTP default date did not change at Pacific midnight');
+$kernel->terminate($request,$response);
 CarbonImmutable::setTestNow();
 echo "Live scoring checks passed: Pacific midnight/DST, three Fantrax dates, seven matchups, IDs, zero-point players, future projections, injury flags, failed-date preservation, independent publication, and page rendering.\n";
