@@ -32,7 +32,7 @@ class FantraxDailyScores
             'positionOrGroup' => 'ALL',
             'pageNumber' => '1',
             'maxResultsPerPage' => 500,
-            'datePlaying' => 'ALL',
+            'datePlaying' => $day,
             'startDate' => $day,
             'endDate' => $day,
             'timeframeTypeCode' => 'BY_DATE',
@@ -48,7 +48,7 @@ class FantraxDailyScores
             'dt' => 0,
             'at' => 0,
             'av' => '0.0',
-            'tz' => 'America/Halifax',
+            'tz' => 'America/Vancouver',
             'v' => self::API_VERSION,
         ];
 
