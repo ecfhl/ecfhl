@@ -27,6 +27,7 @@ final class RefreshPlayerProjections
         $seasonStart = $baseline[0]['season_start'];
         $windows = [];
         $cache = [];
+        // Pull the current Fantrax season totals as part of this daily job.
         $seasonActual = $seasonStart <= $end ? $this->source->actual($seasonStart, $end) : [];
         if ($seasonStart <= $end) foreach ($baseline as $player) if (!isset($seasonActual[$player['player_id']])) throw new RuntimeException('Missing season actual stats for baseline player '.$player['player_id'].'.');
         if ($log) $log('Season actual FPts/GP collected through '.$end.'.');
