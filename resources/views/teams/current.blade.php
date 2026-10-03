@@ -691,6 +691,14 @@ html[data-theme="dark"] .team-next-lineup-player .team-minors{background:#15365f
  .team-live-body{align-items:center!important}
 }
 
+/* Increase matchup score numbers by 4px */
+.team-live-score strong{font-size:34px!important}
+.team-live-score.team-live-weekly strong{font-size:42px!important}
+@media(max-width:700px){
+ .team-live-score strong,.team-live-score+.team-live-score strong{font-size:27px!important}
+ .team-live-score.team-live-weekly strong{font-size:35px!important}
+}
+
 /* Larger matchup scores, with weekly score emphasized */
 .team-live-score strong{font-size:30px!important;line-height:.95!important}
 .team-live-score.team-live-weekly strong{font-size:38px!important;font-weight:900!important}
