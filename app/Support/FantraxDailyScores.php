@@ -48,7 +48,7 @@ class FantraxDailyScores
             'dt' => 0,
             'at' => 0,
             'av' => '0.0',
-            'tz' => 'America/Vancouver',
+            'tz' => 'America/Halifax',
             'v' => self::API_VERSION,
         ];
 
