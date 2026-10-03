@@ -372,11 +372,22 @@ Route::get('/teams/current', function() {
         ->get()
         ->keyBy(fn($g)=>strtoupper(trim((string)$g->team)));
 
-    // Keep Fantrax's player-specific datePlaying result authoritative.
-    // A team-level NHL/DFO schedule cannot prove that an individual player is
-    // dressed; scratched/injured players may legitimately show their next game.
-    $rows=$rows->map(function($p)use($scheduleByTeam){
-        $team=strtoupper(trim((string)$p->nhl_team));
+    // Fantrax daily scoring is authoritative for the selected fantasy date.
+    // Do not depend on the roster collector's is_playing flag: a player with a
+    // Fantrax daily-score row (including 0 FPts) belongs to that day's matchup.
+    $dailyScoreRows=DB::table('active_daily_scores')->whereDate('game_date',$date)->get();
+    $scoreName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower($name))??'';};
+    $scoreTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
+    $dailyScores=$dailyScoreRows->keyBy(fn($r)=>$scoreTeam($r->nhl_team).'|'.$scoreName($r->player_name));
+
+    $rows=$rows->map(function($p)use($scheduleByTeam,$dailyScores,$scoreName,$scoreTeam){
+        $team=$scoreTeam($p->nhl_team);
+        $score=$dailyScores[$team.'|'.$scoreName($p->player_name)]??null;
+        $p->is_playing=$score!==null;
+        if($score){
+            $liveOpp=trim((string)($score->opponent_display??''));
+            if($liveOpp!=='')$p->opponent_display=$liveOpp;
+        }
         if((bool)$p->is_playing && $team!=='' && isset($scheduleByTeam[$team])){
             $game=$scheduleByTeam[$team];
             if(empty($p->opponent))$p->opponent=$game->opponent;
@@ -385,9 +396,6 @@ Route::get('/teams/current', function() {
         return $p;
     });
 
-    $scoreName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower($name))??'';};
-    $scoreTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
-    $dailyScoreRows=DB::table('active_daily_scores')->whereDate('game_date',$date)->get();
     $scoreLastUpdate=DB::table('job_run_history')
         ->where('job_name','ecfhl:refresh-daily-scores')
         ->whereDate('target_date',$date)
@@ -621,11 +629,22 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         ->get()
         ->keyBy(fn($g)=>strtoupper(trim((string)$g->team)));
 
-    // Keep Fantrax's player-specific datePlaying result authoritative.
-    // A team-level NHL/DFO schedule cannot prove that an individual player is
-    // dressed; scratched/injured players may legitimately show their next game.
-    $rows=$rows->map(function($p)use($scheduleByTeam){
-        $team=strtoupper(trim((string)$p->nhl_team));
+    // Fantrax daily scoring is authoritative for the selected fantasy date.
+    // Do not depend on the roster collector's is_playing flag: a player with a
+    // Fantrax daily-score row (including 0 FPts) belongs to that day's matchup.
+    $dailyScoreRows=DB::table('active_daily_scores')->whereDate('game_date',$date)->get();
+    $scoreName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower($name))??'';};
+    $scoreTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
+    $dailyScores=$dailyScoreRows->keyBy(fn($r)=>$scoreTeam($r->nhl_team).'|'.$scoreName($r->player_name));
+
+    $rows=$rows->map(function($p)use($scheduleByTeam,$dailyScores,$scoreName,$scoreTeam){
+        $team=$scoreTeam($p->nhl_team);
+        $score=$dailyScores[$team.'|'.$scoreName($p->player_name)]??null;
+        $p->is_playing=$score!==null;
+        if($score){
+            $liveOpp=trim((string)($score->opponent_display??''));
+            if($liveOpp!=='')$p->opponent_display=$liveOpp;
+        }
         if((bool)$p->is_playing && $team!=='' && isset($scheduleByTeam[$team])){
             $game=$scheduleByTeam[$team];
             if(empty($p->opponent))$p->opponent=$game->opponent;
@@ -634,9 +653,6 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         return $p;
     });
 
-    $scoreName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower($name))??'';};
-    $scoreTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
-    $dailyScoreRows=DB::table('active_daily_scores')->whereDate('game_date',$date)->get();
     $scoreLastUpdate=DB::table('job_run_history')
         ->where('job_name','ecfhl:refresh-daily-scores')
         ->whereDate('target_date',$date)
