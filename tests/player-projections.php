@@ -62,9 +62,9 @@ $date = CarbonImmutable::parse('2026-11-03 04:00', 'America/Halifax');
 $refresh->refresh($date);
 checkProjection(DB::table('player_projections')->count() === 1000, 'Store exactly 1,000 projections.');
 checkProjection($source->calls === [['2026-10-27','2026-11-02'], ['2026-10-20','2026-11-02'], ['2026-10-13','2026-11-02']], 'Use inclusive 7/14/21 calendar days ending yesterday, including DST.');
-checkProjection((float)DB::table('player_projections')->where('player_id','p5')->value('projected_fpts_per_game') === 3.5, 'Average four FPts/GP components with equal weights.');
-checkProjection((float)DB::table('player_projections')->where('player_id','p3')->value('projected_fpts_per_game') === 0.5, 'Zero-game windows contribute zero and still divide by four.');
-checkProjection((float)DB::table('player_projections')->where('player_id','p4')->value('projected_fpts_per_game') === -1.0, 'Preserve negative points.');
+checkProjection((float)DB::table('player_projections')->where('player_id','p5')->value('projected_fpts_per_game') === 3.0, 'Apply the 50/25/15/10 weights.');
+checkProjection((float)DB::table('player_projections')->where('player_id','p3')->value('projected_fpts_per_game') === 1.0, 'Zero-game windows contribute zero while the baseline keeps its 50% weight.');
+checkProjection((float)DB::table('player_projections')->where('player_id','p4')->value('projected_fpts_per_game') === 0.0, 'Preserve negative points.');
 $frozen = DB::table('player_projection_baselines')->orderBy('source_rank')->get()->toJson();
 $before = DB::table('player_projections')->orderBy('player_id')->get()->toJson();
 $refresh->refresh($date);
@@ -82,16 +82,17 @@ checkProjection(DB::table('player_projections')->orderBy('player_id')->get()->to
 $source->missing = false;
 $map = new PlayerProjections;
 $players = $map->decorate(collect([(object)['player_id'=>'p3','player_name'=>'Wrong Name'], (object)['player_id'=>'outside','projected_fpts_per_game'=>9]]));
-checkProjection($players[0]->projected_fpts_per_game === 0.5, 'Use Fantrax ID over names.');
+checkProjection($players[0]->projected_fpts_per_game === 1.0, 'Use Fantrax ID over names.');
 checkProjection($players[1]->projected_fpts_per_game === null, 'Do not mix Fantrax projections into the custom model for untracked players.');
 checkProjection($map->find((object)['player_name'=>'Same Name','team'=>'MTL']) === null, 'Avoid ambiguous names in legacy rows.');
 checkProjection($map->find((object)['player_name'=>'5, Player'])?->player_id === 'p5', 'Normalize legacy last-name-first names.');
+checkProjection(abs(ProjectionMath::average(2, 4, 6, 8) - 3.7) < 0.000001, 'Apply distinct weights to all four different inputs.');
 checkProjection(ProjectionMath::rate(10, 4) === 2.5, 'Divide by GP, not days.');
 
 DB::table('active_daily_players')->insert(['game_date'=>'2026-11-03','player_id'=>'p5','player_name'=>'Player 5','team'=>'MTL','position'=>'F',
     'opponent'=>'TOR','availability'=>'FA','projected_fpts'=>999,'source_rank'=>5,'last_update'=>now(),'created_at'=>now(),'updated_at'=>now()]);
 $tips = App\Support\AiTips::groups([], '2026-11-03');
-checkProjection($tips['F'][0]['projected_points'] === 3.5, 'Daily Targets use the stored custom per-game value, not season totals.');
+checkProjection($tips['F'][0]['projected_points'] === 3.0, 'Daily Targets use the stored custom per-game value, not season totals.');
 checkProjection($tips['F'][0]['player_id'] === 'p5', 'Daily Targets retain Fantrax IDs for duplicate-name players.');
 DB::table('active_daily_players')->insert(['game_date'=>'2026-11-03','player_id'=>'outside','player_name'=>'Untracked','team'=>'MTL','position'=>'F',
     'opponent'=>'TOR','availability'=>'FA','projected_fpts'=>999,'source_rank'=>1001,'last_update'=>now(),'created_at'=>now(),'updated_at'=>now()]);
@@ -103,9 +104,9 @@ $participant = ['player_id'=>'p5','fantasy_team_id'=>'t1','player_name'=>'Player
 $bench = array_replace($participant, ['player_id'=>'p3','scoring_status'=>'BENCH','daily_fpts'=>0]);
 $view = (new App\Support\LiveScoring\ViewData)->teams(['fantasy_date'=>'2026-11-03','players'=>[$participant,$bench],
     'teams'=>['t1'=>['name'=>'Example','daily_fpts'=>8,'period_fpts'=>20,'daily_projected_fpts'=>999]]]);
-checkProjection($view['t1']['daily_projected_fpts'] === 3.5, 'Matchup projection totals sum custom active-player rates and exclude the bench.');
+checkProjection($view['t1']['daily_projected_fpts'] === 3.0, 'Matchup projection totals sum custom active-player rates and exclude the bench.');
 checkProjection($view['t1']['today_fpts'] === 8 && $view['t1']['week_fpts'] === 20, 'Custom projections never change actual or period scores.');
-checkProjection($view['t1']['positions']['F']['rows'][0]->projected_fpts_per_game === 3.5, 'Live matchup player values use the custom model.');
+checkProjection($view['t1']['positions']['F']['rows'][0]->projected_fpts_per_game === 3.0, 'Live matchup player values use the custom model.');
 
 $source->calls = [];
 $refresh->refresh(CarbonImmutable::parse('2026-10-03 04:00', 'America/Halifax'), true);
@@ -113,7 +114,7 @@ checkProjection($source->calls === [['2026-09-29','2026-10-02']], 'Clamp windows
 $source->calls = [];
 $refresh->refresh(CarbonImmutable::parse('2026-09-29 04:00', 'America/Halifax'), true);
 checkProjection($source->calls === [], 'Before any completed season games, use zero actual rates without querying future dates.');
-checkProjection((float)DB::table('player_projections')->where('player_id','p5')->value('projected_fpts_per_game') === 0.5, 'Keep equal four-way weights before the first game.');
+checkProjection((float)DB::table('player_projections')->where('player_id','p5')->value('projected_fpts_per_game') === 1.0, 'Keep the 50% baseline weight before the first game.');
 
 // The source parser must reject changed dates, missing GP and truncated pages.
 class FixtureProjectionSource extends FantraxProjectionSource

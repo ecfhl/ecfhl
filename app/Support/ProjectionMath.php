@@ -12,6 +12,6 @@ final class ProjectionMath
 
     public static function average(float $baseline, float $seven, float $fourteen, float $twentyOne): float
     {
-        return ($baseline + $seven + $fourteen + $twentyOne) / 4;
+        return $baseline * 0.50 + $seven * 0.25 + $fourteen * 0.15 + $twentyOne * 0.10;
     }
 }
