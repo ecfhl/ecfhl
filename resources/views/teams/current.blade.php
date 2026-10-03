@@ -448,7 +448,7 @@
                     @if(($target['position'] ?? '') === 'G' && array_key_exists('vegas_odds',$target) && $target['vegas_odds']!==null)
                       <span class="pill goalie-vegas-odds {{ $target['vegas_odds_class'] }}">{{ $target['vegas_odds']>0?'+':'' }}{{ (int)$target['vegas_odds'] }}</span>
                     @endif
-                    <strong class="team-target-proj">{{ $target['projected_points']!==null?number_format($target['projected_points'],0):'—' }}</strong>
+                    <strong class="team-target-proj">{{ $target['projected_points']!==null?number_format($target['projected_points'],2):'—' }}</strong>
                     @if(!empty($target['add_url']))
                       <a class="team-target-add" href="{{ $target['add_url'] }}" target="_blank" rel="noopener noreferrer">+ Add</a>
                     @endif
@@ -766,3 +766,4 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 @endsection
+

@@ -11,6 +11,8 @@ class AiTips
         $groups = ['G' => [], 'F' => [], 'D' => []];
         $startedTeams = self::startedTeams($date);
         $daily = DB::table('active_daily_players')->whereDate('game_date', $date)->orderBy('source_rank')->get();
+        $projections = new PlayerProjections;
+        $daily = $projections->decorate($daily);
         foreach ($daily as $row) {
             $position = strtoupper(trim((string) $row->position));
             if (! in_array($position, ['F', 'D'], true)) continue;
@@ -35,6 +37,7 @@ class AiTips
         }
 
         $goalies = DB::table('active_available_goalies')->whereDate('game_date', $date)->get();
+        $goalies = $projections->decorate($goalies);
         foreach ($goalies as $row) {
             if (isset($startedTeams[strtoupper(trim((string)$row->team))]) || self::gameHasStarted($row, $date)) continue;
             $status = self::availability($row);
@@ -147,6 +150,6 @@ class AiTips
     {
         $opponent = trim((string) ($row->opponent ?? ''));
         $opponent = strtoupper((string) ($row->home_away ?? '')) === 'AWAY' && $opponent !== '' ? '@'.$opponent : $opponent;
-        return ['name'=>$row->player_name,'team'=>$row->team,'position'=>$position,'opponent'=>$opponent,'game_time'=>$row->game_time??null,'status'=>$status,'injury_status'=>$row->injury_status,'projected_points'=>$row->projected_fpts===null?null:(float)$row->projected_fpts,'source_rank'=>(int)($row->source_rank??PHP_INT_MAX),'game_date'=>$date,'starting_status'=>null,'not_starting'=>false];
+        return ['name'=>$row->player_name,'team'=>$row->team,'position'=>$position,'opponent'=>$opponent,'game_time'=>$row->game_time??null,'status'=>$status,'injury_status'=>$row->injury_status,'projected_points'=>property_exists($row, 'projected_fpts_per_game') ? $row->projected_fpts_per_game : ($row->projected_fpts===null?null:(float)$row->projected_fpts),'source_rank'=>(int)($row->source_rank??PHP_INT_MAX),'game_date'=>$date,'starting_status'=>null,'not_starting'=>false];
     }
 }

@@ -30,6 +30,7 @@ Route::post('/job-status/test-goalie-notification', function (WebPush $webPush) 
 Route::post('/job-status/run/{job}', function (string $job) {
     abort_unless(request()->ajax() && request()->headers->get('X-Requested-With') === 'XMLHttpRequest', 403);
     $commands = [
+        'projections' => 'ecfhl:refresh-player-projections',
         'players' => 'ecfhl:refresh-daily-players',
         'goalies' => 'ecfhl:refresh-starting-goalies',
         'lines' => 'ecfhl:refresh-pp-lines',
@@ -44,14 +45,14 @@ Route::post('/job-status/run/{job}', function (string $job) {
 
     $returnTo = in_array(request('return_to'), ['daily-targets','ai-tips'], true) ? '/daily-targets' : '/job-status';
     $jobsToRun = $job === 'all' ? $commands : [$job => $commands[$job]];
-    $labels = ['players' => 'Fantrax players', 'goalies' => 'Starting goalies', 'lines' => 'Power-play lines', 'odds' => 'NHL odds', 'teams' => 'Fantasy team rosters', 'scores' => 'Live daily scores', 'standings' => 'Current standings', 'advisor' => 'Lineup Advisor'];
+    $labels = ['projections' => 'Projected FPts', 'players' => 'Fantrax players', 'goalies' => 'Starting goalies', 'lines' => 'Power-play lines', 'odds' => 'NHL odds', 'teams' => 'Fantasy team rosters', 'scores' => 'Live daily scores', 'standings' => 'Current standings', 'advisor' => 'Lineup Advisor'];
     $results = [];
     $details = [];
     $anyFailed = false;
 
     foreach ($jobsToRun as $jobKey => $command) {
         try {
-            $exitCode = Artisan::call($command);
+            $exitCode = Artisan::call($command, $jobKey === 'projections' && $job !== 'all' ? ['--force'=>true] : []);
             $output = trim(Artisan::output());
             $outputFailed = (bool) preg_match('/(?:Could not parse|validation failed|no rendered matchup|\bfailed\b|\berror\b|SQLSTATE)/i', $output);
             $failed = $exitCode !== 0 || $outputFailed;
@@ -79,7 +80,7 @@ Route::post('/job-status/run/{job}', function (string $job) {
     }
 
     $message = implode("\n\n", $results);
-    if ($job === 'all') $message .= "\n\n".($anyFailed ? 'One or more jobs failed.' : 'All 8 jobs completed.');
+    if ($job === 'all') $message .= "\n\n".($anyFailed ? 'One or more jobs failed.' : 'All '.count($jobsToRun).' jobs completed.');
     else $message .= "\n".($anyFailed ? 'Job failed.' : 'Job completed.');
 
     if (request()->expectsJson()) {
@@ -92,4 +93,5 @@ Route::post('/job-status/run/{job}', function (string $job) {
     }
 
     return redirect($returnTo)->with($anyFailed ? 'job_error' : 'job_success', $message);
-})->whereIn('job', ['players', 'goalies', 'lines', 'odds', 'teams', 'scores', 'standings', 'advisor', 'all']);
+})->whereIn('job', ['projections', 'players', 'goalies', 'lines', 'odds', 'teams', 'scores', 'standings', 'advisor', 'all']);
+

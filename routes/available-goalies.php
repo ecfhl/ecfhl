@@ -54,6 +54,7 @@ Artisan::command('ecfhl:refresh-available-goalies', function () {
 
                 $rows[] = [
                     'game_date' => $day,
+                    'player_id' => $p->player_id ?? null,
                     'player_name' => $p->player_name,
                     'team' => $team,
                     'opponent' => $opponent,
@@ -89,3 +90,4 @@ Artisan::command('ecfhl:refresh-available-goalies', function () {
 });
 
 Schedule::command('ecfhl:refresh-available-goalies')->hourlyAt(35)->withoutOverlapping(50);
+

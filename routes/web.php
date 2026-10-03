@@ -439,6 +439,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         return $p;
     };
     $rows=$rows->map($decorate);
+    $rows=(new \App\Support\PlayerProjections)->decorate($rows);
 
     $positions=[];
     foreach(['F'=>'Forwards','D'=>'Defensemen','G'=>'Goalies'] as $code=>$label){
@@ -625,6 +626,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
                     return 'name:'.mb_strtolower(trim((string)($p->player_name??'')));
                 })
                 ->values();
+            $oppRows=(new \App\Support\PlayerProjections)->decorate($oppRows);
             foreach($oppRows as $p){
                 $status=strtoupper((string)($p->roster_status??''));
                 if($status==='MINORS'){
@@ -764,6 +766,17 @@ Route::get('/push/notifications', function () {
     return response()->json(['notifications'=>$rows])->header('Cache-Control','no-store');
 });
 
+Route::get('/api/player-projections', function () {
+    $players=DB::table('player_projections as p')
+        ->join('player_projection_baselines as b','b.player_id','=','p.player_id')
+        ->select('b.*','p.as_of_date','p.window_end_date','p.fpts_7d','p.gp_7d','p.fpts_per_game_7d',
+            'p.fpts_14d','p.gp_14d','p.fpts_per_game_14d','p.fpts_21d','p.gp_21d','p.fpts_per_game_21d',
+            'p.projected_fpts_per_game','p.refreshed_at')->orderBy('b.source_rank')->get();
+    return response()->json(['formula'=>'(fantrax + actual_7d + actual_14d + actual_21d) / 4',
+        'timezone'=>'America/Halifax','count'=>$players->count(),'players'=>$players])
+        ->header('Cache-Control','no-store');
+});
+
 Route::get('/job-status', function () {
     $tz = 'America/Halifax';
     $now = \Carbon\CarbonImmutable::now($tz);
@@ -832,6 +845,7 @@ Route::get('/job-status', function () {
         return $job;
     };
     $jobs = array_map($withOutcome, [
+        ['key'=>'projections','name'=>'Regenerate Projected FPts','schedule'=>'Daily at 4:00 a.m. Atlantic','last_update'=>$format(DB::table('player_projections')->max('refreshed_at')),'records'=>DB::table('player_projections')->count(),'next_run'=>(function()use($now){$next=$now->startOfDay()->setTime(4,0);if($next->lte($now))$next=$next->addDay();return $next->format('M j · g:i a T');})(),'state'=>$state(DB::table('player_projections')->max('refreshed_at'),1560),'description'=>'Top 1,000 players: (frozen Fantrax FPts/GP + actual 7-day FPts/GP + 14-day FPts/GP + 21-day FPts/GP) ÷ 4. Actual windows end yesterday; no games played contributes zero.'],
         ['key'=>'players','name'=>'Fantrax Available Players','schedule'=>'Every 15 minutes (:00, :15, :30, :45)','last_update'=>$format($fantraxLast),'records'=>DB::table('active_daily_players')->count(),'next_run'=>$nextQuarterHourly(),'state'=>$state($fantraxLast,30),'description'=>'Available players playing today and tomorrow, including projected fantasy points.'],
         ['key'=>'goalies','name'=>'Daily Faceoff Goalies','schedule'=>'Every 5 minutes','last_update'=>$format($goaliesLast),'records'=>DB::table('active_starting_goalies')->count(),'next_run'=>$nextFiveMinutes(),'state'=>$state($goaliesLast,12),'description'=>'Starting-goalie status for today and tomorrow.'],
         ['key'=>'lines','name'=>'Daily Faceoff Lines','schedule'=>'Every hour at :00','last_update'=>$format($linesLast),'records'=>DB::table('active_pp_lines')->count(),'next_run'=>$nextHourly(0),'state'=>$state($linesLast,90),'description'=>'Current line combinations and PP1/PP2 assignments for all NHL teams.'],

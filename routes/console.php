@@ -63,7 +63,7 @@ Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayer
         $all=$fantrax->fetch($date,'ALL');
         try{$goalies=$fantrax->fetch($date,'G');}catch(\Throwable $e){Log::warning('Dedicated Fantrax goalie fetch failed',['date'=>$date->format('Y-m-d'),'error'=>$e->getMessage()]);$goalies=['rows'=>[]];}
         $merged=[];foreach(array_merge($all['rows'],$goalies['rows']) as $p){$key=mb_strtolower(trim($p['player_name'])).'|'.strtoupper(trim($p['team'])).'|'.strtoupper(trim((string)($p['position']??'')));$merged[$key]=$p;}
-        $now=now();$rows=array_map(function($p)use($date,$now){$opp=trim((string)($p['opponent']??''));$away=str_starts_with($opp,'@');return ['game_date'=>$date->format('Y-m-d'),'player_name'=>$p['player_name'],'team'=>$p['team'],'position'=>$p['position'],'opponent'=>ltrim($opp,'@'),'home_away'=>$opp===''?null:($away?'AWAY':'HOME'),'game_time'=>$p['game_time']??null,'game_started'=>(bool)($p['game_started']??false),'availability'=>$p['availability'],'waiver_day'=>$p['waiver_day'],'injury_status'=>$p['injury_status'],'projected_fpts'=>$p['projected_fpts'],'fantrax_url'=>$p['fantrax_url'],'source_rank'=>$p['source_rank'],'last_update'=>$now,'created_at'=>$now,'updated_at'=>$now];},array_values($merged));
+        $now=now();$rows=array_map(function($p)use($date,$now){$opp=trim((string)($p['opponent']??''));$away=str_starts_with($opp,'@');return ['game_date'=>$date->format('Y-m-d'),'player_id'=>$p['player_id'],'player_name'=>$p['player_name'],'team'=>$p['team'],'position'=>$p['position'],'opponent'=>ltrim($opp,'@'),'home_away'=>$opp===''?null:($away?'AWAY':'HOME'),'game_time'=>$p['game_time']??null,'game_started'=>(bool)($p['game_started']??false),'availability'=>$p['availability'],'waiver_day'=>$p['waiver_day'],'injury_status'=>$p['injury_status'],'projected_fpts'=>$p['projected_fpts'],'fantrax_url'=>$p['fantrax_url'],'source_rank'=>$p['source_rank'],'last_update'=>$now,'created_at'=>$now,'updated_at'=>$now];},array_values($merged));
         DB::transaction(function()use($date,$rows){DB::table('active_daily_players')->whereDate('game_date',$date->format('Y-m-d'))->delete();if($rows)DB::table('active_daily_players')->insert($rows);});$count=count($rows);$gcount=count(array_filter($rows,fn($r)=>$r['position']==='G'));$this->info($date->format('Y-m-d').': '.$count.' Fantrax players refreshed ('.$gcount.' goalies)');Log::info('Fantrax daily players refresh completed',['date'=>$date->format('Y-m-d'),'rows'=>$count,'goalies'=>$gcount]);
     }catch(\Throwable $e){$failed=true;Log::error('Fantrax daily players refresh failed',['date'=>$date->format('Y-m-d'),'url'=>$fantrax->url($date),'error'=>$e->getMessage(),'exception'=>get_class($e)]);$this->error($date->format('Y-m-d').': '.$e->getMessage());}}
     if(!$failed){try{Artisan::call('ecfhl:refresh-available-goalies');$this->line(trim(Artisan::output()));}catch(\Throwable $e){$failed=true;$this->error('Available goalies: '.$e->getMessage());}}
@@ -71,6 +71,7 @@ Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayer
 });
 
 require __DIR__.'/live-scoring-console.php';
+require __DIR__.'/projections-console.php';
 
 Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dailyMoves) {
     $tz='America/Vancouver';
@@ -103,6 +104,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
     }
 
     $rosters=DB::table('active_fantasy_rosters')->whereDate('game_date',$date)->get();
+    $rosters=(new \App\Support\PlayerProjections)->decorate($rosters);
     $teams=$rosters->groupBy('fantasy_team_id');
     $availableGroups=\App\Support\AiTips::groups([], $date);
 
@@ -371,7 +373,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                 $target=$pickTarget($pos,(string)$teamId);
                 if($target){
                     $suggestions[]='Move '.$displayPlayerName($irCandidate->player_name).' to IR. Add '.$displayPlayerName($target['name']).' ('.$target['team'].')'
-                        .(!empty($target['projected_points'])?', '.$target['projected_points'].' projected FPts':'').'.';
+                        .(!empty($target['projected_points'])?', '.number_format((float)$target['projected_points'],2).' projected FPts/GP':'').'.';
                 }
             }
         }
@@ -404,7 +406,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                     if($target){
                         $suggestions[]='Goalie is covered tonight. You have an open '.$targetPos.' spot. Drop '
                             .$displayPlayerName($surplusGoalie->player_name).'. Add '.$displayPlayerName($target['name']).' ('.$target['team'].')'
-                            .(!empty($target['projected_points'])?', '.$target['projected_points'].' projected FPts':'').'.';
+                            .(!empty($target['projected_points'])?', '.number_format((float)$target['projected_points'],2).' projected FPts/GP':'').'.';
                     }
                 }
             }
@@ -625,7 +627,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             $replacementMap=[];
             $failed=false;
             $result=preg_replace_callback(
-                '/\\b(Add|add)\\s+(.+?)\\s+\\(([A-Z]{2,3})\\)(?:,\\s*([0-9.]+)\\s+projected FPts)?/u',
+                '~\\b(Add|add)\\s+(.+?)\\s+\\(([A-Z]{2,3})\\)(?:,\\s*(-?[0-9.]+)\\s+projected FPts(?:/GP)?)?~u',
                 function($m)use(
                     $allowStandPat,&$usedAdvisorTargets,&$replacementMap,&$failed,
                     $availableGroups,$advisorNameKey,$rankTeam,$displayPlayerName
@@ -685,7 +687,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
                     $replacement=$m[1].' '.$newName.' ('.$newTeam.')';
                     if(isset($m[4]) && $m[4]!==''){
                         $projected=$candidate['projected_points']??null;
-                        if($projected!==null && $projected!=='')$replacement.=', '.$projected.' projected FPts';
+                        if($projected!==null && $projected!=='')$replacement.=', '.number_format((float)$projected,2).' projected FPts/GP';
                     }
                     return $replacement;
                 },

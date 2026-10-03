@@ -5,12 +5,13 @@ namespace App\Support\LiveScoring;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-// Optional presentation badges. These sources never change Fantrax membership,
-// fantasy dates, opponents, points, projections, or game state.
+// Presentation badges and stored custom per-game projections. Fantrax membership,
+// fantasy dates, opponents, actual points and game state stay intact.
 final class PlayerDisplayEnrichment
 {
     public function decorate($players, string $date)
     {
+        $players = (new \App\Support\PlayerProjections)->decorate($players);
         $name = static function ($v) {
             $v = trim((string)$v);
             if (str_contains($v, ',')) { [$last,$first] = array_map('trim',explode(',',$v,2)); $v = $first.' '.$last; }

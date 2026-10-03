@@ -23,7 +23,8 @@ final class ViewData
             $teams[$id] = [
                 'id'=>(string)$id,'name'=>$team['name'],'slug'=>Str::slug($team['name']),'positions'=>$positions,'count'=>$players->count(),
                 'today_stats'=>$stats,'today_fpts'=>$team['daily_fpts'],'week_fpts'=>$team['period_fpts'],
-                'daily_projected_fpts'=>$team['daily_projected_fpts'],
+                'daily_projected_fpts'=>$active->contains(fn($p)=>property_exists($p, 'custom_projection'))
+                    ? $active->sum(fn($p)=>$p->projected_fpts_per_game ?? 0) : $team['daily_projected_fpts'],
                 'today_fpts_changed'=>$team['daily_fpts_changed'] ?? false,'week_fpts_changed'=>$team['period_fpts_changed'] ?? false,
                 'games_in_progress'=>$players->where('game_status','2')->pluck('game_id')->unique()->count(),
             ];

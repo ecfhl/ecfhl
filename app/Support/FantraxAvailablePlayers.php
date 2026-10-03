@@ -97,7 +97,7 @@ class FantraxAvailablePlayers
 
             $injury = $this->injury($scorer['icons'] ?? []); $waiverDay = null;
             if (preg_match('/W\s*\(([^)]+)\)/i', $statusRaw, $m)) $waiverDay = trim($m[1]);
-            $rows[] = ['player_name'=>$name,'team'=>$team,'position'=>$position,'opponent'=>$opp,'game_time'=>$gameTime,'game_started'=>(bool)$gameStarted,'availability'=>str_starts_with($statusUpper,'W')?'W':'FA','waiver_day'=>$waiverDay,'injury_status'=>$injury,'projected_fpts'=>$fpts,'source_rank'=>(int)($scorer['rank']??($rank+1)),'fantrax_url'=>'https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/players;searchName='.rawurlencode($name).';positionOrGroup=ALL;'];
+            $rows[] = ['player_id'=>(string)($scorer['scorerId']??''),'player_name'=>$name,'team'=>$team,'position'=>$position,'opponent'=>$opp,'game_time'=>$gameTime,'game_started'=>(bool)$gameStarted,'availability'=>str_starts_with($statusUpper,'W')?'W':'FA','waiver_day'=>$waiverDay,'injury_status'=>$injury,'projected_fpts'=>$fpts,'source_rank'=>(int)($scorer['rank']??($rank+1)),'fantrax_url'=>'https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/players;searchName='.rawurlencode($name).';positionOrGroup=ALL;'];
         }
         if (!$rows && $positionGroup !== 'G') throw new RuntimeException('Fantrax returned player rows but none were parseable as available players.');
         return ['url'=>$url, 'rows'=>$rows];
@@ -120,3 +120,4 @@ class FantraxAvailablePlayers
 
     private function numeric(mixed $value): ?float { if($value===null||$value==='')return null;$value=preg_replace('/[^0-9.\-]/','',html_entity_decode(strip_tags((string)$value)));return is_numeric($value)?(float)$value:null; }
 }
+
