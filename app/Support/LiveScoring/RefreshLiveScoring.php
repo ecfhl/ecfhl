@@ -28,13 +28,23 @@ final class RefreshLiveScoring
                 foreach (($previous['players'] ?? []) as $p) $previousPlayers[$p['fantasy_team_id'].'|'.$p['player_id']] = $p;
                 foreach ($snapshot['players'] as &$p) {
                     $old = $previousPlayers[$p['fantasy_team_id'].'|'.$p['player_id']] ?? null;
-                    $p['fpts_changed'] = $old !== null && abs($old['daily_fpts'] - $p['daily_fpts']) > 0.0001;
+                    $oldFpts = $old !== null ? (float)($old['daily_fpts'] ?? 0) : null;
+                    $newFpts = (float)($p['daily_fpts'] ?? 0);
+                    $p['fpts_change'] = $oldFpts === null ? 'same' : ($newFpts > $oldFpts + 0.0001 ? 'up' : ($newFpts < $oldFpts - 0.0001 ? 'down' : 'same'));
+                    $p['fpts_changed'] = $p['fpts_change'] !== 'same';
                 }
                 unset($p);
                 foreach ($snapshot['teams'] as $id=>&$team) {
                     $old = $previous['teams'][$id] ?? null;
-                    $team['daily_fpts_changed'] = $old !== null && $old['daily_fpts'] !== $team['daily_fpts'];
-                    $team['period_fpts_changed'] = $old !== null && $old['period_fpts'] !== $team['period_fpts'];
+                    $oldDaily = $old !== null ? (float)($old['daily_fpts'] ?? 0) : null;
+                    $newDaily = (float)($team['daily_fpts'] ?? 0);
+                    $oldPeriod = $old !== null ? (float)($old['period_fpts'] ?? 0) : null;
+                    $newPeriod = (float)($team['period_fpts'] ?? 0);
+
+                    $team['daily_fpts_change'] = $oldDaily === null ? 'same' : ($newDaily > $oldDaily + 0.0001 ? 'up' : ($newDaily < $oldDaily - 0.0001 ? 'down' : 'same'));
+                    $team['period_fpts_change'] = $oldPeriod === null ? 'same' : ($newPeriod > $oldPeriod + 0.0001 ? 'up' : ($newPeriod < $oldPeriod - 0.0001 ? 'down' : 'same'));
+                    $team['daily_fpts_changed'] = $team['daily_fpts_change'] !== 'same';
+                    $team['period_fpts_changed'] = $team['period_fpts_change'] !== 'same';
                 }
                 unset($team);
                 DB::transaction(function () use ($snapshot, $daily, $period, $details, $date) {
