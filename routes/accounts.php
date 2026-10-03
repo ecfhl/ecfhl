@@ -16,5 +16,6 @@ Route::middleware('auth')->group(function(){
  Route::get('/account/claim-team',[Accounts::class,'claimForm']);
  Route::post('/account/claim-team',[Accounts::class,'claim'])->middleware('throttle:5,1,owner-write');
  Route::post('/notifications',[Notifications::class,'save']);
+ Route::post('/notifications/goalie',[Notifications::class,'watch']);
 });
 Route::get('/notifications',[Notifications::class,'index']);

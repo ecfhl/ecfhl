@@ -99,5 +99,56 @@ verifyOwner(ownerRequest('POST','/login',['email'=>'b@example.org','password'=>'
 // Reverse-proxy redirects preserve HTTPS for secure session cookies.
 $response=ownerRequest('GET','/admin',[],$guest,['HTTP_ACCEPT'=>'text/html','HTTP_X_FORWARDED_PROTO'=>'https','REMOTE_ADDR'=>'10.0.0.1']);
 verifyOwner(str_starts_with((string)$response->headers->get('Location'),'https://'),'Proxy HTTPS was lost on a redirect');
+// Goalie watch list uses dated statuses and game instants, independent of alert eligibility.
+foreach(['2026_09_30_210000_add_game_time_to_active_daily_players_table.php','2026_10_01_001900_add_game_started_to_active_daily_players.php','2026_09_30_000009_add_game_time_to_active_fantasy_rosters.php'] as $migration)(require __DIR__.'/../database/migrations/'.$migration)->up();
+CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-10-02T16:00:00-03:00'));
+DB::table('active_available_goalies')->delete();
+foreach([
+ ['MTL','Sam Goalie','Fri 6:00PM',null],['TOR','Z Early','Fri 5:00PM',null],
+ ['BOS','Already Started','Fri 3:00PM',null],['ANA','Live Game','Fri 9:00PM',null],
+ ['SEA','Live Opponent',null,null],['EDM','Finished Game',null,null],
+ ['CAR','Confirmed Starter','Fri 8:00PM',null],['CAR','Backup Goalie','Fri 8:00PM',null],
+ ['BUF','Not Starting','Fri 8:00PM',null],['DET','Pool Confirmed','Fri 8:00PM','Confirmed'],
+ ['DAL','Unknown Time',null,null],['FLA','At Start Time','Fri 4:00PM',null],
+ ['VAN','Late Night','Sat 12:30AM',null],['NSH','Pool Started','Fri 9:00PM',null],
+] as [$team,$name,$time,$status]){
+ DB::table('active_available_goalies')->insert(['game_date'=>$day,'team'=>$team,'player_name'=>$name,'opponent'=>'NYR','availability'=>'FA','starting_status'=>$status]);
+ DB::table('active_daily_players')->insert(['game_date'=>$day,'team'=>$team,'player_name'=>$name,'opponent'=>'NYR','position'=>'G','availability'=>'FA','game_time'=>$time,'game_started'=>$team==='NSH']);
+}
+DB::table('active_available_goalies')->insert(['game_date'=>'2026-10-03','team'=>'MTL','player_name'=>'Sam Goalie','opponent'=>'TOR','availability'=>'FA']);
+DB::table('active_daily_players')->insert(['game_date'=>'2026-10-03','team'=>'MTL','player_name'=>'Sam Goalie','game_time'=>'Sat 5:00PM']);
+foreach([['CAR','Confirmed Starter','Confirmed'],['TOR','Z Early','Probable'],['BUF','Not Starting','Not starting']] as [$team,$name,$status])DB::table('active_starting_goalies')->insert(['game_date'=>$day,'team'=>$team,'player_name'=>$name,'starting_status'=>$status,'source_url'=>'https://example.org','checked_at'=>'2026-10-02 19:00:00']);
+DB::table('live_scoring_snapshots')->insert(['league_id'=>App\Support\LiveScoring\FantraxClient::LEAGUE_ID,'fantasy_date'=>$day,'source_date'=>$day,'source'=>'fantrax','source_payload'=>'{}','player_count'=>3,'collected_at'=>'2026-10-02 19:00:00','payload'=>json_encode(['players'=>[
+ ['nhl_team'=>'ANA','opponent'=>'SEA','game_status'=>'2','starts_at'=>null],
+ ['nhl_team'=>'EDM','game_status'=>'3','starts_at'=>null],
+ ['nhl_team'=>'MTL','game_status'=>'1','starts_at'=>'2026-10-02T23:00:00Z'],
+]])]);
+$options=app(App\Support\OwnerGoalies::class)->options();
+verifyOwner($options->where('day','Today')->pluck('name')->values()->all()===['Z Early','Sam Goalie','Late Night','Unknown Time'],'Start-time ordering / confirmed / backup / live / final / exact-start filtering failed: '.$options->toJson());
+verifyOwner($options->where('day','Tomorrow')->pluck('name')->values()->all()===['Sam Goalie'],'Today/tomorrow grouping lost a repeated goalie');
+verifyOwner($options->firstWhere('name','Sam Goalie')['start_time']==='8:00 pm ADT','Snapshot instant not used for Atlantic start display');
+verifyOwner($options->firstWhere('name','Late Night')['start']==='2026-10-03T00:30:00-03:00','Atlantic midnight date rolled backward');
+verifyOwner(app(App\Support\OwnerGoalies::class)->available($day)->contains('player_name','Confirmed Starter'),'Confirmation alert eligibility was incorrectly removed');
+$a->notification_preferences=['team_scores'=>false,'opponent_scores'=>true,'goalies'=>['CAR|confirmedstarter']];$a->save();
+$response=ownerRequest('GET','/notifications',[],$alpha,['HTTP_ACCEPT'=>'text/html']);$html=$response->getContent();
+verifyOwner(str_contains($html,'<h3>Today</h3>')&&str_contains($html,'<h3>Tomorrow</h3>'),'Day headings missing');
+verifyOwner(!str_contains($html,'<strong>Confirmed Starter</strong>')&&str_contains($html,'type="hidden" name="goalies[]" value="CAR|confirmedstarter"'),'Hidden saved watch leaked into display / lost');
+verifyOwner(ownerRequest('POST','/notifications/goalie',['key'=>'TOR|zearly','enabled'=>true],$guest)->getStatusCode()===401,'Guest goalie watch accepted');
+foreach([true,true,false,true] as $enabled){
+ $response=ownerRequest('POST','/notifications/goalie',['key'=>'TOR|zearly','enabled'=>$enabled],$alpha);
+ verifyOwner($response->getStatusCode()===200&&json_decode($response->getContent(),true)['enabled']===$enabled,'Bell watch toggle failed: '.$response->getContent());
+}
+$preferences=$a->fresh()->notification_preferences;
+verifyOwner($preferences['team_scores']===false&&$preferences['opponent_scores']===true&&$preferences['goalies']===['CAR|confirmedstarter','TOR|zearly'],'Bell overwrote other preferences / duplicated watch');
+verifyOwner(ownerRequest('POST','/notifications/goalie',['key'=>'CAR|confirmedstarter','enabled'=>true],$alpha)->getStatusCode()===422,'Confirmed goalie new watch accepted');
+verifyOwner(ownerRequest('POST','/notifications/goalie',['key'=>'BOS|alreadystarted','enabled'=>true],$alpha)->getStatusCode()===422,'Started game watch accepted');
+verifyOwner(ownerRequest('POST','/notifications/goalie',['key'=>'CAR|confirmedstarter','enabled'=>false],$alpha)->getStatusCode()===200,'Hidden watch cannot be removed');
+$response=ownerRequest('GET','/daily-targets?date='.$day,[],$alpha,['HTTP_ACCEPT'=>'text/html']);
+verifyOwner($response->getStatusCode()===200&&str_contains($response->getContent(),'data-goalie-watch="TOR|zearly"'),'Daily Targets bell not rendered: '.substr(strip_tags($response->getContent()),0,1000));
+verifyOwner(!str_contains($response->getContent(),'data-goalie-watch="CAR|confirmedstarter"'),'Confirmed goalie received a bell');
+ownerRequest('GET','/notifications',[],$guest,['HTTP_ACCEPT'=>'text/html']);
+$guestBell=view('account.goalie-bell',['goalie'=>['name'=>'Z Early','team'=>'TOR','starting_status'=>'Probable'],'date'=>$day])->render();
+verifyOwner(str_contains($guestBell,'href="/login"'),'Guest bell lacks sign-in link');
+verifyOwner(str_contains(view('account.goalie-bell',['goalie'=>['name'=>'Sam Goalie','team'=>'MTL'],'date'=>'2026-10-03'])->render(),'goalie-watch-bell'),'Tomorrow unknown status bell missing');
 CarbonImmutable::setTestNow();
-echo "Owner account checks passed: pages, optional browsing, exclusive claims, reserved admin invitation, admin routes/actions, password hashing/login, Google state/linking, own/opponent scoring, goalie filters, waiver dates, isolated push delivery, and SSRF rejection.\n";
+echo "Owner account checks passed: pages, optional browsing, exclusive claims, reserved admin invitation, admin routes/actions, password hashing/login, Google state/linking, own/opponent scoring, goalie filters, date groups/start-time ordering, confirmed/nonstarter/started-game exclusions, bell toggle/auth/preference preservation, waiver dates, isolated push delivery, and SSRF rejection.\n";

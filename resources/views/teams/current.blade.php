@@ -437,6 +437,7 @@
                   <div class="team-target-main">
                     <div class="team-target-name">
                       <strong>{{ $target['name'] }} ({{ $target['team'] }})</strong>
+                      @if($code==='G')@include('account.goalie-bell',['goalie'=>$target])@endif
                       @if(!empty($target['injury_status']))<span class="pill team-ir">IR</span>@endif
                     </div>
                     <div class="team-target-lines">

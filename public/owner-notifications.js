@@ -1,4 +1,7 @@
 (()=>{
+ // A goalie can appear on both days; both checkboxes represent the same saved watch.
+ const watches=[...document.querySelectorAll('.owner-goalie-choice input[name="goalies[]"]')];
+ watches.forEach(input=>input.addEventListener('change',()=>{watches.filter(other=>other.value===input.value).forEach(other=>{other.checked=input.checked;});}));
  const enable=document.getElementById('owner-enable-push'),disable=document.getElementById('owner-disable-push'),state=document.getElementById('owner-push-state');
  const supported='serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
  const csrf=()=>document.querySelector('meta[name="csrf-token"]').content;

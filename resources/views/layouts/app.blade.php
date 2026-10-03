@@ -470,5 +470,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&modal.classList.contains('open'))closeModal();});
 });
 </script>
+@if(request()->is('daily-targets','teams/current/*'))
+<link rel="stylesheet" href="/goalie-watches.css?v=1">
+<script src="/goalie-watches.js?v=1" defer></script>
+@endif
 @stack('scripts')
 </body></html>

@@ -8,6 +8,20 @@ class OwnerNotificationsController {
  public function index(Request $r,OwnerGoalies $goalies){
   return view('account.notifications',['owner'=>$r->user(),'preferences'=>array_replace(OwnerNotificationPolicy::DEFAULTS,$r->user()?->notification_preferences??[]),'goalies'=>$goalies->options()]);
  }
+ public function watch(Request $r,OwnerGoalies $goalies){
+  $v=$r->validate(['key'=>'required|string|max:255','enabled'=>'required|boolean']);
+  $key=$v['key'];$enabled=$r->boolean('enabled');
+  $allowed=$goalies->options()->pluck('key')->all();
+  $saved=\Illuminate\Support\Facades\DB::transaction(function()use($r,$allowed,$key,$enabled){
+   $owner=\App\Models\User::whereKey($r->user()->id)->lockForUpdate()->firstOrFail();
+   $p=array_replace(OwnerNotificationPolicy::DEFAULTS,$owner->notification_preferences??[]);
+   abort_unless(in_array($key,$allowed,true)||(!$enabled && in_array($key,$p['goalies'],true)),422,'This goalie is no longer awaiting a starting decision for an upcoming game. Refresh the page.');
+   $p['goalies']=array_values(array_diff($p['goalies'],[$key]));
+   if($enabled){abort_if(count($p['goalies'])>=100,422,'You can watch up to 100 goalies.');$p['goalies'][]=$key;}
+   $owner->notification_preferences=$p;$owner->save();return $p['goalies'];
+  });
+  return response()->json(['key'=>$key,'enabled'=>in_array($key,$saved,true)]);
+ }
  public function save(Request $r,OwnerGoalies $goalies){
   $allowed=$goalies->options()->pluck('key')->merge($r->user()->notification_preferences['goalies']??[])->unique()->all();
   $v=$r->validate(['goalies'=>'nullable|array|max:100','goalies.*'=>['string',Rule::in($allowed)]]);

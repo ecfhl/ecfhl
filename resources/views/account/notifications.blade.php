@@ -15,12 +15,16 @@
 <label class="owner-setting"><span><strong>Available goalies · Tomorrow</strong><small>Status changes for available goalies with a game tomorrow.</small></span><input type="checkbox" name="available_tomorrow" value="1" @checked($preferences['available_tomorrow'])></label>
 </section>
 <section class="card owner-goalie-watch"><h2>Watch specific available goalies</h2><p class="subtle">Receive status changes for selected goalies while they are available and have a game today or tomorrow.</p>
-@if($goalies->isEmpty())<p>No available goalies are listed for today or tomorrow yet.</p>@endif
-<div class="owner-goalie-grid">@foreach($goalies as $g)<label class="owner-goalie-choice"><input type="checkbox" name="goalies[]" value="{{ $g['key'] }}" @checked(in_array($g['key'],$preferences['goalies'],true))><span><strong>{{ $g['name'] }}</strong><small>{{ $g['team'] }} · {{ implode(' / ',$g['days']) }}</small></span></label>@endforeach
-@foreach(array_diff($preferences['goalies'],$goalies->pluck('key')->all()) as $key)<label class="owner-goalie-choice"><input type="checkbox" name="goalies[]" value="{{ $key }}" checked><span>{{ $key }}<small>Saved watch · no eligible game currently listed</small></span></label>@endforeach</div>
+@foreach(['Today','Tomorrow'] as $day)
+<div class="owner-goalie-day"><h3>{{ $day }}</h3>
+@if($goalies->where('day',$day)->isEmpty())<p class="subtle">No goalies awaiting a starting decision for upcoming games.</p>@endif
+<div class="owner-goalie-grid">@foreach($goalies->where('day',$day) as $g)<label class="owner-goalie-choice"><input type="checkbox" name="goalies[]" value="{{ $g['key'] }}" @checked(in_array($g['key'],$preferences['goalies'],true))><span><strong>{{ $g['name'] }}</strong><small>{{ $g['team'] }} · {{ $g['start_time'] }}</small></span></label>@endforeach</div>
+</div>
+@endforeach
+@foreach(array_diff($preferences['goalies'],$goalies->pluck('key')->all()) as $key)<input type="hidden" name="goalies[]" value="{{ $key }}">@endforeach
 </section>
 @if($owner)<div class="owner-save"><button class="button primary" type="submit">Save preferences</button><p class="subtle">Preferences apply to every device enabled for your account. Today and tomorrow follow the league’s Pacific fantasy day.</p></div>@endif
 </fieldset></form>
 </div>
-@if($owner)<script src="/owner-notifications.js?v=1" defer></script>@endif
+@if($owner)<script src="/owner-notifications.js?v=2" defer></script>@endif
 @endsection
