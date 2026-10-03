@@ -648,6 +648,14 @@ html[data-theme="dark"] .team-next-lineup-player .team-minors{background:#15365f
 .team-live-expanded .matchup-player-today strong{font-size:22px!important;line-height:1!important}
 }
 
+/* Keep matchup logos aligned when team names wrap */
+.team-live-name-row{min-height:31px!important;display:flex!important;align-items:flex-start!important}
+.team-live-name-row a{width:100%}
+@media(max-width:700px){
+ .team-live-name-row{min-height:24px!important}
+ .team-live-body{align-items:center!important}
+}
+
 /* Compact mobile matchup scoreboard */
 @media(max-width:700px){
  .team-live-matchup-summary{min-height:0!important;padding:8px 24px 8px 8px!important;gap:4px!important}
