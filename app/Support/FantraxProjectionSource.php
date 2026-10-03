@@ -38,6 +38,16 @@ class FantraxProjectionSource
         return $rows;
     }
 
+
+    public function currentSeason(): array
+    {
+        $today = CarbonImmutable::now('America/Halifax')->toDateString();
+        $start = CarbonImmutable::now('America/Halifax')->startOfYear()->toDateString();
+        // Ask Fantrax for the current season-to-date dataset, not the preseason projection.
+        // The displayed season start is validated by Fantrax in actual().
+        return $this->actual($start, $today);
+    }
+
     public function actual(string $start, string $end): array
     {
         $rows = [];
