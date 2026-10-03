@@ -216,10 +216,17 @@
     @endphp
     <details class="team-next-opponent">
       <summary class="team-next-opponent-summary">
-        <span class="team-next-opponent-label">Playing Next Week</span>
-        <strong>{{ $nextWeekOpponent['side']==='HOME' ? 'vs' : '@' }} {{ $nextWeekOpponent['opponent'] }}</strong>
-        <span class="subtle">Scoring Period {{ $nextWeekOpponent['period'] }}@if($nextWeekDates) · {{ $nextWeekDates }}@endif</span>
-        <span class="team-next-opponent-chevron">▾</span>
+        <div class="team-next-opponent-meta">
+          <span class="team-next-opponent-label">Playing Next Week</span>
+          <span class="subtle">Scoring Period {{ $nextWeekOpponent['period'] }}</span>
+          @if($nextWeekDates)<span class="subtle">{{ $nextWeekDates }}</span>@endif
+        </div>
+        <div class="team-next-opponent-team">
+          <img class="team-next-opponent-logo" src="/team-icons/{{ \Illuminate\Support\Str::slug($nextWeekOpponent['opponent']) }}?v=1" alt="{{ $nextWeekOpponent['opponent'] }} team icon">
+          <span class="team-next-opponent-vs">{{ $nextWeekOpponent['side']==='HOME' ? 'vs' : '@' }}</span>
+          <strong>{{ $nextWeekOpponent['opponent'] }}</strong>
+        </div>
+        <span class="team-next-opponent-chevron">›</span>
       </summary>
       <div class="team-next-lineup">
         <div class="team-next-lineup-label">Next week's current lineup</div>
@@ -575,6 +582,28 @@ html[data-theme="dark"] .team-not-playing,html[data-theme="dark"] .team-not-play
 .team-lineup-advisor-photo-button{overflow:hidden;border-radius:6%;box-shadow:0 3px 10px rgba(15,23,42,.14)}
 .team-lineup-advisor-photo img{border-radius:6%!important}
 html[data-theme="dark"] .team-lineup-advisor-photo-button{box-shadow:0 4px 14px rgba(0,0,0,.35)}
+
+/* Redesigned next-week opponent header */
+.team-next-opponent-summary{display:grid!important;grid-template-columns:minmax(120px,.8fr) minmax(0,1.6fr)!important;align-items:center!important;gap:12px!important;padding:12px 42px 12px 14px!important}
+.team-next-opponent-meta{display:flex;flex-direction:column;gap:2px;min-width:0}
+.team-next-opponent-meta .subtle{grid-column:auto!important}
+.team-next-opponent-team{display:flex;align-items:center;gap:10px;min-width:0}
+.team-next-opponent-logo{width:54px;height:54px;flex:0 0 54px;object-fit:cover;border-radius:12px}
+.team-next-opponent-vs{font-size:11px;font-weight:900;text-transform:uppercase;color:#64748b}
+.team-next-opponent-team strong{font-size:18px;line-height:1.05;color:#172033}
+.team-next-opponent-chevron{font-size:24px!important}
+html[data-theme="dark"] .team-next-opponent-logo{box-shadow:0 3px 12px rgba(0,0,0,.4)}
+html[data-theme="dark"] .team-next-opponent-vs{color:#93c5fd!important}
+html[data-theme="dark"] .team-next-opponent-team strong{color:#f8fafc!important}
+@media(max-width:700px){
+ .team-next-opponent-summary{grid-template-columns:minmax(100px,.85fr) minmax(0,1.5fr)!important;gap:8px!important;padding:10px 32px 10px 10px!important}
+ .team-next-opponent-logo{width:46px;height:46px;flex-basis:46px;border-radius:10px}
+ .team-next-opponent-team{gap:6px}
+ .team-next-opponent-vs{font-size:8px}
+ .team-next-opponent-team strong{font-size:13px!important}
+ .team-next-opponent-meta .subtle{font-size:9px!important}
+ .team-next-opponent-chevron{right:9px!important;font-size:20px!important}
+}
 
 /* Dark-friendly next-week lineup */
 html[data-theme="dark"] .team-next-opponent{background:#0b1728!important;border:1px solid #1d4f91!important;border-radius:16px!important;box-shadow:0 8px 24px rgba(0,0,0,.22)}
