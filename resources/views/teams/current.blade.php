@@ -56,28 +56,28 @@
       <details class="team-live-matchup-card">
         <summary class="team-live-matchup-summary">
           <div class="team-live-side team-live-score-left">
-            <img class="team-live-logo" src="/team-icons/{{ $slug }}?v=1" alt="{{ $liveMatchup['team_name'] }} team icon">
-            <div class="team-live-side-content">
-              <div class="team-live-name-row">
-                <a href="/teams/current/{{ $slug }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $liveMatchup['team_name'] }}</a>
-              </div>
+            <div class="team-live-name-row">
+              <a href="/teams/current/{{ $slug }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $liveMatchup['team_name'] }}</a>
+            </div>
+            <div class="team-live-body">
+              <img class="team-live-logo" src="/team-icons/{{ $slug }}?v=1" alt="{{ $liveMatchup['team_name'] }} team icon">
               <div class="team-live-scores">
-                <span class="team-live-score"><small>Weekly</small><strong class="{{ $teamWeekWinning?'winning':'' }}">{{ number_format($liveMatchup['team_week'],0) }}</strong></span>
-                <span class="team-live-score"><small>Daily</small><strong class="{{ $teamDayWinning?'winning':'' }}">{{ number_format($liveMatchup['team_today'],0) }}</strong></span>
+                <span class="team-live-score team-live-today"><strong class="{{ $teamDayWinning?'winning':'' }}">{{ number_format($liveMatchup['team_today'],0) }}</strong><small>Today</small></span>
+                <span class="team-live-score team-live-weekly"><strong class="{{ $teamWeekWinning?'winning':'' }}">{{ number_format($liveMatchup['team_week'],0) }}</strong><small>Weekly</small></span>
               </div>
             </div>
           </div>
           <div class="team-live-vs">VS</div>
           <div class="team-live-side team-live-side-right team-live-score-right">
-            <img class="team-live-logo" src="/team-icons/{{ \Illuminate\Support\Str::slug($liveMatchup['opponent_name']) }}?v=1" alt="{{ $liveMatchup['opponent_name'] }} team icon">
-            <div class="team-live-side-content">
-              <div class="team-live-name-row">
-                <a href="/teams/current/{{ \Illuminate\Support\Str::slug($liveMatchup['opponent_name']) }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $liveMatchup['opponent_name'] }}</a>
-              </div>
+            <div class="team-live-name-row">
+              <a href="/teams/current/{{ \Illuminate\Support\Str::slug($liveMatchup['opponent_name']) }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $liveMatchup['opponent_name'] }}</a>
+            </div>
+            <div class="team-live-body">
               <div class="team-live-scores">
-                <span class="team-live-score"><small>Weekly</small><strong class="{{ $oppWeekWinning?'winning':'' }}">{{ number_format($liveMatchup['opponent_week'],0) }}</strong></span>
-                <span class="team-live-score"><small>Daily</small><strong class="{{ $oppDayWinning?'winning':'' }}">{{ number_format($liveMatchup['opponent_today'],0) }}</strong></span>
+                <span class="team-live-score team-live-today"><strong class="{{ $oppDayWinning?'winning':'' }}">{{ number_format($liveMatchup['opponent_today'],0) }}</strong><small>Today</small></span>
+                <span class="team-live-score team-live-weekly"><strong class="{{ $oppWeekWinning?'winning':'' }}">{{ number_format($liveMatchup['opponent_week'],0) }}</strong><small>Weekly</small></span>
               </div>
+              <img class="team-live-logo" src="/team-icons/{{ \Illuminate\Support\Str::slug($liveMatchup['opponent_name']) }}?v=1" alt="{{ $liveMatchup['opponent_name'] }} team icon">
             </div>
           </div>
           <span class="team-live-chevron">▾</span>
@@ -575,6 +575,36 @@ html[data-theme="dark"] .team-not-playing,html[data-theme="dark"] .team-not-play
 .team-lineup-advisor-photo-button{overflow:hidden;border-radius:6%;box-shadow:0 3px 10px rgba(15,23,42,.14)}
 .team-lineup-advisor-photo img{border-radius:6%!important}
 html[data-theme="dark"] .team-lineup-advisor-photo-button{box-shadow:0 4px 14px rgba(0,0,0,.35)}
+
+/* Symmetric team-page scoreboard layout */
+.team-live-matchup-summary{align-items:stretch}
+.team-live-side{display:flex;flex-direction:column!important;align-items:stretch!important;gap:7px;min-width:0}
+.team-live-name-row,.team-live-side-right .team-live-name-row{display:block;min-width:0;text-align:left}
+.team-live-side-right .team-live-name-row{text-align:right}
+.team-live-name-row a{display:block;font-size:14px;font-weight:900;line-height:1.1;white-space:normal;overflow:visible;text-overflow:clip}
+.team-live-body{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;flex:1;min-width:0}
+.team-live-side-right .team-live-body{flex-direction:row}
+.team-live-logo{width:58px;height:58px;flex:0 0 58px;object-fit:cover;border-radius:10px}
+.team-live-scores{display:flex!important;flex-direction:column;align-items:flex-end!important;gap:3px!important;white-space:nowrap;align-self:flex-end!important}
+.team-live-score{display:flex!important;flex-direction:column;align-items:flex-end;gap:0!important;line-height:1!important;transform:none!important}
+.team-live-score strong,.team-live-score+.team-live-score strong{font-size:24px!important;line-height:.95!important;font-weight:800;color:#172033}
+.team-live-score small,.team-live-score+.team-live-score small{display:block!important;margin:2px 0 0!important;font-size:8px!important;line-height:1!important;font-weight:900;text-transform:uppercase;color:#64748b}
+.team-live-score strong.winning{font-weight:900}
+.team-live-score-left .team-live-scores{margin-left:auto}
+.team-live-score-right .team-live-scores{order:0;align-items:flex-start!important;margin-right:auto}
+.team-live-score-right .team-live-score{align-items:flex-start}
+.team-live-score-right .team-live-logo{order:1}
+.team-live-vs{align-self:center}
+@media(max-width:700px){
+  .team-live-matchup-summary{gap:5px;padding:9px 25px 9px 7px}
+  .team-live-side{gap:5px!important}
+  .team-live-name-row a{font-size:11px!important}
+  .team-live-body{gap:4px}
+  .team-live-logo{width:42px!important;height:42px!important;flex-basis:42px!important;border-radius:7px!important}
+  .team-live-score strong,.team-live-score+.team-live-score strong{font-size:20px!important}
+  .team-live-score small,.team-live-score+.team-live-score small{font-size:7px!important}
+  .team-live-vs{font-size:7px;margin-top:12px}
+}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
