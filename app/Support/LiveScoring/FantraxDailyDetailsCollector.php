@@ -55,6 +55,8 @@ final class FantraxDailyDetailsCollector
             $headers = $data['tableHeader']['cells'] ?? [];
             $columns = [];
             foreach ($headers as $index=>$header) $columns[$header['shortName'] ?? $header['key'] ?? ''] = $index;
+            $rosterStatusColumn = null;
+            foreach ($headers as $index=>$header) if (($header['name'] ?? '') === 'Roster Status') $rosterStatusColumn = $index;
             if (!isset($columns['GP'])) throw new RuntimeException('Fantrax standard daily stats are missing GP.');
             $rows = $data['statsTable'] ?? [];
             if (($data['paginatedResultSet']['totalNumPages'] ?? 1) === 1 && ($data['paginatedResultSet']['totalNumResults'] ?? count($rows)) > count($rows)) throw new RuntimeException('Fantrax daily details were truncated.');
@@ -63,6 +65,7 @@ final class FantraxDailyDetailsCollector
                 if ($id === '') throw new RuntimeException('Missing Fantrax detail player identity.');
                 $cell = fn($key)=>isset($columns[$key]) ? ($entry['cells'][$columns[$key]]['content'] ?? null) : null;
                 $details[$id] = ['gp'=>is_numeric($cell('GP')) ? (int)$cell('GP') : 0, 'contract'=>$cell('Con')];
+                $details[$id]['source_roster_status'] = $rosterStatusColumn !== null ? ($entry['cells'][$rosterStatusColumn]['content'] ?? null) : null;
                 foreach (['SV','GA','GAA','SV%','Min','SOGA'] as $stat) {
                     if (isset($columns[$stat])) $details[$id]['goalie_stats'][$stat] = $cell($stat);
                 }

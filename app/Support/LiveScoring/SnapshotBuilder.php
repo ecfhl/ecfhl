@@ -24,6 +24,12 @@ final class SnapshotBuilder
             $player['gp'] = $extra['gp'] ?? null;
             $player['contract'] = $extra['contract'] ?? null;
             $player['goalie_stats'] = $extra['goalie_stats'] ?? [];
+            $player['source_roster_status'] = $extra['source_roster_status'] ?? null;
+            // The daily matchup determines scoring eligibility. Explicit Fantrax
+            // roster status supplies bench sublabels; injury/minor icons do not.
+            $player['roster_status'] = $player['scoring_status'] === 'ACTIVE' ? 'ACTIVE' : match(strtoupper((string)$player['source_roster_status'])) {
+                'IR'=>'INJURED_RESERVE','MIN'=>'MINORS',default=>'BENCH',
+            };
         }
         unset($player);
         $matchups = (new FantraxMatchupCollector)->collect($day, $period, $players);

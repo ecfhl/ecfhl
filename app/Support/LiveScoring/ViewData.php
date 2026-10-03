@@ -36,9 +36,9 @@ final class ViewData
         $bench = $p['scoring_status'] === 'BENCH';
         $contract = trim((string)($p['contract'] ?? ''));
         $row = (object)array_merge($p, [
-            'daily_participant'=>true, 'is_bench'=>$bench, 'is_ir'=>$bench && $p['injury_status'],
+            'daily_participant'=>true, 'is_bench'=>$bench, 'is_ir'=>$p['roster_status']==='INJURED_RESERVE',
             'last_update'=>$p['collected_at'] ?? null,
-            'roster_status'=>$bench && $p['minor_badge'] ? 'MINORS' : $p['scoring_status'],
+            'roster_status'=>$p['roster_status'],
             'today_fpts'=>$p['daily_fpts'], 'today_fpts_changed'=>$p['fpts_changed'] ?? false,
             'projected_fpts_per_game'=>$p['daily_projected_fpts'], 'live_opponent_display'=>$p['game_display'],
             'opponent_display'=>$p['game_display'], 'game_time'=>null,

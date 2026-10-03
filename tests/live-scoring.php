@@ -81,6 +81,7 @@ $source = liveFixture('2026-10-02');
 $source['day']['scorerMap']['ACTIVE']['65yfc2nwmolvao6q']['2010'][0]['scorer']['icons'][] = ['typeId'=>'2'];
 $injured = $builder->build('2026-10-02',$source['day'],$source['period'],$source['details']);
 checkLive($injured['teams']['65yfc2nwmolvao6q']['daily_fpts'] === $snapshots['2026-10-02']['teams']['65yfc2nwmolvao6q']['daily_fpts'], 'Injury flag removed ACTIVE scoring');
+foreach ($injured['players'] as $p) if ($p['scoring_status']==='ACTIVE') checkLive($p['roster_status']==='ACTIVE', 'Badge or supplemental roster status overrode Fantrax ACTIVE lineup');
 
 Http::preventStrayRequests();
 $badDate = true;
