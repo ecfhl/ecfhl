@@ -50,6 +50,6 @@
   </div>
   <div class="matchup-player-metrics">
     <div><span>Proj.</span><strong>{{ $player->projected_fpts_per_game!==null?number_format($player->projected_fpts_per_game,2):'—' }}</strong></div>
-    <div class="matchup-player-today"><span>Day</span><strong class="{{ !empty($player->today_fpts_changed)?'score-changed':'' }}">{{ rtrim(rtrim(number_format($player->today_fpts ?? 0,2), '0'), '.') }}</strong></div>
+    <div class="matchup-player-today"><span>Day</span><strong class="score-{{ $player->today_fpts_change ?? 'same' }}">{{ rtrim(rtrim(number_format($player->today_fpts ?? 0,2), '0'), '.') }}</strong></div>
   </div>
 </div>
