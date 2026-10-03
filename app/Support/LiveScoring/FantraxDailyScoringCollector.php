@@ -42,7 +42,7 @@ final class FantraxDailyScoringCollector
             if (!ctype_digit($millis)) throw new RuntimeException('Invalid Fantrax game start.');
             $startsAt = CarbonImmutable::createFromTimestampUTC((int)$millis / 1000)->toIso8601String();
             $text = ($homeAway === 'AWAY' ? '@' : 'vs ').$opponent.' · '.CarbonImmutable::parse($startsAt)->setTimezone('America/Halifax')->format('g:i a T');
-        } elseif (preg_match('/^([A-Z]{2,4})\s+\d+\s+@([A-Z]{2,4})\s+\d+/', $text, $m)) {
+        } elseif (preg_match('/^([A-Z]{2,4})\s+\d+\s+@\s*([A-Z]{2,4})\s+\d+/', $text, $m)) {
             $homeAway = $team === $m[1] ? 'AWAY' : 'HOME';
             $opponent = $homeAway === 'AWAY' ? $m[2] : $m[1];
         }

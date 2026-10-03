@@ -51,6 +51,7 @@ foreach ($expected as $date) {
             checkLive($player['fantasy_date'] === $date && $player['source_date'] === $date, 'Player date changed');
             checkLive($player['daily_fpts'] === (float)($raw['statsMap'][$player['player_id']]['object1'] ?? 0), 'Player points changed');
             checkLive($player['game_id'] !== '', 'Event identity lost');
+            checkLive($player['opponent'] !== null, 'Dated opponent missing');
             $pid = $player['player_id'];
             $original = $raw['projectedTotalsMap'][$pid];
             $calculated = $raw['calculatedProjectedTotalsMap'][$pid] ?? $original;
@@ -69,6 +70,7 @@ checkLive(count($lone) === 4, 'Lone Tsar daily lineup does not match Fantrax');
 checkLive($byId['05y3a']['daily_fpts'] === 2.0 && $byId['03wpi']['daily_fpts'] === 2.0, 'Carlsson/Dubois regression');
 checkLive(isset($byId['03924']) && $byId['03rf2']['daily_fpts'] === 0.0, 'Zero-point active player disappeared');
 checkLive($byId['05y3a']['gp'] === 1, 'Carlsson GP missing');
+checkLive($byId['05y3a']['opponent'] === 'VGK' && $byId['03wpi']['opponent'] === 'CAR' && $byId['03924']['opponent'] === 'ANA' && $byId['03rf2']['opponent'] === 'STL', 'Final/in-progress opponents were not parsed');
 $tomorrow = array_filter($snapshots['2026-10-03']['players'], fn($p)=>$p['fantasy_team_id']==='65yfc2nwmolvao6q' && $p['scoring_status']==='ACTIVE');
 checkLive(count($tomorrow) === 13, 'Tomorrow was not populated before games started');
 checkLive(!in_array('05y3a', array_column($tomorrow,'player_id'),true), 'Tomorrow copied today');
