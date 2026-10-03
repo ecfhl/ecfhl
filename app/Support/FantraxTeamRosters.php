@@ -114,7 +114,11 @@ class FantraxTeamRosters
             'statusOrTeamFilter'=>'ALL_TAKEN',
             'pageNumber'=>'1',
             'datePlaying'=>$day,
+            'startDate'=>$day,
+            'endDate'=>$day,
+            'timeframeTypeCode'=>'BY_DATE',
             'maxResultsPerPage'=>500,
+            'positionOrGroup'=>'ALL',
         ]);
 
         $projections = $this->fetchStatsPage([
