@@ -372,29 +372,11 @@ Route::get('/teams/current', function() {
         ->get()
         ->keyBy(fn($g)=>strtoupper(trim((string)$g->team)));
 
-    // NHL schedule is authoritative for whether a team actually plays on this
-    // fantasy date. Fantrax/DFO can expose the next game (for example a Saturday
-    // game while viewing Friday), so never promote that player to "Today".
-    $nhlTeamsPlaying=null;
-    try {
-        $nhlResponse=Http::timeout(8)->retry(1,400)->get('https://api-web.nhle.com/v1/score/'.$date);
-        $nhlResponse->throw();
-        $nhlTeamsPlaying=collect($nhlResponse->json('games')??[])
-            ->flatMap(fn($game)=>[
-                strtoupper((string)($game['awayTeam']['abbrev']??'')),
-                strtoupper((string)($game['homeTeam']['abbrev']??'')),
-            ])->filter()->unique()->flip();
-    } catch (\Throwable $e) {
-        report($e);
-    }
-
-    $rows=$rows->map(function($p)use($scheduleByTeam,$nhlTeamsPlaying){
+    // Keep Fantrax's player-specific datePlaying result authoritative.
+    // A team-level NHL/DFO schedule cannot prove that an individual player is
+    // dressed; scratched/injured players may legitimately show their next game.
+    $rows=$rows->map(function($p)use($scheduleByTeam){
         $team=strtoupper(trim((string)$p->nhl_team));
-        if($nhlTeamsPlaying!==null){
-            $p->is_playing=$team!=='' && isset($nhlTeamsPlaying[$team]);
-        } elseif($team!=='' && isset($scheduleByTeam[$team])){
-            $p->is_playing=true;
-        }
         if((bool)$p->is_playing && $team!=='' && isset($scheduleByTeam[$team])){
             $game=$scheduleByTeam[$team];
             if(empty($p->opponent))$p->opponent=$game->opponent;
@@ -639,29 +621,11 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         ->get()
         ->keyBy(fn($g)=>strtoupper(trim((string)$g->team)));
 
-    // NHL schedule is authoritative for whether a team actually plays on this
-    // fantasy date. Fantrax/DFO can expose the next game (for example a Saturday
-    // game while viewing Friday), so never promote that player to "Today".
-    $nhlTeamsPlaying=null;
-    try {
-        $nhlResponse=Http::timeout(8)->retry(1,400)->get('https://api-web.nhle.com/v1/score/'.$date);
-        $nhlResponse->throw();
-        $nhlTeamsPlaying=collect($nhlResponse->json('games')??[])
-            ->flatMap(fn($game)=>[
-                strtoupper((string)($game['awayTeam']['abbrev']??'')),
-                strtoupper((string)($game['homeTeam']['abbrev']??'')),
-            ])->filter()->unique()->flip();
-    } catch (\Throwable $e) {
-        report($e);
-    }
-
-    $rows=$rows->map(function($p)use($scheduleByTeam,$nhlTeamsPlaying){
+    // Keep Fantrax's player-specific datePlaying result authoritative.
+    // A team-level NHL/DFO schedule cannot prove that an individual player is
+    // dressed; scratched/injured players may legitimately show their next game.
+    $rows=$rows->map(function($p)use($scheduleByTeam){
         $team=strtoupper(trim((string)$p->nhl_team));
-        if($nhlTeamsPlaying!==null){
-            $p->is_playing=$team!=='' && isset($nhlTeamsPlaying[$team]);
-        } elseif($team!=='' && isset($scheduleByTeam[$team])){
-            $p->is_playing=true;
-        }
         if((bool)$p->is_playing && $team!=='' && isset($scheduleByTeam[$team])){
             $game=$scheduleByTeam[$team];
             if(empty($p->opponent))$p->opponent=$game->opponent;
