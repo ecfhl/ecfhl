@@ -110,10 +110,13 @@ class FantraxTeamRosters
         // Fantrax's datePlaying filter is the reliable way to identify players
         // actually scheduled to play on a given day. Keep projections separate
         // so players without a game still retain their season projected FPts.
+        // Fantrax matchup/roster scoring is authoritative for the selected
+        // fantasy date. BY_DATE returns the players and stats Fantrax itself
+        // displays for that day; datePlaying can drift to the next scheduled game.
         $playing = $this->fetchStatsPage([
             'statusOrTeamFilter'=>'ALL_TAKEN',
             'pageNumber'=>'1',
-            'datePlaying'=>$day,
+            'datePlaying'=>'ALL',
             'startDate'=>$day,
             'endDate'=>$day,
             'timeframeTypeCode'=>'BY_DATE',
