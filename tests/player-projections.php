@@ -92,6 +92,11 @@ DB::table('active_daily_players')->insert(['game_date'=>'2026-11-03','player_id'
     'opponent'=>'TOR','availability'=>'FA','projected_fpts'=>999,'source_rank'=>5,'last_update'=>now(),'created_at'=>now(),'updated_at'=>now()]);
 $tips = App\Support\AiTips::groups([], '2026-11-03');
 checkProjection($tips['F'][0]['projected_points'] === 3.5, 'Daily Targets use the stored custom per-game value, not season totals.');
+checkProjection($tips['F'][0]['player_id'] === 'p5', 'Daily Targets retain Fantrax IDs for duplicate-name players.');
+DB::table('active_daily_players')->insert(['game_date'=>'2026-11-03','player_id'=>'outside','player_name'=>'Untracked','team'=>'MTL','position'=>'F',
+    'opponent'=>'TOR','availability'=>'FA','projected_fpts'=>999,'source_rank'=>1001,'last_update'=>now(),'created_at'=>now(),'updated_at'=>now()]);
+$untracked = collect(App\Support\AiTips::groups([], '2026-11-03')['F'])->first(fn($p)=>$p['player_id']==='outside');
+checkProjection($untracked['projected_points'] === null, 'An untracked target has no custom estimate, rather than a false zero or a Fantrax season total.');
 $participant = ['player_id'=>'p5','fantasy_team_id'=>'t1','player_name'=>'Player 5','nhl_team'=>'MTL','position'=>'F',
     'roster_status'=>'ACTIVE','scoring_status'=>'ACTIVE','daily_fpts'=>8,'daily_projected_fpts'=>99,'game_display'=>'vs TOR',
     'game_status'=>'1','game_id'=>'g1','gp'=>1,'stats'=>[]];
