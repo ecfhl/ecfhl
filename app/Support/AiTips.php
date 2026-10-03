@@ -150,6 +150,6 @@ class AiTips
     {
         $opponent = trim((string) ($row->opponent ?? ''));
         $opponent = strtoupper((string) ($row->home_away ?? '')) === 'AWAY' && $opponent !== '' ? '@'.$opponent : $opponent;
-        return ['player_id'=>$row->player_id??null,'name'=>$row->player_name,'team'=>$row->team,'position'=>$position,'opponent'=>$opponent,'game_time'=>$row->game_time??null,'status'=>$status,'injury_status'=>$row->injury_status,'projected_points'=>property_exists($row, 'projected_fpts_per_game') ? $row->projected_fpts_per_game : ($row->projected_fpts===null?null:(float)$row->projected_fpts),'source_rank'=>(int)($row->source_rank??PHP_INT_MAX),'game_date'=>$date,'starting_status'=>null,'not_starting'=>false];
+        return ['player_id'=>$row->player_id??null,'name'=>$row->player_name,'team'=>$row->team,'position'=>$position,'opponent'=>$opponent,'game_time'=>$row->game_time??null,'status'=>$status,'injury_status'=>$row->injury_status,'projected_points'=>property_exists($row, 'projected_fpts_per_game') ? $row->projected_fpts_per_game : ($row->projected_fpts===null?null:(float)$row->projected_fpts),'season_fpts_per_game'=>$row->season_fpts_per_game??null,'fpts_per_game_7d'=>$row->fpts_per_game_7d??null,'fpts_per_game_21d'=>$row->fpts_per_game_21d??null,'source_rank'=>(int)($row->source_rank??PHP_INT_MAX),'game_date'=>$date,'starting_status'=>null,'not_starting'=>false];
     }
 }
