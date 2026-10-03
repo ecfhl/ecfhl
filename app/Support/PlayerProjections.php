@@ -46,6 +46,10 @@ final class PlayerProjections
                 $player->projected_fpts_per_game = $row ? (float)$row->projected_fpts_per_game : null;
                 $player->custom_projection = $row !== null;
                 $player->projection_as_of_date = $row?->as_of_date;
+                $player->season_fpts_per_game = $row ? (float)$row->season_fpts_per_game : null;
+                $player->fpts_per_game_7d = $row ? (float)$row->fpts_per_game_7d : null;
+                $player->fpts_per_game_14d = $row ? (float)$row->fpts_per_game_14d : null;
+                $player->fpts_per_game_21d = $row ? (float)$row->fpts_per_game_21d : null;
             }
             return $player;
         });
