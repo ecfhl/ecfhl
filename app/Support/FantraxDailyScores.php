@@ -32,7 +32,7 @@ class FantraxDailyScores
             'positionOrGroup' => 'ALL',
             'pageNumber' => '1',
             'maxResultsPerPage' => 500,
-            'datePlaying' => $day,
+            'datePlaying' => 'ALL',
             'startDate' => $day,
             'endDate' => $day,
             'timeframeTypeCode' => 'BY_DATE',
