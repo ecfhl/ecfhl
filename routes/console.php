@@ -72,7 +72,7 @@ Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayer
 });
 
 Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailyScores $fantrax, NhlDailyStats $nhlStats, FantraxSchedule $fantraxSchedule, WebPush $webPush) {
-    $tz='America/Halifax';
+    $tz='America/Vancouver';
     $requested=trim((string)($this->argument('date')??''));
     if($requested!==''){
         try{$dates=[CarbonImmutable::createFromFormat('!Y-m-d',$requested,$tz)];}
@@ -295,8 +295,8 @@ Artisan::command('ecfhl:refresh-daily-scores {date?}', function (FantraxDailySco
 });
 
 Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dailyMoves) {
-    $tz='America/Halifax';
-    $day=CarbonImmutable::now($tz)->subHours(4)->startOfDay();
+    $tz='America/Vancouver';
+    $day=CarbonImmutable::now($tz)->startOfDay();
     $date=$day->toDateString();
     $dow=(int)$day->format('N');
     $isWeekend=$dow>=6;
