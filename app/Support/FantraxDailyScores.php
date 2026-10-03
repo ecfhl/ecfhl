@@ -28,7 +28,7 @@ class FantraxDailyScores
         $url = $this->url($date);
 
         $requestData = [
-            'statusOrTeamFilter' => 'ALL',
+            'statusOrTeamFilter' => 'ALL_TAKEN',
             'positionOrGroup' => 'ALL',
             'pageNumber' => '1',
             'maxResultsPerPage' => 500,
