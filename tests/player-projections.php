@@ -114,17 +114,27 @@ checkProjection((float)DB::table('player_projections')->where('player_id','p5')-
 class FixtureProjectionSource extends FantraxProjectionSource
 {
     public string $mode = '';
+    public int $pageCount = 1;
+    public array $batches = [];
     protected function pages(array $args, array $pages): array
     {
+        $this->batches[] = $pages;
         $goalie = $args['positionOrGroup'] === 'POS_201';
         $start = $this->mode === 'date' ? '2026-10-26' : $args['startDate'];
         $headers = [['key'=>'fpts'], ['shortName'=>$this->mode === 'gp' ? 'OTHER' : 'GP']];
         $data = ['displayedStatusOrTeam'=>'ALL','displayedPosOrGroup'=>$args['positionOrGroup'], 'displayedSelections'=>['datePlaying'=>'ALL','searchName'=>'', 'displayedSeasonOrProjection'=>['code'=>self::ACTUAL],
             'displayedStartDate'=>CarbonImmutable::parse($start, 'America/New_York')->getTimestampMs(),
             'displayedEndDate'=>CarbonImmutable::parse($args['endDate'], 'America/New_York')->getTimestampMs()],
-            'paginatedResultSet'=>['totalNumPages'=>1,'pageNumber'=>1,'totalNumResults'=>$this->mode === 'partial' ? 2 : 1],
+            'paginatedResultSet'=>['totalNumPages'=>$this->pageCount,'pageNumber'=>1,'totalNumResults'=>$this->mode === 'partial' ? $this->pageCount + 1 : $this->pageCount],
             'tableHeader'=>['cells'=>$headers], 'statsTable'=>[['scorer'=>['scorerId'=>$goalie?'goalie':'skater'], 'cells'=>[['content'=>'-1'],['content'=>'2']]]]];
-        return [1=>$data];
+        $result = [];
+        foreach ($pages as $page) {
+            $row = $data;
+            $row['paginatedResultSet']['pageNumber'] = $page;
+            if ($this->pageCount > 1) $row['statsTable'][0]['scorer']['scorerId'] .= '-'.$page;
+            $result[$page] = $row;
+        }
+        return $result;
     }
 }
 $parser = new FixtureProjectionSource;
@@ -134,4 +144,7 @@ foreach (['date','gp','partial'] as $mode) {
     $parser->mode = $mode;
     rejectsProjection(fn()=>$parser->actual('2026-10-27','2026-11-02'), 'Reject '.$mode.' source corruption.');
 }
+$parser->mode = ''; $parser->pageCount = 10; $parser->batches = [];
+checkProjection(count($parser->actual('2026-10-27','2026-11-02')) === 20, 'Parse every page across both groups.');
+checkProjection(max(array_map('count', $parser->batches)) <= 3, 'Keep actual-stat collection batches within production memory limits.');
 echo "Player projection checks passed.\n";

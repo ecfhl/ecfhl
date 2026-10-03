@@ -50,23 +50,28 @@ class FantraxProjectionSource
             $pages = (int)$pagination['totalNumPages'];
             $total = (int)$pagination['totalNumResults'];
             if ($pages < 1 || $pages > 50 || $total < 1) throw new RuntimeException('Invalid Fantrax actual-stat pagination.');
-            $all = [1=>$first];
-            foreach (array_chunk($pages > 1 ? range(2, $pages) : [], 6) as $batch) $all += $this->pages($args, $batch);
             $count = 0;
             $groupSeen = [];
-            foreach ($all as $page => $data) {
-                $this->validate($data, self::ACTUAL, $start, $end);
-                if (($data['displayedPosOrGroup'] ?? '') !== $group) throw new RuntimeException('Fantrax returned a different actual-stat position group.');
-                if ((int)$data['paginatedResultSet']['pageNumber'] !== $page || (int)$data['paginatedResultSet']['totalNumResults'] !== $total) throw new RuntimeException('Fantrax actual-stat pagination changed during collection.');
-                foreach ($this->parse($data, true) as $row) {
-                    if (isset($groupSeen[$row['player_id']])) throw new RuntimeException('Duplicate player in Fantrax actual-stat pagination.');
-                    $groupSeen[$row['player_id']] = true;
-                    // Fantrax lists a few dual-position players in both groups.
-                    if (isset($rows[$row['player_id']]) && $rows[$row['player_id']] !== $row) throw new RuntimeException('Conflicting skater/goalie stats for '.$row['player_id'].'.');
-                    $rows[$row['player_id']] = $row;
-                    $count++;
+            // Parse each small batch immediately instead of retaining all 8,000+
+            // rich Fantrax rows in a PHP web request with a 128 MB memory limit.
+            $consume = function (array $batch) use ($group, $start, $end, $total, &$rows, &$count, &$groupSeen) {
+                foreach ($batch as $page => $data) {
+                    $this->validate($data, self::ACTUAL, $start, $end);
+                    if (($data['displayedPosOrGroup'] ?? '') !== $group) throw new RuntimeException('Fantrax returned a different actual-stat position group.');
+                    if ((int)$data['paginatedResultSet']['pageNumber'] !== $page || (int)$data['paginatedResultSet']['totalNumResults'] !== $total) throw new RuntimeException('Fantrax actual-stat pagination changed during collection.');
+                    foreach ($this->parse($data, true) as $row) {
+                        if (isset($groupSeen[$row['player_id']])) throw new RuntimeException('Duplicate player in Fantrax actual-stat pagination.');
+                        $groupSeen[$row['player_id']] = true;
+                        // Fantrax lists a few dual-position players in both groups.
+                        if (isset($rows[$row['player_id']]) && $rows[$row['player_id']] !== $row) throw new RuntimeException('Conflicting skater/goalie stats for '.$row['player_id'].'.');
+                        $rows[$row['player_id']] = $row;
+                        $count++;
+                    }
                 }
-            }
+            };
+            $consume([1=>$first]);
+            unset($first);
+            foreach (array_chunk($pages > 1 ? range(2, $pages) : [], 3) as $batch) $consume($this->pages($args, $batch));
             if ($count !== $total) throw new RuntimeException('Fantrax actual-stat pages were incomplete.');
         }
         return $rows;
