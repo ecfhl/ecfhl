@@ -124,7 +124,7 @@ class FantraxSchedule
             'dt' => 0,
             'at' => 0,
             'av' => '0.0',
-            'tz' => 'America/Halifax',
+            'tz' => 'America/Vancouver',
             'v' => self::API_VERSION,
         ];
 
@@ -154,8 +154,8 @@ class FantraxSchedule
         }
 
         try {
-            $start = CarbonImmutable::createFromFormat('!D M j, Y', $m[1], 'America/Halifax');
-            $end = CarbonImmutable::createFromFormat('!D M j, Y', $m[2], 'America/Halifax');
+            $start = CarbonImmutable::createFromFormat('!D M j, Y', $m[1], 'America/Vancouver');
+            $end = CarbonImmutable::createFromFormat('!D M j, Y', $m[2], 'America/Vancouver');
             return ($start && $end) ? [$start, $end] : null;
         } catch (\Throwable) {
             return null;
