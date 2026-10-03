@@ -849,13 +849,22 @@ document.addEventListener('DOMContentLoaded',()=>{
         renderAdvice(advisor.advice);
       };
 
+      let advisorAutoRotate=null;
+      const restartAdvisorAutoRotate=()=>{
+        if(advisorAutoRotate) clearInterval(advisorAutoRotate);
+        if(order.length>1){
+          advisorAutoRotate=setInterval(()=>move(1),10000);
+        }
+      };
+
       const move=(direction)=>{
         const index=order.indexOf(currentKey);
         const nextIndex=(index+direction+order.length)%order.length;
         renderAdvisor(order[nextIndex]);
       };
-      prev?.addEventListener('click',()=>move(-1));
-      next?.addEventListener('click',()=>move(1));
+      restartAdvisorAutoRotate();
+      prev?.addEventListener('click',()=>{move(-1);restartAdvisorAutoRotate();});
+      next?.addEventListener('click',()=>{move(1);restartAdvisorAutoRotate();});
       renderAdvisor(currentKey);
     }catch(error){
       console.error('Could not initialize advisor cycle',error);
