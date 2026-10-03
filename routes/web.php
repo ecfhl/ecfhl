@@ -5,6 +5,11 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
+Route::get('/csrf-token', function () {
+    return response()->json(['token'=>csrf_token()])
+        ->header('Cache-Control','no-store, no-cache, must-revalidate');
+});
+
 Route::post('/admin/lineup-advisor/reset-and-refresh', function () {
     abort_unless(request()->ajax() && request()->headers->get('X-Requested-With') === 'XMLHttpRequest', 403);
     abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advice'), 503);
