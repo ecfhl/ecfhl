@@ -61,7 +61,7 @@ class FantraxDailyMoves
             'dt'=>0,
             'at'=>0,
             'av'=>'0.0',
-            'tz'=>'America/Halifax',
+            'tz'=>'America/Vancouver',
             'v'=>self::API_VERSION,
         ];
 
