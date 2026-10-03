@@ -603,6 +603,22 @@ html[data-theme="dark"] .team-next-lineup-player .team-minors{background:#15365f
  html[data-theme="dark"] .team-next-lineup-player{font-size:10px!important;line-height:1.2!important}
 }
 
+/* Mobile player metric layout */
+@media(max-width:700px){
+.team-live-expanded .matchup-player-row{position:relative!important;display:block!important;padding:9px 9px 10px!important;min-height:96px!important}
+.team-live-expanded .matchup-player-main{display:block!important;width:100%!important;min-width:0!important}
+.team-live-expanded .matchup-player-name{display:flex!important;width:100%!important;padding-right:0!important;font-size:13px!important;line-height:1.15!important}
+.team-live-expanded .matchup-player-name strong{flex-basis:100%!important;width:100%!important;order:-10}
+.team-live-expanded .matchup-player-opponent{padding-right:34px!important;margin-top:5px!important}
+.team-live-expanded .matchup-player-metrics{position:static!important;display:block!important}
+.team-live-expanded .matchup-player-metrics>div:first-child{position:absolute!important;right:9px!important;top:38px!important;display:flex!important;align-items:baseline!important;gap:3px!important;text-align:right!important}
+.team-live-expanded .matchup-player-metrics>div:first-child span{font-size:7px!important}
+.team-live-expanded .matchup-player-metrics>div:first-child strong{font-size:12px!important;line-height:1!important}
+.team-live-expanded .matchup-player-today{position:absolute!important;right:9px!important;bottom:9px!important;text-align:right!important}
+.team-live-expanded .matchup-player-today span{display:none!important}
+.team-live-expanded .matchup-player-today strong{font-size:22px!important;line-height:1!important}
+}
+
 /* Dark scoreboard treatment */
 html[data-theme="dark"] .team-live-matchup-card{background:linear-gradient(135deg,#0b1728 0%,#07111f 100%)!important;border:1px solid #1d4f91!important;box-shadow:0 10px 28px rgba(0,0,0,.28)}
 html[data-theme="dark"] .team-live-matchup-card[open]{border:2px solid #2563eb!important;box-shadow:0 0 0 1px rgba(37,99,235,.22),0 12px 32px rgba(0,0,0,.34)}
