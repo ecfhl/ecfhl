@@ -50,7 +50,21 @@ document.addEventListener('DOMContentLoaded',()=>{
       const data=new FormData();data.append('image',file);
       submit.disabled=true;submit.textContent='Uploading...';status.textContent='';
       try{
-        const response=await fetch('/team-icons/'+encodeURIComponent(form.dataset.teamSlug),{method:'POST',headers:{'X-CSRF-TOKEN':csrf,'Accept':'application/json'},body:data});
+        const upload=token=>fetch('/team-icons/'+encodeURIComponent(form.dataset.teamSlug),{
+          method:'POST',
+          credentials:'same-origin',
+          headers:{'X-CSRF-TOKEN':token,'Accept':'application/json'},
+          body:data
+        });
+        let response=await upload(csrf);
+        if(response.status===419){
+          const tokenResponse=await fetch('/csrf-token',{credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json'}});
+          const tokenData=await tokenResponse.json().catch(()=>({}));
+          if(tokenResponse.ok&&tokenData.token){
+            document.querySelector('meta[name="csrf-token"]')?.setAttribute('content',tokenData.token);
+            response=await upload(tokenData.token);
+          }
+        }
         const result=await response.json().catch(()=>({}));
         if(!response.ok)throw new Error(result.message||'Upload failed.');
         const fresh=(result.url||('/team-icons/'+form.dataset.teamSlug))+(String(result.url||'').includes('?')?'&':'?')+'t='+Date.now();
