@@ -344,6 +344,18 @@ Route::get('/standings', function(EcfhlData $data){
                 'art_ross'=>['label'=>'Art Ross','icon'=>'🏒','detail'=>'Forwards','leaders'=>$leaders($stats->filter(fn($p)=>strtoupper((string)$p->position)==='F'))],
                 'norris'=>['label'=>'Norris','icon'=>'🛡️','detail'=>'Defensemen','leaders'=>$leaders($stats->filter(fn($p)=>strtoupper((string)$p->position)==='D'))],
                 'vezina'=>['label'=>'Vezina','icon'=>'🥅','detail'=>'Goalies','leaders'=>$leaders($stats->filter(fn($p)=>strtoupper((string)$p->position)==='G'))],
+                'calder'=>['label'=>'Calder','icon'=>'🌱','detail'=>'Rookies','leaders'=>$leaders($stats->filter(function($p){
+                    static $rookies=null;
+                    if($rookies===null){
+                        $rookies=array_fill_keys(array_map(fn($n)=>\App\Support\PlayerProjections::name($n),[
+                            'Gavin McKenna','Ivar Stenberg','Roman Kantserov','Chase Reid','Viggo Bjorck','Caleb Malhotra',
+                            'Keaton Verhoeff','Nikita Klepov','Carson Carels','Daxon Rudolph','Wyatt Cullen','Alberts Smits',
+                            'Ilya Protas','Ryan Lin','Markus Ruck','Ethan Belchetz','Xavier Villeneuve','Liam Ruck',
+                            'Tommy Bleyl','Maddox Dagenais','Oliver Suvanto','J.P. Hurlbert'
+                        ]),true);
+                    }
+                    return isset($rookies[\App\Support\PlayerProjections::name((string)$p->player_name)]);
+                }))],
             ];
         }
     } catch (\Throwable $e) {
