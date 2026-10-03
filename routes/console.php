@@ -7,6 +7,7 @@ use App\Support\FantraxDailyMoves;
 use App\Support\FantraxTeamRosters;
 use App\Support\FantraxStandings;
 use App\Support\FantraxSchedule;
+use App\Support\FantasyDay;
 use App\Support\NhlOdds;
 use App\Support\WebPush;
 use Carbon\CarbonImmutable;
