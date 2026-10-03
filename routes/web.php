@@ -372,11 +372,31 @@ Route::get('/teams/current', function() {
         ->get()
         ->keyBy(fn($g)=>strtoupper(trim((string)$g->team)));
 
-    $rows=$rows->map(function($p)use($scheduleByTeam){
+    // NHL schedule is authoritative for whether a team actually plays on this
+    // fantasy date. Fantrax/DFO can expose the next game (for example a Saturday
+    // game while viewing Friday), so never promote that player to "Today".
+    $nhlTeamsPlaying=null;
+    try {
+        $nhlResponse=Http::timeout(8)->retry(1,400)->get('https://api-web.nhle.com/v1/score/'.$date);
+        $nhlResponse->throw();
+        $nhlTeamsPlaying=collect($nhlResponse->json('games')??[])
+            ->flatMap(fn($game)=>[
+                strtoupper((string)($game['awayTeam']['abbrev']??'')),
+                strtoupper((string)($game['homeTeam']['abbrev']??'')),
+            ])->filter()->unique()->flip();
+    } catch (\Throwable $e) {
+        report($e);
+    }
+
+    $rows=$rows->map(function($p)use($scheduleByTeam,$nhlTeamsPlaying){
         $team=strtoupper(trim((string)$p->nhl_team));
-        if($team!=='' && isset($scheduleByTeam[$team])){
-            $game=$scheduleByTeam[$team];
+        if($nhlTeamsPlaying!==null){
+            $p->is_playing=$team!=='' && isset($nhlTeamsPlaying[$team]);
+        } elseif($team!=='' && isset($scheduleByTeam[$team])){
             $p->is_playing=true;
+        }
+        if((bool)$p->is_playing && $team!=='' && isset($scheduleByTeam[$team])){
+            $game=$scheduleByTeam[$team];
             if(empty($p->opponent))$p->opponent=$game->opponent;
             if(empty($p->home_away))$p->home_away=$game->home_away;
         }
@@ -619,11 +639,31 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         ->get()
         ->keyBy(fn($g)=>strtoupper(trim((string)$g->team)));
 
-    $rows=$rows->map(function($p)use($scheduleByTeam){
+    // NHL schedule is authoritative for whether a team actually plays on this
+    // fantasy date. Fantrax/DFO can expose the next game (for example a Saturday
+    // game while viewing Friday), so never promote that player to "Today".
+    $nhlTeamsPlaying=null;
+    try {
+        $nhlResponse=Http::timeout(8)->retry(1,400)->get('https://api-web.nhle.com/v1/score/'.$date);
+        $nhlResponse->throw();
+        $nhlTeamsPlaying=collect($nhlResponse->json('games')??[])
+            ->flatMap(fn($game)=>[
+                strtoupper((string)($game['awayTeam']['abbrev']??'')),
+                strtoupper((string)($game['homeTeam']['abbrev']??'')),
+            ])->filter()->unique()->flip();
+    } catch (\Throwable $e) {
+        report($e);
+    }
+
+    $rows=$rows->map(function($p)use($scheduleByTeam,$nhlTeamsPlaying){
         $team=strtoupper(trim((string)$p->nhl_team));
-        if($team!=='' && isset($scheduleByTeam[$team])){
-            $game=$scheduleByTeam[$team];
+        if($nhlTeamsPlaying!==null){
+            $p->is_playing=$team!=='' && isset($nhlTeamsPlaying[$team]);
+        } elseif($team!=='' && isset($scheduleByTeam[$team])){
             $p->is_playing=true;
+        }
+        if((bool)$p->is_playing && $team!=='' && isset($scheduleByTeam[$team])){
+            $game=$scheduleByTeam[$team];
             if(empty($p->opponent))$p->opponent=$game->opponent;
             if(empty($p->home_away))$p->home_away=$game->home_away;
         }
