@@ -71,7 +71,13 @@ final class RefreshLiveScoring
             $old = $previous[$player['fantasy_team_id'].'|'.$player['player_id']] ?? null;
             if ($player['scoring_status'] !== 'ACTIVE' || !$old || $player['daily_fpts'] <= $old['daily_fpts']) continue;
             try {
-                app(WebPush::class)->notify('live-score','ECFHL Live Scoring', $player['player_name'].' now has '.$player['daily_fpts'].' FPts.', '/teams/current?date='.$snapshot['fantasy_date'], $player['fantasy_team_id'], ['opponent_team_id'=>$opponents[$player['fantasy_team_id']]??null,'game_date'=>$snapshot['fantasy_date']]);
+                $teamName = $snapshot['teams'][$player['fantasy_team_id']]['name'];
+                $statLine = [];
+                foreach (['G','A','PPG','SHG','GWG'] as $stat) {
+                    $statLine[] = $stat.': '.(int)($player['stats'][$stat]['value'] ?? 0);
+                }
+                $body = $player['player_name'].' · '.$player['daily_fpts']." FPts\n".implode(' · ', $statLine);
+                app(WebPush::class)->notify('live-score','ECFHL · '.$teamName, $body, '/teams/current?date='.$snapshot['fantasy_date'], $player['fantasy_team_id'], ['opponent_team_id'=>$opponents[$player['fantasy_team_id']]??null,'game_date'=>$snapshot['fantasy_date']]);
             } catch (\Throwable $e) {
                 Log::warning('Live scoring notification failed', ['error'=>$e->getMessage()]);
             }

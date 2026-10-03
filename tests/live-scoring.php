@@ -22,6 +22,8 @@ function checkLive(bool $condition, string $message): void { if (!$condition) th
 function liveFixture(string $date): array { return json_decode(gzdecode(file_get_contents(__DIR__.'/fixtures/live-scoring/'.$date.'.json.gz')), true, 512, JSON_THROW_ON_ERROR); }
 config(['database.connections.sqlite'=>['driver'=>'sqlite','database'=>':memory:','prefix'=>'','foreign_key_constraints'=>true]]);
 foreach (glob(__DIR__.'/../database/migrations/*create*.php') as $file) (require $file)->up();
+(require __DIR__.'/../database/migrations/2026_10_01_235500_add_fantasy_team_to_push_notifications.php')->up();
+(require __DIR__.'/../database/migrations/2026_10_02_010000_add_fantasy_team_to_push_subscriptions.php')->up();
 
 $days = new FantasyDay;
 $expected = ['yesterday'=>'2026-10-01','today'=>'2026-10-02','tomorrow'=>'2026-10-03'];
@@ -115,6 +117,29 @@ checkLive(count($messages) === 3 && str_contains($messages[0],'published') && st
 $badDate = false;
 checkLive($refresh->refresh('2026-10-02', fn($m)=>null), 'Valid independent refresh failed');
 
+// A real refresh emits the current game totals and fantasy owner name, only for active scoring gains.
+$notificationCount=DB::table('push_notifications')->count();
+$scorer=$byId['05y3a'];
+foreach($expected as $date){
+ $oldSnapshot=$snapshots[$date];$changedBench=false;$changedActive=false;
+ foreach($oldSnapshot['players'] as &$oldPlayer){
+  if($date==='2026-10-02'){
+   if($oldPlayer['player_id']===$scorer['player_id'] && $oldPlayer['fantasy_team_id']===$scorer['fantasy_team_id'])$oldPlayer['daily_fpts']=0;
+   elseif(!$changedBench && $oldPlayer['scoring_status']==='BENCH'){$oldPlayer['daily_fpts']-=1;$changedBench=true;}
+   elseif(!$changedActive && $oldPlayer['scoring_status']==='ACTIVE'){$oldPlayer['daily_fpts']+=1;$changedActive=true;}
+  }elseif(!$changedActive && $oldPlayer['scoring_status']==='ACTIVE'){$oldPlayer['daily_fpts']-=1;$changedActive=true;}
+ }
+ unset($oldPlayer);
+ $repository->publish($oldSnapshot,liveFixture($date),CarbonImmutable::now('UTC'));
+}
+checkLive($refresh->refresh('2026-10-02',fn($m)=>null),'Scoring notification refresh failed');
+checkLive(DB::table('push_notifications')->count()===$notificationCount+1,'Bench/decreased/yesterday/tomorrow score emitted an alert, or active increase was missing');
+$notification=DB::table('push_notifications')->orderByDesc('id')->first();
+checkLive($notification->title==='ECFHL · '.$snapshots['2026-10-02']['teams'][$scorer['fantasy_team_id']]['name'],'Notification omitted ECFHL team name');
+$expectedStats=[];foreach(['G','A','PPG','SHG','GWG'] as $stat)$expectedStats[]=$stat.': '.(int)($scorer['stats'][$stat]['value']??0);
+checkLive($notification->body===$scorer['player_name'].' · '.$scorer['daily_fpts']." FPts\n".implode(' · ',$expectedStats),'Notification stat line does not match dated Fantrax totals');
+checkLive($notification->fantasy_team_id===$scorer['fantasy_team_id']&&$notification->category==='live-score'&&$notification->url==='/teams/current?date=2026-10-02','Scoring alert lost ownership/date/category');
+checkLive($refresh->refresh('2026-10-02',fn($m)=>null)&&DB::table('push_notifications')->count()===$notificationCount+1,'Unchanged score duplicated notification');
 $kernel=$app->make(Illuminate\Contracts\Http\Kernel::class);
 $loneSlug=Illuminate\Support\Str::slug($snapshots['2026-10-02']['teams']['65yfc2nwmolvao6q']['name']);
 DB::table('seasons')->insert(['season_id'=>'test-current','season_name'=>'2026-27']);
@@ -146,4 +171,4 @@ $calendar=json_decode($response->getContent(),true,512,JSON_THROW_ON_ERROR);
 checkLive($response->getStatusCode()===200 && $calendar['selected_date']==='2026-10-03' && $calendar['dates']===['yesterday'=>'2026-10-02','today'=>'2026-10-03','tomorrow'=>'2026-10-04'], 'HTTP default date did not change at Pacific midnight');
 $kernel->terminate($request,$response);
 CarbonImmutable::setTestNow();
-echo "Live scoring checks passed: Pacific midnight/DST, three Fantrax dates, seven matchups, IDs, zero-point players, future projections, injury flags, failed-date preservation, independent publication, and page rendering.\n";
+echo "Live scoring checks passed: Pacific midnight/DST, three Fantrax dates, seven matchups, IDs, zero-point players, future projections, injury flags, failed-date preservation, independent publication, scoring notification team names/current stat lines/trigger isolation, and page rendering.\n";
