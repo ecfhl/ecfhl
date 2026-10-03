@@ -465,11 +465,11 @@
                     @if(($target['position'] ?? '') === 'G' && array_key_exists('vegas_odds',$target) && $target['vegas_odds']!==null)
                       <span class="pill goalie-vegas-odds {{ $target['vegas_odds_class'] }}">{{ $target['vegas_odds']>0?'+':'' }}{{ (int)$target['vegas_odds'] }}</span>
                     @endif
-                    <div class="team-target-stats" title="Season / Last 7 / Last 21 / Projection">
+                    <div class="team-target-stats" title="Season / Last 21 / Last 7 / My Projection">
                       <span><small>SEASON</small>{{ isset($target['season_fpts_per_game'])&&$target['season_fpts_per_game']!==null?number_format($target['season_fpts_per_game'],2):'—' }}</span>
-                      <span><small>L7</small>{{ isset($target['fpts_per_game_7d'])&&$target['fpts_per_game_7d']!==null?number_format($target['fpts_per_game_7d'],2):'—' }}</span>
                       <span><small>L21</small>{{ isset($target['fpts_per_game_21d'])&&$target['fpts_per_game_21d']!==null?number_format($target['fpts_per_game_21d'],2):'—' }}</span>
-                      <strong class="team-target-proj"><small>PROJ</small>{{ $target['projected_points']!==null?number_format($target['projected_points'],2):'—' }}</strong>
+                      <span><small>L7</small>{{ isset($target['fpts_per_game_7d'])&&$target['fpts_per_game_7d']!==null?number_format($target['fpts_per_game_7d'],2):'—' }}</span>
+                      <strong class="team-target-proj"><small>MY PROJ</small>{{ $target['projected_points']!==null?number_format($target['projected_points'],2):'—' }}</strong>
                     </div>
                     @if(!empty($target['add_url']))
                       <a class="team-target-add" href="{{ $target['add_url'] }}" target="_blank" rel="noopener noreferrer">+ Add</a>
