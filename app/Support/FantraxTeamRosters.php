@@ -185,7 +185,7 @@ class FantraxTeamRosters
 
         $payload = [
             'msgs'=>[['method'=>'getPlayerStats','data'=>$requestData]],
-            'uiv'=>3,'refUrl'=>$url,'dt'=>0,'at'=>0,'av'=>'0.0','tz'=>'America/Halifax','v'=>self::API_VERSION,
+            'uiv'=>3,'refUrl'=>$url,'dt'=>0,'at'=>0,'av'=>'0.0','tz'=>'America/Vancouver','v'=>self::API_VERSION,
         ];
 
         $response = Http::timeout(60)->retry(2, 1500)->withHeaders([
