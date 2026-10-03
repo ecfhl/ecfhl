@@ -21,7 +21,9 @@ final class RefreshPlayerProjections
         $capture = !$baseline;
         if ($capture) $baseline = $this->source->baseline();
         if (count($baseline) !== 1000 || collect($baseline)->pluck('season_id')->unique()->all() !== [FantraxProjectionSource::SEASON_ID]) throw new RuntimeException('The frozen projection baseline is incomplete or belongs to a different season.');
-        $end = CarbonImmutable::parse($date, 'America/Halifax')->subDay()->toDateString();
+        // Season award standings should reflect Fantrax's current season totals through today.
+        // Recent-rate windows still use the same Fantrax actual-stat source.
+        $end = CarbonImmutable::parse($date, 'America/Halifax')->toDateString();
         $seasonStart = $baseline[0]['season_start'];
         $windows = [];
         $cache = [];
