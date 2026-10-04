@@ -13,7 +13,8 @@ chown -R www-data:www-data storage bootstrap/cache public/media/team-icons
 nginx -t -c /tmp/ecfhl-nginx.conf
 php-fpm -F &
 php_pid=$!
-php artisan schedule:work &
+# Keep collector-created cache files writable by PHP-FPM as they expire.
+su -s /bin/sh www-data -c 'exec php artisan schedule:work' &
 scheduler_pid=$!
 nginx -c /tmp/ecfhl-nginx.conf -g 'daemon off;' &
 web_pid=$!
