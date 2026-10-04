@@ -32,6 +32,8 @@ $kernel=$app->make(Illuminate\Contracts\Http\Kernel::class);
 function ownerRequest($method,$url,$body=[],&$cookies=[],$headers=[]){
  global $app,$kernel;
  $app->forgetScopedInstances();Auth::forgetGuards();$app->make('session')->forgetDrivers();$app->forgetInstance('session.store');
+ // Rebuild Redirector too: it retains the prior session store in this multi-request harness.
+ $app->forgetInstance('redirect');
  $r=Illuminate\Http\Request::create($url,$method,$body,$cookies,[],array_merge(['HTTP_ACCEPT'=>'application/json'],$headers));
  $resp=$kernel->handle($r);foreach($resp->headers->getCookies() as $cookie)$cookies[$cookie->getName()]=$cookie->getValue();
  $kernel->terminate($r,$resp);return $resp;
@@ -58,7 +60,9 @@ foreach(['/login','/register'] as $authUrl){
  $response=ownerRequest('POST',$authUrl,['_token'=>'expired','name'=>'Retained Name','email'=>'retained@example.org','password'=>'must-not-be-flashed','password_confirmation'=>'must-not-be-flashed','team_id'=>'b'],$guest,['HTTP_ACCEPT'=>'text/html']);
  verifyOwner($response->getStatusCode()===302&&parse_url($response->headers->get('Location'),PHP_URL_PATH)===$authUrl,'Expired auth form showed a raw error');
  $response=ownerRequest('GET',$authUrl,[],$guest,['HTTP_ACCEPT'=>'text/html']);
- verifyOwner(str_contains($response->getContent(),'This form expired.')&&str_contains($response->getContent(),'retained@example.org')&&!str_contains($response->getContent(),'must-not-be-flashed'),'Expired form lost safe input or retained a password');
+ verifyOwner(str_contains($response->getContent(),'This form expired.'),'Expired form message missing for '.$authUrl);
+ verifyOwner(str_contains($response->getContent(),'retained@example.org'),'Expired form lost safe input for '.$authUrl);
+ verifyOwner(!str_contains($response->getContent(),'must-not-be-flashed'),'Expired form retained a password');
  $response=ownerRequest('POST',$authUrl,['_token'=>'expired'],$alpha,['HTTP_ACCEPT'=>'text/html']);
  verifyOwner($response->getStatusCode()===302&&parse_url($response->headers->get('Location'),PHP_URL_PATH)==='/account','Repeat after successful auth did not recover to the account');
 }
