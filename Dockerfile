@@ -16,5 +16,6 @@ RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --no-interaction --pref
 COPY . .
 RUN COMPOSER_ALLOW_SUPERUSER=1 composer dump-autoload --optimize --no-dev
 RUN php tests/drafts-only.php
+RUN php tests/owner-accounts.php
 
 CMD ["sh", "-c", "php artisan migrate --force || exit 1; (php artisan ecfhl:refresh-pp-lines || true) & php artisan schedule:work & exec php artisan serve --host=0.0.0.0 --port=$PORT"]

@@ -38,6 +38,8 @@ function ownerRequest($method,$url,$body=[],&$cookies=[],$headers=[]){
 }
 $guest=[];$response=ownerRequest('GET','/register',[],$guest,['HTTP_ACCEPT'=>'text/html']);
 verifyOwner($response->getStatusCode()===200,'Register render failed: '.substr(strip_tags($response->getContent()),0,1000));
+verifyOwner(str_contains($response->headers->get('Cache-Control'),'no-store'),'Signup page can cache a stale session token');
+verifyOwner(str_contains($response->getContent(),'/submit-guard.js'),'Shared submit protection missing');
 verifyOwner(str_contains($response->getContent(),'/team-icons/alpha'),'Team logo absent');
 verifyOwner(!str_contains($response->getContent(),'value="lone"'),'Reserved team offered publicly');
 verifyOwner(!str_contains($response->getContent(),'href="/admin"'),'Admin menu exposed to guest');
@@ -49,6 +51,20 @@ verifyOwner($response->getStatusCode()===302,'Signup failed: '.$response->getCon
 $a=User::where('email','a@example.org')->first();verifyOwner($a && $a->claim->fantasy_team_id==='a' && !$a->is_admin,'Signup/team/admin state incorrect');
 verifyOwner($a->password!=='strong-example-a','Password was not hashed');
 $response=ownerRequest('GET','/account',[],$alpha,['HTTP_ACCEPT'=>'text/html']);verifyOwner($response->getStatusCode()===200,'Account render failed: '.$response->getContent());
+verifyOwner(str_contains($response->headers->get('Cache-Control'),'no-store'),'Private account page can be cached');
+// Enable real CSRF middleware for expired forms and repeats after successful sign-in.
+$app['env']='local';
+foreach(['/login','/register'] as $authUrl){
+ $response=ownerRequest('POST',$authUrl,['_token'=>'expired','name'=>'Retained Name','email'=>'retained@example.org','password'=>'must-not-be-flashed','password_confirmation'=>'must-not-be-flashed','team_id'=>'b'],$guest,['HTTP_ACCEPT'=>'text/html']);
+ verifyOwner($response->getStatusCode()===302&&parse_url($response->headers->get('Location'),PHP_URL_PATH)===$authUrl,'Expired auth form showed a raw error');
+ $response=ownerRequest('GET',$authUrl,[],$guest,['HTTP_ACCEPT'=>'text/html']);
+ verifyOwner(str_contains($response->getContent(),'This form expired.')&&str_contains($response->getContent(),'retained@example.org')&&!str_contains($response->getContent(),'must-not-be-flashed'),'Expired form lost safe input or retained a password');
+ $response=ownerRequest('POST',$authUrl,['_token'=>'expired'],$alpha,['HTTP_ACCEPT'=>'text/html']);
+ verifyOwner($response->getStatusCode()===302&&parse_url($response->headers->get('Location'),PHP_URL_PATH)==='/account','Repeat after successful auth did not recover to the account');
+}
+$response=ownerRequest('POST','/login',['_token'=>'expired'],$guest);
+verifyOwner($response->getStatusCode()===419&&str_contains($response->getContent(),'Reload this page'),'AJAX expired-session message unclear');
+$app['env']='testing';
 verifyOwner(ownerRequest('GET','/admin',[],$alpha)->getStatusCode()===403,'Regular owner admin access allowed');
 verifyOwner(ownerRequest('POST','/lineup-advisors/mike/profile',['first_name'=>'Oops'],$alpha)->getStatusCode()===403,'Regular owner admin mutation allowed');
 $second=[];$response=ownerRequest('POST','/register',['name'=>'Duplicate','email'=>'duplicate@example.org','password'=>'strong-example-b','password_confirmation'=>'strong-example-b','team_id'=>'a'],$second);

@@ -28,5 +28,5 @@
 @if($owner)<div class="owner-save"><button class="button primary" type="submit" id="owner-save-preferences">Save preferences</button><p id="owner-save-state" class="subtle" role="status" aria-live="polite">All changes saved.</p><p class="subtle">Preferences apply to every device enabled for your account. Today and tomorrow follow the league’s Pacific fantasy day.</p></div>@endif
 </fieldset></form>
 </div>
-@if($owner)<script src="/owner-notifications.js?v=3" defer></script>@endif
+@if($owner)<script src="/owner-notifications.js?v=4" defer></script>@endif
 @endsection

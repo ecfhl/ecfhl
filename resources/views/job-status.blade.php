@@ -98,6 +98,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  if(testForm)testForm.addEventListener('submit',async e=>{
    e.preventDefault();
    const button=testForm.querySelector('button');
+   if(button.disabled)return;
    const csrf=testForm.querySelector('input[name="_token"]')?.value || document.querySelector('meta[name="csrf-token"]')?.content;
    const original=button.textContent;
    button.disabled=true;button.textContent='Sending…';
@@ -194,8 +195,12 @@ document.addEventListener('DOMContentLoaded',()=>{
      return {status:'failed'};
    }
  };
+ let jobsRunning=false;
  document.querySelectorAll('.job-ajax-form').forEach(form=>form.addEventListener('submit',async e=>{
+   if(jobsRunning){e.preventDefault();return;}
+   jobsRunning=true;
    e.preventDefault();const requested=form.dataset.job;const jobs=requested==='all'?['projections','players','goalies','lines','odds','teams','scores','standings','advisor']:[requested];const button=form.querySelector('button');const original=button.textContent;const lines=[];const csrf=form.querySelector('input[name="_token"]')?.value || document.querySelector('meta[name="csrf-token"]')?.content;
+   try{
    if(requested==='all'){
      sessionStorage.removeItem(clearedKey);
      statusRoot?.classList.remove('job-outcomes-cleared');
@@ -230,9 +235,13 @@ document.addEventListener('DOMContentLoaded',()=>{
      lines.push(failed?'Job failed.':(warnings?'Job completed with a warning.':'Job completed.'));
    }
    boxText.textContent=lines.join('\n');saveBox();
-   document.querySelectorAll('.job-ajax-form button').forEach(b=>b.disabled=false);button.textContent=original;
+   }catch(error){
+     box.hidden=false;box.className='job-live-results error';boxText.textContent='Refresh failed: '+error.message;
+   }finally{
+     document.querySelectorAll('.job-ajax-form button').forEach(b=>b.disabled=false);button.textContent=original;
+     jobsRunning=false;
+   }
   }));
 });
 </script>
 @endsection
-

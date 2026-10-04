@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     input?.addEventListener('change',()=>{if(status)status.textContent=input.files?.[0]?.name||'';});
     form.addEventListener('submit',async event=>{
       event.preventDefault();
+      if(submit.disabled)return;
       const file=input?.files?.[0];
       if(!file)return;
       if(file.size>2*1024*1024){status.textContent='Image must be 2 MB or smaller.';return;}

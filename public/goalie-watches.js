@@ -4,6 +4,7 @@
  const message=document.createElement('div');message.className='goalie-watch-message';message.setAttribute('role','status');message.hidden=true;document.body.append(message);let timer;
  const announce=(text,settings=false)=>{message.replaceChildren(document.createTextNode(text));if(settings){const link=document.createElement('a');link.href='/notifications';link.textContent='Device settings';message.append(link);}message.hidden=false;clearTimeout(timer);timer=setTimeout(()=>{message.hidden=true;},8000);};
  buttons.forEach(button=>button.addEventListener('click',async()=>{
+  if(button.disabled)return;
   const key=button.dataset.goalieWatch,enabled=button.getAttribute('aria-pressed')!=='true';
   const matches=buttons.filter(other=>other.dataset.goalieWatch===key);matches.forEach(other=>{other.disabled=true;});
   try{
