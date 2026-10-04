@@ -2,11 +2,11 @@
 <html lang="en" data-theme="light">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="color-scheme" content="light dark">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="/submit-guard.js?v=1"></script>
-    <script src="/navigation-feedback.js?v=1" defer></script>
+    <script src="/navigation-feedback.js?v=2" defer></script>
     @php
         if (request()->is('/')) {$browserTitle='East Coast Fantasy Hockey League';}
         elseif(request()->is('teams/current/*')&&isset($teamName)){$browserTitle='ECFHL - '.$teamName;}
@@ -26,7 +26,21 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 @media(max-width:900px){.header-actions{min-width:0;gap:5px}.push-team-picker{position:fixed;right:10px;top:62px;width:min(240px,calc(100vw - 20px))}.push-team-select{font-size:11px}.push-notification-toggle,.header-theme-toggle{padding:5px}.nav-toggle{flex:0 0 auto}.main-nav{text-align:left}.main-nav>a{display:block;text-align:left!important;padding-left:24px!important}.nav-dropdown{display:block;width:100%}.nav-dropdown-row{display:grid;grid-template-columns:1fr auto;align-items:center;width:100%}.nav-dropdown-main-link{text-align:left!important;padding:10px 0 10px 24px!important}.nav-dropdown-toggle{width:44px;text-align:center;padding:10px 0}.nav-dropdown:hover .nav-dropdown-menu{display:none}.nav-dropdown.open .nav-dropdown-menu{display:grid!important;position:static;min-width:0;width:100%;grid-template-columns:1fr;background:transparent;border:0;box-shadow:none;padding:4px 0 8px 36px}.nav-dropdown-menu a{padding:8px 0!important;text-align:left!important}.nav-dropdown-menu .nav-history-link{border-top:1px solid var(--line);padding-top:10px!important}}
 
 .mobile-primary-nav{display:none}
-@media(max-width:900px){body{padding-bottom:72px}.mobile-primary-nav{position:fixed;left:0;right:0;bottom:0;z-index:1100;display:grid;grid-template-columns:repeat(4,1fr);padding:5px 6px calc(5px + env(safe-area-inset-bottom));background:var(--surface,#fff);border-top:1px solid var(--line,#d7dde5);box-shadow:0 -4px 16px rgba(15,23,42,.10)}.mobile-primary-nav a{min-width:0;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 2px;color:var(--muted,#667085);text-decoration:none;font-size:10px;font-weight:800;line-height:1.1;text-align:center}.mobile-primary-nav a.active{color:#d9a91e}.mobile-primary-nav .mobile-nav-icon{font-size:20px;line-height:1}.mobile-primary-nav .mobile-live-icon{color:#c94b52}.mobile-primary-nav a.active .mobile-live-icon{color:#d9a91e}}
+@media(max-width:900px){
+ html{scroll-padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+ body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+ .mobile-primary-nav{position:fixed;left:0;right:0;bottom:0;z-index:1100;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));background:var(--panel);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(15,23,42,.15)}
+ .mobile-primary-nav a{min-width:0;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:5px 2px;border:2px solid transparent;border-radius:9px;color:#fff;text-decoration:none;font-size:11px;font-weight:800;line-height:1.15;text-align:center}
+ .mobile-primary-nav .mobile-nav-label{display:flex;align-items:center;justify-content:center;min-height:26px}
+ .mobile-primary-nav .mobile-nav-icon{font-size:18px;line-height:1}
+ .mobile-primary-nav .mobile-nav-live{background:#cf0020}
+ .mobile-primary-nav .mobile-nav-team{background:#007d82}
+ .mobile-primary-nav .mobile-nav-standings{background:#00699f}
+ .mobile-primary-nav .mobile-nav-targets{background:#ffcc25;color:#231d08}
+ .mobile-primary-nav a.active{border-color:var(--text);box-shadow:0 0 0 1px var(--panel)}
+ .mobile-primary-nav a:focus-visible{outline:3px solid var(--text);outline-offset:1px}
+ .mobile-primary-nav a:active{filter:brightness(.9)}
+}
 </style>
 </head>
 <body>
@@ -84,10 +98,10 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 <main>@yield('content')</main>
 
 <nav class="mobile-primary-nav" aria-label="Primary navigation">
-  <a id="mobile-my-team-nav-link" data-my-team-link href="#"><span class="mobile-nav-icon">★</span><span>My Team</span></a>
-  <a href="/teams/current" class="{{ request()->is('teams/current','teams/current/*')?'active':'' }}"><span class="mobile-nav-icon mobile-live-icon">●</span><span>Live</span></a>
-  <a href="/standings" class="{{ request()->is('standings')?'active':'' }}"><span class="mobile-nav-icon">🏆</span><span>Standings</span></a>
-  <a href="/daily-targets" class="{{ request()->is('daily-targets')?'active':'' }}"><span class="mobile-nav-icon">🎯</span><span>Targets</span></a>
+  <a class="mobile-nav-live {{ request()->is('teams/current')?'active':'' }}" href="/teams/current" data-loading-label="Live Scoring" @if(request()->is('teams/current')) aria-current="page" @endif><span class="mobile-nav-icon" aria-hidden="true">●</span><span class="mobile-nav-label">Live Scoring</span></a>
+  <a id="mobile-my-team-nav-link" class="mobile-nav-team" data-my-team-link href="{{ auth()->user()?->claim ? '/teams/current/'.\Illuminate\Support\Str::slug(auth()->user()->claim->team_name) : '/account/claim-team' }}" data-loading-label="My Team"><span class="mobile-nav-icon" aria-hidden="true">★</span><span class="mobile-nav-label">My Team</span></a>
+  <a class="mobile-nav-standings {{ request()->is('standings')?'active':'' }}" href="/standings" data-loading-label="Standings" @if(request()->is('standings')) aria-current="page" @endif><span class="mobile-nav-icon" aria-hidden="true">🏆</span><span class="mobile-nav-label">Standings</span></a>
+  <a class="mobile-nav-targets {{ request()->is('daily-targets')?'active':'' }}" href="/daily-targets" data-loading-label="Daily Targets" @if(request()->is('daily-targets')) aria-current="page" @endif><span class="mobile-nav-icon" aria-hidden="true">🎯</span><span class="mobile-nav-label">Daily Targets</span></a>
 </nav>
 <footer class="site-footer"><div class="shell footer-inner"><div><strong>ECFHL HISTORY</strong><br><span>2007–08 → present</span></div><div class="footer-right">Database-backed league archive</div></div></footer>
 <div id="navigation-loading" class="navigation-loading" hidden>
@@ -111,10 +125,14 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 (function(){
  const teamId=@json(auth()->user()?->claim?->fantasy_team_id);
  const teamUrl=@json(auth()->user()?->claim ? '/teams/current/'.\Illuminate\Support\Str::slug(auth()->user()->claim->team_name) : null);
- if(teamId&&teamUrl){localStorage.setItem('ecfhl-notification-team-id',teamId);localStorage.setItem('ecfhl-notification-team-url',teamUrl);}
+ let savedTeamUrl=null;
+ try{
+   if(teamId&&teamUrl){localStorage.setItem('ecfhl-notification-team-id',teamId);localStorage.setItem('ecfhl-notification-team-url',teamUrl);}
+   savedTeamUrl=localStorage.getItem('ecfhl-notification-team-url');
+ }catch(_){}
  const links=document.querySelectorAll('[data-my-team-link]');
- const url=teamUrl||localStorage.getItem('ecfhl-notification-team-url');
- links.forEach(link=>{link.href=url||'/account/claim-team';link.style.display=url||@json((bool)auth()->user())?'':'none';if(url&&location.pathname===url)link.classList.add('active');});
+ const url=teamUrl||savedTeamUrl;
+ links.forEach(link=>{link.href=url||'/account/claim-team';if(url&&location.pathname===url){link.classList.add('active');link.setAttribute('aria-current','page');}});
  if('serviceWorker' in navigator)navigator.serviceWorker.register('/push-sw.js',{scope:'/'}).catch(()=>{});
 })();
 </script>

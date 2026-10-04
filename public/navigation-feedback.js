@@ -20,7 +20,7 @@
   };
   const isNavigation = (event, link) => {
     if (!link || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return false;
-    if (!link.closest('.site-header, #guest-signup-dialog') || link.hasAttribute('download')) return false;
+    if (!link.closest('.site-header, .mobile-primary-nav, #guest-signup-dialog') || link.hasAttribute('download')) return false;
     if (link.target && link.target !== '_self') return false;
     const url = new URL(link.href, location.href);
     if (!['http:', 'https:'].includes(url.protocol) || url.origin !== location.origin) return false;
