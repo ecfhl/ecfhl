@@ -11,6 +11,7 @@ final class SeasonPlayers
         'SHG'=>'Short-handed goals', 'GWG'=>'Game-winning goals', 'SOG'=>'Shots on goal', 'TOI'=>'Time on ice'];
     private const BASE_HEADERS = ['player'=>'Player', 'team'=>'Team', 'ec_proj'=>'EC Proj', 'fpts'=>'FPts', 'fpts_gp'=>'FPts/gp', 'gp'=>'GP'];
     public const DATASETS = ['season'=>'Season', '7d'=>'7 days', '14d'=>'14 days', '21d'=>'21 days', 'fantrax'=>'Fantrax proj'];
+    private const TEAM_ALIASES = ['LA'=>'LAK', 'NJ'=>'NJD', 'SJ'=>'SJS', 'TB'=>'TBL'];
 
     public function data(Request $request): array
     {
@@ -26,8 +27,11 @@ final class SeasonPlayers
         $positions = array_values(array_intersect(['F', 'D', 'G'], explode(',', (string)$request->query('positions', 'F,D'))));
         $rookies = $request->query('rookies') === '1';
         $search = mb_substr(trim((string)$request->query('q', '')), 0, 100);
-        $availability = (string)$request->query('availability', 'all');
-        if (!in_array($availability, ['all', 'available', 'taken'], true)) $availability = 'all';
+        $availability = (string)$request->query('availability', 'available');
+        if (!in_array($availability, ['all', 'available', 'taken'], true)) $availability = 'available';
+        $playing = (string)$request->query('playing', 'all');
+        if (!in_array($playing, ['all', 'today', 'tomorrow'], true)) $playing = 'all';
+        $playingDate = $playing === 'all' ? null : app(FantasyDay::class)->today()->addDays($playing === 'tomorrow' ? 1 : 0)->toDateString();
         $teamOptions = DB::table('active_fantasy_rosters')->where('game_date', fn($q)=>$q->from('active_fantasy_rosters')->selectRaw('MAX(game_date)'))
             ->select('fantasy_team_id')->selectRaw('MAX(fantasy_team_name) as fantasy_team_name')->groupBy('fantasy_team_id')->orderBy('fantasy_team_name')->get();
         $selectedTeam = (string)$request->query('team', '');
@@ -71,6 +75,7 @@ final class SeasonPlayers
         if ($selectedTeam !== '') $query->where('r.fantasy_team_id', $selectedTeam);
         if ($availability === 'available') $query->whereNull('r.id');
         if ($availability === 'taken') $query->whereNotNull('r.id');
+        if ($playingDate) $query->whereIn(DB::raw('UPPER(TRIM(s.nhl_team))'), $this->playingTeams($playingDate));
         if ($rookies) $query->where('s.rookie', true);
         if ($selectedLine !== '' || $selectedPp !== '') {
             // Resolve the collector's team/name assignments to Fantrax IDs first,
@@ -93,7 +98,7 @@ final class SeasonPlayers
             ->orderByRaw('season_sort_value IS NULL')->orderBy('season_sort_value', $direction)
             ->orderBy('s.player_name')->orderBy('s.player_id')
             ->paginate(25, ['*'], 'page', max(1, (int)$request->query('page', 1)))->appends([
-                'positions'=>implode(',', $positions), 'rookies'=>$rookies ? '1' : '0', 'q'=>$search, 'sort'=>$sort, 'direction'=>$direction, 'team'=>$selectedTeam, 'availability'=>$availability, 'line'=>$selectedLine, 'pp'=>$selectedPp, 'dataset'=>$dataset,
+                'positions'=>implode(',', $positions), 'rookies'=>$rookies ? '1' : '0', 'q'=>$search, 'sort'=>$sort, 'direction'=>$direction, 'team'=>$selectedTeam, 'availability'=>$availability, 'line'=>$selectedLine, 'pp'=>$selectedPp, 'dataset'=>$dataset, 'playing'=>$playing,
             ]);
         $players->getCollection()->transform(function ($row) use ($lines, $pp) {
             $row->stats = json_decode($row->stats_json, true) ?: [];
@@ -108,13 +113,39 @@ final class SeasonPlayers
             'season'=>DB::table('season_player_stats')->max('stats_through'),
             default=>DB::table('player_projections')->max('window_end_date'),
         };
-        return compact('players', 'positions', 'rookies', 'search', 'columns', 'headers', 'sort', 'direction', 'teamOptions', 'selectedTeam', 'availability', 'selectedLine', 'selectedPp', 'dataset', 'datasetLabel', 'statsThrough', 'ownedTeamId');
+        return compact('players', 'positions', 'rookies', 'search', 'columns', 'headers', 'sort', 'direction', 'teamOptions', 'selectedTeam', 'availability', 'selectedLine', 'selectedPp', 'dataset', 'datasetLabel', 'statsThrough', 'ownedTeamId', 'playing', 'playingDate');
+    }
+
+    private function playingTeams(string $date): array
+    {
+        // Reuse dated snapshots from the scheduled collectors; page views make
+        // no upstream requests. Include both sides, independent of availability.
+        return PublicData::remember('season-players:playing-teams:'.$date, 30, function () use ($date) {
+            $teams = [];
+            foreach (['active_daily_players'=>'team', 'active_fantasy_rosters'=>'nhl_team', 'active_starting_goalies'=>'team', 'todays_odds'=>'team'] as $table=>$column) {
+                $games = DB::table($table)->where('game_date', $date)->whereNotNull('opponent')->whereRaw("TRIM(opponent) <> ''")
+                    ->select($column.' as team', 'opponent')->distinct()->get();
+                foreach ($games as $game) {
+                    $team = $this->teamCode($game->team);
+                    $opponent = $this->teamCode(ltrim(trim($game->opponent), '@'));
+                    if (!isset(DailyFaceoffPowerPlay::TEAMS[$team], DailyFaceoffPowerPlay::TEAMS[$opponent]) || $team === $opponent) continue;
+                    $teams[$team] = $teams[$opponent] = true;
+                }
+            }
+            foreach (self::TEAM_ALIASES as $alias=>$team) if (isset($teams[$team])) $teams[$alias] = true;
+            return array_keys($teams);
+        });
+    }
+
+    private function teamCode(?string $team): string
+    {
+        $team = strtoupper(trim((string)$team));
+        return self::TEAM_ALIASES[$team] ?? $team;
     }
 
     private function assignmentKey(?string $team, string $name): string
     {
-        $team = strtoupper(trim((string)$team));
-        $team = match($team) { 'LA'=>'LAK', 'NJ'=>'NJD', 'SJ'=>'SJS', 'TB'=>'TBL', default=>$team };
+        $team = $this->teamCode($team);
         if (str_contains($name, ',')) { [$last, $first] = array_map('trim', explode(',', $name, 2)); $name = $first.' '.$last; }
         return $team.'|'.preg_replace('/[^\pL\pN]+/u', '', mb_strtolower(trim($name)));
     }
