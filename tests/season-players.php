@@ -64,7 +64,7 @@ verifySeason(str_contains($html,'EC Proj')&&str_contains($html,'71:11')&&str_con
 verifySeason(str_contains($html,'aria-pressed="true" href="/players?positions=D')&&str_contains($html,'aria-pressed="true" href="/players?positions=F')&&str_contains($html,'aria-pressed="false" href="/players?positions=F%2CD%2CG'),'Default filter button states failed.');
 preg_match_all('/<th scope="col"[^>]*>.*?<a[^>]*>(.*?) <span/s',$html,$headerMatches);
 verifySeason($headerMatches[1]===['Player','Team','EC Proj','FPts','FPts/gp','GP','G','A','Pts','PPG','SHG','GWG','SOG','TOI'],'Column order and labels must match the requested stats exactly.');
-verifySeason(preg_match('/<td class="myproj">6\.25<\/td>\s*<td>99\.00<\/td>\s*<td>9\.90<\/td>\s*<td>10<\/td>\s*<td>2<\/td>\s*<td>9<\/td>/', $html), 'Row values must follow EC Proj, FPts, FPts/gp, GP, G and A header order.');
+verifySeason(preg_match('/<td class="myproj">6\.25<\/td>\s*<td>99<\/td>\s*<td>9\.90<\/td>\s*<td>10<\/td>\s*<td>2<\/td>\s*<td>9<\/td>/', $html), 'Row values must follow EC Proj, FPts, FPts/gp, GP, G and A header order.');
 $sortHtml=seasonRequest('/players?rookies=1&sort=A&direction=asc')->getContent();
 verifySeason(str_contains($sortHtml,'aria-sort="ascending"')&&str_contains($sortHtml,'sort=A&amp;direction=desc')&&str_contains($sortHtml,'name="sort" value="A"'),'Sort arrows / toggle links / search preservation failed.');
 $json=json_decode(seasonRequest('/players?positions=F,D&page=2',true)->getContent(),true);
@@ -86,7 +86,7 @@ verifySeason($betaRookies['players']->total()===11&&$betaRookies['players']->get
 $invalidFilters=$service->data(Request::create('/players?team=unknown&availability=bad'));verifySeason($invalidFilters['selectedTeam']===''&&$invalidFilters['availability']==='all','Unknown filters must fall back to All.');
 $betaHtml=seasonRequest('/players?team=beta&availability=taken&sort=G&direction=asc')->getContent();
 verifySeason(str_contains($betaHtml,'value="beta" selected')&&str_contains($betaHtml,'name="team" value="beta"')&&str_contains($betaHtml,'name="availability" value="taken"'),'Team selection and search preservation failed.');
-verifySeason(str_contains($betaHtml,'class="player-team-logo"')&&str_contains($betaHtml,'width="32" height="32"')&&str_contains($betaHtml,'<span>Beta</span>'),'Team thumbnail must appear before the team name.');
+verifySeason(str_contains($betaHtml,'class="player-team-logo"')&&str_contains($betaHtml,'width="32" height="32"')&&str_contains($betaHtml,'<span class="player-team-name">Beta</span>'),'Team thumbnail must appear before the team name.');
 $betaMore=json_decode(seasonRequest('/players?team=beta&availability=taken&sort=G&direction=asc&page=2',true)->getContent(),true);
 verifySeason($betaMore['shown']===34&&$betaMore['total']===34&&substr_count($betaMore['html'],'data-player-id=')===9&&substr_count($betaMore['html'],'class="player-team-logo"')===9,'Filtered Show More must append the right players and their logos.');
 // Filter across the full data set, before sorting/pagination, and preserve every control.
@@ -115,4 +115,8 @@ verifySeason(!str_contains($betaHtml,'class="player-add-icon"'),'Owned players m
 verifySeason(str_contains($advancedHtml,'id="season-player-line" class="player-buttons" role="group"')&&str_contains($advancedHtml,'id="season-player-pp" class="player-buttons" role="group"')&&!str_contains($advancedHtml,'<select id="season-player-line"')&&!str_contains($advancedHtml,'<select id="season-player-pp"'),'Line and power-play slicers must use accessible buttons.');
 preg_match('/id="season-player-line".*?<\/div>/s',$advancedHtml,$lineButtons);preg_match('/id="season-player-pp".*?<\/div>/s',$advancedHtml,$ppButtons);
 verifySeason(str_contains($lineButtons[0],'aria-pressed="true"')&&str_contains($lineButtons[0],'rookies=1')&&str_contains($lineButtons[0],'line=2&amp;pp=1')&&str_contains($ppButtons[0],'line=1&amp;pp=2'),'Assignment buttons must indicate selection and preserve the other filters.');
-echo "Season players checks passed: stats, sorting, normalized assignment buttons, combined pagination, compact controls, rookie/position badges, frozen player/team/header panes, two-line team names and unowned Fantrax add searches.\n";
+verifySeason(str_contains($betaHtml,'aria-label="Beta"')&&str_contains($betaHtml,'class="player-team-name"')&&str_contains($betaHtml,'--team-column-width:64px')&&str_contains($betaHtml,'.player-team-link .player-team-name{display:none}'),'Mobile must keep accessible team logos while hiding team names in a narrow frozen column.');
+DB::table('season_player_stats')->where('player_id','p1')->update(['season_fpts'=>1234.5]);
+$roundedHtml=seasonRequest('/players?q=Player%20%3Cunsafe%3E')->getContent();
+verifySeason(preg_match('/<td class="myproj">6\.25<\/td>\s*<td>1,235<\/td>\s*<td>9\.90<\/td>/', $roundedHtml),'FPts must display whole numbers with grouping while EC Proj and FPts/gp retain decimals.');
+echo "Season players checks passed: stats, sorting, assignment buttons, pagination, frozen panes, integer FPts, mobile team logos and Fantrax add searches.\n";
