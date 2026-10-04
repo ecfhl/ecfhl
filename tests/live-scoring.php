@@ -78,6 +78,24 @@ checkLive(count($tomorrow) === 13, 'Tomorrow was not populated before games star
 checkLive(!in_array('05y3a', array_column($tomorrow,'player_id'),true), 'Tomorrow copied today');
 checkLive($snapshots['2026-10-03']['teams']['65yfc2nwmolvao6q']['daily_projected_fpts'] > 0, 'Tomorrow projections missing');
 
+// Fantrax may omit the original estimate while tomorrow's calculated estimate exists.
+$source = liveFixture('2026-10-03');
+$active = collect($snapshots['2026-10-03']['players'])->firstWhere('scoring_status', 'ACTIVE');
+$tid = $active['fantasy_team_id']; $pid = $active['player_id'];
+$source['day']['statsPerTeam']['allTeamsStats'][$tid]['ACTIVE']['calculatedProjectedTotalsMap'][$pid] = 1.43;
+unset($source['day']['statsPerTeam']['allTeamsStats'][$tid]['ACTIVE']['projectedTotalsMap'][$pid]);
+$withoutOriginal = $builder->build('2026-10-03', $source['day'], $source['period'], $source['details']);
+$optional = collect($withoutOriginal['players'])->first(fn($p)=>$p['fantasy_team_id']===$tid && $p['player_id']===$pid);
+checkLive($optional['daily_projection_original']===null && $optional['daily_projection_calculated']===1.43 && $optional['daily_projected_fpts']===1.43, 'Missing original estimate blocked a valid calculated estimate.');
+checkLive(count($withoutOriginal['players'])===count($snapshots['2026-10-03']['players']) && $withoutOriginal['teams'][$tid]['daily_fpts']===$snapshots['2026-10-03']['teams'][$tid]['daily_fpts'], 'Missing estimates changed lineup membership or actual points.');
+unset($source['day']['statsPerTeam']['allTeamsStats'][$tid]['ACTIVE']['calculatedProjectedTotalsMap'][$pid]);
+$withoutBoth = $builder->build('2026-10-03', $source['day'], $source['period'], $source['details']);
+$optional = collect($withoutBoth['players'])->first(fn($p)=>$p['fantasy_team_id']===$tid && $p['player_id']===$pid);
+checkLive($optional['daily_projected_fpts']===null && $withoutBoth['teams'][$tid]['daily_projected_fpts']===null, 'Unavailable source estimates must stay null instead of publishing a false zero or partial team projection.');
+$source['day']['statsPerTeam']['allTeamsStats'][$tid]['ACTIVE']['projectedTotalsMap'][$pid] = 0;
+$withZero = $builder->build('2026-10-03', $source['day'], $source['period'], $source['details']);
+checkLive(collect($withZero['players'])->first(fn($p)=>$p['fantasy_team_id']===$tid && $p['player_id']===$pid)['daily_projected_fpts']===0, 'A genuine zero estimate must remain zero.');
+
 // Injury icons must not change Fantrax ACTIVE membership or team scoring.
 $source = liveFixture('2026-10-02');
 $source['day']['scorerMap']['ACTIVE']['65yfc2nwmolvao6q']['2010'][0]['scorer']['icons'][] = ['typeId'=>'2'];
@@ -87,12 +105,17 @@ foreach ($injured['players'] as $p) if ($p['scoring_status']==='ACTIVE') checkLi
 
 Http::preventStrayRequests();
 $badDate = true;
-Http::fake(function ($request) use (&$badDate) {
+$missingOriginal = false;
+Http::fake(function ($request) use (&$badDate, &$missingOriginal) {
     $message = $request->data()['msgs'][0];
     $date = $message['data']['date'] ?? $message['data']['startDate'];
     $fixture = liveFixture($date);
     if ($message['method'] === 'getLiveScoringStats') {
         $data = $fixture[$message['data']['viewType']==='1'?'day':'period'];
+        if ($missingOriginal && $date==='2026-10-03' && $message['data']['viewType']==='1') {
+            foreach ($data['statsPerTeam']['allTeamsStats'] as &$team) { $team['ACTIVE']['projectedTotalsMap'] = []; }
+            unset($team);
+        }
         if ($badDate && $date==='2026-10-02') $data['date'] = '2026-10-03';
     } else {
         $key = $message['data']['positionOrGroup'].':1';
@@ -116,6 +139,12 @@ checkLive($repository->get('2026-10-02') === $before, 'Failed date destroyed pre
 checkLive(count($messages) === 3 && str_contains($messages[0],'published') && str_contains($messages[2],'published'), 'One failed date prevented independent dates publishing');
 $badDate = false;
 checkLive($refresh->refresh('2026-10-02', fn($m)=>null), 'Valid independent refresh failed');
+
+// A missing original estimate must still publish all three dates successfully.
+$missingOriginal = true; $messages = [];
+checkLive($refresh->refresh('2026-10-02', function($m)use(&$messages){$messages[]=$m;}), 'Missing original future estimates still fail the refresh.');
+checkLive(count(array_filter($messages,fn($m)=>str_contains($m,'published')))===3, 'Missing estimates prevented one date from publishing.');
+$missingOriginal = false;
 
 // A real refresh emits the current game totals and fantasy owner name, only for active scoring gains.
 $notificationCount=DB::table('push_notifications')->count();
@@ -171,4 +200,4 @@ $calendar=json_decode($response->getContent(),true,512,JSON_THROW_ON_ERROR);
 checkLive($response->getStatusCode()===200 && $calendar['selected_date']==='2026-10-03' && $calendar['dates']===['yesterday'=>'2026-10-02','today'=>'2026-10-03','tomorrow'=>'2026-10-04'], 'HTTP default date did not change at Pacific midnight');
 $kernel->terminate($request,$response);
 CarbonImmutable::setTestNow();
-echo "Live scoring checks passed: Pacific midnight/DST, three Fantrax dates, seven matchups, IDs, zero-point players, future projections, injury flags, failed-date preservation, independent publication, scoring notification team names/current stat lines/trigger isolation, and page rendering.\n";
+echo "Live scoring checks passed: Pacific midnight/DST, three Fantrax dates, seven matchups, IDs, zero-point players, future projections, optional missing estimates, preserved actual scoring, injury flags, failed-date preservation, independent publication, scoring notification team names/current stat lines/trigger isolation, and page rendering.\n";

@@ -24,11 +24,12 @@ final class FantraxMatchupCollector
             $active = array_filter($players, fn($p)=>$p['fantasy_team_id'] === $id && $p['scoring_status'] === 'ACTIVE');
             $sum = array_sum(array_column($active, 'daily_fpts'));
             if (abs($sum - (float)$daily['totalFpts']) > 0.02) throw new RuntimeException('Fantrax daily team/player totals disagree for '.$fantasyTeam['name']);
+            $projections = array_column($active, 'daily_projection_calculated');
             $teams[$id] = [
                 'id'=>$id, 'name'=>$fantasyTeam['name'], 'daily_fpts'=>(float)$daily['totalFpts'] + (float)($daily['pointsAdjustment'] ?? 0),
                 'daily_points_adjustment'=>(float)($daily['pointsAdjustment'] ?? 0),
                 'period_fpts'=>(float)$weekly['totalFpts'] + (float)($weekly['pointsAdjustment'] ?? 0),
-                'daily_projected_fpts'=>round(array_sum(array_column($active, 'daily_projection_calculated')), 2),
+                'daily_projected_fpts'=>in_array(null, $projections, true) ? null : round(array_sum($projections), 2),
             ];
         }
         if (!$teams || !is_array($day['matchups'] ?? null)) throw new RuntimeException('Missing Fantrax matchups.');

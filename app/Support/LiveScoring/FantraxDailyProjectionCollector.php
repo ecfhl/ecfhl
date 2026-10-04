@@ -10,10 +10,13 @@ final class FantraxDailyProjectionCollector
             $team = $day['statsPerTeam']['allTeamsStats'][$player['fantasy_team_id']][$player['scoring_status']];
             $id = $player['player_id'];
             $original = $team['projectedTotalsMap'][$id] ?? null;
+            $original = is_numeric($original) ? $original : null;
             $calculated = $team['calculatedProjectedTotalsMap'][$id] ?? $original;
-            if ($player['scoring_status'] === 'ACTIVE' && (!is_numeric($original) || !is_numeric($calculated))) {
-                throw new \RuntimeException('Missing dated Fantrax active player projection for '.$id);
-            }
+            $calculated = is_numeric($calculated) ? $calculated : $original;
+            // Fantrax can publish a valid lineup and calculated estimate before
+            // its original estimate exists. These optional source estimates must
+            // not block actual scoring; the UI uses our stored EC Proj rates.
+            // Keep unavailable estimates null rather than inventing zero points.
             $finished = !empty($day['allEventsFinished']) || ($team['remainingEventPercent'][$id] ?? null) === 0.0 || ($team['remainingEventPercent'][$id] ?? null) === 0;
             $player['daily_projection_original'] = $original;
             $player['daily_projection_calculated'] = $calculated;
