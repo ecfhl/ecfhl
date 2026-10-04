@@ -3,7 +3,7 @@
 <div class="page-head"><div class="shell"><div class="eyebrow">Stay in the game</div><h1>Notifications</h1><p>Choose the scoring and goalie updates you want.</p></div></div>
 <div class="shell owner-page">@include('account.shared')
 @unless($owner)<div class="card"><h2>Save alerts to your owner account</h2><p>Sign in or create an account and claim your team to set up notifications.</p><a class="button primary" href="/login">Sign in</a> <a class="button" href="/register">Create account</a></div>@endunless
-@if($owner)<section class="card owner-device"><div><h2>This device</h2><p id="owner-push-state" role="status">Checking browser notifications…</p></div><button class="button primary" id="owner-enable-push" type="button">Enable notifications</button><button class="button" id="owner-disable-push" type="button" hidden>Disable on this device</button></section>@endif
+@if($owner)<section class="card owner-device"><div><h2>This device</h2><p id="owner-push-state" role="status">Checking browser notifications…</p></div><button class="button primary" id="owner-enable-push" type="button" disabled>Enable notifications</button><button class="button" id="owner-disable-push" type="button" hidden disabled>Disable on this device</button></section>@endif
 <form method="post" action="/notifications" class="owner-form" id="owner-preferences-form">@csrf
 <fieldset @disabled(!$owner) class="owner-settings-grid owner-settings-fieldset">
 <section class="card"><h2>Scoring</h2>@if($owner?->claim)<p class="subtle">{{ $owner->claim->team_name }}</p>@elseif($owner)<p><a href="/account/claim-team">Claim your team</a> to receive scoring alerts.</p>@endif
@@ -28,5 +28,5 @@
 @if($owner)<div class="owner-save"><button class="button primary" type="submit" id="owner-save-preferences">Save preferences</button><p id="owner-save-state" class="subtle" role="status" aria-live="polite">All changes saved.</p><p class="subtle">Preferences apply to every device enabled for your account. Today and tomorrow follow the league’s Pacific fantasy day.</p></div>@endif
 </fieldset></form>
 </div>
-@if($owner)<script src="/owner-notifications.js?v=5" defer></script>@endif
+@if($owner)<script src="/owner-notifications.js?v=6" defer></script>@endif
 @endsection

@@ -44,3 +44,29 @@ vm.runInNewContext(fs.readFileSync('public/owner-notifications.js','utf8'),conte
  await form.fire('submit');assert.equal(calls.length,4,'Do not submit again during navigation');
  console.log('Preference UI checks passed: initial saved state, change/revert, duplicate goalies, saving lock, concurrent edits, error/unconfirmed responses, retry and redirect after confirmed save.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
+
+// Push controls stay locked during setup, requests and the three-second cooldown.
+(async()=>{
+ const enable=new Element({textContent:'Enable notifications'}),disable=new Element({textContent:'Disable on this device',hidden:true}),state=new Element();
+ const ids={'owner-enable-push':enable,'owner-disable-push':disable,'owner-push-state':state};
+ const timers=new Map(),requests=[];let timerId=0,sub=null,active=false,permission='granted',ready;
+ const registration={pushManager:{getSubscription:async()=>sub,subscribe:async()=>sub={endpoint:'test-endpoint',unsubscribe:async()=>{sub=null;return true;}}},active:{postMessage:(message,ports)=>{if(ports)ports[0].channel.port1.onmessage();}}};
+ const context={document:{getElementById:id=>ids[id],querySelectorAll:()=>[],querySelector:()=>({content:'test-csrf'})},navigator:{serviceWorker:{register:()=>new Promise(resolve=>{ready=resolve;}),ready:Promise.resolve(registration)}},window:{PushManager:class {},Notification:{}},
+  Notification:{permission:'default',requestPermission:async()=>permission},
+  MessageChannel:class {constructor(){this.port1={};this.port2={channel:this};}},
+  localStorage:{setItem(){},removeItem(){}},atob:s=>Buffer.from(s,'base64').toString('binary'),
+  setTimeout:(callback,delay)=>{timers.set(++timerId,{callback,delay});return timerId;},clearTimeout:id=>timers.delete(id),
+  fetch:async(url)=>{requests.push(url);if(url==='/push/subscribe')active=true;if(url==='/push/unsubscribe')active=false;return {ok:true,json:async()=>url==='/push/config'?{publicKey:'YQ'}:url==='/push/device'?{enabled:active}:{feedToken:'token',latestId:1}};}
+ };
+ vm.runInNewContext(fs.readFileSync('public/owner-notifications.js','utf8'),context);
+ assert.equal(enable.disabled,true,'Push setup must disable controls');await enable.fire('click');assert.equal(requests.length,0);
+ ready();await new Promise(setImmediate);assert.equal(enable.disabled,false);
+ const enabling=enable.fire('click');assert.equal(enable.disabled,true);assert.equal(disable.disabled,true);await enable.fire('click');await enabling;
+ assert.equal(requests.filter(url=>url==='/push/subscribe').length,1);
+ assert.equal(disable.hidden,false);assert.equal(disable.disabled,true,'Reverse action must wait three seconds');
+ await disable.fire('click');assert.equal(requests.includes('/push/unsubscribe'),false);
+ const cooldown=()=>{const entry=[...timers].find(([,timer])=>timer.delay===3000);assert.ok(entry,'A three-second cooldown is required');timers.delete(entry[0]);entry[1].callback();};
+ cooldown();assert.equal(disable.disabled,false);await disable.fire('click');assert.equal(enable.hidden,false);assert.equal(enable.disabled,true);cooldown();
+ permission='denied';await enable.fire('click');assert.equal(enable.disabled,false,'Permission failure must allow retry');assert.equal(timers.size,0);
+ console.log('Push UI checks passed: setup lock, duplicate-click protection, three-second cooldown in both directions and retry after failure.');
+})().catch(error=>{console.error(error);process.exitCode=1;});
