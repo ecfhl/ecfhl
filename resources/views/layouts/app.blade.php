@@ -16,6 +16,7 @@
         else{$pageTitles=['seasons'=>'Seasons','standings'=>'Standings','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','daily-targets'=>'Daily Targets','job-status'=>'Collector Status','admin'=>'Admin','login'=>'Sign In','register'=>'Create Account','account'=>'Account','notifications'=>'Notifications','rules'=>'Rules'];$browserTitle='ECFHL - '.($pageTitles[request()->segment(1)]??'East Coast Fantasy Hockey League');}
         $showSeasonFilter=!request()->is('login','register','account','account/*','notifications','auth/*','rules','players','daily-targets','job-status','admin','admin/*','teams/current','teams/current/*','seasons','seasons/*','standings');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
         $currentTeamMenu=\App\Support\PublicData::teamMenu();
+        $ownedTeamSlug=auth()->user()?->claim ? \Illuminate\Support\Str::slug((string)auth()->user()->claim->team_name) : null;
     @endphp
     <title>{{ $browserTitle }}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7"><link rel="shortcut icon" href="/favicon.svg?v=7"><link rel="apple-touch-icon" href="/ecfhl-logo.png?v=7"><link rel="stylesheet" href="/app.css?v=6"><link rel="stylesheet" href="/header-filters.css?v=3"><link rel="stylesheet" href="/navigation-feedback.css?v=1">
@@ -184,8 +185,6 @@ document.addEventListener('DOMContentLoaded',()=>{
        }
      }
 
-     // IR is additive: show injured players OR players matching the active
-     // goalie/line filters. It never narrows the current filter selection.
      return filterInjured ? (isInjured || matchesPositionFilters) : matchesPositionFilters;
    };
 
@@ -334,9 +333,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 .team-icon-advisor-save,.team-icon-modal-upload{appearance:none;border:1px solid rgba(255,255,255,.22);background:#0b5f9e;color:#fff;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2)}
 .team-icon-advisor-save:hover,.team-icon-modal-upload:hover{background:#0d6fb8}
 .team-icon-advisor-save:disabled,.team-icon-modal-upload:disabled{opacity:.6;cursor:wait}
-.team-icon-modal-upload{appearance:none;border:1px solid rgba(255,255,255,.22);background:#0b5f9e;color:#fff;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2)}
-.team-icon-modal-upload:hover{background:#0d6fb8}
-.team-icon-modal-upload:disabled{opacity:.6;cursor:wait}
 .team-icon-modal-close{position:absolute;top:-14px;right:-14px;width:38px;height:38px;border:0;border-radius:50%;background:#fff;color:#0f172a;font-size:24px;font-weight:900;line-height:1;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.28)}
 .team-icon-modal-close:hover{background:#f1f5f9}
 .team-icon-modal-close:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
@@ -352,7 +348,7 @@ document.addEventListener('DOMContentLoaded',()=>{
         <input id="team-icon-advisor-input" class="team-icon-advisor-input" type="text" maxlength="40" autocomplete="off">
         <button id="team-icon-advisor-save" class="team-icon-advisor-save" type="button">Save</button>
       </div>@endif
-
+      @auth<button id="team-icon-modal-upload" class="team-icon-modal-upload" type="button" hidden>Change image</button>@endauth
       <input id="team-icon-modal-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
     </div>
     <button id="team-icon-modal-close" class="team-icon-modal-close" type="button" aria-label="Close team icon preview">×</button>
@@ -369,11 +365,15 @@ document.addEventListener('DOMContentLoaded',()=>{
   const advisorNameInput=document.getElementById('team-icon-advisor-input');
   const advisorNameSave=document.getElementById('team-icon-advisor-save');
   const csrf=document.querySelector('meta[name="csrf-token"]')?.content||'';
+  const ownedTeamSlug=@json($ownedTeamSlug);
+  const isAdmin=@json((bool)auth()->user()?->is_admin);
   if(!modal||!modalImage||!closeButton||!fileInput)return;
 
   let lastTrigger=null;
   let activeSlug='';
   let activeAdvisorKey='';
+
+  const canEditActiveTeam=()=>!!activeSlug&&!activeAdvisorKey&&(isAdmin||activeSlug===ownedTeamSlug);
 
   const closeModal=()=>{
     modal.classList.remove('open','loading');
@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     document.body.style.removeProperty('overflow');
     fileInput.value='';
     fileInput.disabled=false;
-    if(uploadButton)uploadButton.hidden=false;
+    if(uploadButton)uploadButton.hidden=true;
     activeAdvisorKey='';
     advisorNameRow?.classList.remove('open');
     lastTrigger?.focus();
@@ -405,13 +405,9 @@ document.addEventListener('DOMContentLoaded',()=>{
         advisorNameInput.value='';
         advisorNameRow.classList.remove('open');
       }
-      if(activeAdvisorKey){
-        if(uploadButton)uploadButton.hidden=true;
-        fileInput.disabled=true;
-      }else{
-        if(uploadButton)uploadButton.hidden=false;
-        fileInput.disabled=false;
-      }
+      const canEdit=canEditActiveTeam();
+      if(uploadButton)uploadButton.hidden=!canEdit;
+      fileInput.disabled=!canEdit;
       modal.classList.add('open');
       modal.setAttribute('aria-hidden','false');
       document.body.style.overflow='hidden';
@@ -460,10 +456,10 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
 
-  uploadButton?.addEventListener('click',()=>fileInput.click());
+  uploadButton?.addEventListener('click',()=>{if(canEditActiveTeam())fileInput.click();});
   fileInput.addEventListener('change',async()=>{
     const file=fileInput.files?.[0];
-    if(!file||!activeSlug)return;
+    if(!file||!activeSlug||!canEditActiveTeam())return;
     if(file.size>2*1024*1024){
       alert('Team icon must be 2 MB or smaller.');
       fileInput.value='';
@@ -494,7 +490,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       alert(error.message||'Could not upload team icon.');
     }finally{
       if(uploadButton)uploadButton.disabled=false;
-      if(uploadButton)uploadButton.textContent='Upload new image';
+      if(uploadButton)uploadButton.textContent='Change image';
       fileInput.value='';
     }
   });
