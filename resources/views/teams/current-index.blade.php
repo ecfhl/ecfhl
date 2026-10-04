@@ -492,6 +492,13 @@ html[data-theme="dark"] .matchup-summary-side .matchup-projected-score{backgroun
 }
 
 @media(max-width:800px){.matchup-summary-side{padding-top:3px!important}.matchup-summary-score,.matchup-summary-away .matchup-summary-score,.matchup-summary-home .matchup-summary-score{top:33px!important}.matchup-summary-vs{margin-top:53px}.matchup-side-header{display:none!important}}
+
+@media(max-width:800px){
+  .matchup-summary-side .matchup-projected-score{position:absolute!important;top:62px!important;bottom:auto!important;margin:0!important;z-index:2}
+  .matchup-summary-away .matchup-projected-score{right:0!important;left:auto!important;text-align:right}
+  .matchup-summary-home .matchup-projected-score{left:0!important;right:auto!important;text-align:left}
+  .matchup-summary-meta{margin-top:1px!important}
+}
 </style>
 
 <script>
