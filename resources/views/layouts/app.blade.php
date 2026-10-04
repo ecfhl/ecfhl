@@ -317,15 +317,15 @@ document.addEventListener('DOMContentLoaded',()=>{
 <style>.header-actions{display:flex;align-items:center;gap:8px;margin-left:auto}.header-theme-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}@media(min-width:901px){.header-actions{order:3}.main-nav{order:2}.header-theme-toggle{margin-left:6px}}</style>
 <style>
 .score-up{color:#16834f!important}.score-down{color:#dc2626!important}.score-same{color:#111827!important}
-.team-icon-uploader{appearance:none;border:0;background:transparent;padding:0;margin:0;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;border-radius:12px}
+.team-icon-uploader{appearance:none;border:0;background:transparent;padding:0;margin:0;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;border-radius:0;box-shadow:none}
 .team-icon-uploader:hover{filter:brightness(.96)}
 .team-icon-uploader:focus-visible{outline:2px solid #60a5fa;outline-offset:3px}
-.team-icon-uploader img{display:block;width:46px;height:46px;object-fit:cover;border-radius:12px;box-shadow:0 2px 8px rgba(15,23,42,.12);background:transparent}
+.team-icon-uploader img{display:block;width:46px;height:46px;object-fit:contain;border-radius:0;box-shadow:none;background:transparent}
 .team-icon-modal{position:fixed;inset:0;z-index:5000;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(2,6,23,.82);backdrop-filter:blur(3px)}
 .team-icon-modal.open{display:flex}
 .team-icon-modal-card{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;max-width:min(92vw,760px);max-height:88vh}
 .team-icon-modal-loader{display:none;width:46px;height:46px;border:4px solid rgba(255,255,255,.28);border-top-color:#fff;border-radius:50%;animation:team-icon-spin .75s linear infinite}.team-icon-modal.loading .team-icon-modal-loader{display:block}.team-icon-modal.loading .team-icon-modal-image{display:none}@keyframes team-icon-spin{to{transform:rotate(360deg)}}
-.team-icon-modal-image{display:block;max-width:100%;max-height:calc(88vh - 58px);width:auto;height:auto;border-radius:18px;box-shadow:0 18px 60px rgba(0,0,0,.45);background:transparent}
+.team-icon-modal-image{display:block;max-width:100%;max-height:calc(88vh - 58px);width:auto;height:auto;border-radius:0;box-shadow:none;background:transparent}
 .team-icon-modal-actions{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
 .team-icon-advisor-name{display:none;align-items:center;gap:7px}
 .team-icon-advisor-name.open{display:flex}
@@ -340,7 +340,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 .team-icon-modal-close{position:absolute;top:-14px;right:-14px;width:38px;height:38px;border:0;border-radius:50%;background:#fff;color:#0f172a;font-size:24px;font-weight:900;line-height:1;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.28)}
 .team-icon-modal-close:hover{background:#f1f5f9}
 .team-icon-modal-close:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
-@media(max-width:700px){.team-icon-uploader img{width:40px;height:40px;border-radius:10px}.team-icon-modal{padding:16px}.team-icon-modal-close{top:-10px;right:-8px}}
+@media(max-width:700px){.team-icon-uploader img{width:40px;height:40px;border-radius:0.team-icon-modal{padding:16px}.team-icon-modal-close{top:-10px;right:-8px}}
 </style>
 <div id="team-icon-modal" class="team-icon-modal" role="dialog" aria-modal="true" aria-label="Team icon preview" aria-hidden="true">
   <div class="team-icon-modal-card">
