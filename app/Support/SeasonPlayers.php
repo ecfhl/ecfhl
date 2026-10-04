@@ -10,9 +10,18 @@ final class SeasonPlayers
     private const SKATER_COLUMNS = ['G'=>'Goals', 'A'=>'Assists', 'Pts'=>'Points', 'PPG'=>'Power-play goals',
         'SHG'=>'Short-handed goals', 'GWG'=>'Game-winning goals', 'SOG'=>'Shots on goal', 'TOI'=>'Time on ice'];
     private const BASE_HEADERS = ['player'=>'Player', 'team'=>'Team', 'ec_proj'=>'EC Proj', 'fpts'=>'FPts', 'fpts_gp'=>'FPts/gp', 'gp'=>'GP'];
+    public const DATASETS = ['season'=>'Season', '7d'=>'7 days', '14d'=>'14 days', '21d'=>'21 days', 'fantrax'=>'Fantrax proj'];
 
     public function data(Request $request): array
     {
+        $dataset = (string)$request->query('dataset', 'season');
+        if (!isset(self::DATASETS[$dataset])) $dataset = 'season';
+        $datasetLabel = self::DATASETS[$dataset];
+        $datasetFields = match($dataset) {
+            '7d', '14d', '21d'=>['fpts'=>'p.fpts_'.$dataset, 'gp'=>'p.gp_'.$dataset, 'fpts_gp'=>'p.fpts_per_game_'.$dataset],
+            'fantrax'=>['fpts'=>'b.fantrax_season_fpts', 'gp'=>'NULL', 'fpts_gp'=>'b.fantrax_fpts_per_game'],
+            default=>['fpts'=>'s.season_fpts', 'gp'=>'s.season_gp', 'fpts_gp'=>'s.season_fpts_per_game'],
+        };
         $positions = array_values(array_intersect(['F', 'D', 'G'], explode(',', (string)$request->query('positions', 'F,D'))));
         $rookies = $request->query('rookies') === '1';
         $search = mb_substr(trim((string)$request->query('q', '')), 0, 100);
@@ -36,9 +45,13 @@ final class SeasonPlayers
             $goalieColumns = json_decode($groups['goalie'] ?? '{}', true) ?: [];
             foreach (['Min','W','L','OL','GAA','SV%','SHO','GA','SOGA','SV'] as $label) if (isset($goalieColumns[$label])) $columns[$label] = $goalieColumns[$label];
         }
-        $headers = self::BASE_HEADERS + array_combine(array_keys($columns), array_keys($columns));
+        // Extra category stats are stored only for Season. Never mix season
+        // goals/assists with a selected recent window or frozen projection.
+        if ($dataset !== 'season') $columns = [];
+        $headers = ['rank'=>'Rank'] + self::BASE_HEADERS + array_combine(array_keys($columns), array_keys($columns));
+        if ($dataset === 'fantrax') unset($headers['gp']);
         $sort = (string)$request->query('sort', 'fpts');
-        if (!isset($headers[$sort])) $sort = 'fpts';
+        if ($sort === 'rank' || !isset($headers[$sort])) $sort = 'fpts';
         $direction = $request->query('direction', in_array($sort, ['player','team'], true) ? 'asc' : 'desc') === 'asc' ? 'asc' : 'desc';
         // Use only the latest roster snapshot; an old ownership record must not
         // make a released player appear to belong to their former team.
@@ -46,10 +59,14 @@ final class SeasonPlayers
             ->where('game_date', fn($q)=>$q->from('active_fantasy_rosters')->selectRaw('MAX(game_date)'))->groupBy('player_id');
         $query = DB::table('season_player_stats as s')
             ->leftJoin('player_projections as p', 'p.player_id', '=', 's.player_id')
+            ->leftJoin('player_projection_baselines as b', 'b.player_id', '=', 's.player_id')
             ->leftJoinSub($roster, 'latest_roster', 'latest_roster.player_id', '=', 's.player_id')
             ->leftJoin('active_fantasy_rosters as r', 'r.id', '=', 'latest_roster.roster_id')
             ->whereIn('s.position', $positions)
-            ->select('s.*', 'p.projected_fpts_per_game', 'r.fantasy_team_id', 'r.fantasy_team_name');
+            ->select('s.*', 'p.projected_fpts_per_game', 'r.fantasy_team_id', 'r.fantasy_team_name')
+            ->selectRaw($datasetFields['fpts'].' as dataset_fpts, '.$datasetFields['gp'].' as dataset_gp, '.$datasetFields['fpts_gp'].' as dataset_fpts_per_game');
+        if ($dataset === 'fantrax') $query->whereNotNull('b.player_id');
+        elseif ($dataset !== 'season') $query->whereNotNull('p.player_id');
         if ($selectedTeam !== '') $query->where('r.fantasy_team_id', $selectedTeam);
         if ($availability === 'available') $query->whereNull('r.id');
         if ($availability === 'taken') $query->whereNotNull('r.id');
@@ -68,14 +85,14 @@ final class SeasonPlayers
             $query->whereIn('s.player_id', $ids);
         }
         if ($search !== '') $query->where('s.player_name', 'like', '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search).'%');
-        [$expression, $bindings] = $this->sortExpression($sort);
+        [$expression, $bindings] = $this->sortExpression($sort, $datasetFields);
         // Sort in SQL before pagination, with unavailable values last in either
         // direction. Player ID resolves ties so Show More has a stable order.
         $players = $query->selectRaw($expression.' as season_sort_value', $bindings)
             ->orderByRaw('season_sort_value IS NULL')->orderBy('season_sort_value', $direction)
             ->orderBy('s.player_name')->orderBy('s.player_id')
             ->paginate(25, ['*'], 'page', max(1, (int)$request->query('page', 1)))->appends([
-                'positions'=>implode(',', $positions), 'rookies'=>$rookies ? '1' : '0', 'q'=>$search, 'sort'=>$sort, 'direction'=>$direction, 'team'=>$selectedTeam, 'availability'=>$availability, 'line'=>$selectedLine, 'pp'=>$selectedPp,
+                'positions'=>implode(',', $positions), 'rookies'=>$rookies ? '1' : '0', 'q'=>$search, 'sort'=>$sort, 'direction'=>$direction, 'team'=>$selectedTeam, 'availability'=>$availability, 'line'=>$selectedLine, 'pp'=>$selectedPp, 'dataset'=>$dataset,
             ]);
         $players->getCollection()->transform(function ($row) use ($lines, $pp) {
             $row->stats = json_decode($row->stats_json, true) ?: [];
@@ -85,8 +102,12 @@ final class SeasonPlayers
             $row->pp_unit = $row->position === 'G' ? null : ($pp[$key]->pp_unit ?? null);
             return $row;
         });
-        return compact('players', 'positions', 'rookies', 'search', 'columns', 'headers', 'sort', 'direction', 'teamOptions', 'selectedTeam', 'availability', 'selectedLine', 'selectedPp')
-            + ['statsThrough'=>DB::table('season_player_stats')->max('stats_through')];
+        $statsThrough = match($dataset) {
+            'fantrax'=>DB::table('player_projection_baselines')->max('captured_at'),
+            'season'=>DB::table('season_player_stats')->max('stats_through'),
+            default=>DB::table('player_projections')->max('window_end_date'),
+        };
+        return compact('players', 'positions', 'rookies', 'search', 'columns', 'headers', 'sort', 'direction', 'teamOptions', 'selectedTeam', 'availability', 'selectedLine', 'selectedPp', 'dataset', 'datasetLabel', 'statsThrough');
     }
 
     private function assignmentKey(?string $team, string $name): string
@@ -97,10 +118,10 @@ final class SeasonPlayers
         return $team.'|'.preg_replace('/[^\pL\pN]+/u', '', mb_strtolower(trim($name)));
     }
 
-    private function sortExpression(string $sort): array
+    private function sortExpression(string $sort, array $datasetFields): array
     {
         $fields = ['player'=>'LOWER(s.player_name)', 'team'=>"LOWER(COALESCE(r.fantasy_team_name, 'Free Agent'))",
-            'gp'=>'s.season_gp', 'fpts'=>'s.season_fpts', 'fpts_gp'=>'s.season_fpts_per_game', 'ec_proj'=>'p.projected_fpts_per_game'];
+            'gp'=>$datasetFields['gp'], 'fpts'=>$datasetFields['fpts'], 'fpts_gp'=>$datasetFields['fpts_gp'], 'ec_proj'=>'p.projected_fpts_per_game'];
         if (isset($fields[$sort])) return [$fields[$sort], []];
         $extract = DB::connection()->getDriverName() === 'sqlite' ? 'json_extract(s.stats_json, ?)' : 'JSON_UNQUOTE(JSON_EXTRACT(s.stats_json, ?))';
         $paths = ['$."'.$sort.'"'];

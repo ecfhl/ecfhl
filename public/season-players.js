@@ -1,11 +1,16 @@
 (() => {
   const table = document.querySelector('.season-player-table');
   if (table) {
-    const firstColumn = table.querySelector('thead th');
+    const playerColumn = table.querySelector('thead .player-frozen-player');
+    const rankColumn = table.querySelector('thead .player-frozen-rank');
     const scroll = table.closest('.player-table-scroll');
-    const updateOffset = () => scroll.style.setProperty('--player-sticky-offset', `${firstColumn.getBoundingClientRect().width}px`);
+    const updateOffset = () => scroll.style.setProperty('--player-sticky-offset', `${rankColumn.getBoundingClientRect().width + playerColumn.getBoundingClientRect().width}px`);
     updateOffset();
-    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(updateOffset).observe(firstColumn);
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(updateOffset);
+      observer.observe(rankColumn);
+      observer.observe(playerColumn);
+    }
     else window.addEventListener('resize', updateOffset);
   }
   const button = document.getElementById('season-player-more');

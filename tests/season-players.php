@@ -62,8 +62,10 @@ $html=seasonRequest('/players')->getContent();
 verifySeason(substr_count($html,'data-player-id=')===25&&str_contains($html,'Player &lt;unsafe&gt;')&&!str_contains($html,'Player <unsafe>'),'SSR row count / escaped names failed.');
 verifySeason(str_contains($html,'EC Proj')&&str_contains($html,'71:11')&&str_contains($html,'/teams/current/beta')&&str_contains($html,'Free Agent'),'Stats / ownership / custom projection rendering failed.');
 verifySeason(str_contains($html,'aria-pressed="true" href="/players?positions=D')&&str_contains($html,'aria-pressed="true" href="/players?positions=F')&&str_contains($html,'aria-pressed="false" href="/players?positions=F%2CD%2CG'),'Default filter button states failed.');
-preg_match_all('/<th scope="col"[^>]*>.*?<a[^>]*>(.*?) <span/s',$html,$headerMatches);
-verifySeason($headerMatches[1]===['Player','Team','EC Proj','FPts','FPts/gp','GP','G','A','Pts','PPG','SHG','GWG','SOG','TOI'],'Column order and labels must match the requested stats exactly.');
+preg_match('/<thead>(.*?)<\/thead>/s',$html,$tableHead);
+preg_match_all('/<th scope="col"[^>]*>(.*?)<\/th>/s',$tableHead[1],$headCells);
+$headerLabels=array_map(fn($v)=>rtrim(trim(strip_tags($v)), ' ↑↓↕'),$headCells[1]);
+verifySeason($headerLabels===['Rank','Player','Team','EC Proj','FPts','FPts/gp','GP','G','A','Pts','PPG','SHG','GWG','SOG','TOI'],'Column order and labels must match the requested stats exactly.');
 verifySeason(preg_match('/<td class="myproj">6\.25<\/td>\s*<td>99<\/td>\s*<td>9\.90<\/td>\s*<td>10<\/td>\s*<td>2<\/td>\s*<td>9<\/td>/', $html), 'Row values must follow EC Proj, FPts, FPts/gp, GP, G and A header order.');
 $sortHtml=seasonRequest('/players?rookies=1&sort=A&direction=asc')->getContent();
 verifySeason(str_contains($sortHtml,'aria-sort="ascending"')&&str_contains($sortHtml,'sort=A&amp;direction=desc')&&str_contains($sortHtml,'name="sort" value="A"'),'Sort arrows / toggle links / search preservation failed.');
@@ -115,8 +117,38 @@ verifySeason(!str_contains($betaHtml,'class="player-add-icon"'),'Owned players m
 verifySeason(str_contains($advancedHtml,'id="season-player-line" class="player-buttons" role="group"')&&str_contains($advancedHtml,'id="season-player-pp" class="player-buttons" role="group"')&&!str_contains($advancedHtml,'<select id="season-player-line"')&&!str_contains($advancedHtml,'<select id="season-player-pp"'),'Line and power-play slicers must use accessible buttons.');
 preg_match('/id="season-player-line".*?<\/div>/s',$advancedHtml,$lineButtons);preg_match('/id="season-player-pp".*?<\/div>/s',$advancedHtml,$ppButtons);
 verifySeason(str_contains($lineButtons[0],'aria-pressed="true"')&&str_contains($lineButtons[0],'rookies=1')&&str_contains($lineButtons[0],'line=2&amp;pp=1')&&str_contains($ppButtons[0],'line=1&amp;pp=2'),'Assignment buttons must indicate selection and preserve the other filters.');
-verifySeason(str_contains($betaHtml,'aria-label="Beta"')&&str_contains($betaHtml,'class="player-team-name"')&&str_contains($betaHtml,'--team-column-width:64px')&&str_contains($betaHtml,'.player-team-link .player-team-name{display:none}'),'Mobile must keep accessible team logos while hiding team names in a narrow frozen column.');
+verifySeason(str_contains($betaHtml,'aria-label="Beta"')&&str_contains($betaHtml,'class="player-team-name"')&&str_contains($betaHtml,'--team-column-width:44px')&&str_contains($betaHtml,'.player-team-link .player-team-name{display:none}'),'Mobile must keep accessible team logos while hiding team names in a narrow frozen column.');
 DB::table('season_player_stats')->where('player_id','p1')->update(['season_fpts'=>1234.5]);
 $roundedHtml=seasonRequest('/players?q=Player%20%3Cunsafe%3E')->getContent();
 verifySeason(preg_match('/<td class="myproj">6\.25<\/td>\s*<td>1,235<\/td>\s*<td>9\.90<\/td>/', $roundedHtml),'FPts must display whole numbers with grouping while EC Proj and FPts/gp retain decimals.');
-echo "Season players checks passed: stats, sorting, assignment buttons, pagination, frozen panes, integer FPts, mobile team logos and Fantrax add searches.\n";
+// Dataset values must come from the selected source, including sort and paging.
+for($i=1;$i<=62;$i++) {
+ $row=$projection;$row['player_id']='p'.$i;$row['projected_fpts_per_game']=$i===1?6.25:9-$i/100;
+ foreach([7,14,21] as $days) { $row['fpts_'.$days.'d']=$days*100-$i;$row['gp_'.$days.'d']=$i%5+1;$row['fpts_per_game_'.$days.'d']=$row['fpts_'.$days.'d']/$row['gp_'.$days.'d']; }
+ DB::table('player_projections')->updateOrInsert(['player_id'=>'p'.$i],$row);
+ DB::table('player_projection_baselines')->insert(['player_id'=>'p'.$i,'season_id'=>'2026-27','player_name'=>'Baseline '.$i,'nhl_team'=>'MTL','position'=>$i>60?'G':'F','source_rank'=>$i,'fantrax_fpts_per_game'=>5+$i/10,'fantrax_season_fpts'=>1000-$i*2,'season_start'=>'2026-09-13','captured_at'=>'2026-10-01 04:00:00']);
+}
+foreach([7,14,21] as $days) {
+ $window=$service->data(Request::create('/players?dataset='.$days.'d&sort=fpts&direction=desc'));
+ verifySeason($window['dataset']===$days.'d'&&$window['players']->total()===60&&$window['columns']===[]&&array_keys($window['headers'])===['rank','player','team','ec_proj','fpts','fpts_gp','gp'],'Recent datasets must use tracked players and their available columns.');
+ $first=$window['players'][0];verifySeason($first->player_id==='p1'&&(float)$first->dataset_fpts===$days*100.0-1&&(int)$first->dataset_gp===2&&abs((float)$first->dataset_fpts_per_game-($days*100-1)/2)<.00001,'Recent values or SQL sort used season stats: '.$days);
+ verifySeason(str_contains($window['players']->nextPageUrl(),'dataset='.$days.'d'),'Show More lost dataset: '.$days);
+}
+$fantrax=$service->data(Request::create('/players?dataset=fantrax&sort=fpts_gp&direction=desc'));
+verifySeason($fantrax['players']->total()===60&&$fantrax['players'][0]->player_id==='p60'&&(float)$fantrax['players'][0]->dataset_fpts===880.0&&(float)$fantrax['players'][0]->dataset_fpts_per_game===11.0&&!isset($fantrax['headers']['gp'])&&$fantrax['columns']===[],'Fantrax dataset must show frozen totals/rates and omit unrecorded GP/category stats.');
+verifySeason($fantrax['statsThrough']==='2026-10-01 04:00:00','Fantrax date must use baseline capture time.');
+$windowGoalies=$service->data(Request::create('/players?dataset=7d&positions=G'));
+verifySeason($windowGoalies['players']->total()===2&&$windowGoalies['columns']===[],'Recent dataset must exclude untracked goalies and season goalie categories.');
+$combo=$service->data(Request::create('/players?dataset=14d&team=beta&availability=taken&line=1&pp=1&sort=fpts_gp&direction=asc'));
+verifySeason($combo['players']->total()===33&&$combo['players']->getCollection()->every(fn($p)=>$p->fantasy_team_id==='beta'&&(int)$p->line_number===1&&(int)$p->pp_unit===1),'Dataset lost current ownership or assignment filters.');
+$comboMore=json_decode(seasonRequest('/players?dataset=14d&team=beta&availability=taken&line=1&pp=1&sort=fpts_gp&direction=asc&page=2',true)->getContent(),true);
+verifySeason($comboMore['shown']===33&&$comboMore['html']!==''&&!str_contains($comboMore['html'],'<td>1,235</td>'),'Recent Show More must render the selected dataset.');
+preg_match_all('/class="player-frozen-rank">(\d+)<\/td>/',$html,$ranks);verifySeason(array_map('intval',$ranks[1])===range(1,25),'Initial rank must start at 1 and follow current order.');
+preg_match_all('/class="player-frozen-rank">(\d+)<\/td>/',$json['html'],$ranks);verifySeason(array_map('intval',$ranks[1])===range(26,50),'Ranks must continue across Show More pages.');
+preg_match_all('/class="player-frozen-rank">(\d+)<\/td>/',$comboMore['html'],$ranks);verifySeason(array_map('intval',$ranks[1])===range(26,33),'Filtered ranks must follow pagination, without gaps.');
+$datasetHtml=seasonRequest('/players?dataset=7d&team=beta&availability=taken&line=1&pp=1&sort=fpts_gp&direction=asc')->getContent();
+verifySeason(str_contains($datasetHtml,'id="season-player-dataset"')&&str_contains($datasetHtml,'name="dataset" value="7d"')&&str_contains($datasetHtml,'dataset=21d')&&str_contains($datasetHtml,'frozen top 1,000')&&str_contains($datasetHtml,'actual FPts'),'Dataset buttons, source scope and form preservation failed.');
+verifySeason(str_contains($datasetHtml,'<col class="rank-col">')&&str_contains($datasetHtml,'class="player-frozen-rank"')&&str_contains($datasetHtml,'padding:6px 7px')&&str_contains($datasetHtml,'--player-stat-width:72px'),'Rank pane and compact table spacing missing.');
+$invalidDataset=$service->data(Request::create('/players?dataset=invalid&sort=rank'));verifySeason($invalidDataset['dataset']==='season'&&$invalidDataset['sort']==='fpts','Unknown dataset and positional rank sort must safely fall back.');
+$categoryFallback=$service->data(Request::create('/players?dataset=7d&sort=G'));verifySeason($categoryFallback['sort']==='fpts','A category sort must reset when it is unavailable in the new dataset.');
+echo "Season players checks passed: all five dataset values/sorts/filters, frozen ranks, compact panes, integer FPts, mobile logos and preserved Show More datasets.\n";
