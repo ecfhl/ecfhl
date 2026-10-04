@@ -59,11 +59,15 @@ class FantraxProjectionSource
     public function actual(string $start, string $end): array
     {
         $rows = [];
-        foreach (['HOCKEY_SKATING', 'POS_201'] as $group) {
+        $datasets = [['HOCKEY_SKATING', '1'], ['POS_201', '1']];
+        // The standard view omits SHG; the league's tracked view supplies it.
+        if ($this->seasonDetails) $datasets[] = ['HOCKEY_SKATING', '5'];
+        foreach ($datasets as [$group, $categoryType]) {
             $args = ['statusOrTeamFilter'=>'ALL', 'positionOrGroup'=>$group, 'seasonOrProjection'=>self::ACTUAL,
-                'timeframeTypeCode'=>'BY_DATE', 'scoringCategoryType'=>'1', 'startDate'=>$start, 'endDate'=>$end, 'maxResultsPerPage'=>500];
+                'timeframeTypeCode'=>'BY_DATE', 'scoringCategoryType'=>$categoryType, 'startDate'=>$start, 'endDate'=>$end, 'maxResultsPerPage'=>500];
             $first = $this->pages($args, [1])[1];
             $this->validate($first, self::ACTUAL, $start, $end);
+            if ($categoryType === '5' && !collect($first['tableHeader']['cells'])->contains('shortName', 'SHG')) throw new RuntimeException('Missing Fantrax short-handed goals column.');
             $pagination = $first['paginatedResultSet'];
             $pages = (int)$pagination['totalNumPages'];
             $total = (int)$pagination['totalNumResults'];
@@ -72,18 +76,19 @@ class FantraxProjectionSource
             $groupSeen = [];
             // Parse each small batch immediately instead of retaining all 8,000+
             // rich Fantrax rows in a PHP web request with a 128 MB memory limit.
-            $consume = function (array $batch) use ($group, $start, $end, $total, &$rows, &$count, &$groupSeen) {
+            $consume = function (array $batch) use ($group, $categoryType, $start, $end, $total, &$rows, &$count, &$groupSeen) {
                 foreach ($batch as $page => $data) {
                     $this->validate($data, self::ACTUAL, $start, $end);
+                    if (isset($data['displayedScoringCategoryType']) && (string)$data['displayedScoringCategoryType'] !== $categoryType) throw new RuntimeException('Fantrax returned a different actual-stat view.');
                     if (($data['displayedPosOrGroup'] ?? '') !== $group) throw new RuntimeException('Fantrax returned a different actual-stat position group.');
                     if ((int)$data['paginatedResultSet']['pageNumber'] !== $page || (int)$data['paginatedResultSet']['totalNumResults'] !== $total) throw new RuntimeException('Fantrax actual-stat pagination changed during collection.');
                     foreach ($this->parse($data, true) as $row) {
                         if (isset($groupSeen[$row['player_id']])) throw new RuntimeException('Duplicate player in Fantrax actual-stat pagination.');
                         $groupSeen[$row['player_id']] = true;
-                        // Fantrax lists a few dual-position players in both groups.
+                        // Merge standard/tracked views and dual-position players by ID.
                         if (isset($rows[$row['player_id']])) {
                             $prior = $rows[$row['player_id']];
-                            if ($prior['fpts'] !== $row['fpts'] || $prior['gp'] !== $row['gp']) throw new RuntimeException('Conflicting skater/goalie stats for '.$row['player_id'].'.');
+                            if ($prior['fpts'] !== $row['fpts'] || $prior['gp'] !== $row['gp']) throw new RuntimeException('Conflicting actual stat views for '.$row['player_id'].'.');
                             if ($this->seasonDetails) {
                                 $row['stats'] = array_merge($prior['stats'], $row['stats']);
                                 $row['stat_columns'] = array_merge($prior['stat_columns'], $row['stat_columns']);

@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('ecfhl:refresh-player-projections {--force : Regenerate even if already refreshed today} {--ensure-season-stats : Collect complete season stats only if missing}', function (RefreshPlayerProjections $refresh) {
-    if ($this->option('ensure-season-stats') && DB::table('season_player_stat_columns')->count() > 0) {
+    $skaterColumns = json_decode(DB::table('season_player_stat_columns')->where('group', 'skater')->value('columns_json') ?? '{}', true);
+    if ($this->option('ensure-season-stats') && isset($skaterColumns['SHG'])) {
         $this->line('Complete season player stats already available.');
         return 0;
     }

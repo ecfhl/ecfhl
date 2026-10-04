@@ -13,7 +13,7 @@ foreach(glob(__DIR__.'/../database/migrations/*create*.php') as $file)(require $
 (require __DIR__.'/../database/migrations/2026_10_03_210000_add_season_actuals_to_player_projections.php')->up();
 config(['performance.public_data_cache'=>false]);
 foreach(['skater'=>['GP'=>'Games played','G'=>'Goals','A'=>'Assists','TOI'=>'Time on ice'],'goalie'=>['GP'=>'Games played','W'=>'Wins','SV%'=>'Save percentage']] as $group=>$columns) DB::table('season_player_stat_columns')->insert(['group'=>$group,'columns_json'=>json_encode($columns)]);
-for($i=1;$i<=65;$i++) DB::table('season_player_stats')->insert(['player_id'=>'p'.$i,'season_id'=>'2026-27','player_name'=>$i===1?'Player <unsafe>':'Player '.str_pad($i,2,'0',STR_PAD_LEFT),'nhl_team'=>'MTL','position'=>$i>60?'G':($i%2?'F':'D'),'rookie'=>$i%3===0,'season_fpts'=>100-$i,'season_gp'=>10,'season_fpts_per_game'=>(100-$i)/10,'stats_json'=>json_encode(['G'=>'2','A'=>'5','TOI'=>'71:11','W'=>'3','SV%'=>'.925']),'stats_through'=>'2026-10-04','refreshed_at'=>now()]);
+for($i=1;$i<=65;$i++) DB::table('season_player_stats')->insert(['player_id'=>'p'.$i,'season_id'=>'2026-27','player_name'=>$i===1?'Player <unsafe>':'Player '.str_pad($i,2,'0',STR_PAD_LEFT),'nhl_team'=>'MTL','position'=>$i>60?'G':($i%2?'F':'D'),'rookie'=>$i%3===0,'season_fpts'=>100-$i,'season_gp'=>10,'season_fpts_per_game'=>(100-$i)/10,'stats_json'=>json_encode(['G'=>'2','A'=>'5','TOI'=>$i===1?'71:11':'10:00','W'=>'3','SV%'=>'.925']),'stats_through'=>'2026-10-04','refreshed_at'=>now()]);
 $projection=['player_id'=>'p1','as_of_date'=>'2026-10-04','window_end_date'=>'2026-10-04','projected_fpts_per_game'=>6.25,'refreshed_at'=>now()];foreach([7,14,21] as $days){$projection['gp_'.$days.'d']=0;$projection['fpts_'.$days.'d']=0;$projection['fpts_per_game_'.$days.'d']=0;}DB::table('player_projections')->insert($projection);
 foreach([['2026-10-03','old','Old owner','p2'],['2026-10-04','alpha','Alpha','p1'],['2026-10-04','beta','Beta','p1']] as [$date,$id,$name,$player]) DB::table('active_fantasy_rosters')->insert(['game_date'=>$date,'fantasy_team_id'=>$id,'fantasy_team_name'=>$name,'player_id'=>$player,'player_name'=>'Player','position'=>'F']);
 $service=new SeasonPlayers;
@@ -21,7 +21,7 @@ $d=$service->data(Request::create('/players'));
 verifySeason($d['positions']===['F','D']&&$d['players']->total()===60&&$d['players']->count()===25,'Defaults must show F/D only and 25 players.');
 verifySeason($d['players'][0]->fantasy_team_name==='Beta'&&$d['players'][1]->fantasy_team_name===null,'Latest snapshot ownership / deduplicated roster join failed.');
 verifySeason((float)$d['players'][0]->projected_fpts_per_game===6.25&&$d['players'][1]->projected_fpts_per_game===null,'MyProj must use saved custom rates and preserve untracked nulls.');
-verifySeason(array_keys($d['columns'])===['G','A','TOI']&&$d['players'][0]->stats['TOI']==='71:11','Full stat columns / time values were lost.');
+verifySeason(array_keys($d['columns'])===['A','G','Pts','PPG','SHG','GWG','SOG','TOI']&&$d['players'][0]->stats['TOI']==='71:11','Full stat columns / time values were lost.');
 $rookies=$service->data(Request::create('/players?positions=F,D&rookies=1'));
 verifySeason($rookies['players']->total()===20&&$rookies['players']->getCollection()->every(fn($p)=>(bool)$p->rookie),'Rookie On must exclude veterans.');
 $all=$service->data(Request::create('/players?positions=F,D,G&rookies=0'));
@@ -33,14 +33,33 @@ $second=$service->data(Request::create('/players?positions=F,D&page=2'));
 verifySeason($second['players']->count()===25&&$second['players']->firstItem()===26&&$second['players']->lastItem()===50,'Second page must append the next 25.');
 $third=$service->data(Request::create('/players?positions=F,D&page=3'));verifySeason($third['players']->count()===10&&$third['players']->nextPageUrl()===null,'Final page must stop pagination.');
 $filtered=$service->data(Request::create('/players?positions=F,D&rookies=1&q=Player'));verifySeason($filtered['players']->total()===20,'Search must preserve the position and rookie filters.');
+// Use values with different digit lengths, negatives, missing rates and tied minutes.
+foreach(['p1'=>['A'=>'9','G'=>'2','Pt'=>'11','PPG'=>'2','SHG'=>'1','GWG'=>'2','SOG'=>'999','TOI'=>'71:11'], 'p2'=>['A'=>'100','G'=>'10','Pt'=>'110','PPG'=>'10','SHG'=>'3','GWG'=>'10','SOG'=>'1,000','TOI'=>'71:59'], 'p60'=>['A'=>'-2','G'=>'0','Pt'=>'-2','PPG'=>'0','SHG'=>'0','GWG'=>'0','SOG'=>'0','TOI'=>'105:01']] as $id=>$stats)DB::table('season_player_stats')->where('player_id',$id)->update(['stats_json'=>json_encode($stats)]);
+DB::table('season_player_stats')->where('player_id','p2')->update(['season_gp'=>25,'season_fpts_per_game'=>20]);
+foreach(['gp'=>'p2','fpts_gp'=>'p2','PPG'=>'p2','GWG'=>'p2','A'=>'p2','G'=>'p2','Pts'=>'p2','SHG'=>'p2','SOG'=>'p2','TOI'=>'p60','ec_proj'=>'p1'] as $key=>$first){
+ $sorted=$service->data(Request::create('/players?sort='.$key.'&direction=desc'));
+ verifySeason($sorted['players'][0]->player_id===$first, 'Descending full-dataset numeric sorting failed: '.$key);
+ verifySeason(str_contains($sorted['players']->nextPageUrl(),'sort='.$key)&&str_contains($sorted['players']->nextPageUrl(),'direction=desc'), 'Show More lost sorting: '.$key);
+}
+$names=$service->data(Request::create('/players?sort=player&direction=asc'));verifySeason($names['players'][0]->player_id==='p2','Player sorting must use names alphabetically.');
+$ascending=$service->data(Request::create('/players?sort=A&direction=asc'));verifySeason($ascending['players'][0]->player_id==='p60','Negative stats must sort before zero/positive stats.');
+$minutes=$service->data(Request::create('/players?sort=TOI&direction=desc'));verifySeason($minutes['players'][1]->player_id==='p2'&&$minutes['players'][2]->player_id==='p1','TOI must compare seconds when minutes tie.');
+$missing=$service->data(Request::create('/players?sort=ec_proj&direction=asc'));verifySeason($missing['players'][0]->player_id==='p1','Unavailable EC Proj must stay last when ascending.');
+$teams=$service->data(Request::create('/players?sort=team&direction=asc'));verifySeason($teams['players'][0]->fantasy_team_name==='Beta','Team sorting must use displayed ECFHL team.');
+$invalid=$service->data(Request::create('/players?sort=DROP%20TABLE&direction=INVALID'));verifySeason($invalid['sort']==='fpts'&&$invalid['direction']==='desc','Reject unknown SQL sort fields and directions.');
+$sortedRookies=$service->data(Request::create('/players?positions=F,D&rookies=1&sort=A&direction=asc'));verifySeason($sortedRookies['players'][0]->player_id==='p60'&&$sortedRookies['players']->total()===20,'Sorting must preserve rookie/position filters.');
 $kernel=$app->make(Illuminate\Contracts\Http\Kernel::class);
 function seasonRequest($url,$json=false){global $app,$kernel;$app->forgetScopedInstances();$r=Request::create($url,'GET',[],[],[],['HTTP_ACCEPT'=>$json?'application/json':'text/html']);$response=$kernel->handle($r);$kernel->terminate($r,$response);verifySeason($response->getStatusCode()===200,'Players response failed: '.$response->getContent());return $response;}
 $html=seasonRequest('/players')->getContent();
 verifySeason(substr_count($html,'data-player-id=')===25&&str_contains($html,'Player &lt;unsafe&gt;')&&!str_contains($html,'Player <unsafe>'),'SSR row count / escaped names failed.');
-verifySeason(str_contains($html,'MyProj/GP')&&str_contains($html,'71:11')&&str_contains($html,'/teams/current/beta')&&str_contains($html,'Free Agent'),'Stats / ownership / custom projection rendering failed.');
+verifySeason(str_contains($html,'EC Proj')&&str_contains($html,'71:11')&&str_contains($html,'/teams/current/beta')&&str_contains($html,'Free Agent'),'Stats / ownership / custom projection rendering failed.');
 verifySeason(str_contains($html,'aria-pressed="true" href="/players?positions=D')&&str_contains($html,'aria-pressed="true" href="/players?positions=F')&&str_contains($html,'aria-pressed="false" href="/players?positions=F%2CD%2CG'),'Default filter button states failed.');
+preg_match_all('/<th scope="col"[^>]*>.*?<a[^>]*>(.*?) <span/s',$html,$headerMatches);
+verifySeason($headerMatches[1]===['Player','Team','GP','FPts','FPts/gp','EC Proj','A','G','Pts','PPG','SHG','GWG','SOG','TOI'],'Column order and labels must match the requested stats exactly.');
+$sortHtml=seasonRequest('/players?rookies=1&sort=A&direction=asc')->getContent();
+verifySeason(str_contains($sortHtml,'aria-sort="ascending"')&&str_contains($sortHtml,'sort=A&amp;direction=desc')&&str_contains($sortHtml,'name="sort" value="A"'),'Sort arrows / toggle links / search preservation failed.');
 $json=json_decode(seasonRequest('/players?positions=F,D&page=2',true)->getContent(),true);
 verifySeason(substr_count($json['html'],'data-player-id=')===25&&$json['shown']===50&&$json['total']===60&&str_contains($json['next_url'],'positions=F%2CD'),'Show More must return next rows with preserved filters.');
 $final=json_decode(seasonRequest('/players?positions=G&rookies=1',true)->getContent(),true);verifySeason($final['shown']===1&&$final['total']===1&&$final['next_url']===null,'Filtered Show More termination failed.');
 $admin=view('admin.index')->render();foreach(['/admin/projections','/job-status','/admin/advisors','/admin/team-images'] as $url)verifySeason(str_contains($admin,'class="card admin-menu-card" href="'.$url.'"'),'Admin card missing: '.$url);
-echo "Season players checks passed: defaults, full stats, rookies, positions, search, latest ownership, MyProj, escaped SSR, 25-row pagination and admin cards.\n";
+echo "Season players checks passed: defaults, full stats, rookies, positions, search, latest ownership, MyProj, escaped SSR, 25-row pagination, full-dataset sorting, requested column order and admin cards.\n";

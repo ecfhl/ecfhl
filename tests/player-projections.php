@@ -168,13 +168,14 @@ class FixtureProjectionSource extends FantraxProjectionSource
     {
         $this->batches[] = $pages;
         $goalie = $args['positionOrGroup'] === 'POS_201';
+        $tracked = $args['scoringCategoryType'] === '5';
         $start = $this->mode === 'date' ? '2026-10-26' : $args['startDate'];
-        $headers = [['key'=>'fpts'], ['shortName'=>$this->mode === 'gp' ? 'OTHER' : 'GP', 'scipId'=>'gp', 'name'=>'Games Played'], ['shortName'=>'TOI','scipId'=>'toi','name'=>'Time on ice']];
+        $headers = [['key'=>'fpts'], ['shortName'=>$this->mode === 'gp' ? 'OTHER' : 'GP', 'scipId'=>'gp', 'name'=>'Games Played'], ($tracked ? ['shortName'=>$this->mode === 'shg' ? 'OTHER' : 'SHG','scipId'=>'shg','name'=>'Short-handed goals'] : ['shortName'=>'TOI','scipId'=>'toi','name'=>'Time on ice'])];
         $data = ['displayedStatusOrTeam'=>'ALL','displayedPosOrGroup'=>$args['positionOrGroup'], 'displayedSelections'=>['datePlaying'=>'ALL','searchName'=>'', 'displayedSeasonOrProjection'=>['code'=>self::ACTUAL],
             'displayedStartDate'=>CarbonImmutable::parse($start, 'America/New_York')->getTimestampMs(),
             'displayedEndDate'=>CarbonImmutable::parse($args['endDate'], 'America/New_York')->getTimestampMs()],
             'paginatedResultSet'=>['totalNumPages'=>$this->pageCount,'pageNumber'=>1,'totalNumResults'=>$this->mode === 'partial' ? $this->pageCount + 1 : $this->pageCount],
-            'tableHeader'=>['cells'=>$headers], 'statsTable'=>[['scorer'=>['scorerId'=>$goalie?'goalie':'skater', 'name'=>'Test Player', 'teamShortName'=>'MTL', 'posShortNames'=>$goalie?'G':'F', 'rookie'=>true], 'cells'=>[['content'=>'-1'],['content'=>'2'],['content'=>'71:11']]]]];
+            'tableHeader'=>['cells'=>$headers], 'statsTable'=>[['scorer'=>['scorerId'=>$goalie?'goalie':'skater', 'name'=>'Test Player', 'teamShortName'=>'MTL', 'posShortNames'=>$goalie?'G':'F', 'rookie'=>true], 'cells'=>[['content'=>'-1'],['content'=>'2'],['content'=>$tracked?'3':'71:11']]]]];
         $result = [];
         foreach ($pages as $page) {
             $row = $data;
@@ -189,7 +190,10 @@ $parser = new FixtureProjectionSource;
 $parsed = $parser->actual('2026-10-27','2026-11-03');
 checkProjection(count($parsed) === 2 && $parsed['goalie']['gp'] === 2, 'Collect skater and goalie GP separately.');
 $details=$parser->seasonActual('2026-10-27','2026-11-03');
-checkProjection($details['skater']['rookie']===true && $details['skater']['stats']['TOI']==='71:11' && $details['goalie']['position']==='G', 'Capture Fantrax metadata, official rookie flags and complete stat columns.');
+checkProjection($details['skater']['stats']['SHG']==='3' && $details['skater']['rookie']===true && $details['skater']['stats']['TOI']==='71:11' && $details['goalie']['position']==='G', 'Capture Fantrax metadata, official rookie flags and complete stat columns.');
+$parser->mode = 'shg';
+rejectsProjection(fn()=>$parser->seasonActual('2026-10-27','2026-11-03'), 'Reject a missing tracked SHG column rather than publish false zeroes.');
+$parser->mode = '';
 checkProjection(!isset($parser->actual('2026-10-27','2026-11-03')['skater']['stats']), 'Keep rolling window payloads small after season collection.');
 foreach (['date','gp','partial'] as $mode) {
     $parser->mode = $mode;
