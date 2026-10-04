@@ -16,6 +16,14 @@ foreach(['skater'=>['GP'=>'Games played','G'=>'Goals','A'=>'Assists','TOI'=>'Tim
 for($i=1;$i<=65;$i++) DB::table('season_player_stats')->insert(['player_id'=>'p'.$i,'season_id'=>'2026-27','player_name'=>$i===1?'Player <unsafe>':'Player '.str_pad($i,2,'0',STR_PAD_LEFT),'nhl_team'=>'MTL','position'=>$i>60?'G':($i%2?'F':'D'),'rookie'=>$i%3===0,'season_fpts'=>100-$i,'season_gp'=>10,'season_fpts_per_game'=>(100-$i)/10,'stats_json'=>json_encode(['G'=>'2','A'=>'5','TOI'=>$i===1?'71:11':'10:00','W'=>'3','SV%'=>'.925']),'stats_through'=>'2026-10-04','refreshed_at'=>now()]);
 $projection=['player_id'=>'p1','as_of_date'=>'2026-10-04','window_end_date'=>'2026-10-04','projected_fpts_per_game'=>6.25,'refreshed_at'=>now()];foreach([7,14,21] as $days){$projection['gp_'.$days.'d']=0;$projection['fpts_'.$days.'d']=0;$projection['fpts_per_game_'.$days.'d']=0;}DB::table('player_projections')->insert($projection);
 foreach([['2026-10-03','old','Old owner','p2'],['2026-10-04','alpha','Alpha','p1'],['2026-10-04','beta','Beta','p1']] as [$date,$id,$name,$player]) DB::table('active_fantasy_rosters')->insert(['game_date'=>$date,'fantasy_team_id'=>$id,'fantasy_team_name'=>$name,'player_id'=>$player,'player_name'=>'Player','position'=>'F']);
+// Assignments use collector names/abbreviations, including reversed names and aliases.
+DB::table('season_player_stats')->where('player_id','p3')->update(['nhl_team'=>'SJS']);
+for($i=1;$i<=35;$i++) {
+ $name=$i===1?'Player <unsafe>':($i===3?'03, Player':'Player '.str_pad($i,2,'0',STR_PAD_LEFT));
+ $team=$i===3?'SJ':'MTL';
+ DB::table('active_line_combinations')->insert(['team'=>$team,'player_name'=>$name,'position_group'=>$i%2?'F':'D','line_number'=>$i===2?2:1,'source_url'=>'https://example.com','last_update'=>now()]);
+ DB::table('active_pp_lines')->insert(['team'=>$team,'player_name'=>$name,'pp_unit'=>in_array($i,[2,4])?2:1,'source_url'=>'https://example.com','last_update'=>now()]);
+}
 $service=new SeasonPlayers;
 $d=$service->data(Request::create('/players'));
 verifySeason($d['positions']===['F','D']&&$d['players']->total()===60&&$d['players']->count()===25,'Defaults must show F/D only and 25 players.');
@@ -80,4 +88,20 @@ verifySeason(str_contains($betaHtml,'value="beta" selected')&&str_contains($beta
 verifySeason(str_contains($betaHtml,'class="player-team-logo"')&&str_contains($betaHtml,'width="32" height="32"')&&str_contains($betaHtml,'<span>Beta</span>'),'Team thumbnail must appear before the team name.');
 $betaMore=json_decode(seasonRequest('/players?team=beta&availability=taken&sort=G&direction=asc&page=2',true)->getContent(),true);
 verifySeason($betaMore['shown']===34&&$betaMore['total']===34&&substr_count($betaMore['html'],'data-player-id=')===9&&substr_count($betaMore['html'],'class="player-team-logo"')===9,'Filtered Show More must append the right players and their logos.');
-echo "Season players checks passed: defaults, full stats, rookies, positions, search, latest ownership, MyProj, escaped SSR, 25-row pagination, full-dataset sorting, requested column order, current team/availability filters, thumbnails and admin cards.\n";
+// Filter across the full data set, before sorting/pagination, and preserve every control.
+$line=$service->data(Request::create('/players?line=1&pp=1&team=beta&availability=taken&sort=G&direction=asc'));
+verifySeason($line['players']->total()===33&&$line['players']->count()===25&&$line['players']->getCollection()->every(fn($p)=>(int)$p->line_number===1&&(int)$p->pp_unit===1),'Line/PP filters must combine before pagination and normalize names/team aliases.');
+verifySeason(str_contains($line['players']->nextPageUrl(),'line=1')&&str_contains($line['players']->nextPageUrl(),'pp=1'),'Show More lost line/PP filters.');
+$lineMore=json_decode(seasonRequest('/players?line=1&pp=1&team=beta&availability=taken&sort=G&direction=asc&page=2',true)->getContent(),true);
+verifySeason($lineMore['total']===33&&$lineMore['shown']===33&&substr_count($lineMore['html'],'data-player-id=')===8,'Assignment pagination lost rows or added duplicates.');
+$pair=$service->data(Request::create('/players?positions=D&line=1&pp=2'));
+verifySeason($pair['players']->total()===1&&$pair['players'][0]->player_id==='p4','Defense pairs must use the D assignments.');
+$none=$service->data(Request::create('/players?positions=F,D,G&line=none&pp=none'));
+verifySeason($none['players']->total()===25&&$none['players']->getCollection()->every(fn($p)=>$p->position!=='G'&&$p->line_number===null&&$p->pp_unit===null),'No listed assignment filters must include unassigned skaters and exclude goalies.');
+$bad=$service->data(Request::create('/players?line=bad&pp=3'));verifySeason($bad['selectedLine']===''&&$bad['selectedPp']==='','Invalid assignment filters must fall back to All.');
+$advancedHtml=seasonRequest('/players?line=1&pp=1&rookies=1')->getContent();
+verifySeason(str_contains($advancedHtml,'class="player-advanced"  open')&&str_contains($advancedHtml,'id="season-player-line"')&&str_contains($advancedHtml,'id="season-player-pp"')&&str_contains($advancedHtml,'name="line" value="1"')&&str_contains($advancedHtml,'line=1&amp;pp=1'),'Active advanced filters must remain visible and survive search, sorting and positions.');
+verifySeason(preg_match('/class="player-name-link"[^>]*>[^<]+<span class="rookie-tag">Rookie<\/span><\/a>/', $advancedHtml),'Rookie sticker must be beside the name, not on the metadata line.');
+verifySeason(str_contains($html,'class="player-position-f"')&&str_contains($html,'class="player-position-d"')&&str_contains(seasonRequest('/players?positions=G')->getContent(),'class="player-position-g"'),'Every row must have its position shade, including goalie rows.');
+verifySeason(str_contains($html,'class="player-advanced" >')&&!str_contains($html,'class="player-advanced"  open'),'Advanced filters should start collapsed without active settings.');
+echo "Season players checks passed: defaults, full stats, positions, rookies, sorting, ownership, thumbnails, normalized line/PP filters, combined pagination, compact advanced controls and position shades.\n";
