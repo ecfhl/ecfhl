@@ -14,6 +14,7 @@ final class SeasonPlayers
 
     public function data(Request $request): array
     {
+        $ownedTeamId = $request->user()?->claim?->fantasy_team_id;
         $dataset = (string)$request->query('dataset', 'season');
         if (!isset(self::DATASETS[$dataset])) $dataset = 'season';
         $datasetLabel = self::DATASETS[$dataset];
@@ -107,7 +108,7 @@ final class SeasonPlayers
             'season'=>DB::table('season_player_stats')->max('stats_through'),
             default=>DB::table('player_projections')->max('window_end_date'),
         };
-        return compact('players', 'positions', 'rookies', 'search', 'columns', 'headers', 'sort', 'direction', 'teamOptions', 'selectedTeam', 'availability', 'selectedLine', 'selectedPp', 'dataset', 'datasetLabel', 'statsThrough');
+        return compact('players', 'positions', 'rookies', 'search', 'columns', 'headers', 'sort', 'direction', 'teamOptions', 'selectedTeam', 'availability', 'selectedLine', 'selectedPp', 'dataset', 'datasetLabel', 'statsThrough', 'ownedTeamId');
     }
 
     private function assignmentKey(?string $team, string $name): string

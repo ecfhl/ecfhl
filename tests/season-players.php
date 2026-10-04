@@ -151,4 +151,24 @@ verifySeason(str_contains($datasetHtml,'id="season-player-dataset"')&&str_contai
 verifySeason(str_contains($datasetHtml,'<col class="rank-col">')&&str_contains($datasetHtml,'class="player-frozen-rank"')&&str_contains($datasetHtml,'padding:6px 7px')&&str_contains($datasetHtml,'--player-stat-width:72px'),'Rank pane and compact table spacing missing.');
 $invalidDataset=$service->data(Request::create('/players?dataset=invalid&sort=rank'));verifySeason($invalidDataset['dataset']==='season'&&$invalidDataset['sort']==='fpts','Unknown dataset and positional rank sort must safely fall back.');
 $categoryFallback=$service->data(Request::create('/players?dataset=7d&sort=G'));verifySeason($categoryFallback['sort']==='fpts','A category sort must reset when it is unavailable in the new dataset.');
-echo "Season players checks passed: all five dataset values/sorts/filters, frozen ranks, compact panes, integer FPts, mobile logos and preserved Show More datasets.\n";
+// Ownership highlighting follows the signed-in account, never the selected team filter.
+$owner = new \App\Models\User(['name'=>'Beta owner']);
+$owner->setRelation('claim', new \App\Models\TeamClaim(['fantasy_team_id'=>'beta','team_name'=>'Beta']));
+\Illuminate\Support\Facades\Auth::guard()->setUser($owner);
+$ownedHtml=seasonRequest('/players?team=beta')->getContent();
+verifySeason(substr_count($ownedHtml,' player-on-my-team"')===25&&str_contains($ownedHtml,'legend-own'),'Signed-in team must highlight every owned player and show its legend.');
+$ownedMore=seasonRequest('/players?team=beta&page=2',true);
+$ownedJson=json_decode($ownedMore->getContent(),true);
+verifySeason(substr_count($ownedJson['html'],' player-on-my-team"')===9&&str_contains($ownedMore->headers->get('Cache-Control'),'no-store'),'Show More must preserve personalized row highlights without shared caching.');
+$otherHtml=seasonRequest('/players?team=gamma')->getContent();
+verifySeason(!str_contains($otherHtml,' player-on-my-team"'),'Selecting a different ECFHL team must not highlight that roster as your own.');
+verifySeason(str_contains($ownedHtml,'data-team-icon-viewer data-team-slug="beta" data-team-name="Beta"')&&str_contains($ownedHtml,'data-full-src="/team-icons/beta"'),'Player logos must open the full-size team viewer.');
+preg_match('/<nav class="mobile-primary-nav".*?<\/nav>/s',$ownedHtml,$mobileNav);
+verifySeason(str_contains($mobileNav[0],'mobile-nav-players active')&&!str_contains($mobileNav[0],'/daily-targets')&&str_contains($ownedHtml,'href="/daily-targets"'),'Players must replace the bottom Targets shortcut while Targets remains in the menu.');
+verifySeason(str_contains($ownedHtml,'id="team-icon-modal-title"')&&str_contains($ownedHtml,'id="team-icon-modal-view-team"')&&str_contains($ownedHtml,'/team-image-viewer.js?v=1'),'Shared titled viewer and View Team action missing.');
+$unclaimed = new \App\Models\User(['name'=>'Unclaimed']);$unclaimed->setRelation('claim',null);
+\Illuminate\Support\Facades\Auth::guard()->setUser($unclaimed);
+verifySeason(!str_contains(seasonRequest('/players')->getContent(),' player-on-my-team"'),'Unclaimed accounts must not highlight free agents.');
+\Illuminate\Support\Facades\Auth::guard()->forgetUser();
+verifySeason(!str_contains(seasonRequest('/players')->getContent(),' player-on-my-team"'),'Guests must not inherit an owner highlight.');
+echo "Season players checks passed: five datasets, ranks, compact panes, owner highlighting and private pagination, logo viewer and Players navigation.\n";

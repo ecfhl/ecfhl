@@ -10,7 +10,7 @@
   <div class="team-image-grid">
     @foreach($teams as $team)
       <section class="card team-image-card">
-        <button type="button" class="team-image-preview" data-team-icon-viewer data-team-slug="{{ $team->slug }}" title="View {{ $team->name }} image">
+        <button type="button" class="team-image-preview" data-team-icon-viewer data-team-slug="{{ $team->slug }}" data-team-name="{{ $team->name }}" title="View {{ $team->name }} image">
           <img src="{{ \App\Support\TeamImages::url($team->slug,160) }}" data-full-src="{{ \App\Support\TeamImages::url($team->slug) }}" loading="lazy" decoding="async" alt="{{ $team->name }}">
         </button>
         <div class="team-image-info">

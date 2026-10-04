@@ -36,7 +36,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
  .mobile-primary-nav .mobile-nav-live{background:#cf0020}
  .mobile-primary-nav .mobile-nav-team{background:#007d82}
  .mobile-primary-nav .mobile-nav-standings{background:#00699f}
- .mobile-primary-nav .mobile-nav-targets{background:#ffcc25;color:#231d08}
+ .mobile-primary-nav .mobile-nav-players{background:#ffcc25;color:#231d08}
  .mobile-primary-nav a.active{border-color:var(--text);box-shadow:0 0 0 1px var(--panel)}
  .mobile-primary-nav a:focus-visible{outline:3px solid var(--text);outline-offset:1px}
  .mobile-primary-nav a:active{filter:brightness(.9)}
@@ -103,7 +103,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
   <a class="mobile-nav-live {{ request()->is('teams/current')?'active':'' }}" href="/teams/current" data-loading-label="Live Scoring" @if(request()->is('teams/current')) aria-current="page" @endif><span class="mobile-nav-icon" aria-hidden="true">●</span><span class="mobile-nav-label">Live Scoring</span></a>
   <a id="mobile-my-team-nav-link" class="mobile-nav-team" data-my-team-link href="{{ auth()->user()?->claim ? '/teams/current/'.\Illuminate\Support\Str::slug(auth()->user()->claim->team_name) : '/account/claim-team' }}" data-loading-label="My Team"><span class="mobile-nav-icon" aria-hidden="true">★</span><span class="mobile-nav-label">My Team</span></a>
   <a class="mobile-nav-standings {{ request()->is('standings')?'active':'' }}" href="/standings" data-loading-label="Standings" @if(request()->is('standings')) aria-current="page" @endif><span class="mobile-nav-icon" aria-hidden="true">🏆</span><span class="mobile-nav-label">Standings</span></a>
-  <a class="mobile-nav-targets {{ request()->is('daily-targets')?'active':'' }}" href="/daily-targets" data-loading-label="Daily Targets" @if(request()->is('daily-targets')) aria-current="page" @endif><span class="mobile-nav-icon" aria-hidden="true">🎯</span><span class="mobile-nav-label">Daily Targets</span></a>
+  <a class="mobile-nav-players {{ request()->is('players')?'active':'' }}" href="/players" data-loading-label="Players" @if(request()->is('players')) aria-current="page" @endif><span class="mobile-nav-icon" aria-hidden="true">🏒</span><span class="mobile-nav-label">Players</span></a>
 </nav>
 <footer class="site-footer"><div class="shell footer-inner"><div><strong>ECFHL HISTORY</strong><br><span>2007–08 → present</span></div><div class="footer-right">Database-backed league archive</div></div></footer>
 <div id="navigation-loading" class="navigation-loading" hidden>
@@ -337,6 +337,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 <style>.header-actions{display:flex;align-items:center;gap:8px;margin-left:auto}.header-theme-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}@media(min-width:901px){.header-actions{order:3}.main-nav{order:2}.header-theme-toggle{margin-left:6px}}</style>
 <style>
 .score-up{color:#16834f!important}.score-down{color:#dc2626!important}.score-same{color:#111827!important}
+.team-logo-viewer{appearance:none;border:0;background:transparent;padding:0;margin:0;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;box-shadow:none}.team-viewer-logo-image{display:block;width:100%;height:100%;object-fit:inherit;border-radius:inherit}.team-logo-viewer:focus-visible{outline:2px solid #60a5fa;outline-offset:3px}
 .team-icon-uploader{appearance:none;border:0;background:transparent;padding:0;margin:0;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;border-radius:0;box-shadow:none}
 .team-icon-uploader:hover{filter:brightness(.96)}
 .team-icon-uploader:focus-visible{outline:2px solid #60a5fa;outline-offset:3px}
@@ -345,7 +346,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 .team-icon-modal.open{display:flex}
 .team-icon-modal-card{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;max-width:min(92vw,760px);max-height:88vh}
 .team-icon-modal-loader{display:none;width:46px;height:46px;border:4px solid rgba(255,255,255,.28);border-top-color:#fff;border-radius:50%;animation:team-icon-spin .75s linear infinite}.team-icon-modal.loading .team-icon-modal-loader{display:block}.team-icon-modal.loading .team-icon-modal-image{display:none}@keyframes team-icon-spin{to{transform:rotate(360deg)}}
-.team-icon-modal-image{display:block;max-width:100%;max-height:calc(88vh - 58px);width:auto;height:auto;border-radius:0;box-shadow:none;background:transparent}
+.team-icon-modal-image{display:block;max-width:100%;max-height:calc(88dvh - 150px);width:auto;height:auto;border-radius:0;box-shadow:none;background:transparent}
+.team-icon-modal-title{margin:0;color:#fff;text-align:center;font-size:clamp(18px,3vw,26px);line-height:1.2;overflow-wrap:anywhere;max-width:100%;padding:0 32px}.team-icon-modal-view-team{display:inline-flex;align-items:center;justify-content:center;background:#dfac31;color:#172033;text-decoration:none;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:800}.team-icon-modal-view-team:hover{background:#efbc41}.team-icon-modal-view-team[hidden]{display:none}
 .team-icon-modal-actions{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
 .team-icon-advisor-name{display:none;align-items:center;gap:7px}
 .team-icon-advisor-name.open{display:flex}
@@ -360,13 +362,15 @@ document.addEventListener('DOMContentLoaded',()=>{
 .team-icon-modal-close{position:absolute;top:-14px;right:-14px;width:38px;height:38px;border:0;border-radius:50%;background:#fff;color:#0f172a;font-size:24px;font-weight:900;line-height:1;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.28)}
 .team-icon-modal-close:hover{background:#f1f5f9}
 .team-icon-modal-close:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
-@media(max-width:700px){.team-icon-uploader img{width:40px;height:40px;border-radius:0.team-icon-modal{padding:16px}.team-icon-modal-close{top:-10px;right:-8px}}
+@media(max-width:700px){.team-icon-uploader img{width:40px;height:40px;border-radius:0}.team-icon-modal{padding:16px}.team-icon-modal-close{top:-10px;right:-8px}}
 </style>
-<div id="team-icon-modal" class="team-icon-modal" role="dialog" aria-modal="true" aria-label="Team icon preview" aria-hidden="true">
+<div id="team-icon-modal" class="team-icon-modal" role="dialog" aria-modal="true" aria-labelledby="team-icon-modal-title" aria-hidden="true" data-owned-team-slug="{{ auth()->user()?->claim ? \Illuminate\Support\Str::slug(auth()->user()->claim->team_name) : '' }}" data-is-admin="{{ auth()->user()?->is_admin ? '1' : '0' }}">
   <div class="team-icon-modal-card">
+    <h2 id="team-icon-modal-title" class="team-icon-modal-title">Team logo</h2>
     <div class="team-icon-modal-loader" role="status" aria-label="Loading full-size team logo"></div>
     <img id="team-icon-modal-image" class="team-icon-modal-image" alt="">
     <div class="team-icon-modal-actions">
+      <a id="team-icon-modal-view-team" class="team-icon-modal-view-team" hidden>View Team</a>
       @if(auth()->user()?->is_admin)<div id="team-icon-advisor-name" class="team-icon-advisor-name">
         <label class="team-icon-advisor-label" for="team-icon-advisor-input">First Name</label>
         <input id="team-icon-advisor-input" class="team-icon-advisor-input" type="text" maxlength="40" autocomplete="off">
@@ -379,155 +383,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     <button id="team-icon-modal-close" class="team-icon-modal-close" type="button" aria-label="Close team icon preview">×</button>
   </div>
 </div>
-<script>
-document.addEventListener('DOMContentLoaded',()=>{
-  const modal=document.getElementById('team-icon-modal');
-  const modalImage=document.getElementById('team-icon-modal-image');
-  const closeButton=document.getElementById('team-icon-modal-close');
-  const uploadButton=document.getElementById('team-icon-modal-upload');
-  const fileInput=document.getElementById('team-icon-modal-file');
-  const advisorNameRow=document.getElementById('team-icon-advisor-name');
-  const advisorNameInput=document.getElementById('team-icon-advisor-input');
-  const advisorNameSave=document.getElementById('team-icon-advisor-save');
-  const csrf=document.querySelector('meta[name="csrf-token"]')?.content||'';
-  const ownedTeamSlug=@json(auth()->user()?->claim ? \Illuminate\Support\Str::slug(auth()->user()->claim->team_name) : null);
-  const isAdmin=@json((bool)auth()->user()?->is_admin);
-  if(!modal||!modalImage||!closeButton||!fileInput)return;
-
-  let lastTrigger=null;
-  let activeSlug='';
-  let activeAdvisorKey='';
-
-  const closeModal=()=>{
-    modal.classList.remove('open','loading');
-    modal.setAttribute('aria-hidden','true');
-    document.body.style.removeProperty('overflow');
-    fileInput.value='';
-    fileInput.disabled=false;
-    if(uploadButton)uploadButton.hidden=true;
-    activeAdvisorKey='';
-    advisorNameRow?.classList.remove('open');
-    lastTrigger?.focus();
-  };
-
-  document.querySelectorAll('[data-team-icon-viewer]').forEach(button=>{
-    button.addEventListener('click',()=>{
-      const img=button.querySelector('img');
-      if(!img)return;
-      lastTrigger=button;
-      activeSlug=button.dataset.teamSlug||'';
-      activeAdvisorKey=button.dataset.advisorKey||'';
-      const fullSrc=img.dataset.fullSrc||img.currentSrc||img.src;
-      modal.classList.add('loading');
-      modalImage.removeAttribute('src');
-      modalImage.alt=img.alt||'Team icon';
-      modalImage.onload=()=>modal.classList.remove('loading');
-      modalImage.onerror=()=>modal.classList.remove('loading');
-      modalImage.src=fullSrc;
-      if(advisorNameRow&&advisorNameInput){
-        advisorNameInput.value='';
-        advisorNameRow.classList.remove('open');
-      }
-      if(activeAdvisorKey){
-        if(uploadButton)uploadButton.hidden=true;
-        fileInput.disabled=true;
-      }else{
-        const canChangeImage=!!activeSlug && (isAdmin || ownedTeamSlug===activeSlug);
-        if(uploadButton)uploadButton.hidden=!canChangeImage;
-        fileInput.disabled=!canChangeImage;
-      }
-      modal.classList.add('open');
-      modal.setAttribute('aria-hidden','false');
-      document.body.style.overflow='hidden';
-      closeButton.focus();
-    });
-  });
-
-  advisorNameSave?.addEventListener('click',async()=>{
-    if(advisorNameSave.disabled)return;
-    if(!activeAdvisorKey||!advisorNameInput)return;
-    const firstName=advisorNameInput.value.trim();
-    if(!firstName){
-      alert('First name is required.');
-      advisorNameInput.focus();
-      return;
-    }
-
-    advisorNameSave.disabled=true;
-    advisorNameSave.textContent='Saving...';
-    try{
-      const response=await fetch('/lineup-advisors/'+encodeURIComponent(activeAdvisorKey)+'/profile',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
-        body:JSON.stringify({first_name:firstName})
-      });
-      if(!response.ok){
-        let message='Could not save advisor name.';
-        try{const data=await response.json();message=data.message||message;}catch(e){}
-        throw new Error(message);
-      }
-      const data=await response.json();
-      const savedName=data.first_name||firstName;
-      document.querySelectorAll('[data-advisor-display-name="'+CSS.escape(activeAdvisorKey)+'"]').forEach(el=>el.textContent=savedName);
-      document.querySelectorAll('[data-team-icon-viewer][data-advisor-key="'+CSS.escape(activeAdvisorKey)+'"]').forEach(button=>{
-        button.dataset.advisorFirstName=savedName;
-        button.title='View '+savedName+' advisor image';
-        button.setAttribute('aria-label','View '+savedName+' Lineup Advisor image');
-        const img=button.querySelector('img');
-        if(img)img.alt=savedName+', Lineup Advisor';
-      });
-    }catch(error){
-      alert(error.message||'Could not save advisor name.');
-    }finally{
-      advisorNameSave.disabled=false;
-      advisorNameSave.textContent='Save';
-    }
-  });
-
-  uploadButton?.addEventListener('click',()=>fileInput.click());
-  fileInput.addEventListener('change',async()=>{
-    const file=fileInput.files?.[0];
-    if(!file||!activeSlug)return;
-    if(file.size>2*1024*1024){
-      alert('Team icon must be 2 MB or smaller.');
-      fileInput.value='';
-      return;
-    }
-
-    const form=new FormData();
-    form.append('image',file);
-    if(uploadButton)uploadButton.disabled=true;
-    if(uploadButton)uploadButton.textContent='Uploading...';
-
-    try{
-      const response=await fetch('/team-icons/'+encodeURIComponent(activeSlug),{
-        method:'POST',
-        headers:{'X-CSRF-TOKEN':csrf,'Accept':'application/json'},
-        body:form
-      });
-      if(!response.ok){
-        let message='Could not upload team icon.';
-        try{const data=await response.json();message=data.message||message;}catch(e){}
-        throw new Error(message);
-      }
-      const data=await response.json();
-      const freshUrl=(data.url||('/team-icons/'+activeSlug))+(String(data.url||'').includes('?')?'&':'?')+'t='+Date.now();
-      modalImage.src=freshUrl;
-      document.querySelectorAll('[data-team-icon-viewer][data-team-slug="'+CSS.escape(activeSlug)+'"] img').forEach(img=>{img.dataset.fullSrc=freshUrl;img.removeAttribute('srcset');img.src=data.thumbnail_url||('/team-icons/'+encodeURIComponent(activeSlug)+'/thumbnail?size=160&t='+Date.now());});
-    }catch(error){
-      alert(error.message||'Could not upload team icon.');
-    }finally{
-      if(uploadButton)uploadButton.disabled=false;
-      if(uploadButton)uploadButton.textContent='Change Image';
-      fileInput.value='';
-    }
-  });
-
-  closeButton.addEventListener('click',closeModal);
-  modal.addEventListener('click',event=>{if(event.target===modal)closeModal();});
-  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&modal.classList.contains('open'))closeModal();});
-});
-</script>
+<script src="/team-image-viewer.js?v=1" defer></script>
 @if(request()->is('daily-targets','teams/current/*'))
 <link rel="stylesheet" href="/goalie-watches.css?v=1">
 <script src="/goalie-watches.js?v=2" defer></script>

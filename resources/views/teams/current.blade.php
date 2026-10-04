@@ -60,7 +60,7 @@
               <a href="/teams/current/{{ $slug }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $liveMatchup['team_name'] }}</a>
             </div>
             <div class="team-live-body">
-              <img class="team-live-logo" src="{{ \App\Support\TeamImages::url($slug,160) }}" width="160" height="160" decoding="async" alt="{{ $liveMatchup['team_name'] }} team icon">
+              <button type="button" class="team-logo-viewer team-live-logo" data-team-icon-viewer data-team-slug="{{ $slug }}" data-team-name="{{ $liveMatchup['team_name'] }}" aria-label="View {{ $liveMatchup['team_name'] }} logo"><img class="team-viewer-logo-image" data-full-src="{{ \App\Support\TeamImages::url($slug) }}" src="{{ \App\Support\TeamImages::url($slug,160) }}" width="160" height="160" decoding="async" alt="{{ $liveMatchup['team_name'] }} team icon"></button>
               <div class="team-live-scores">
                 <span class="team-live-score team-live-today"><strong class="{{ $teamDayWinning?'winning':'' }}">{{ number_format($liveMatchup['team_today'],0) }}</strong><small>Today</small></span>
                 <span class="team-live-score team-live-weekly"><strong class="{{ $teamWeekWinning?'winning':'' }}">{{ number_format($liveMatchup['team_week'],0) }}</strong><small>Weekly</small></span>
@@ -77,7 +77,7 @@
                 <span class="team-live-score team-live-today"><strong class="{{ $oppDayWinning?'winning':'' }}">{{ number_format($liveMatchup['opponent_today'],0) }}</strong><small>Today</small></span>
                 <span class="team-live-score team-live-weekly"><strong class="{{ $oppWeekWinning?'winning':'' }}">{{ number_format($liveMatchup['opponent_week'],0) }}</strong><small>Weekly</small></span>
               </div>
-              <img class="team-live-logo" src="{{ \App\Support\TeamImages::url(\Illuminate\Support\Str::slug($liveMatchup['opponent_name']),160) }}" width="160" height="160" decoding="async" alt="{{ $liveMatchup['opponent_name'] }} team icon">
+              <button type="button" class="team-logo-viewer team-live-logo" data-team-icon-viewer data-team-slug="{{ \Illuminate\Support\Str::slug($liveMatchup['opponent_name']) }}" data-team-name="{{ $liveMatchup['opponent_name'] }}" aria-label="View {{ $liveMatchup['opponent_name'] }} logo"><img class="team-viewer-logo-image" data-full-src="{{ \App\Support\TeamImages::url(\Illuminate\Support\Str::slug($liveMatchup['opponent_name'])) }}" src="{{ \App\Support\TeamImages::url(\Illuminate\Support\Str::slug($liveMatchup['opponent_name']),160) }}" width="160" height="160" decoding="async" alt="{{ $liveMatchup['opponent_name'] }} team icon"></button>
             </div>
           </div>
           <span class="team-live-chevron">▾</span>
@@ -222,7 +222,7 @@
           @if($nextWeekDates)<span class="subtle">{{ $nextWeekDates }}</span>@endif
         </div>
         <div class="team-next-opponent-team">
-          <img class="team-next-opponent-logo" src="{{ \App\Support\TeamImages::url(\Illuminate\Support\Str::slug($nextWeekOpponent['opponent']),160) }}" width="160" height="160" loading="lazy" decoding="async" alt="{{ $nextWeekOpponent['opponent'] }} team icon">
+          <button type="button" class="team-logo-viewer team-next-opponent-logo" data-team-icon-viewer data-team-slug="{{ \Illuminate\Support\Str::slug($nextWeekOpponent['opponent']) }}" data-team-name="{{ $nextWeekOpponent['opponent'] }}" aria-label="View {{ $nextWeekOpponent['opponent'] }} logo"><img class="team-viewer-logo-image" data-full-src="{{ \App\Support\TeamImages::url(\Illuminate\Support\Str::slug($nextWeekOpponent['opponent'])) }}" src="{{ \App\Support\TeamImages::url(\Illuminate\Support\Str::slug($nextWeekOpponent['opponent']),160) }}" width="160" height="160" loading="lazy" decoding="async" alt="{{ $nextWeekOpponent['opponent'] }} team icon"></button>
           <span class="team-next-opponent-vs">{{ $nextWeekOpponent['side']==='HOME' ? 'vs' : '@' }}</span>
           <strong>{{ $nextWeekOpponent['opponent'] }}</strong>
         </div>

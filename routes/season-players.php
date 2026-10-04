@@ -11,6 +11,6 @@ Route::get('/players', function (Request $request, SeasonPlayers $service) {
         'next_url'=>$data['players']->nextPageUrl(),
         'shown'=>$data['players']->lastItem() ?? 0,
         'total'=>$data['players']->total(),
-    ]);
+    ])->header('Cache-Control', 'private, no-store');
     return view('season-players', $data);
 });

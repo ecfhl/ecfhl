@@ -46,6 +46,7 @@ verifyOwner(str_contains($response->getContent(),'/submit-guard.js'),'Shared sub
 verifyOwner(!str_contains($response->getContent(),'id="guest-signup-dialog"'),'Signup page must not show a signup invitation');
 verifyOwner(str_contains($response->getContent(),'class="nav-create-account"'),'Guest menu needs a prominent signup action');
 verifyOwner(str_contains($response->getContent(),'/team-icons/alpha'),'Team logo absent');
+verifyOwner(str_contains($response->getContent(),'data-team-icon-viewer data-team-slug="alpha" data-team-name="Alpha"'),'Signup team logos must open the shared team viewer.');
 verifyOwner(!str_contains($response->getContent(),'value="lone"'),'Reserved team offered publicly');
 verifyOwner(!str_contains($response->getContent(),'href="/admin"'),'Admin menu exposed to guest');
 verifyOwner(ownerRequest('GET','/admin',[],$guest)->getStatusCode()===401,'Guest admin access allowed');
@@ -59,6 +60,7 @@ verifyOwner($response->getStatusCode()===302,'Signup failed: '.$response->getCon
 $a=User::where('email','a@example.org')->first();verifyOwner($a && $a->claim->fantasy_team_id==='a' && !$a->is_admin,'Signup/team/admin state incorrect');
 verifyOwner($a->password!=='strong-example-a','Password was not hashed');
 $response=ownerRequest('GET','/account',[],$alpha,['HTTP_ACCEPT'=>'text/html']);verifyOwner($response->getStatusCode()===200,'Account render failed: '.$response->getContent());
+verifyOwner(str_contains($response->getContent(),'data-team-icon-viewer data-team-slug="alpha" data-team-name="Alpha"')&&str_contains($response->getContent(),'data-full-src="/team-icons/alpha"'),'Account team logo must open its full-size viewer.');
 verifyOwner(str_contains($response->headers->get('Cache-Control'),'no-store'),'Private account page can be cached');
 verifyOwner(!str_contains($response->getContent(),'id="guest-signup-dialog"')&&!str_contains($response->getContent(),'class="nav-create-account"'),'Signed-in owner received signup prompts');
 // Enable real CSRF middleware for expired forms and repeats after successful sign-in.
