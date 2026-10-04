@@ -130,7 +130,7 @@
       @endphp
 
       <details class="matchup-card" data-matchup-key="{{ ($away['id'] ?? $away['slug'] ?? 'away') }}::{{ ($home['id'] ?? $home['slug'] ?? 'home') }}" data-away-team-id="{{ $away['id'] ?? '' }}" data-home-team-id="{{ $home['id'] ?? '' }}">
-        <summary class="matchup-summary"><div class="matchup-side-header matchup-side-header-away">AWAY</div><div class="matchup-side-header matchup-side-header-home">HOME</div>
+        <summary class="matchup-summary">
           <div class="matchup-summary-side matchup-summary-away">
             @if($away)
               <div class="matchup-summary-name">
@@ -490,6 +490,8 @@ html[data-theme="dark"] .matchup-summary-side .matchup-projected-score{backgroun
   .matchup-stat-row{padding-top:0!important}
   .matchup-summary-side .matchup-projected-score{margin-top:2px!important;padding:2px 6px}
 }
+
+@media(max-width:800px){.matchup-summary-side{padding-top:3px!important}.matchup-summary-score,.matchup-summary-away .matchup-summary-score,.matchup-summary-home .matchup-summary-score{top:33px!important}.matchup-summary-vs{margin-top:53px}.matchup-side-header{display:none!important}}
 </style>
 
 <script>
