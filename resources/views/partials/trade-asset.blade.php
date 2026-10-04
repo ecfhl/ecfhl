@@ -28,7 +28,7 @@
     $fantraxUrl = (!$isPick && !$contract && !empty($season))
         ? \App\Support\TradeContracts::fantraxSearchUrl($season, $player)
         : null;
-    $playerUrl = !$isPick ? '/players?q='.urlencode(trim($player)).'#player-results' : null;
+    $playerUrl = !$isPick ? '/players/history?q='.urlencode(trim($player)).'#player-results' : null;
     $color = in_array($contract, ['MINOR','MINORS','TBD'], true) ? 'orange' : (in_array($contract, ['2 YEARS','3 YEARS','4 YEARS'], true) ? 'blue' : 'gray');
 @endphp
 

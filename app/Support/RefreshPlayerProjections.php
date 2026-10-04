@@ -4,6 +4,7 @@ namespace App\Support;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 
 final class RefreshPlayerProjections
@@ -28,7 +29,7 @@ final class RefreshPlayerProjections
         $windows = [];
         $cache = [];
         // Pull the current Fantrax season totals as part of this daily job.
-        $seasonActual = $seasonStart <= $end ? $this->source->actual($seasonStart, $end) : [];
+        $seasonActual = $seasonStart <= $end ? $this->source->seasonActual($seasonStart, $end) : [];
         if ($seasonStart <= $end) $cache[$seasonStart] = $seasonActual;
         if ($seasonStart <= $end) foreach ($baseline as $player) if (!isset($seasonActual[$player['player_id']])) throw new RuntimeException('Missing season actual stats for baseline player '.$player['player_id'].'.');
         if ($log) $log('Season actual FPts/GP collected through '.$end.'.');
@@ -66,12 +67,37 @@ final class RefreshPlayerProjections
             ], $weights);
             $rows[] = $row;
         }
-        DB::transaction(function () use ($capture, $baseline, $rows, $now) {
+        $seasonRows = [];
+        $columns = [];
+        $baselineById = array_column($baseline, null, 'player_id');
+        foreach ($seasonActual as $id => $stat) {
+            $metadata = $baselineById[$id] ?? [];
+            $name = $stat['player_name'] ?? $metadata['player_name'] ?? '';
+            if ($name === '') continue;
+            $position = strtoupper($stat['position'] ?? $metadata['position'] ?? '');
+            $position = preg_match('/\bG\b/', $position) ? 'G' : (preg_match('/\bD\b/', $position) ? 'D' : 'F');
+            $group = $position === 'G' ? 'goalie' : 'skater';
+            $columns[$group] = array_merge($columns[$group] ?? [], $stat['stat_columns'] ?? []);
+            $seasonRows[] = ['player_id'=>(string)$id, 'season_id'=>FantraxProjectionSource::SEASON_ID, 'player_name'=>$name,
+                'nhl_team'=>$stat['nhl_team'] ?? $metadata['nhl_team'] ?? null, 'position'=>$position, 'rookie'=>$stat['rookie'] ?? null,
+                'season_fpts'=>$stat['fpts'], 'season_gp'=>$stat['gp'], 'season_fpts_per_game'=>ProjectionMath::rate((float)$stat['fpts'], (int)$stat['gp']),
+                'stats_json'=>json_encode($stat['stats'] ?? [], JSON_THROW_ON_ERROR), 'stats_through'=>$end, 'refreshed_at'=>$now];
+        }
+        $storeSeason = Schema::hasTable('season_player_stats') && $seasonRows;
+        DB::transaction(function () use ($capture, $baseline, $rows, $now, $storeSeason, $seasonRows, $columns) {
             if ($capture) foreach (array_chunk($baseline, 100) as $batch) DB::table('player_projection_baselines')->insert(array_map(fn($r)=>$r + ['captured_at'=>$now], $batch));
             DB::table('player_projections')->delete();
             foreach (array_chunk($rows, 100) as $batch) DB::table('player_projections')->insert($batch);
+            if ($storeSeason) {
+                DB::table('season_player_stats')->delete();
+                foreach (array_chunk($seasonRows, 100) as $batch) DB::table('season_player_stats')->insert($batch);
+                DB::table('season_player_stat_columns')->delete();
+                foreach ($columns as $group => $labels) DB::table('season_player_stat_columns')->insert(['group'=>$group, 'columns_json'=>json_encode($labels, JSON_THROW_ON_ERROR)]);
+            }
         });
         PublicData::forget('player-projections');
+        PublicData::forget('season-player-columns');
+        if ($log && $storeSeason) $log(count($seasonRows).' complete season player stat lines stored, including Fantrax rookie flags.');
         if ($log) $log('1000 player projections regenerated for '.$date.'. Fantrax baseline '.($capture ? 'captured' : 'unchanged').'.');
         return count($rows);
     }

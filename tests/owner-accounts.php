@@ -91,6 +91,8 @@ verifyOwner($response->getStatusCode()===302 && User::where('email','dan@example
 verifyOwner(ownerRequest('GET','/account/admin-invite?token='.$configInvite,[],$guest)->getStatusCode()===410,'Admin invitation reusable after activation');
 $response=ownerRequest('GET','/account',[],$admin,['HTTP_ACCEPT'=>'text/html']);verifyOwner(str_contains($response->getContent(),'href="/admin"'),'Administrator menu absent');
 verifyOwner(str_contains($response->getContent(),'href="/admin/projections"'),'Projection weights link missing from administrator menu');
+$landing=ownerRequest('GET','/admin',[],$admin,['HTTP_ACCEPT'=>'text/html']);
+verifyOwner($landing->getStatusCode()===200 && substr_count($landing->getContent(),'class="card admin-menu-card"')===4, 'Admin must open a card menu instead of redirecting to Advisors');
 $response=ownerRequest('GET','/admin/projections',[],$admin,['HTTP_ACCEPT'=>'text/html']);
 verifyOwner($response->getStatusCode()===200 && str_contains($response->getContent(),'Season to date') && str_contains($response->getContent(),'units[21d]'),'Projection settings page failed to render');
 $response=ownerRequest('POST','/admin/projections',['weights'=>['fantrax'=>20,'season'=>30,'7d'=>25,'14d'=>15,'21d'=>10]],$admin);
@@ -231,6 +233,7 @@ verifyOwner(ownerRequest('POST','/notifications/goalie',['key'=>'CAR|confirmedst
 $response=ownerRequest('GET','/daily-targets?date='.$day,[],$alpha,['HTTP_ACCEPT'=>'text/html']);
 verifyOwner($response->getStatusCode()===200&&str_contains($response->getContent(),'data-goalie-watch="TOR|zearly"'),'Daily Targets bell not rendered: '.substr(strip_tags($response->getContent()),0,1000));
 verifyOwner(!str_contains($response->getContent(),'data-goalie-watch="CAR|confirmedstarter"'),'Confirmed goalie received a bell');
+verifyOwner(!str_contains($response->getContent(),'class="tips-refresh-status'), 'Daily Targets collector footer link must be removed');
 ownerRequest('GET','/notifications',[],$guest,['HTTP_ACCEPT'=>'text/html']);
 verifyOwner(str_contains(view('layouts.app')->render(),'id="guest-signup-dialog"'),'Signed-out browsing needs a signup invitation');
 verifyOwner(str_contains(view('layouts.app')->render(),'Already have an account?'),'Signup invitation must include sign-in');

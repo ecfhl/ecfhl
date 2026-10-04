@@ -21,6 +21,7 @@ RUN php tests/performance.php
 RUN php tests/live-scoring.php
 RUN php tests/standings.php
 RUN php tests/player-projections.php
+RUN php tests/season-players.php
 COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/zz-ecfhl.conf
 COPY docker/php.ini /usr/local/etc/php/conf.d/zz-ecfhl.ini
 

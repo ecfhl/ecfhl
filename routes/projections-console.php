@@ -6,7 +6,11 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('ecfhl:refresh-player-projections {--force : Regenerate even if already refreshed today}', function (RefreshPlayerProjections $refresh) {
+Artisan::command('ecfhl:refresh-player-projections {--force : Regenerate even if already refreshed today} {--ensure-season-stats : Collect complete season stats only if missing}', function (RefreshPlayerProjections $refresh) {
+    if ($this->option('ensure-season-stats') && DB::table('season_player_stat_columns')->count() > 0) {
+        $this->line('Complete season player stats already available.');
+        return 0;
+    }
     $path = storage_path('app/player-projections.lock');
     if (!is_dir(dirname($path))) mkdir(dirname($path), 0775, true);
     $lock = fopen($path, 'c');
@@ -18,7 +22,7 @@ Artisan::command('ecfhl:refresh-player-projections {--force : Regenerate even if
     $messages = [];
     $ok = false;
     try {
-        $refresh->refresh(CarbonImmutable::now('America/Halifax'), (bool)$this->option('force'), function ($message) use (&$messages) { $messages[] = $message; $this->line($message); });
+        $refresh->refresh(CarbonImmutable::now('America/Halifax'), (bool)($this->option('force') || $this->option('ensure-season-stats')), function ($message) use (&$messages) { $messages[] = $message; $this->line($message); });
         $ok = true;
         return 0;
     } catch (\Throwable $e) {

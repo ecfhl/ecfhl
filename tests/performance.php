@@ -34,8 +34,8 @@ DB::enableQueryLog();
 $optimized=class_exists(PublicData::class);
 $cacheDirectory=sys_get_temp_dir().'/ecfhl-performance-'.getmypid();
 config(['cache.stores.file.path'=>$cacheDirectory.'/cache','performance.public_data_cache'=>$optimized]);
-$budgets=['/'=>5,'/seasons'=>5,'/teams'=>5,'/trades'=>5,'/draft'=>5,'/players?q=Sidney'=>3,'/rules'=>2,'/register'=>6];
-foreach(['/','/seasons','/teams','/trades','/draft','/players?q=Sidney','/rules','/register'] as $path){
+$budgets=['/'=>5,'/seasons'=>5,'/teams'=>5,'/trades'=>5,'/draft'=>5,'/players/history?q=Sidney'=>3,'/rules'=>2,'/register'=>6];
+foreach(['/','/seasons','/teams','/trades','/draft','/players/history?q=Sidney','/rules','/register'] as $path){
  $counts=[];
  for($run=0;$run<2;$run++){
   $app->forgetScopedInstances();DB::flushQueryLog();$request=Request::create($path.(str_contains($path,'?')?'&':'?').'type=all');

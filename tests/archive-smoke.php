@@ -29,7 +29,7 @@ Artisan::call('migrate',['--force'=>true]);
 function check($condition,$message){if(!$condition)throw new RuntimeException($message);}
 $kernel=$app->make(Illuminate\Contracts\Http\Kernel::class);
 foreach(['h2h','total','all','none'] as $mode){
- foreach(['/','/seasons','/teams','/teams/F001','/trades','/draft','/prizes','/players?q=Sidney','/rules'] as $path){
+ foreach(['/','/seasons','/teams','/teams/F001','/trades','/draft','/prizes','/players/history?q=Sidney','/rules'] as $path){
   $app->forgetScopedInstances();
   $request=Request::create($path.(str_contains($path,'?')?'&':'?').'type='.$mode);
   $response=$kernel->handle($request);

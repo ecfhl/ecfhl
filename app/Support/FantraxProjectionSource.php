@@ -13,6 +13,14 @@ class FantraxProjectionSource
     public const SEASON_ID = '2026-27';
     public const PROJECTION = 'PROJECTION_0_31n_SEASON';
     public const ACTUAL = 'SEASON_31n_BY_DATE';
+    private bool $seasonDetails = false;
+
+    public function seasonActual(string $start, string $end): array
+    {
+        $this->seasonDetails = true;
+        try { return $this->actual($start, $end); }
+        finally { $this->seasonDetails = false; }
+    }
 
     public function baseline(): array
     {
@@ -73,7 +81,14 @@ class FantraxProjectionSource
                         if (isset($groupSeen[$row['player_id']])) throw new RuntimeException('Duplicate player in Fantrax actual-stat pagination.');
                         $groupSeen[$row['player_id']] = true;
                         // Fantrax lists a few dual-position players in both groups.
-                        if (isset($rows[$row['player_id']]) && $rows[$row['player_id']] !== $row) throw new RuntimeException('Conflicting skater/goalie stats for '.$row['player_id'].'.');
+                        if (isset($rows[$row['player_id']])) {
+                            $prior = $rows[$row['player_id']];
+                            if ($prior['fpts'] !== $row['fpts'] || $prior['gp'] !== $row['gp']) throw new RuntimeException('Conflicting skater/goalie stats for '.$row['player_id'].'.');
+                            if ($this->seasonDetails) {
+                                $row['stats'] = array_merge($prior['stats'], $row['stats']);
+                                $row['stat_columns'] = array_merge($prior['stat_columns'], $row['stat_columns']);
+                            }
+                        }
                         $rows[$row['player_id']] = $row;
                         $count++;
                     }
@@ -128,8 +143,10 @@ class FantraxProjectionSource
     private function parse(array $data, bool $actual): array
     {
         $columns = [];
+        $statColumns = [];
         foreach ($data['tableHeader']['cells'] as $i => $column) {
             foreach (['key', 'shortName'] as $field) if (isset($column[$field])) $columns[$column[$field]] = $i;
+            if (isset($column['scipId']) && !empty($column['shortName'])) $statColumns[$column['shortName']] = ['index'=>$i, 'name'=>$column['name'] ?? $column['shortName']];
         }
         foreach ($actual ? ['fpts', 'GP'] : ['fpts', 'fptsPerGame'] as $column) if (!isset($columns[$column])) throw new RuntimeException('Missing Fantrax projection column: '.$column);
         $rows = [];
@@ -142,7 +159,17 @@ class FantraxProjectionSource
             if ($actual) {
                 $games = $this->number($cell('GP'));
                 if ($games < 0 || floor($games) !== $games) throw new RuntimeException('Invalid Fantrax games played.');
-                $rows[] = ['player_id'=>$id, 'fpts'=>$points, 'gp'=>(int)$games];
+                $row = ['player_id'=>$id, 'fpts'=>$points, 'gp'=>(int)$games];
+                if ($this->seasonDetails) {
+                    $row += ['player_name'=>(string)($scorer['name'] ?? ''), 'nhl_team'=>$scorer['teamShortName'] ?? null,
+                        'position'=>(string)($scorer['posShortNames'] ?? ''), 'rookie'=>isset($scorer['rookie']) ? (bool)$scorer['rookie'] : null,
+                        'stats'=>[], 'stat_columns'=>[]];
+                    foreach ($statColumns as $label => $column) {
+                        $row['stats'][$label] = trim(html_entity_decode(strip_tags((string)($entry['cells'][$column['index']]['content'] ?? ''))));
+                        $row['stat_columns'][$label] = $column['name'];
+                    }
+                }
+                $rows[] = $row;
             } else {
                 $position = (string)($scorer['posShortNames'] ?? '');
                 $rows[] = ['player_id'=>$id, 'player_name'=>(string)$scorer['name'], 'nhl_team'=>$scorer['teamShortName'] ?? null,

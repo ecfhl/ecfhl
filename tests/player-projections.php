@@ -27,6 +27,7 @@ function rejectsProjection(callable $call, string $message): void
 
 foreach (['2026_09_29_000001_create_active_daily_players_table.php', '2026_09_29_000002_create_active_starting_goalies_table.php', '2026_09_29_000004_create_active_available_goalies_table.php', '2026_10_03_140000_create_player_projections.php'] as $name) (require __DIR__.'/../database/migrations/'.$name)->up();
 (require __DIR__.'/../database/migrations/2026_10_03_210000_add_season_actuals_to_player_projections.php')->up();
+(require __DIR__.'/../database/migrations/2026_10_04_210000_create_season_player_stats.php')->up();
 
 class TestProjectionSource extends FantraxProjectionSource
 {
@@ -51,6 +52,7 @@ class TestProjectionSource extends FantraxProjectionSource
         for ($i=1; $i<=1000; $i++) $rows['p'.$i] = ['player_id'=>'p'.$i, 'fpts'=>12, 'gp'=>3];
         // Zero-game and negative-point rates are intentionally meaningful inputs.
         $rows['p3'] = ['fpts'=>0, 'gp'=>0];
+        $rows['p5'] += ['player_name'=>'Player 5', 'position'=>'F', 'nhl_team'=>'MTL', 'rookie'=>true, 'stats'=>['G'=>'3','TOI'=>'71:11'], 'stat_columns'=>['G'=>'Goals','TOI'=>'Time on ice']];
         $rows['p4'] = ['fpts'=>-4, 'gp'=>2];
         if ($this->missing) unset($rows['p1000']);
         return $rows;
@@ -66,6 +68,8 @@ checkProjection($source->calls === [['2026-09-29','2026-11-03'], ['2026-10-28','
 checkProjection((float)DB::table('player_projections')->where('player_id','p5')->value('projected_fpts_per_game') === 3.0, 'Apply the 50/25/15/10 weights.');
 checkProjection((float)DB::table('player_projections')->where('player_id','p3')->value('projected_fpts_per_game') === 1.0, 'Zero-game windows contribute zero while the baseline keeps its 50% weight.');
 checkProjection((float)DB::table('player_projections')->where('player_id','p4')->value('projected_fpts_per_game') === 0.0, 'Preserve negative points.');
+checkProjection(DB::table('season_player_stats')->count()===1000 && (bool)DB::table('season_player_stats')->where('player_id','p5')->value('rookie'), 'Store full season stat rows and rookie flags atomically.');
+checkProjection(json_decode(DB::table('season_player_stats')->where('player_id','p5')->value('stats_json'),true)['TOI']==='71:11', 'Preserve source stat formatting.');
 $frozen = DB::table('player_projection_baselines')->orderBy('source_rank')->get()->toJson();
 $before = DB::table('player_projections')->orderBy('player_id')->get()->toJson();
 $refresh->refresh($date);
@@ -74,9 +78,11 @@ $refresh->refresh($date, true);
 checkProjection(count($source->calls) === 8 && $source->captures === 1, 'Manual regeneration only refreshes actual windows.');
 checkProjection(DB::table('player_projection_baselines')->orderBy('source_rank')->get()->toJson() === $frozen, 'Frozen Fantrax baseline remains byte-for-byte unchanged.');
 $before = DB::table('player_projections')->orderBy('player_id')->get()->toJson();
+$seasonBefore = DB::table('season_player_stats')->orderBy('player_id')->get()->toJson();
 $source->broken = true;
 rejectsProjection(fn()=>$refresh->refresh($date->addDay()), 'Propagate a source failure.');
 checkProjection(DB::table('player_projections')->orderBy('player_id')->get()->toJson() === $before, 'A failed source must preserve all stored projections.');
+checkProjection(DB::table('season_player_stats')->orderBy('player_id')->get()->toJson()===$seasonBefore, 'Source failures must preserve full season stats.');
 $source->broken = false; $source->missing = true;
 rejectsProjection(fn()=>$refresh->refresh($date->addDay()), 'Reject a missing baseline player instead of silently zeroing it.');
 checkProjection(DB::table('player_projections')->orderBy('player_id')->get()->toJson() === $before, 'An incomplete dataset must preserve all stored projections.');
@@ -163,12 +169,12 @@ class FixtureProjectionSource extends FantraxProjectionSource
         $this->batches[] = $pages;
         $goalie = $args['positionOrGroup'] === 'POS_201';
         $start = $this->mode === 'date' ? '2026-10-26' : $args['startDate'];
-        $headers = [['key'=>'fpts'], ['shortName'=>$this->mode === 'gp' ? 'OTHER' : 'GP']];
+        $headers = [['key'=>'fpts'], ['shortName'=>$this->mode === 'gp' ? 'OTHER' : 'GP', 'scipId'=>'gp', 'name'=>'Games Played'], ['shortName'=>'TOI','scipId'=>'toi','name'=>'Time on ice']];
         $data = ['displayedStatusOrTeam'=>'ALL','displayedPosOrGroup'=>$args['positionOrGroup'], 'displayedSelections'=>['datePlaying'=>'ALL','searchName'=>'', 'displayedSeasonOrProjection'=>['code'=>self::ACTUAL],
             'displayedStartDate'=>CarbonImmutable::parse($start, 'America/New_York')->getTimestampMs(),
             'displayedEndDate'=>CarbonImmutable::parse($args['endDate'], 'America/New_York')->getTimestampMs()],
             'paginatedResultSet'=>['totalNumPages'=>$this->pageCount,'pageNumber'=>1,'totalNumResults'=>$this->mode === 'partial' ? $this->pageCount + 1 : $this->pageCount],
-            'tableHeader'=>['cells'=>$headers], 'statsTable'=>[['scorer'=>['scorerId'=>$goalie?'goalie':'skater'], 'cells'=>[['content'=>'-1'],['content'=>'2']]]]];
+            'tableHeader'=>['cells'=>$headers], 'statsTable'=>[['scorer'=>['scorerId'=>$goalie?'goalie':'skater', 'name'=>'Test Player', 'teamShortName'=>'MTL', 'posShortNames'=>$goalie?'G':'F', 'rookie'=>true], 'cells'=>[['content'=>'-1'],['content'=>'2'],['content'=>'71:11']]]]];
         $result = [];
         foreach ($pages as $page) {
             $row = $data;
@@ -182,6 +188,9 @@ class FixtureProjectionSource extends FantraxProjectionSource
 $parser = new FixtureProjectionSource;
 $parsed = $parser->actual('2026-10-27','2026-11-03');
 checkProjection(count($parsed) === 2 && $parsed['goalie']['gp'] === 2, 'Collect skater and goalie GP separately.');
+$details=$parser->seasonActual('2026-10-27','2026-11-03');
+checkProjection($details['skater']['rookie']===true && $details['skater']['stats']['TOI']==='71:11' && $details['goalie']['position']==='G', 'Capture Fantrax metadata, official rookie flags and complete stat columns.');
+checkProjection(!isset($parser->actual('2026-10-27','2026-11-03')['skater']['stats']), 'Keep rolling window payloads small after season collection.');
 foreach (['date','gp','partial'] as $mode) {
     $parser->mode = $mode;
     rejectsProjection(fn()=>$parser->actual('2026-10-27','2026-11-03'), 'Reject '.$mode.' source corruption.');

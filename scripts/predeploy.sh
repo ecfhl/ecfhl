@@ -15,3 +15,8 @@ fi
 if ! php artisan ecfhl:refresh-current-standings; then
     echo 'WARNING: Standings refresh failed; existing standings preserved.'
 fi
+
+# Populate complete player stat lines once when this feature is first deployed.
+if ! php artisan ecfhl:refresh-player-projections --ensure-season-stats; then
+    echo 'WARNING: Season player stats refresh failed; previous valid data preserved.'
+fi

@@ -14,7 +14,7 @@
         elseif(request()->is('seasons/*')&&isset($season)){$browserTitle='ECFHL - '.($season['season']??'Season');}
         elseif(request()->is('teams/current')){$browserTitle='ECFHL - Live Scoring';}
         else{$pageTitles=['seasons'=>'Seasons','standings'=>'Standings','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','daily-targets'=>'Daily Targets','job-status'=>'Collector Status','admin'=>'Admin','login'=>'Sign In','register'=>'Create Account','account'=>'Account','notifications'=>'Notifications','rules'=>'Rules'];$browserTitle='ECFHL - '.($pageTitles[request()->segment(1)]??'East Coast Fantasy Hockey League');}
-        $showSeasonFilter=!request()->is('login','register','account','account/*','notifications','auth/*','rules','players','daily-targets','job-status','admin','admin/*','teams/current','teams/current/*','seasons','seasons/*','standings');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
+        $showSeasonFilter=!request()->is('login','register','account','account/*','notifications','auth/*','rules','players','players/*','daily-targets','job-status','admin','admin/*','teams/current','teams/current/*','seasons','seasons/*','standings');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
         $currentTeamMenu=\App\Support\PublicData::teamMenu();
     @endphp
     <title>{{ $browserTitle }}</title>
@@ -50,6 +50,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 <a id="my-team-nav-link" class="my-team-link" data-my-team-link href="#"><span class="nav-item-icon">★</span>My Team</a>
 <a href="/teams/current" class="{{ request()->is('teams/current','teams/current/*')?'active':'' }}"><span class="nav-item-icon nav-live-icon">●</span><span class="nav-live-text">Live Scoring</span></a>
 <a href="/standings" class="{{ request()->is('standings')?'active':'' }}"><span class="nav-item-icon">🏆</span>Standings</a>
+<a href="/players" class="{{ request()->is('players')?'active':'' }}"><span class="nav-item-icon">🏒</span>Players</a>
 <a href="/daily-targets" class="{{ request()->is('daily-targets')?'active':'' }}"><span class="nav-item-icon nav-target-icon">🎯</span>Daily Targets</a>
 <div class="nav-dropdown {{ request()->is('teams')||request()->is('teams/*')&&!request()->is('teams/current','teams/current/*')?'active':'' }}">
   <div class="nav-dropdown-row">
@@ -63,7 +64,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
     <a class="nav-history-link" href="/teams">Franchise History</a>
   </div>
 </div>
-<div class="nav-dropdown {{ request()->is('seasons','seasons/*','prizes','trades','draft','players')?'active':'' }}">
+<div class="nav-dropdown {{ request()->is('seasons','seasons/*','prizes','trades','draft','players/history')?'active':'' }}">
   <div class="nav-dropdown-row">
     <a class="nav-dropdown-main-link" href="/teams"><span class="nav-item-icon">📖</span>Archive</a>
     <button type="button" class="nav-dropdown-toggle" onclick="const menu=this.closest('.nav-dropdown');menu.classList.remove('menu-dismissed');this.setAttribute('aria-expanded',String(menu.classList.toggle('open')))" aria-label="Open Archive menu" aria-expanded="false"><span aria-hidden="true">▾</span></button>
@@ -74,7 +75,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
     <a href="/prizes">Prizes History</a>
     <a href="/trades">Trades History</a>
     <a href="/draft" onclick="if(location.pathname==='/draft'){event.preventDefault();history.replaceState(null,'','/draft');window.scrollTo({top:0,left:0,behavior:'auto'});}">Draft History</a>
-    <a href="/players">Players History</a>
+    <a href="/players/history">Players History</a>
   </div>
 </div>
 <a href="/rules" class="{{ request()->is('rules')?'active':'' }}"><span class="nav-item-icon">🔨</span>Rules</a>

@@ -90,7 +90,7 @@ foreach($events as $event) {
     check(strcmp($previous,$event['sort'])<=0,'Player history chronology');$previous=$event['sort'];
     if($event['kind']==='trade') { $key=$event['season'].'|'.$event['data']['id'];check(!isset($seen[$key]),'Duplicate trade in player results');$seen[$key]=true; }
 }
-foreach(['/?type=total','/draft?type=all&season=all&franchise=F002','/trades?type=all&team=Androids','/players?type=all&q=Sidney','/rules'] as $path) {
+foreach(['/?type=total','/draft?type=all&season=all&franchise=F002','/trades?type=all&team=Androids','/players/history?type=all&q=Sidney','/rules'] as $path) {
     $app->forgetScopedInstances();$request=Request::create($path);$response=$kernel->handle($request);
     check($response->getStatusCode()===200,'Query regression page: '.$path);
     if($path==='/?type=total') check(!str_contains($response->getContent(),"President's Trophy:"),'Total points incorrectly labelled President trophy');
