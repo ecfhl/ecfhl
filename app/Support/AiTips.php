@@ -10,7 +10,7 @@ class AiTips
     {
         $groups = ['G' => [], 'F' => [], 'D' => []];
         $startedTeams = self::startedTeams($date);
-        $daily = DB::table('active_daily_players')->whereDate('game_date', $date)->orderBy('source_rank')->get();
+        $daily = DB::table('active_daily_players')->where('game_date', $date)->orderBy('source_rank')->get();
         $projections = new PlayerProjections;
         $daily = $projections->decorate($daily);
         foreach ($daily as $row) {
@@ -26,7 +26,7 @@ class AiTips
         }
 
         $normalize = static fn ($v) => preg_replace('/[^\pL\pN]+/u', '', mb_strtolower(trim((string) $v))) ?? '';
-        $dfoRows = DB::table('active_starting_goalies')->whereDate('game_date', $date)->get();
+        $dfoRows = DB::table('active_starting_goalies')->where('game_date', $date)->get();
         $dfoByPlayer = [];
         $confirmedByTeam = [];
         foreach ($dfoRows as $dfo) {
@@ -36,7 +36,7 @@ class AiTips
             if (strtolower(trim((string) $dfo->starting_status)) === 'confirmed') $confirmedByTeam[$team] = $normalize($dfo->player_name);
         }
 
-        $goalies = DB::table('active_available_goalies')->whereDate('game_date', $date)->get();
+        $goalies = DB::table('active_available_goalies')->where('game_date', $date)->get();
         $goalies = $projections->decorate($goalies);
         foreach ($goalies as $row) {
             if (isset($startedTeams[strtoupper(trim((string)$row->team))]) || self::gameHasStarted($row, $date)) continue;
@@ -71,7 +71,7 @@ class AiTips
 
         $teams = [];
         $rows = DB::table('active_fantasy_rosters')
-            ->whereDate('game_date', $date)
+            ->where('game_date', $date)
             ->whereNotNull('game_time')
             ->get(['nhl_team','game_time']);
 

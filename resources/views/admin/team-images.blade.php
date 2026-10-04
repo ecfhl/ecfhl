@@ -11,7 +11,7 @@
     @foreach($teams as $team)
       <section class="card team-image-card">
         <button type="button" class="team-image-preview" data-team-icon-viewer data-team-slug="{{ $team->slug }}" title="View {{ $team->name }} image">
-          <img src="/team-icons/{{ $team->slug }}?v={{ now()->timestamp }}" alt="{{ $team->name }}">
+          <img src="{{ \App\Support\TeamImages::url($team->slug,160) }}" data-full-src="{{ \App\Support\TeamImages::url($team->slug) }}" loading="lazy" decoding="async" alt="{{ $team->name }}">
         </button>
         <div class="team-image-info">
           <h2>{{ $team->name }}</h2>
@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded',()=>{
         const result=await response.json().catch(()=>({}));
         if(!response.ok)throw new Error(result.message||'Upload failed.');
         const fresh=(result.url||('/team-icons/'+form.dataset.teamSlug))+(String(result.url||'').includes('?')?'&':'?')+'t='+Date.now();
-        document.querySelectorAll('[data-team-slug="'+CSS.escape(form.dataset.teamSlug)+'"] img').forEach(img=>img.src=fresh);
+        document.querySelectorAll('[data-team-slug="'+CSS.escape(form.dataset.teamSlug)+'"] img').forEach(img=>{img.dataset.fullSrc=fresh;img.src=result.thumbnail_url||fresh;});
         status.textContent='Image updated.';
         input.value='';
       }catch(error){status.textContent=error.message||'Upload failed.';}

@@ -7,10 +7,13 @@ use Illuminate\Support\Str;
 
 class EcfhlData
 {
+    private array $sources = [];
     protected function source(string $key): array
     {
-        $payload = DB::table('source_cache')->where('source_key', $key)->value('payload');
-        return $payload ? (json_decode($payload, true) ?: []) : [];
+        return $this->sources[$key] ??= PublicData::remember('source:'.$key, 300, function() use ($key) {
+            $payload = DB::table('source_cache')->where('source_key', $key)->value('payload');
+            return $payload ? (json_decode($payload, true) ?: []) : [];
+        });
     }
 
     protected function displayTeamName(?string $name, ?string $franchiseId = null): string

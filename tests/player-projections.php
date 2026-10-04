@@ -26,6 +26,7 @@ function rejectsProjection(callable $call, string $message): void
 }
 
 foreach (['2026_09_29_000001_create_active_daily_players_table.php', '2026_09_29_000002_create_active_starting_goalies_table.php', '2026_09_29_000004_create_active_available_goalies_table.php', '2026_10_03_140000_create_player_projections.php'] as $name) (require __DIR__.'/../database/migrations/'.$name)->up();
+(require __DIR__.'/../database/migrations/2026_10_03_210000_add_season_actuals_to_player_projections.php')->up();
 
 class TestProjectionSource extends FantraxProjectionSource
 {
@@ -61,16 +62,16 @@ $refresh = new RefreshPlayerProjections($source);
 $date = CarbonImmutable::parse('2026-11-03 04:00', 'America/Halifax');
 $refresh->refresh($date);
 checkProjection(DB::table('player_projections')->count() === 1000, 'Store exactly 1,000 projections.');
-checkProjection($source->calls === [['2026-10-27','2026-11-02'], ['2026-10-20','2026-11-02'], ['2026-10-13','2026-11-02']], 'Use inclusive 7/14/21 calendar days ending yesterday, including DST.');
+checkProjection($source->calls === [['2026-09-29','2026-11-03'], ['2026-10-28','2026-11-03'], ['2026-10-21','2026-11-03'], ['2026-10-14','2026-11-03']], 'Use season totals and inclusive 7/14/21 calendar days ending today, including DST.');
 checkProjection((float)DB::table('player_projections')->where('player_id','p5')->value('projected_fpts_per_game') === 3.0, 'Apply the 50/25/15/10 weights.');
 checkProjection((float)DB::table('player_projections')->where('player_id','p3')->value('projected_fpts_per_game') === 1.0, 'Zero-game windows contribute zero while the baseline keeps its 50% weight.');
 checkProjection((float)DB::table('player_projections')->where('player_id','p4')->value('projected_fpts_per_game') === 0.0, 'Preserve negative points.');
 $frozen = DB::table('player_projection_baselines')->orderBy('source_rank')->get()->toJson();
 $before = DB::table('player_projections')->orderBy('player_id')->get()->toJson();
 $refresh->refresh($date);
-checkProjection(count($source->calls) === 3 && $source->captures === 1, 'Skip repeated routine refreshes on the same date.');
+checkProjection(count($source->calls) === 4 && $source->captures === 1, 'Skip repeated routine refreshes on the same date.');
 $refresh->refresh($date, true);
-checkProjection(count($source->calls) === 6 && $source->captures === 1, 'Manual regeneration only refreshes actual windows.');
+checkProjection(count($source->calls) === 8 && $source->captures === 1, 'Manual regeneration only refreshes actual windows.');
 checkProjection(DB::table('player_projection_baselines')->orderBy('source_rank')->get()->toJson() === $frozen, 'Frozen Fantrax baseline remains byte-for-byte unchanged.');
 $before = DB::table('player_projections')->orderBy('player_id')->get()->toJson();
 $source->broken = true;
@@ -110,9 +111,9 @@ checkProjection($view['t1']['positions']['F']['rows'][0]->projected_fpts_per_gam
 
 $source->calls = [];
 $refresh->refresh(CarbonImmutable::parse('2026-10-03 04:00', 'America/Halifax'), true);
-checkProjection($source->calls === [['2026-09-29','2026-10-02']], 'Clamp windows to the current season and reuse identical early-season ranges.');
+checkProjection($source->calls === [['2026-09-29','2026-10-03']], 'Clamp windows to the current season and reuse identical early-season ranges.');
 $source->calls = [];
-$refresh->refresh(CarbonImmutable::parse('2026-09-29 04:00', 'America/Halifax'), true);
+$refresh->refresh(CarbonImmutable::parse('2026-09-28 04:00', 'America/Halifax'), true);
 checkProjection($source->calls === [], 'Before any completed season games, use zero actual rates without querying future dates.');
 checkProjection((float)DB::table('player_projections')->where('player_id','p5')->value('projected_fpts_per_game') === 1.0, 'Keep the 50% baseline weight before the first game.');
 
@@ -144,13 +145,13 @@ class FixtureProjectionSource extends FantraxProjectionSource
     }
 }
 $parser = new FixtureProjectionSource;
-$parsed = $parser->actual('2026-10-27','2026-11-02');
+$parsed = $parser->actual('2026-10-27','2026-11-03');
 checkProjection(count($parsed) === 2 && $parsed['goalie']['gp'] === 2, 'Collect skater and goalie GP separately.');
 foreach (['date','gp','partial'] as $mode) {
     $parser->mode = $mode;
-    rejectsProjection(fn()=>$parser->actual('2026-10-27','2026-11-02'), 'Reject '.$mode.' source corruption.');
+    rejectsProjection(fn()=>$parser->actual('2026-10-27','2026-11-03'), 'Reject '.$mode.' source corruption.');
 }
 $parser->mode = ''; $parser->pageCount = 10; $parser->batches = [];
-checkProjection(count($parser->actual('2026-10-27','2026-11-02')) === 20, 'Parse every page across both groups.');
+checkProjection(count($parser->actual('2026-10-27','2026-11-03')) === 20, 'Parse every page across both groups.');
 checkProjection(max(array_map('count', $parser->batches)) <= 3, 'Keep actual-stat collection batches within production memory limits.');
 echo "Player projection checks passed.\n";

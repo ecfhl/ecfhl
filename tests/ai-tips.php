@@ -22,7 +22,9 @@ use Illuminate\Support\Facades\DB;
 
 config(['database.connections.sqlite'=>['driver'=>'sqlite','database'=>':memory:','prefix'=>'','foreign_key_constraints'=>true]]);
 foreach (glob(__DIR__.'/../database/migrations/*create_active*table.php') as $file) (require $file)->up();
+foreach (['2026_09_24_000001_create_ecfhl_tables.php','2026_09_30_000006_create_todays_odds_table.php','2026_10_03_041000_create_live_scoring_snapshots.php','2026_10_01_153500_create_web_push_tables.php','2026_10_03_230000_create_owner_accounts.php'] as $name) (require __DIR__.'/../database/migrations/'.$name)->up();
 $date = '2026-09-29';
+\Carbon\CarbonImmutable::setTestNow(\Carbon\CarbonImmutable::parse('2026-09-29T12:00:00-03:00'));
 
 DB::table('active_daily_players')->delete();
 DB::table('active_starting_goalies')->delete();
@@ -94,6 +96,6 @@ $html = view('ai-tips', [
     'snapshot'=>['date'=>$date],
     'groups'=>$groups,
 ])->render();
-verifyTips(str_contains($html, 'Available forwards') && str_contains($html, 'Available defensemen') && str_contains($html, 'Available goalies'), 'Render database-backed AI Tips sections.');
+verifyTips(str_contains($html, 'Forwards (') && str_contains($html, 'Defensemen (') && str_contains($html, 'Goaltenders ('), 'Render database-backed Daily Targets sections.');
 
 echo "AI Tips checks passed.\n";

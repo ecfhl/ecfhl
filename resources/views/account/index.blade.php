@@ -3,7 +3,7 @@
 <div class="page-head"><div class="shell"><div class="eyebrow">League owners</div><h1>Your account</h1><p>{{ $owner->name }} · {{ $owner->email }}</p></div></div>
 <div class="shell owner-page">@include('account.shared')
 <div class="card owner-account-team">
-@if($owner->claim)<img src="/team-icons/{{ \Illuminate\Support\Str::slug($owner->claim->team_name) }}" alt="Team logo"><div><h2>{{ $owner->claim->team_name }}</h2><p>{{ $owner->is_admin?'League administrator':'League owner' }}</p><a class="button" href="/teams/current/{{ \Illuminate\Support\Str::slug($owner->claim->team_name) }}">My Team</a> <a class="button primary" href="/notifications">Notification settings</a></div>
+@if($owner->claim)<img src="{{ \App\Support\TeamImages::url(\Illuminate\Support\Str::slug($owner->claim->team_name),160) }}" decoding="async" alt="Team logo"><div><h2>{{ $owner->claim->team_name }}</h2><p>{{ $owner->is_admin?'League administrator':'League owner' }}</p><a class="button" href="/teams/current/{{ \Illuminate\Support\Str::slug($owner->claim->team_name) }}">My Team</a> <a class="button primary" href="/notifications">Notification settings</a></div>
 @else<div><h2>Choose your team</h2><a class="button primary" href="/account/claim-team">Claim an available team</a></div>@endif
 </div>
 <div class="owner-settings-grid"><section class="card"><h2>Sign-in methods</h2><p>Email & password: <strong>{{ $owner->password?'Enabled':'Not set' }}</strong></p><p>Google: <strong>{{ $owner->google_id?'Connected':'Not connected' }}</strong></p>

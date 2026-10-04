@@ -60,7 +60,7 @@
               <a href="/teams/current/{{ $slug }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $liveMatchup['team_name'] }}</a>
             </div>
             <div class="team-live-body">
-              <img class="team-live-logo" src="/team-icons/{{ $slug }}?v=1" alt="{{ $liveMatchup['team_name'] }} team icon">
+              <img class="team-live-logo" src="{{ \App\Support\TeamImages::url($slug,160) }}" width="160" height="160" decoding="async" alt="{{ $liveMatchup['team_name'] }} team icon">
               <div class="team-live-scores">
                 <span class="team-live-score team-live-today"><strong class="{{ $teamDayWinning?'winning':'' }}">{{ number_format($liveMatchup['team_today'],0) }}</strong><small>Today</small></span>
                 <span class="team-live-score team-live-weekly"><strong class="{{ $teamWeekWinning?'winning':'' }}">{{ number_format($liveMatchup['team_week'],0) }}</strong><small>Weekly</small></span>
@@ -77,7 +77,7 @@
                 <span class="team-live-score team-live-today"><strong class="{{ $oppDayWinning?'winning':'' }}">{{ number_format($liveMatchup['opponent_today'],0) }}</strong><small>Today</small></span>
                 <span class="team-live-score team-live-weekly"><strong class="{{ $oppWeekWinning?'winning':'' }}">{{ number_format($liveMatchup['opponent_week'],0) }}</strong><small>Weekly</small></span>
               </div>
-              <img class="team-live-logo" src="/team-icons/{{ \Illuminate\Support\Str::slug($liveMatchup['opponent_name']) }}?v=1" alt="{{ $liveMatchup['opponent_name'] }} team icon">
+              <img class="team-live-logo" src="{{ \App\Support\TeamImages::url(\Illuminate\Support\Str::slug($liveMatchup['opponent_name']),160) }}" width="160" height="160" decoding="async" alt="{{ $liveMatchup['opponent_name'] }} team icon">
             </div>
           </div>
           <span class="team-live-chevron">▾</span>
@@ -222,7 +222,7 @@
           @if($nextWeekDates)<span class="subtle">{{ $nextWeekDates }}</span>@endif
         </div>
         <div class="team-next-opponent-team">
-          <img class="team-next-opponent-logo" src="/team-icons/{{ \Illuminate\Support\Str::slug($nextWeekOpponent['opponent']) }}?v=1" alt="{{ $nextWeekOpponent['opponent'] }} team icon">
+          <img class="team-next-opponent-logo" src="{{ \App\Support\TeamImages::url(\Illuminate\Support\Str::slug($nextWeekOpponent['opponent']),160) }}" width="160" height="160" loading="lazy" decoding="async" alt="{{ $nextWeekOpponent['opponent'] }} team icon">
           <span class="team-next-opponent-vs">{{ $nextWeekOpponent['side']==='HOME' ? 'vs' : '@' }}</span>
           <strong>{{ $nextWeekOpponent['opponent'] }}</strong>
         </div>
@@ -291,6 +291,8 @@
           'name'=>$name,
           'slug'=>$key==='mike'?'lineup-advisor':'lineup-advisor-'.$key,
           'advice'=>$advice,
+          'thumbnail'=>\App\Support\TeamImages::url($key==='mike'?'lineup-advisor':'lineup-advisor-'.$key,640),
+          'fullImage'=>\App\Support\TeamImages::url($key==='mike'?'lineup-advisor':'lineup-advisor-'.$key),
         ];
       }
     @endphp
@@ -310,7 +312,7 @@
           data-advisor-first-name="{{ $advisorFirstName }}"
           title="View {{ $advisorFirstName }} advisor image"
           aria-label="View {{ $advisorFirstName }} Lineup Advisor image">
-          <img src="/team-icons/{{ $advisorImageSlug }}?v=1" alt="{{ $advisorFirstName }}, Lineup Advisor">
+          <img src="{{ \App\Support\TeamImages::url($advisorImageSlug,640) }}" data-full-src="{{ \App\Support\TeamImages::url($advisorImageSlug) }}" loading="lazy" decoding="async" alt="{{ $advisorFirstName }}, Lineup Advisor">
         </button>
       </div>
       <div class="team-lineup-content">
@@ -900,7 +902,8 @@ document.addEventListener('DOMContentLoaded',()=>{
           imageButton.dataset.advisorFirstName=advisor.name;
           imageButton.title='View '+advisor.name+' advisor image';
           imageButton.setAttribute('aria-label','View '+advisor.name+' Lineup Advisor image');
-          image.src='/team-icons/'+encodeURIComponent(advisor.slug)+'?t='+Date.now();
+          image.src=advisor.thumbnail;
+          image.dataset.fullSrc=advisor.fullImage;
           image.alt=advisor.name+', Lineup Advisor';
         }
         renderAdvice(advisor.advice);

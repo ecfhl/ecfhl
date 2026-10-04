@@ -13,7 +13,7 @@ class Archive extends EcfhlData
         $mode = request()->query('type', request()->cookie('ecfhl-season-type', 'h2h'));
         return in_array($mode, ['h2h','total','all','none'], true) ? $mode : 'h2h';
     }
-    private function rows(string $table): array { return $this->cache[$table] ??= DB::table($table)->get()->map(fn($r)=>(array)$r)->all(); }
+    private function rows(string $table): array { return $this->cache[$table] ??= PublicData::remember('archive:'.$table, $table==='team_seasons'?30:300, fn()=>DB::table($table)->get()->map(fn($r)=>(array)$r)->all()); }
     private function matches(?string $format): bool { return $this->mode()==='all' || ($this->mode()!=='none' && ($this->mode()==='h2h') === (stripos($format ?? '', 'head')!==false)); }
     private function selected(string $id): bool { foreach ($this->rows('seasons') as $s) if ($s['season_id']===$id) return $this->matches($s['format']); return false; }
     private function year(string $id): string { if (!isset($this->cache['years'])) $this->cache['years']=array_column($this->rows('seasons'),'season_name','season_id'); return $this->cache['years'][$id] ?? $id; }
@@ -24,7 +24,13 @@ class Archive extends EcfhlData
         foreach ($this->rows('franchises') as $f) if ($f['franchise_id']===$id) return $this->cache['names'][$id]=$f['franchise_name'];
         return $this->cache['names'][$id]=$fallback;
     }
-    private function historical(?string $id,string $seasonId,?string $fallback=null): string { foreach($this->rows('team_seasons') as $r) if($r['season_id']===$seasonId&&$r['franchise_id']===$id) return $r['original_name']; return $fallback?:$this->franchiseName($id); }
+    private function historical(?string $id,string $seasonId,?string $fallback=null): string {
+        if(!isset($this->cache['historical-names'])){
+            $this->cache['historical-names']=[];
+            foreach($this->rows('team_seasons') as $r)$this->cache['historical-names'][$r['season_id'].'|'.$r['franchise_id']]=$r['original_name'];
+        }
+        return $this->cache['historical-names'][$seasonId.'|'.$id]??($fallback?:$this->franchiseName($id));
+    }
     public function franchiseId(?string $name, ?string $seasonId = null): ?string
     {
         if (!$name) return null;
@@ -46,12 +52,18 @@ class Archive extends EcfhlData
     {
         $out=[];foreach($this->rows('seasons') as $r){if(!$this->selected($r['season_id']))continue;$r['season']=$r['season_name'];foreach(['champion'=>'champion','runner_up'=>'second','third_place'=>'third'] as $key=>$type){$names=[];foreach($this->rows('awards') as $a)if($a['season_id']===$r['season_id']&&$a['award_type_id']===$type)$names[]=$this->historical($a['franchise_id'],$r['season_id'],$a['team_name_raw']);$r[$key]=implode(' / ',array_unique($names));}$out[]=$r;}usort($out,fn($a,$b)=>$b['sequence']<=>$a['sequence']);return $out;
     }
-    public function teamSeasons(?string $season=null,?string $team=null): array { $fid=$team?$this->resolve($team):null;return array_values(array_map(function($r){$r['team']=$r['original_name'];return $r;},array_filter(parent::teamSeasons($season),fn($r)=>$this->selected($r['season_id'])&&(!$team||$r['franchise_id']===$fid)))); }
-    public function teamLedger(string $mode='h2h',string $status='all'): array { if($this->mode()==='none')return [];return array_map(function($r){$r['team']=$this->franchiseName($r['id'],$r['team']);return $r;},parent::teamLedger($this->mode(),$status)); }
+    public function teamSeasons(?string $season=null,?string $team=null): array {
+        $key='team-seasons:'.json_encode([$season,$team]);if(isset($this->cache[$key]))return $this->cache[$key];
+        $fid=$team?$this->resolve($team):null;
+        $base=$this->cache['joined-team-seasons']??=PublicData::remember('joined-team-seasons',30,fn()=>parent::teamSeasons());
+        return $this->cache[$key]=array_values(array_map(function($r){$r['team']=$r['original_name'];return $r;},array_filter($base,fn($r)=>(!$season||$r['season']===$season)&&$this->selected($r['season_id'])&&(!$team||$r['franchise_id']===$fid))));
+    }
+    public function teamLedger(string $mode='h2h',string $status='all'): array { if($this->mode()==='none')return [];return $this->cache['ledger:'.$status]??=array_map(function($r){$r['team']=$this->franchiseName($r['id'],$r['team']);return $r;},PublicData::remember('ledger:'.$this->mode().':'.$status,30,fn()=>parent::teamLedger($this->mode(),$status))); }
     public function team(string $slug): ?array { foreach($this->rows('franchises') as $f){$id=$f['franchise_id'];$name=$this->franchiseName($id,$f['franchise_name']);if(!in_array($slug,[$id,\Illuminate\Support\Str::slug($name),\Illuminate\Support\Str::slug($f['franchise_name'])],true))continue;foreach($this->teams() as $t)if($t['id']===$id)return $t;return ['id'=>$id,'team'=>$name,'active'=>(bool)$f['active_in_2025_26'],'seasons'=>0,'champion'=>0,'second'=>0,'third'=>0,'president'=>0,'fpts_leader'=>0,'w'=>0,'l'=>0,'t'=>0,'games'=>0,'win_pct'=>null];}return null; }
 
     public function overviewLeaders(): array
     {
+        if (isset($this->cache['overview'])) return $this->cache['overview'];
         $ledger=$this->teamLedger($this->mode(),'all');
         $championships=[];$winning=[];
         foreach($ledger as $r){
@@ -63,7 +75,7 @@ class Archive extends EcfhlData
         $tradeCounts=[];foreach($this->trades() as $t){if(!empty($t['vetoed']))continue;foreach(array_unique(array_filter([$t['from_id']??null,$t['to_id']??null])) as $id)$tradeCounts[$id]=($tradeCounts[$id]??0)+1;}arsort($tradeCounts);$tradeRows=[];foreach($tradeCounts as $id=>$n)$tradeRows[]=['team'=>$this->franchiseName($id),'value'=>$n,'score'=>$n];
         $first=[];foreach($this->draftSeason('all') as $p)if((int)($p['overall']??0)===1){$id=$p['franchise_id']??$this->resolve($p['team']??null);if($id)$first[$id]=($first[$id]??0)+1;}arsort($first);$firstRows=[];foreach($first as $id=>$n)$firstRows[]=['team'=>$this->franchiseName($id),'value'=>$n,'score'=>$n];
         $awards=[];foreach($this->rows('awards') as $a){if(!$this->selected($a['season_id'])||!in_array($a['award_type_id'],['president','leader','art_ross','norris','vezina','calder','champion','second','third'],true)||empty($a['franchise_id']))continue;$awards[$a['franchise_id']]=($awards[$a['franchise_id']]??0)+1;}arsort($awards);$awardRows=[];foreach($awards as $id=>$n)$awardRows[]=['team'=>$this->franchiseName($id),'value'=>$n,'score'=>$n];
-        return ['championships'=>$championships,'winning_pct'=>$winning,'trades'=>$tradeRows,'first_picks'=>$firstRows,'awards'=>$awardRows];
+        return $this->cache['overview'] = ['championships'=>$championships,'winning_pct'=>$winning,'trades'=>$tradeRows,'first_picks'=>$firstRows,'awards'=>$awardRows];
     }
     public function seasonLeaders(): array
     {
@@ -77,6 +89,10 @@ class Archive extends EcfhlData
 
     public function trades(): array
     {
+        return $this->cache['formatted-trades'] ??= PublicData::remember('formatted-trades:'.$this->mode(), 300, fn()=>$this->buildTrades());
+    }
+    private function buildTrades(): array
+    {
         $out=[];$sourceTrades=[];foreach(parent::trades() as $t)if(!empty($t['id']))$sourceTrades[$t['season'].'|'.$t['id']]=$t;$assets=[];foreach($this->rows('trade_assets') as $a)$assets[$a['trade_id']][]=$a;$verified=[];
         foreach(TradeContracts::records() as $c)$verified[$c['trade_id']][$c['season']][$c['source_side']][TradeContracts::playerKey($c['player_name'])]=$c['contract_years_at_trade'];
         foreach(TradeContracts::statusRecords() as $c)$verified[$c['trade_id']][$c['season']][$c['source_side']][TradeContracts::playerKey($c['player_name'])]=$c['contract_raw'];
@@ -86,6 +102,7 @@ class Archive extends EcfhlData
     }
     public function draftSeason(string $season): array
     {
+        if (isset($this->cache['draft-season:'.$season])) return $this->cache['draft-season:'.$season];
         // The rebuilt relational tables are authoritative for draft history.
         $picks = [];
         $players = array_column($this->rows('players'), 'player_name', 'player_id');
@@ -115,7 +132,7 @@ class Archive extends EcfhlData
             $out[] = $p;
         }
         usort($out,fn($a,$b)=>strcmp($b['season'],$a['season']) ?: (($a['overall']??99999)<=>($b['overall']??99999)));
-        return $out;
+        return $this->cache['draft-season:'.$season]=$out;
     }
     public function draftSeasons(): array { return array_values(array_unique(array_column($this->draftSeason('all'),'season'))); }
     public function awardEvents(): array
@@ -185,10 +202,17 @@ class Archive extends EcfhlData
     {
         $sid = $this->seasonId($season);
         if (!$sid || !$this->selected($sid)) return [];
-        return array_map(function($a) use($sid) {
-            $a['team'] = $this->historical($a['franchise_id'],$sid,$a['team']);
-            return $a;
-        }, parent::seasonAwards($season));
+        $types=array_column($this->rows('award_types'),'award_name','award_type_id');
+        $players=array_column($this->rows('players'),'player_name','player_id');
+        $order=array_flip(['president','leader','art_ross','norris','vezina','calder']);$out=[];
+        foreach($this->rows('awards') as $a){
+            if($a['season_id']!==$sid||!isset($order[$a['award_type_id']])||!isset($types[$a['award_type_id']]))continue;
+            $fallback=$this->displayTeamName($this->franchiseName($a['franchise_id'],$a['team_name_raw']?:'—'),$a['franchise_id']);
+            $out[]=['franchise_id'=>$a['franchise_id'],'id'=>$a['award_type_id'],'label'=>$types[$a['award_type_id']],
+                'player'=>$players[$a['player_id']]??null,'team'=>$this->historical($a['franchise_id'],$sid,$fallback),'points'=>$a['points']];
+        }
+        usort($out,fn($a,$b)=>$order[$a['id']]<=>$order[$b['id']]);
+        return $out;
     }
 
     public function playerHistory(string $q): array

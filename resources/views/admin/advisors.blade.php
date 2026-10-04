@@ -27,7 +27,7 @@
             data-advisor-key="{{ $advisor->advisor_key }}"
             data-advisor-first-name="{{ $advisor->first_name }}"
             title="View {{ $advisor->first_name }} image">
-            <img src="/team-icons/{{ $imageSlug }}?v={{ now()->timestamp }}" alt="{{ $advisor->first_name }}">
+            <img src="{{ \App\Support\TeamImages::url($imageSlug,640) }}" data-full-src="{{ \App\Support\TeamImages::url($imageSlug) }}" loading="lazy" decoding="async" alt="{{ $advisor->first_name }}">
             <span>Preview</span>
           </button>
           <div>

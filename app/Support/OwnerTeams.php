@@ -8,7 +8,7 @@ use App\Models\User;
 class OwnerTeams {
  public function all(): \Illuminate\Support\Collection {
   $date=DB::table('active_fantasy_rosters')->max('game_date');
-  $rows=DB::table('active_fantasy_rosters')->whereDate('game_date',$date)->select('fantasy_team_id','fantasy_team_name')->distinct()->get();
+  $rows=DB::table('active_fantasy_rosters')->where('game_date',$date)->select('fantasy_team_id','fantasy_team_name')->distinct()->get();
   // Fresh snapshots also contain every team, even a team with no roster rows.
   $snapshot=app(\App\Support\LiveScoring\SnapshotRepository::class)->get((new FantasyDay)->today()->toDateString());
   $teams=collect();

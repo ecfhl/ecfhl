@@ -19,9 +19,11 @@ final class PlayerDisplayEnrichment
         };
         $team = static fn($v)=>match(strtoupper(trim((string)$v))) { 'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>strtoupper(trim((string)$v)) };
         $rows = static function ($table, $dated = false) use ($date) {
-            if (!Schema::hasTable($table)) return collect();
-            $query = DB::table($table);
-            return ($dated ? $query->whereDate('game_date',$date) : $query)->get();
+            return \App\Support\PublicData::remember('badges:'.$table.($dated?':'.$date:''), 30, function() use ($table,$dated,$date) {
+                if (!Schema::hasTable($table)) return collect();
+                $query = DB::table($table);
+                return ($dated ? $query->where('game_date',$date) : $query)->get();
+            });
         };
         $pp = $rows('active_pp_lines')->keyBy(fn($r)=>$team($r->team).'|'.$name($r->player_name));
         $lines = $rows('active_line_combinations')->keyBy(fn($r)=>$team($r->team).'|'.$name($r->player_name).'|'.$r->position_group);

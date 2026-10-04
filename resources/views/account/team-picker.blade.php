@@ -4,7 +4,7 @@
 @foreach($teams as $team)
 @if(!$team['claimed'] && (!$team['reserved'] || $invited))
 <label class="owner-team-choice"><input type="radio" name="team_id" value="{{ $team['id'] }}" required @checked(old('team_id')===$team['id'])>
-<img src="/team-icons/{{ $team['slug'] }}" alt="{{ $team['name'] }} logo"><span>{{ $team['name'] }} @if($team['reserved'])<small>Administrator</small>@endif</span></label>
+<img src="{{ \App\Support\TeamImages::url($team['slug'],160) }}" width="64" height="64" loading="lazy" decoding="async" alt="{{ $team['name'] }} logo"><span>{{ $team['name'] }} @if($team['reserved'])<small>Administrator</small>@endif</span></label>
 @endif
 @endforeach
 </div>

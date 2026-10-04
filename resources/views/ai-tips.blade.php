@@ -22,7 +22,7 @@
     $dfoLinesUrl = fn($team) => 'https://www.dailyfaceoff.com/teams/'.($dfoTeamSlugs[strtoupper(trim((string)$team))] ?? strtolower(trim((string)$team))).'/line-combinations';
     $ppLines = \Illuminate\Support\Facades\DB::table('active_pp_lines')->select('team','player_name','pp_unit')->get()->keyBy(fn($row)=>strtoupper(trim($row->team)).'|'.mb_strtolower(trim($row->player_name)));
     $evenStrengthLines = \Illuminate\Support\Facades\DB::table('active_line_combinations')->select('team','player_name','position_group','line_number')->get()->keyBy(fn($row)=>strtoupper(trim($row->team)).'|'.mb_strtolower(trim($row->player_name)).'|'.strtoupper(trim($row->position_group)));
-    $oddsByTeam = \Illuminate\Support\Facades\DB::table('todays_odds')->whereDate('game_date',$date)->get()->keyBy(fn($row)=>strtoupper(trim($row->team)));
+    $oddsByTeam = \Illuminate\Support\Facades\DB::table('todays_odds')->where('game_date',$date)->get()->keyBy(fn($row)=>strtoupper(trim($row->team)));
     $ppCollisionPositions = ['VAN|elias pettersson' => 'F'];
     $ppUnit = function($player)use($ppLines,$ppCollisionPositions){
         $key=strtoupper(trim($player['team']??'')).'|'.mb_strtolower(trim($player['name']??''));
@@ -88,10 +88,10 @@
     $sortSkaters($groups['F']);
     $sortSkaters($groups['D']);
     $hasTips = count($groups['G']) + count($groups['F']) + count($groups['D']) > 0;
-    $fantraxUpdated = \Illuminate\Support\Facades\DB::table('active_daily_players')->whereDate('game_date',$date)->max('last_update');
-    $goaliesUpdated = \Illuminate\Support\Facades\DB::table('active_starting_goalies')->whereDate('game_date',$date)->max('checked_at');
+    $fantraxUpdated = \Illuminate\Support\Facades\DB::table('active_daily_players')->where('game_date',$date)->max('last_update');
+    $goaliesUpdated = \Illuminate\Support\Facades\DB::table('active_starting_goalies')->where('game_date',$date)->max('checked_at');
     $linesUpdated = \Illuminate\Support\Facades\DB::table('active_pp_lines')->max('checked_at');
-    $oddsUpdated = \Illuminate\Support\Facades\DB::table('todays_odds')->whereDate('game_date',$date)->max('checked_at');
+    $oddsUpdated = \Illuminate\Support\Facades\DB::table('todays_odds')->where('game_date',$date)->max('checked_at');
     $updatedValues = array_values(array_filter([$fantraxUpdated,$goaliesUpdated,$linesUpdated,$oddsUpdated]));
     $latestUpdated = $updatedValues ? max($updatedValues) : null;
     $refreshAge = null;

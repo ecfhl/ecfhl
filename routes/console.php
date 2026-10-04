@@ -1,5 +1,10 @@
 <?php
 
+\Illuminate\Support\Facades\Artisan::command('ecfhl:warm-images', function () {
+    $count = \App\Support\TeamImages::warm();
+    $this->info('Generated WebP thumbnails and cached originals for '.$count.' uploaded images.');
+});
+
 use App\Support\DailyFaceoffPowerPlay;
 use App\Support\DailyFaceoffStartingGoalies;
 use App\Support\FantraxAvailablePlayers;

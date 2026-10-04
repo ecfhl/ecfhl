@@ -26,77 +26,6 @@ Route::post('/admin/lineup-advisor/reset-and-refresh', function () {
     ],$exitCode===0?200:500);
 });
 
-Route::get('/team-icons/{slug}/thumbnail', function(string $slug) {
-    $size=max(24,min(160,(int)request('size',64)));
-    $fallback=function() use ($size) {
-        $svg='<svg xmlns="http://www.w3.org/2000/svg" width="'.$size.'" height="'.$size.'" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="#e2e8f0"/><path d="M24 31l16-10 10 8 10-8 16 10-8 14-8-5v36H40V40l-8 5-8-14z" fill="#0b5f9e"/><path d="M43 34h14v8H43z" fill="#fff"/><circle cx="50" cy="59" r="11" fill="#fff" opacity=".9"/><path d="M44 59h12M50 53v12" stroke="#0b5f9e" stroke-width="5" stroke-linecap="round"/></svg>';
-        return response($svg,200,['Content-Type'=>'image/svg+xml','Cache-Control'=>'public, max-age=86400']);
-    };
-    if(!\Illuminate\Support\Facades\Schema::hasTable('team_icons')) return $fallback();
-    $icon=DB::table('team_icons')->where('team_slug',$slug)->first();
-    if(!$icon) return $fallback();
-    $bytes=base64_decode((string)$icon->image_data,true);
-    if($bytes===false || !function_exists('imagecreatefromstring')) return $fallback();
-    $source=@imagecreatefromstring($bytes);
-    if(!$source) return $fallback();
-    $w=imagesx($source); $h=imagesy($source);
-    $side=max($w,$h);
-    $thumb=imagecreatetruecolor($size,$size);
-    imagealphablending($thumb,false); imagesavealpha($thumb,true);
-    $transparent=imagecolorallocatealpha($thumb,0,0,0,127); imagefill($thumb,0,0,$transparent);
-    $scale=min($size/$w,$size/$h);
-    $dw=max(1,(int)round($w*$scale)); $dh=max(1,(int)round($h*$scale));
-    imagecopyresampled($thumb,$source,(int)(($size-$dw)/2),(int)(($size-$dh)/2),0,0,$dw,$dh,$w,$h);
-    ob_start(); imagewebp($thumb,null,72); $out=ob_get_clean();
-    imagedestroy($source); imagedestroy($thumb);
-    return response($out,200,['Content-Type'=>'image/webp','Cache-Control'=>'public, max-age=86400']);
-})->where('slug','[A-Za-z0-9\\-]+');
-
-Route::get('/team-icons/{slug}', function(string $slug) {
-    $generic=function(){
-        $svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="#e2e8f0"/><path d="M24 31l16-10 10 8 10-8 16 10-8 14-8-5v36H40V40l-8 5-8-14z" fill="#0b5f9e"/><path d="M43 34h14v8H43z" fill="#fff"/><circle cx="50" cy="59" r="11" fill="#fff" opacity=".9"/><path d="M44 59h12M50 53v12" stroke="#0b5f9e" stroke-width="5" stroke-linecap="round"/></svg>';
-        return response($svg,200,['Content-Type'=>'image/svg+xml','Cache-Control'=>'no-store, max-age=0']);
-    };
-
-    if(!\Illuminate\Support\Facades\Schema::hasTable('team_icons')){
-        if($slug==='lineup-advisor' && is_file(public_path('images/lineup-advisor-cartoon.svg'))){
-            return response()->file(public_path('images/lineup-advisor-cartoon.svg'),['Cache-Control'=>'no-store, max-age=0']);
-        }
-        if($slug==='lineup-advisor-pierre' && is_file(public_path('images/pierre-advisor.webp'))){
-            return response()->file(public_path('images/pierre-advisor.webp'),['Cache-Control'=>'no-store, max-age=0']);
-        }
-        if($slug==='lineup-advisor-john' && is_file(public_path('images/john-advisor.webp'))){
-            return response()->file(public_path('images/john-advisor.webp'),['Cache-Control'=>'no-store, max-age=0']);
-        }
-        if($slug==='orcas' && is_file(public_path('images/team-icons/orcas.webp'))){
-            return response()->file(public_path('images/team-icons/orcas.webp'),['Cache-Control'=>'no-store, max-age=0']);
-        }
-        return $generic();
-    }
-
-    $icon=DB::table('team_icons')->where('team_slug',$slug)->first();
-    if($icon){
-        $bytes=base64_decode((string)$icon->image_data,true);
-        if($bytes!==false){
-            return response($bytes,200,['Content-Type'=>$icon->mime_type,'Cache-Control'=>'no-store, max-age=0']);
-        }
-    }
-
-    if($slug==='lineup-advisor' && is_file(public_path('images/lineup-advisor-cartoon.svg'))){
-        return response()->file(public_path('images/lineup-advisor-cartoon.svg'),['Cache-Control'=>'no-store, max-age=0']);
-    }
-    if($slug==='lineup-advisor-pierre' && is_file(public_path('images/pierre-advisor.webp'))){
-        return response()->file(public_path('images/pierre-advisor.webp'),['Cache-Control'=>'no-store, max-age=0']);
-    }
-    if($slug==='lineup-advisor-john' && is_file(public_path('images/john-advisor.webp'))){
-        return response()->file(public_path('images/john-advisor.webp'),['Cache-Control'=>'no-store, max-age=0']);
-    }
-    if($slug==='orcas' && is_file(public_path('images/team-icons/orcas.webp'))){
-        return response()->file(public_path('images/team-icons/orcas.webp'),['Cache-Control'=>'no-store, max-age=0']);
-    }
-    return $generic();
-})->where('slug','[A-Za-z0-9\-]+');
-
 Route::post('/team-icons/{slug}', function(string $slug) {
     abort_unless(\Illuminate\Support\Facades\Schema::hasTable('team_icons'),503);
 
@@ -121,13 +50,16 @@ Route::post('/team-icons/{slug}', function(string $slug) {
     $file=$validated['image'];
     $bytes=file_get_contents($file->getRealPath());
     abort_if($bytes===false,422,'Could not read image.');
+    $dimensions=@getimagesizefromstring($bytes);
+    abort_if(!$dimensions || $dimensions[0]*$dimensions[1]>16000000,422,'Use an image with at most 16 million pixels.');
 
     DB::table('team_icons')->updateOrInsert(
         ['team_slug'=>$slug],
         ['mime_type'=>$file->getMimeType()?:'image/png','image_data'=>base64_encode($bytes),'updated_at'=>now(),'created_at'=>now()]
     );
 
-    return response()->json(['ok'=>true,'url'=>'/team-icons/'.$slug.'?v='.now()->timestamp]);
+    \App\Support\TeamImages::generate($slug, $bytes, $file->getMimeType()?:'image/png');
+    return response()->json(['ok'=>true,'url'=>\App\Support\TeamImages::url($slug),'thumbnail_url'=>\App\Support\TeamImages::url($slug,160)]);
 })->where('slug','[A-Za-z0-9\-]+');
 
 Route::post('/lineup-advisors/{advisor}/profile', function(string $advisor) {
@@ -230,6 +162,8 @@ Route::post('/admin/advisors/{advisor}/image', function(string $advisor) {
     $file=$validated['image'];
     $bytes=file_get_contents($file->getRealPath());
     abort_if($bytes===false,422,'Could not read image.');
+    $dimensions=@getimagesizefromstring($bytes);
+    abort_if(!$dimensions || $dimensions[0]*$dimensions[1]>16000000,422,'Use an image with at most 16 million pixels.');
 
     $slug=$advisor==='mike'?'lineup-advisor':'lineup-advisor-'.$advisor;
     DB::table('team_icons')->updateOrInsert(
@@ -242,6 +176,7 @@ Route::post('/admin/advisors/{advisor}/image', function(string $advisor) {
         ]
     );
 
+    \App\Support\TeamImages::generate($slug,$bytes,$file->getMimeType()?:'image/png');
     return redirect('/admin/advisors')->with('notice',$profile->first_name.' image updated.');
 })->where('advisor','[a-z0-9\-]+');
 
@@ -290,18 +225,7 @@ Route::get('/standings', function(EcfhlData $data){
 
     try {
         if(\Illuminate\Support\Facades\Schema::hasTable('fantrax_scoring_period_matchups')){
-            $needsDates=!DB::table('fantrax_scoring_period_matchups')
-                ->where('season_id',$seasonName)
-                ->whereNotNull('start_date')
-                ->exists();
-
-            if($needsDates){
-                try {
-                    \Illuminate\Support\Facades\Artisan::call('ecfhl:refresh-scoring-period-matchups');
-                } catch (\Throwable $e) {
-                    report($e);
-                }
-            }
+            // The scheduled collector fills dates; page views never wait on upstream requests.
 
             $rows=DB::table('fantrax_scoring_period_matchups')
                 ->where('season_id',$seasonName)
@@ -347,7 +271,7 @@ Route::get('/standings', function(EcfhlData $data){
         if(\Illuminate\Support\Facades\Schema::hasTable('player_projections') && \Illuminate\Support\Facades\Schema::hasTable('player_projection_baselines')){
             $rosterDate=DB::table('active_fantasy_rosters')->max('game_date');
             $rosters=$rosterDate
-                ? DB::table('active_fantasy_rosters')->whereDate('game_date',$rosterDate)->get()->keyBy(fn($r)=>(string)$r->player_id)
+                ? DB::table('active_fantasy_rosters')->where('game_date',$rosterDate)->get()->keyBy(fn($r)=>(string)$r->player_id)
                 : collect();
             $stats=DB::table('player_projections as p')
                 ->join('player_projection_baselines as b','b.player_id','=','p.player_id')
@@ -420,12 +344,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $date=(string)request('date',$today);
     if(!in_array($date,[$yesterday,$today,$tomorrow],true))$date=$today;
 
-    $currentNames=DB::table('team_seasons as ts')
-        ->join('seasons as s','s.season_id','=','ts.season_id')
-        ->where('s.season_name','2026-27')
-        ->orderBy('ts.original_name')
-        ->pluck('ts.original_name')
-        ->all();
+    $currentNames=\App\Support\PublicData::teamMenu();
 
     $teamName=null;
     foreach($currentNames as $name){
@@ -434,7 +353,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     abort_unless($teamName,404);
 
     $rows=DB::table('active_fantasy_rosters')
-        ->whereDate('game_date',$date)
+        ->where('game_date',$date)
         ->where('fantasy_team_name',$teamName)
         ->get();
 
@@ -466,9 +385,9 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $normTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
     $pp=DB::table('active_pp_lines')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name));
     $lines=DB::table('active_line_combinations')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name).'|'.strtoupper(trim($r->position_group)));
-    $oddsByTeam=DB::table('todays_odds')->whereDate('game_date',$date)->get()->keyBy(fn($r)=>$normTeam($r->team));
+    $oddsByTeam=DB::table('todays_odds')->where('game_date',$date)->get()->keyBy(fn($r)=>$normTeam($r->team));
     $goalieStatusByPlayer=DB::table('active_starting_goalies')
-        ->whereDate('game_date',$date)
+        ->where('game_date',$date)
         ->get()
         ->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name));
 
@@ -574,7 +493,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
             };
             if($position==='G'){
                 $odds=\Illuminate\Support\Facades\DB::table('todays_odds')
-                    ->whereDate('game_date',$date)
+                    ->where('game_date',$date)
                     ->whereRaw('UPPER(TRIM(team)) = ?', [$team])
                     ->first();
                 $player['vegas_odds']=$odds?->american_odds;
@@ -644,8 +563,8 @@ Route::get('/teams/current/{slug}', function(string $slug) {
             $currentPeriod=DB::table('fantrax_scoring_period_matchups')
                 ->where('season_id','2026-27')
                 ->whereNotNull('start_date')
-                ->whereDate('start_date','<=',$fantasyToday->toDateString())
-                ->whereDate('end_date','>=',$fantasyToday->toDateString())
+                ->where('start_date','<=',$fantasyToday->toDateString())
+                ->where('end_date','>=',$fantasyToday->toDateString())
                 ->value('period_number');
 
             if($currentPeriod){
@@ -741,7 +660,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     try {
         if(\Illuminate\Support\Facades\Schema::hasTable('team_daily_moves')){
             $movesLeftToday=DB::table('team_daily_moves')
-                ->whereDate('move_date',$today)
+                ->where('move_date',$today)
                 ->where('fantasy_team_id',(string)($rows->first()->fantasy_team_id??''))
                 ->value('moves_left');
             $movesLeftToday=$movesLeftToday!==null?(int)$movesLeftToday:null;
@@ -756,7 +675,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
             $adviceTeamId=(string)($rows->first()->fantasy_team_id??'');
             if($adviceTeamId!==''){
                 $lineupAdvice=DB::table('lineup_advice')
-                    ->whereDate('advice_date',$today)
+                    ->where('advice_date',$today)
                     ->where('fantasy_team_id',$adviceTeamId)
                     ->first();
             }
@@ -927,7 +846,7 @@ Route::get('/job-status', function () {
         ['key'=>'teams','name'=>'Fantasy Team Rosters','schedule'=>'Every 15 minutes (:00, :15, :30, :45)','last_update'=>$format($teamsLast),'records'=>DB::table('active_fantasy_rosters')->count(),'next_run'=>$nextQuarterHourly(),'state'=>$state($teamsLast,30),'description'=>'Current Fantrax rosters for every fantasy team, enriched with projections, opponents, injuries, line and power-play assignments.'],
         ['key'=>'scores','name'=>'Fantrax Live Scoring','schedule'=>'Every 2 minutes during games; every 15 minutes otherwise','last_update'=>$format($scoresLast),'records'=>(int)DB::table('live_scoring_snapshots')->sum('player_count'),'next_run'=>'2 min live / 15 min idle','state'=>$state($scoresLast,20),'description'=>'Independent yesterday, today and tomorrow Fantrax lineups, daily scores, period scores, projections and game states. Fantasy dates roll over at Pacific midnight.'],
         ['key'=>'standings','name'=>'Current Standings','schedule'=>'Every 5 minutes during games','last_update'=>$format($standingsLast),'records'=>DB::table('team_seasons')->where('season_id','2026-27')->count(),'next_run'=>'Every 5 min during live game window','state'=>$state($standingsLast,15),'description'=>'2026-27 standings and fantasy points from Fantrax scoring-period data, refreshed during the live game window.'],
-        ['key'=>'advisor','name'=>'Regenerate Lineup Advisor','schedule'=>'Every hour','last_update'=>$format($advisorLast),'records'=>\Illuminate\Support\Facades\Schema::hasTable('lineup_advice')?DB::table('lineup_advice')->whereDate('advice_date',app(\App\Support\FantasyDay::class)->today()->toDateString())->count():0,'next_run'=>(function()use($now){return $now->addHour()->startOfHour()->format('M j · g:i a T');})(),'state'=>$state($advisorLast,90),'description'=>'Rebuilds lineup recommendations for every current fantasy team using moves left, roster construction, injuries, available players, projections, goalie coverage, and matchup context.'],
+        ['key'=>'advisor','name'=>'Regenerate Lineup Advisor','schedule'=>'Every hour','last_update'=>$format($advisorLast),'records'=>\Illuminate\Support\Facades\Schema::hasTable('lineup_advice')?DB::table('lineup_advice')->where('advice_date',app(\App\Support\FantasyDay::class)->today()->toDateString())->count():0,'next_run'=>(function()use($now){return $now->addHour()->startOfHour()->format('M j · g:i a T');})(),'state'=>$state($advisorLast,90),'description'=>'Rebuilds lineup recommendations for every current fantasy team using moves left, roster construction, injuries, available players, projections, goalie coverage, and matchup context.'],
     ]);
     return response()
         ->view('job-status', compact('jobs'))
@@ -943,14 +862,14 @@ Route::get('/ai-tips', function () {
     abort_unless(is_string($date) && preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date), 422, 'Use a valid game date.');
     if (!in_array($date, [$today, $tomorrow], true)) $date = $today;
     $selected = $date === $tomorrow ? 'tomorrow' : 'today';
-    $fantraxRows = DB::table('active_daily_players')->whereDate('game_date',$date)->orderByRaw('projected_fpts IS NULL')->orderByDesc('projected_fpts')->orderBy('source_rank')->get();
+    $fantraxRows = DB::table('active_daily_players')->where('game_date',$date)->orderByRaw('projected_fpts IS NULL')->orderByDesc('projected_fpts')->orderBy('source_rank')->get();
     $norm = fn($v)=>preg_replace('/[^\pL\pN]+/u','',mb_strtolower(trim((string)$v)))??'';
     $ppRows = DB::table('active_pp_lines')->get();
     $ppByTeam=[]; foreach($ppRows as $p){$ppByTeam[strtoupper($p->team)][$norm($p->player_name)] = 'PP'.(int)$p->pp_unit;}
     $decorate=function($rows)use($ppByTeam,$norm){return $rows->map(function($p)use($ppByTeam,$norm){$p->pp_unit=$ppByTeam[strtoupper($p->team)][$norm($p->player_name)]??null;return $p;});};
     $forwards=$decorate($fantraxRows->filter(fn($p)=>strtoupper(trim((string)$p->position))==='F')->values());
     $defensemen=$decorate($fantraxRows->filter(fn($p)=>strtoupper(trim((string)$p->position))==='D')->values());
-    $dfo = DB::table('active_starting_goalies')->whereDate('game_date',$date)->get();
+    $dfo = DB::table('active_starting_goalies')->where('game_date',$date)->get();
     $dfoByTeam=[];$confirmedByTeam=[];foreach($dfo as $g){$team=strtoupper(trim((string)$g->team));$dfoByTeam[$team][$norm($g->player_name)]=$g;if(strtolower(trim((string)$g->starting_status))==='confirmed')$confirmedByTeam[$team]=$norm($g->player_name);}
     $goalies=$fantraxRows->filter(fn($p)=>strtoupper(trim((string)$p->position))==='G')->map(function($p)use($dfoByTeam,$confirmedByTeam,$norm){$team=strtoupper(trim((string)$p->team));$name=$norm($p->player_name);$g=$dfoByTeam[$team][$name]??null;$p->starting_status=$g?ucfirst(strtolower(trim((string)$g->starting_status))):'NA';$p->not_starting=isset($confirmedByTeam[$team])&&$confirmedByTeam[$team]!==$name;if($p->not_starting)$p->starting_status='Not starting';return $p;})->values();
     $rank=['Confirmed'=>0,'Probable'=>1,'Unconfirmed'=>2,'NA'=>3,'Not starting'=>4];$goalies=$goalies->sort(function($a,$b)use($rank){$ra=$rank[$a->starting_status]??3;$rb=$rank[$b->starting_status]??3;return $ra===$rb?((float)($b->projected_fpts??-INF)<=>(float)($a->projected_fpts??-INF)):($ra<=>$rb);})->values();

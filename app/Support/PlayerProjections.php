@@ -16,8 +16,8 @@ final class PlayerProjections
         if ($this->byId !== null) return;
         $this->byId = [];
         if (!Schema::hasTable('player_projections')) return;
-        $rows = DB::table('player_projections as p')->join('player_projection_baselines as b', 'b.player_id', '=', 'p.player_id')
-            ->select('p.*', 'b.player_name', 'b.nhl_team', 'b.fantrax_fpts_per_game')->get();
+        $rows = PublicData::remember('player-projections', 60, fn()=>DB::table('player_projections as p')->join('player_projection_baselines as b', 'b.player_id', '=', 'p.player_id')
+            ->select('p.*', 'b.player_name', 'b.nhl_team', 'b.fantrax_fpts_per_game')->get());
         foreach ($rows as $row) {
             $this->byId[(string)$row->player_id] = $row;
             $key = self::name($row->player_name);

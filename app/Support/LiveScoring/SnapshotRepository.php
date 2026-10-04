@@ -7,9 +7,17 @@ use Illuminate\Support\Facades\DB;
 
 final class SnapshotRepository
 {
+    private array $loaded = [];
     public function get(string $date): ?array
     {
-        $row = DB::table('live_scoring_snapshots')->where('league_id', FantraxClient::LEAGUE_ID)->where('fantasy_date', $date)->first();
+        if (array_key_exists($date, $this->loaded)) return $this->loaded[$date];
+        return $this->loaded[$date] = \App\Support\PublicData::remember('snapshot:'.$date, 10, fn()=> $this->read($date));
+    }
+
+    private function read(string $date): ?array
+    {
+        // The raw upstream responses are large and only needed by collectors/debugging.
+        $row = DB::table('live_scoring_snapshots')->where('league_id', FantraxClient::LEAGUE_ID)->where('fantasy_date', $date)->first(['payload','collected_at']);
         if (!$row) return null;
         $data = json_decode($row->payload, true, 512, JSON_THROW_ON_ERROR);
         $data['collected_at'] = CarbonImmutable::parse($row->collected_at, 'UTC')->toIso8601String();
@@ -31,5 +39,7 @@ final class SnapshotRepository
                     'created_at'=>$collected->utc()->format('Y-m-d H:i:s'), 'updated_at'=>$collected->utc()->format('Y-m-d H:i:s')]
             );
         });
+        unset($this->loaded[$snapshot['fantasy_date']]);
+        \App\Support\PublicData::forget('snapshot:'.$snapshot['fantasy_date']);
     }
 }

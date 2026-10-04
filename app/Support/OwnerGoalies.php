@@ -5,7 +5,7 @@ use Carbon\CarbonImmutable;
 use App\Support\LiveScoring\SnapshotRepository;
 class OwnerGoalies {
  public function available(string $date): \Illuminate\Support\Collection {
-  return DB::table('active_available_goalies')->whereDate('game_date',$date)->get()->filter(function($g)use($date){
+  return DB::table('active_available_goalies')->where('game_date',$date)->get()->filter(function($g)use($date){
    $status=strtoupper(trim((string)$g->availability));
    if(!in_array($status,['FA','W','WAIVERS','FREE AGENT'],true))return false;
    if($status!=='FA' && !empty($g->waiver_day)){
@@ -23,7 +23,7 @@ class OwnerGoalies {
   $days=(new FantasyDay)->dates();$rows=collect();$now=CarbonImmutable::now();$projections=new PlayerProjections;
   foreach(['today','tomorrow'] as $label){
    $date=$days[$label];$available=$this->available($date);$statuses=[];$confirmedTeams=[];
-   foreach(DB::table('active_starting_goalies')->whereDate('game_date',$date)->get() as $g){
+   foreach(DB::table('active_starting_goalies')->where('game_date',$date)->get() as $g){
     $team=strtoupper(trim($g->team));$key=OwnerNotificationPolicy::goalieKey($team,$g->player_name);
     $statuses[$key]=strtolower(trim((string)$g->starting_status));
     if($statuses[$key]==='confirmed')$confirmedTeams[$team]=true;
@@ -52,7 +52,7 @@ class OwnerGoalies {
   $games=[];
   // Dated player-pool times are already converted to Atlantic time by the collector.
   foreach(['active_daily_players'=>'team','active_fantasy_rosters'=>'nhl_team'] as $table=>$column){
-   foreach(DB::table($table)->whereDate('game_date',$date)->get() as $p){
+   foreach(DB::table($table)->where('game_date',$date)->get() as $p){
     $team=strtoupper(trim((string)($p->$column??'')));if($team==='')continue;
     $games[$team]['started']=($games[$team]['started']??false)||(bool)($p->game_started??false);
     if(!isset($games[$team]['start']))$games[$team]['start']=$this->parseTime($date,(string)($p->game_time??''));

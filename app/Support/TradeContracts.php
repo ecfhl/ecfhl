@@ -6,12 +6,14 @@ final class TradeContracts
 {
     public static function records(): array
     {
-        return json_decode(file_get_contents(database_path('data/verified-trade-contracts.json')), true, 512, JSON_THROW_ON_ERROR);
+        static $rows;
+        return $rows ??= json_decode(file_get_contents(database_path('data/verified-trade-contracts.json')), true, 512, JSON_THROW_ON_ERROR);
     }
 
     public static function statusRecords(): array
     {
-        return json_decode(file_get_contents(database_path('data/verified-trade-contract-statuses.json')), true, 512, JSON_THROW_ON_ERROR);
+        static $rows;
+        return $rows ??= json_decode(file_get_contents(database_path('data/verified-trade-contract-statuses.json')), true, 512, JSON_THROW_ON_ERROR);
     }
 
     public static function playerName(string $text): string
@@ -62,6 +64,8 @@ final class TradeContracts
 
     public static function leagueIds(): array
     {
+        static $ids;
+        if ($ids !== null) return $ids;
         $ids=[];
         foreach (array_merge(self::records(), self::statusRecords()) as $row) {
             if (!empty($row['season']) && !empty($row['league_id'])) $ids[$row['season']]=$row['league_id'];

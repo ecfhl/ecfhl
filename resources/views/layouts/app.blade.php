@@ -15,12 +15,7 @@
         elseif(request()->is('teams/current')){$browserTitle='ECFHL - Live Scoring';}
         else{$pageTitles=['seasons'=>'Seasons','standings'=>'Standings','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','daily-targets'=>'Daily Targets','job-status'=>'Collector Status','admin'=>'Admin','login'=>'Sign In','register'=>'Create Account','account'=>'Account','notifications'=>'Notifications','rules'=>'Rules'];$browserTitle='ECFHL - '.($pageTitles[request()->segment(1)]??'East Coast Fantasy Hockey League');}
         $showSeasonFilter=!request()->is('login','register','account','account/*','notifications','auth/*','rules','players','daily-targets','job-status','admin','admin/*','teams/current','teams/current/*','seasons','seasons/*','standings');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
-        $currentTeamMenu=\Illuminate\Support\Facades\DB::table('team_seasons as ts')
-            ->join('seasons as s','s.season_id','=','ts.season_id')
-            ->where('s.season_name','2026-27')
-            ->orderBy('ts.original_name')
-            ->pluck('ts.original_name')
-            ->all();
+        $currentTeamMenu=\App\Support\PublicData::teamMenu();
     @endphp
     <title>{{ $browserTitle }}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7"><link rel="shortcut icon" href="/favicon.svg?v=7"><link rel="apple-touch-icon" href="/ecfhl-logo.png?v=7"><link rel="stylesheet" href="/app.css?v=6"><link rel="stylesheet" href="/header-filters.css?v=3"><link rel="stylesheet" href="/navigation-feedback.css?v=1">
@@ -483,7 +478,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       const data=await response.json();
       const freshUrl=(data.url||('/team-icons/'+activeSlug))+(String(data.url||'').includes('?')?'&':'?')+'t='+Date.now();
       modalImage.src=freshUrl;
-      document.querySelectorAll('[data-team-icon-viewer][data-team-slug="'+CSS.escape(activeSlug)+'"] img').forEach(img=>{img.dataset.fullSrc=freshUrl;img.src='/team-icons/'+encodeURIComponent(activeSlug)+'/thumbnail?size=64&t='+Date.now();});
+      document.querySelectorAll('[data-team-icon-viewer][data-team-slug="'+CSS.escape(activeSlug)+'"] img').forEach(img=>{img.dataset.fullSrc=freshUrl;img.removeAttribute('srcset');img.src=data.thumbnail_url||('/team-icons/'+encodeURIComponent(activeSlug)+'/thumbnail?size=160&t='+Date.now());});
     }catch(error){
       alert(error.message||'Could not upload team icon.');
     }finally{

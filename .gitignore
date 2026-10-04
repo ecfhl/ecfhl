@@ -5,3 +5,5 @@
 /storage/logs/*
 /storage/framework/views/*
 /storage/app/*.lock
+/public/media/team-icons/
+/storage/framework/cache/

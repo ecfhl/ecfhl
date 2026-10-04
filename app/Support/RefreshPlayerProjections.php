@@ -29,6 +29,7 @@ final class RefreshPlayerProjections
         $cache = [];
         // Pull the current Fantrax season totals as part of this daily job.
         $seasonActual = $seasonStart <= $end ? $this->source->actual($seasonStart, $end) : [];
+        if ($seasonStart <= $end) $cache[$seasonStart] = $seasonActual;
         if ($seasonStart <= $end) foreach ($baseline as $player) if (!isset($seasonActual[$player['player_id']])) throw new RuntimeException('Missing season actual stats for baseline player '.$player['player_id'].'.');
         if ($log) $log('Season actual FPts/GP collected through '.$end.'.');
         foreach ([7, 14, 21] as $days) {
@@ -66,6 +67,7 @@ final class RefreshPlayerProjections
             DB::table('player_projections')->delete();
             foreach (array_chunk($rows, 100) as $batch) DB::table('player_projections')->insert($batch);
         });
+        PublicData::forget('player-projections');
         if ($log) $log('1000 player projections regenerated for '.$date.'. Fantrax baseline '.($capture ? 'captured' : 'unchanged').'.');
         return count($rows);
     }
