@@ -147,7 +147,7 @@
                       @if($awayPlayingCounts['G']>0)<span class="position-count-pill {{ $awayPlayingCounts['G']>=1?'full':'' }}">{{ $awayPlayingCounts['G'] }} Goaltender{{ $awayPlayingCounts['G']==1?'':'s' }}</span>@endif
                       @if($awayPlayingCounts['B']>0)<span class="position-count-pill bench-count-pill">{{ $awayPlayingCounts['B'] }} Bench</span>@endif
                     </span>
-                    @if(($away['games_in_progress'] ?? 0)>0)<span class="matchup-live-games">In progress: {{ $away['games_in_progress'] }}</span>@endif
+                    
                   </div>
                   <div class="matchup-meta-row matchup-stat-row">
                     <span class="matchup-daily-cats"><span class="matchup-daily-cats-primary">@foreach(['gp'=>'GP','g'=>'G','a'=>'A'] as $key=>$label)@if(($away['today_stats'][$key] ?? 0) != 0)<span>{{ $label }}: {{ $away['today_stats'][$key] }}</span>@endif @endforeach</span><span class="matchup-daily-cats-special">@foreach(['ppg'=>'PPG','shg'=>'SHG','gwg'=>'GWG','w'=>'W','so'=>'SO'] as $key=>$label)@if(($away['today_stats'][$key] ?? 0) != 0)<span>{{ $label }}: {{ $away['today_stats'][$key] }}</span>@endif @endforeach</span></span>
@@ -171,7 +171,7 @@
                 </div>
                 <div class="matchup-summary-meta matchup-summary-meta-home">
                   <div class="matchup-meta-row matchup-meta-row-home">
-                    @if(($home['games_in_progress'] ?? 0)>0)<span class="matchup-live-games">In progress: {{ $home['games_in_progress'] }}</span>@endif
+                    
                     <span class="matchup-playing-counts">
                       @if($homePlayingCounts['F']>0)<span class="position-count-pill {{ $homePlayingCounts['F']>=8?'full':'' }}">{{ $homePlayingCounts['F'] }} Forward{{ $homePlayingCounts['F']==1?'':'s' }}</span>@endif
                       @if($homePlayingCounts['D']>0)<span class="position-count-pill {{ $homePlayingCounts['D']>=4?'full':'' }}">{{ $homePlayingCounts['D'] }} {{ $homePlayingCounts['D']==1?'Defenseman':'Defensemen' }}</span>@endif
@@ -477,6 +477,18 @@ html[data-theme="dark"] .matchup-summary-side .matchup-projected-score{backgroun
   .matchup-week-score{font-size:27px}.matchup-day-score{font-size:15px}
   .matchup-summary-vs{grid-column:2;grid-row:1;align-self:start;margin-top:69px;padding:0;font-size:9px}
   .matchup-summary-meta{margin-top:4px}
+}
+
+@media(max-width:800px){
+  .matchup-summary{padding:7px 12px 6px!important}
+  .matchup-summary-side{padding-top:12px!important}
+  .matchup-team-name-row{gap:3px!important}
+  .matchup-team-name-row a{min-height:25px}
+  .matchup-summary-score,.matchup-summary-away .matchup-summary-score,.matchup-summary-home .matchup-summary-score{top:42px!important}
+  .matchup-summary-vs{margin-top:62px}
+  .matchup-summary-meta{margin-top:1px!important;gap:1px}
+  .matchup-stat-row{padding-top:0!important}
+  .matchup-summary-side .matchup-projected-score{margin-top:2px!important;padding:2px 6px}
 }
 </style>
 
