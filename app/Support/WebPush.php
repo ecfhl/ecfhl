@@ -87,6 +87,39 @@ class WebPush
         }
     }
 
+    public function testLatestScore(int $userId, string $endpointHash): array
+    {
+        $subscription=DB::table('push_subscriptions')->where('user_id',$userId)->where('endpoint_hash',$endpointHash)->where('enabled',true)->whereNotNull('feed_token_hash')->first();
+        if(!$subscription)throw \Illuminate\Validation\ValidationException::withMessages(['device'=>'Enable notifications on this device in Notifications before sending a test.']);
+        $score=DB::table('push_notifications')->where('category','live-score')->orderByDesc('id')->first();
+        if(!$score)throw \Illuminate\Validation\ValidationException::withMessages(['score'=>'No scoring alert has been recorded yet. Try after the next player earns fantasy points.']);
+        $alert=['title'=>$score->title,'body'=>$score->body,'url'=>$score->url,'fantasy_team_id'=>$score->fantasy_team_id];
+        // Rebuild older alerts with the same team/stat-line formatter used by live scoring.
+        $date=preg_match('/[?&]date=(\d{4}-\d{2}-\d{2})/',(string)$score->url,$match)?$match[1]:(new FantasyDay)->today()->toDateString();
+        $snapshot=app(\App\Support\LiveScoring\SnapshotRepository::class)->get($date);
+        foreach(($snapshot['players']??[]) as $player){
+            if((string)($player['fantasy_team_id']??'')!==(string)$score->fantasy_team_id)continue;
+            if(str_starts_with($score->body,$player['player_name'].' · ')||str_starts_with($score->body,$player['player_name'].' now has ')){
+                $alert=\App\Support\LiveScoring\ScoringAlert::payload($snapshot,$player);break;
+            }
+        }
+        if(!str_contains($alert['body'],'G: ')||!str_contains($alert['body'],'GWG: '))throw \Illuminate\Validation\ValidationException::withMessages(['score'=>'The last scoring alert has no game stat line available. Try after the next scoring update.']);
+        $id=DB::transaction(function()use($alert,$subscription){
+            $id=DB::table('push_notifications')->insertGetId(array_merge($alert,['category'=>'test-score','title'=>$alert['title'].' · TEST','created_at'=>now(),'updated_at'=>now()]));
+            DB::table('push_deliveries')->insert(['subscription_id'=>$subscription->id,'notification_id'=>$id]);return $id;
+        });
+        try{$status=$this->sendEmptyPush($subscription->endpoint);}catch(\Throwable $e){
+            DB::table('push_notifications')->where('id',$id)->delete();throw $e;
+        }
+        if($status<200||$status>=300){
+            DB::table('push_notifications')->where('id',$id)->delete();
+            if(in_array($status,[404,410],true))DB::table('push_subscriptions')->where('id',$subscription->id)->delete();
+            throw \Illuminate\Validation\ValidationException::withMessages(['device'=>'The browser could not receive the test. Re-enable notifications on this device and try again.']);
+        }
+        DB::table('push_subscriptions')->where('id',$subscription->id)->update(['last_push_at'=>now(),'updated_at'=>now()]);
+        return ['ok'=>true,'message'=>'Test sent to this device. '.$alert['title']."\n".$alert['body']];
+    }
+
     private function sendEmptyPush(string $endpoint): int
     {
         [$publicKey,$privatePem]=$this->ensureKeys();

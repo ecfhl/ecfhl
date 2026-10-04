@@ -5,9 +5,9 @@
     <div class="status-actions">
         <a class="button status-back" href="/daily-targets">← Back to Daily Targets</a>
         <div class="status-action-buttons">
-            <form method="POST" action="/job-status/test-goalie-notification" class="test-notification-form">
+            <form method="POST" action="/job-status/test-scoring-notification" class="test-notification-form">
                 @csrf
-                <button type="submit" class="button test-notification">Send Test Notification</button>
+                <button type="submit" class="button test-notification" title="Test the latest player scoring alert on this device">Send Test Notification</button>
             </form>
             <form method="POST" action="/job-status/run/all" class="run-all-form job-ajax-form" data-job="all">
                 @csrf
@@ -102,9 +102,9 @@ document.addEventListener('DOMContentLoaded',()=>{
    const original=button.textContent;
    button.disabled=true;button.textContent='Sending…';
    try{
-     const response=await fetch('/job-status/test-goalie-notification',{method:'POST',credentials:'same-origin',headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest','X-CSRF-TOKEN':csrf,'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:new URLSearchParams({_token:csrf}).toString()});
+     const response=await fetch('/job-status/test-scoring-notification',{method:'POST',credentials:'same-origin',headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest','X-CSRF-TOKEN':csrf,'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:new URLSearchParams({_token:csrf}).toString()});
      const data=await response.json();
-     if(!response.ok||!data.ok)throw new Error(data.message||'Could not send test notification.');
+     if(!response.ok||!data.ok)throw new Error(Object.values(data.errors||{}).flat().join(' ')||data.message||'Could not send test notification.');
      box.hidden=false;box.className='job-live-results ok';boxText.textContent=data.message;saveBox();
    }catch(err){
      box.hidden=false;box.className='job-live-results error';boxText.textContent='Test notification failed: '+err.message;saveBox();

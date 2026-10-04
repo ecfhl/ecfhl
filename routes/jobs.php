@@ -5,27 +5,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use App\Support\WebPush;
 
-Route::post('/job-status/test-goalie-notification', function (WebPush $webPush) {
+$sendTestScore = function (WebPush $webPush) {
     abort_unless(request()->ajax() && request()->headers->get('X-Requested-With') === 'XMLHttpRequest', 403);
-
-    $goalie = DB::table('active_starting_goalies')
-        ->whereIn('starting_status', ['Confirmed', 'Likely'])
-        ->orderByRaw("CASE WHEN starting_status = 'Confirmed' THEN 0 ELSE 1 END")
-        ->orderByDesc('game_date')
-        ->first();
-
-    $name = $goalie?->player_name ?: 'Test Goalie';
-    $team = $goalie?->team ?: 'NHL';
-    $status = $goalie?->starting_status ?: 'Confirmed';
-    $fantraxUrl = 'https://www.fantrax.com/fantasy/league/092zcn40molvao69/players;searchName='.rawurlencode((string)$name).';positionOrGroup=ALL;';
-
-    $webPush->notify('goalie-status', 'Goalie Status — TEST', $name.' ('.$team.') is now '.$status.'.', $fantraxUrl,null,['game_date'=>(new \App\Support\FantasyDay)->today()->toDateString(),'available'=>true,'goalie_key'=>\App\Support\OwnerNotificationPolicy::goalieKey($team,$name)]);
-
-    return response()->json([
-        'ok' => true,
-        'message' => 'Test notification sent for '.$name.' ('.$team.'). Click it to verify the Fantrax player-search link.',
-    ]);
-});
+    $hash=(string)request()->session()->get('push_endpoint_hash',request()->cookie('ecfhl_push_device',''));
+    return response()->json($webPush->testLatestScore(request()->user()->id,$hash));
+};
+Route::post('/job-status/test-scoring-notification',$sendTestScore)->middleware('throttle:5,1,push-test');
+// Support an already-open Collector Status page using the previous URL.
+Route::post('/job-status/test-goalie-notification',$sendTestScore)->middleware('throttle:5,1,push-test');
 
 Route::post('/job-status/run/{job}', function (string $job) {
     abort_unless(request()->ajax() && request()->headers->get('X-Requested-With') === 'XMLHttpRequest', 403);

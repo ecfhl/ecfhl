@@ -191,5 +191,44 @@ ownerRequest('GET','/notifications',[],$guest,['HTTP_ACCEPT'=>'text/html']);
 $guestBell=view('account.goalie-bell',['goalie'=>['name'=>'Z Early','team'=>'TOR','starting_status'=>'Probable'],'date'=>$day])->render();
 verifyOwner(str_contains($guestBell,'href="/login"'),'Guest bell lacks sign-in link');
 verifyOwner(str_contains(view('account.goalie-bell',['goalie'=>['name'=>'Sam Goalie','team'=>'MTL'],'date'=>'2026-10-03'])->render(),'goalie-watch-bell'),'Tomorrow unknown status bell missing');
+// Collector test replays the latest real scoring alert only to the requesting admin device.
+Http::fake(['https://fcm.googleapis.com/*'=>Http::response('',201)]);
+$testHeaders=['HTTP_X_REQUESTED_WITH'=>'XMLHttpRequest'];
+$testEndpoint='https://fcm.googleapis.com/fcm/send/admin-current';
+$response=ownerRequest('POST','/push/subscribe',['endpoint'=>$testEndpoint],$admin);
+verifyOwner($response->getStatusCode()===200,'Admin device setup failed');
+$testToken=json_decode($response->getContent(),true)['feedToken'];
+$adminOwner=User::where('email','dan@example.org')->first();
+$push->subscribe('https://fcm.googleapis.com/fcm/send/admin-other',$adminOwner->id,'token-admin-other');
+DB::table('push_notifications')->insert(['category'=>'live-score','title'=>'Earlier','body'=>'Earlier Player','fantasy_team_id'=>'a','url'=>'/teams/current?date='.$day]);
+DB::table('push_notifications')->insert(['category'=>'live-score','title'=>'ECFHL Live Scoring','body'=>'Latest Skater now has 7 FPts.','fantasy_team_id'=>'b','url'=>'/teams/current?date='.$day]);
+DB::table('push_notifications')->insert(['category'=>'goalie-status','title'=>'Newer goalie','body'=>'Not a scoring event']);
+$testSnapshot=json_decode(DB::table('live_scoring_snapshots')->where('fantasy_date',$day)->value('payload'),true);
+$testSnapshot['fantasy_date']=$day;$testSnapshot['teams']['b']=['name'=>'Beta'];
+$testSnapshot['players'][]=['fantasy_team_id'=>'b','player_name'=>'Latest Skater','daily_fpts'=>7,'stats'=>['G'=>['value'=>2],'A'=>['value'=>3],'PPG'=>['value'=>1],'SHG'=>['value'=>1],'GWG'=>['value'=>1]]];
+DB::table('live_scoring_snapshots')->where('fantasy_date',$day)->update(['payload'=>json_encode($testSnapshot)]);
+verifyOwner(ownerRequest('POST','/job-status/test-scoring-notification',[],$guest,$testHeaders)->getStatusCode()===401,'Guest can send a test');
+verifyOwner(ownerRequest('POST','/job-status/test-scoring-notification',[],$alpha,$testHeaders)->getStatusCode()===403,'Regular owner can send admin test');
+verifyOwner(ownerRequest('POST','/job-status/test-scoring-notification',[],$admin)->getStatusCode()===403,'Non-AJAX test bypassed restriction');
+foreach(['/job-status/test-scoring-notification','/job-status/test-goalie-notification'] as $testUrl){
+ $response=ownerRequest('POST',$testUrl,[],$admin,$testHeaders);
+ verifyOwner($response->getStatusCode()===200&&json_decode($response->getContent(),true)['ok'],'Scoring test failed: '.$response->getContent());
+ $testAlert=DB::table('push_notifications')->orderByDesc('id')->first();
+ verifyOwner($testAlert->category==='test-score'&&$testAlert->title==='ECFHL · Beta · TEST','Test selected goalie / prior test / older score');
+ verifyOwner($testAlert->body==="Latest Skater · 7 FPts\nG: 2 · A: 3 · PPG: 1 · SHG: 1 · GWG: 1",'Test omitted current stat totals / legacy team name');
+ $delivery=DB::table('push_deliveries')->where('notification_id',$testAlert->id)->get();
+ $deviceId=DB::table('push_subscriptions')->where('endpoint_hash',hash('sha256',$testEndpoint))->value('id');
+ verifyOwner($delivery->count()===1&&(int)$delivery[0]->subscription_id===(int)$deviceId,'Test broadcast to other owners/devices');
+}
+$feed=ownerRequest('GET','/push/notifications',[],$guest,['HTTP_AUTHORIZATION'=>'Bearer '.$testToken]);
+verifyOwner(count(json_decode($feed->getContent(),true)['notifications'])===2,'Device feed did not contain the scoring tests');
+$testsBefore=DB::table('push_notifications')->where('category','test-score')->count();
+Http::swap(new Illuminate\Http\Client\Factory);Http::preventStrayRequests();
+Http::fake(['https://fcm.googleapis.com/*'=>Http::response('',410)]);
+$response=ownerRequest('POST','/job-status/test-scoring-notification',[],$admin,$testHeaders);
+verifyOwner($response->getStatusCode()===422&&DB::table('push_notifications')->where('category','test-score')->count()===$testsBefore,'Failed browser delivery reported success / left queued test');
+verifyOwner(!DB::table('push_subscriptions')->where('endpoint_hash',hash('sha256',$testEndpoint))->exists(),'Expired test subscription retained');
+DB::table('push_notifications')->where('category','live-score')->delete();
+try{$push->testLatestScore($adminOwner->id,hash('sha256','https://fcm.googleapis.com/fcm/send/admin-other'));throw new RuntimeException('No scorer invented a test');}catch(Illuminate\Validation\ValidationException $e){verifyOwner(str_contains($e->getMessage(),'No scoring alert'),'Empty scoring history gave an unclear error');}
 CarbonImmutable::setTestNow();
-echo "Owner account checks passed: pages, optional browsing, exclusive claims, reserved admin invitation, admin routes/actions, password hashing/login, Google state/linking, own/opponent scoring, goalie filters, date groups/custom projection ordering/start-time ties, confirmed/nonstarter/started-game exclusions, bell toggle/auth/preference preservation, waiver dates, own-goalie roster slots/current snapshot/toggle/delivery, isolated push delivery, and SSRF rejection.\n";
+echo "Owner account checks passed: pages, optional browsing, exclusive claims, reserved admin invitation, admin routes/actions, password hashing/login, Google state/linking, own/opponent scoring, goalie filters, date groups/custom projection ordering/start-time ties, confirmed/nonstarter/started-game exclusions, bell toggle/auth/preference preservation, waiver dates, own-goalie roster slots/current snapshot/toggle/delivery, isolated push delivery, latest-score test replay/legacy formatting/device isolation/failed delivery, and SSRF rejection.\n";
