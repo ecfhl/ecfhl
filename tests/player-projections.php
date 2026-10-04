@@ -124,7 +124,14 @@ DB::table('player_projections')->where('player_id', 'p5')->update(['season_fpts_
 $statsBefore = DB::table('player_projections')->where('player_id', 'p5')->first();
 $sourceCalls = count($source->calls);
 $customWeights = ['fantrax'=>20, 'season'=>30, '7d'=>25, '14d'=>15, '21d'=>10];
+DB::table('player_projections')->where('player_id', 'p6')->update(['season_fpts_per_game'=>100]);
+$previewBefore = DB::table('player_projections')->orderBy('player_id')->get()->toJson();
+$preview = App\Support\ProjectionSettings::preview($customWeights);
+checkProjection(count($preview['players']) === 10 && $preview['count'] === 1000 && $preview['players'][0]['player_id'] === 'p6', 'Preview the top 10 ranked by the proposed custom formula.');
+checkProjection(abs($preview['players'][0]['myproj'] - 30.4) < 0.000001 && $preview['players'][0]['season_fpts_per_game'] === 100.0, 'Preview compares proposed MyProj with actual season FPts/GP.');
+checkProjection(DB::table('player_projections')->orderBy('player_id')->get()->toJson() === $previewBefore && App\Support\ProjectionSettings::weights() === ProjectionMath::DEFAULT_WEIGHTS, 'Preview must not change saved projections or weights.');
 checkProjection(App\Support\ProjectionSettings::save($customWeights) === 1000, 'Recalculate all 1,000 stored projections.');
+checkProjection(abs((float)DB::table('player_projections')->where('player_id', 'p6')->value('projected_fpts_per_game') - $preview['players'][0]['myproj']) < 0.000001, 'Saving and previewing must use the same calculation.');
 checkProjection(abs((float)DB::table('player_projections')->where('player_id', 'p5')->value('projected_fpts_per_game') - 6.1) < 0.000001, 'Apply distinct weights including season stats.');
 checkProjection(count($source->calls) === $sourceCalls, 'Changing weights must not fetch Fantrax.');
 checkProjection(DB::table('player_projections')->where('player_id', 'p5')->value('refreshed_at') === $statsBefore->refreshed_at, 'Changing weights must not disguise old collected stats as fresh.');

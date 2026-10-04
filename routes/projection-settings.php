@@ -11,13 +11,20 @@ Route::get('/admin/projections', function () {
     return view('admin.projections', compact('weights', 'labels', 'count'));
 });
 
-Route::post('/admin/projections', function () {
+$projectionRequestWeights = function (): array {
     $rules = [];
     $sliders = request()->has('units');
     foreach (ProjectionSettings::LABELS as $key => $_) $rules[($sliders ? 'units.' : 'weights.').$key] = $sliders
         ? 'required|numeric|between:0,10|decimal:0,1' : 'required|numeric|between:0,100|decimal:0,2';
     $validated = request()->validate($rules);
-    $weights = $sliders ? array_map(fn($units)=>(float)$units * 10, $validated['units']) : $validated['weights'];
-    $count = ProjectionSettings::save($weights);
+    return $sliders ? array_map(fn($units)=>(float)$units * 10, $validated['units']) : $validated['weights'];
+};
+
+Route::post('/admin/projections/preview', function () use ($projectionRequestWeights) {
+    return response()->json(ProjectionSettings::preview($projectionRequestWeights()))->header('Cache-Control', 'private, no-store');
+});
+
+Route::post('/admin/projections', function () use ($projectionRequestWeights) {
+    $count = ProjectionSettings::save($projectionRequestWeights());
     return redirect('/admin/projections')->with('notice', 'Projection weights saved. '.$count.' player projections recalculated.');
 });

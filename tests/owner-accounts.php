@@ -51,6 +51,7 @@ verifyOwner(!str_contains($response->getContent(),'href="/admin"'),'Admin menu e
 verifyOwner(ownerRequest('GET','/admin',[],$guest)->getStatusCode()===401,'Guest admin access allowed');
 verifyOwner(ownerRequest('GET','/admin/projections',[],$guest)->getStatusCode()===401,'Guest projection settings access allowed');
 verifyOwner(ownerRequest('POST','/admin/projections',['weights'=>App\Support\ProjectionMath::DEFAULT_WEIGHTS],$guest)->getStatusCode()===401,'Guest projection mutation allowed');
+verifyOwner(ownerRequest('POST','/admin/projections/preview',['units'=>['fantrax'=>6,'season'=>2,'7d'=>2,'14d'=>0,'21d'=>0]],$guest)->getStatusCode()===401,'Guest projection preview allowed');
 verifyOwner(ownerRequest('POST','/job-status/run/all',[],$guest)->getStatusCode()===401,'Guest collector trigger allowed');
 verifyOwner(ownerRequest('POST','/team-icons/alpha',[],$guest)->getStatusCode()===401,'Guest image mutation allowed');
 $alpha=[];$response=ownerRequest('POST','/register',['name'=>'Owner A','email'=>'a@example.org','password'=>'strong-example-a','password_confirmation'=>'strong-example-a','team_id'=>'a'],$alpha);
@@ -77,6 +78,7 @@ verifyOwner($response->getStatusCode()===419&&str_contains($response->getContent
 $app['env']='testing';
 verifyOwner(ownerRequest('GET','/admin',[],$alpha)->getStatusCode()===403,'Regular owner admin access allowed');
 verifyOwner(ownerRequest('POST','/admin/projections',['weights'=>App\Support\ProjectionMath::DEFAULT_WEIGHTS],$alpha)->getStatusCode()===403,'Regular owner projection mutation allowed');
+verifyOwner(ownerRequest('POST','/admin/projections/preview',['units'=>['fantrax'=>6,'season'=>2,'7d'=>2,'14d'=>0,'21d'=>0]],$alpha)->getStatusCode()===403,'Regular owner projection preview allowed');
 verifyOwner(ownerRequest('POST','/lineup-advisors/mike/profile',['first_name'=>'Oops'],$alpha)->getStatusCode()===403,'Regular owner admin mutation allowed');
 $second=[];$response=ownerRequest('POST','/register',['name'=>'Duplicate','email'=>'duplicate@example.org','password'=>'strong-example-b','password_confirmation'=>'strong-example-b','team_id'=>'a'],$second);
 verifyOwner($response->getStatusCode()===422 && !User::where('email','duplicate@example.org')->exists(),'Duplicate claim left an orphan account: '.$response->getStatusCode().' '.$response->getContent());
@@ -99,6 +101,10 @@ $response=ownerRequest('POST','/admin/projections',['units'=>['fantrax'=>6,'seas
 verifyOwner($response->getStatusCode()===302 && App\Support\ProjectionSettings::weights()===['fantrax'=>60.0,'season'=>20.0,'7d'=>20.0,'14d'=>0.0,'21d'=>0.0],'Slider units must convert 6/2/2 into 60%/20%/20%');
 $response=ownerRequest('POST','/admin/projections',['units'=>['fantrax'=>7,'season'=>2,'7d'=>2,'14d'=>0,'21d'=>0]],$admin);
 verifyOwner($response->getStatusCode()===422 && App\Support\ProjectionSettings::weights()['fantrax']===60.0,'A slider total over 10 units changed saved settings');
+$response=ownerRequest('POST','/admin/projections/preview',['units'=>['fantrax'=>5,'season'=>3,'7d'=>2,'14d'=>0,'21d'=>0]],$admin);
+verifyOwner($response->getStatusCode()===200 && json_decode($response->getContent(),true)['weights']['fantrax']===50 && App\Support\ProjectionSettings::weights()['fantrax']===60.0,'Admin preview must calculate proposed weights without saving');
+$response=ownerRequest('POST','/admin/projections/preview',['units'=>['fantrax'=>6,'season'=>3,'7d'=>2,'14d'=>0,'21d'=>0]],$admin);
+verifyOwner($response->getStatusCode()===422,'Preview must reject a total above 10 units');
 // Authorization policy covers distinct scoring/goalie combinations and Pacific fantasy-day boundaries.
 $b=User::create(['name'=>'B','email'=>'b@example.org','password'=>'strong-example-b']);(new OwnerTeams)->claim($b,'b');
 $p=new OwnerNotificationPolicy;

@@ -26,7 +26,7 @@ final class ProjectionSettings
         return implode(' + ', $parts);
     }
 
-    public static function save(array $weights): int
+    public static function validate(array $weights): array
     {
         // Validate again at the calculation boundary, including precision used by the database.
         $total = 0;
@@ -38,6 +38,27 @@ final class ProjectionSettings
             $total += (int)round($value * 100);
         }
         if ($total !== 10000) throw ValidationException::withMessages(['weights'=>'The five percentages must total 100%.']);
+        return $weights;
+    }
+
+    public static function preview(array $weights): array
+    {
+        $weights = self::validate($weights);
+        $rows = DB::table('player_projections as p')->join('player_projection_baselines as b', 'b.player_id', '=', 'p.player_id')
+            ->select('b.player_id', 'b.player_name', 'b.nhl_team', 'b.position', 'b.source_rank', 'b.fantrax_fpts_per_game',
+                'p.season_fpts_per_game', 'p.season_gp', 'p.fpts_per_game_7d', 'p.fpts_per_game_14d', 'p.fpts_per_game_21d', 'p.window_end_date')->get();
+        $players = $rows->map(function ($row) use ($weights) {
+            return ['player_id'=>$row->player_id, 'name'=>$row->player_name, 'team'=>$row->nhl_team, 'position'=>$row->position,
+                'source_rank'=>(int)$row->source_rank, 'season_gp'=>(int)$row->season_gp, 'season_fpts_per_game'=>(float)$row->season_fpts_per_game,
+                'myproj'=>ProjectionMath::weighted(['fantrax'=>(float)$row->fantrax_fpts_per_game, 'season'=>(float)$row->season_fpts_per_game,
+                    '7d'=>(float)$row->fpts_per_game_7d, '14d'=>(float)$row->fpts_per_game_14d, '21d'=>(float)$row->fpts_per_game_21d], $weights)];
+        })->sort(fn($a, $b)=>($b['myproj'] <=> $a['myproj']) ?: ($a['source_rank'] <=> $b['source_rank']))->take(10)->values()->all();
+        return ['players'=>$players, 'count'=>$rows->count(), 'stats_through'=>$rows->max('window_end_date'), 'weights'=>$weights];
+    }
+
+    public static function save(array $weights): int
+    {
+        $weights = self::validate($weights);
 
         // Share the collector lock so an in-flight daily refresh cannot overwrite the new calculation.
         $path = storage_path('app/player-projections.lock');
