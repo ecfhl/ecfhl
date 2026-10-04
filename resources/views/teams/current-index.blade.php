@@ -607,3 +607,14 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 @endsection
+
+<style>
+.matchup-team-name-row .team-icon-uploader,
+.matchup-team-name-row .team-icon-uploader img{
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.matchup-team-name-row .team-icon-uploader img{object-fit:contain!important}
+</style>
