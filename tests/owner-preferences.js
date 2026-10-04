@@ -10,8 +10,8 @@ const watches=[new Element({name:'goalies[]',value:'MTL|samgoalie'}),new Element
 const save=new Element(),status=new Element(),enable=new Element(),disable=new Element(),pushState=new Element();
 const form=new Element({action:'/notifications',querySelectorAll:()=>[own,scores,...watches]});
 const ids={'owner-preferences-form':form,'owner-save-preferences':save,'owner-save-state':status,'owner-enable-push':enable,'owner-disable-push':disable,'owner-push-state':pushState};
-const calls=[];let finish;
-const context={document:{getElementById:id=>ids[id],querySelectorAll:()=>watches,querySelector:()=>({content:'test-csrf'})},navigator:{},window:{},
+const calls=[],redirects=[];let finish;
+const context={document:{getElementById:id=>ids[id],querySelectorAll:()=>watches,querySelector:()=>({content:'test-csrf'})},navigator:{},window:{location:{assign:url=>redirects.push(url)}},
  FormData:class {getAll(name){return watches.filter(input=>input.name===name&&input.checked).map(input=>input.value);}},
  fetch:(url,options)=>{calls.push({url,options});return new Promise(resolve=>{finish=resolve;});},Set,JSON,Boolean,Error,Uint8Array};
 vm.runInNewContext(fs.readFileSync('public/owner-notifications.js','utf8'),context);
@@ -30,14 +30,17 @@ vm.runInNewContext(fs.readFileSync('public/owner-notifications.js','utf8'),conte
  finish({ok:true,json:async()=>({preferences:submitted})});await pending;
  assert.equal(save.disabled,false,'Changes during saving must remain unsaved');
  assert.equal(status.textContent,'Unsaved changes.');
- const second=form.fire('submit');const saved=JSON.parse(calls[1].options.body);
- finish({ok:true,json:async()=>({preferences:saved})});await second;
- assert.equal(save.disabled,true);assert.equal(status.textContent,'Preferences saved.');
- scores.checked=false;await form.fire('change');assert.equal(save.disabled,false);
+ assert.equal(redirects.length,0,'Do not leave behind changes made during the save');
  const failed=form.fire('submit');finish({ok:false,json:async()=>({errors:{goalies:['Refresh the goalie list.']}})});await failed;
  assert.equal(save.disabled,false,'Failed saves must allow retry');assert.equal(status.dataset.state,'error');
  assert.equal(status.textContent,'Refresh the goalie list.');
- const retry=form.fire('submit');finish({ok:true,json:async()=>({preferences:JSON.parse(calls[3].options.body)})});await retry;
- assert.equal(save.disabled,true,'Successful retry must return to saved state');
- console.log('Preference UI checks passed: initial saved state, change/revert, duplicate goalies, saving lock, concurrent edits, confirmation, error and retry, without browser push support.');
+ assert.equal(redirects.length,0,'Failed saves must stay on the page');
+ const unconfirmed=form.fire('submit');finish({ok:true,json:async()=>({})});await unconfirmed;
+ assert.equal(save.disabled,false,'Unconfirmed saves must allow retry');assert.equal(redirects.length,0);
+ const retry=form.fire('submit');finish({ok:true,json:async()=>({preferences:JSON.parse(calls[3].options.body),redirect_url:'/teams/current/alpha'})});await retry;
+ assert.equal(save.disabled,true,'Successful saves stay locked while navigating');
+ assert.deepEqual(redirects,['/teams/current/alpha'],'Successful save must open the owner team');
+ assert.equal(status.textContent,'Saved. Opening your team…');
+ await form.fire('submit');assert.equal(calls.length,4,'Do not submit again during navigation');
+ console.log('Preference UI checks passed: initial saved state, change/revert, duplicate goalies, saving lock, concurrent edits, error/unconfirmed responses, retry and redirect after confirmed save.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

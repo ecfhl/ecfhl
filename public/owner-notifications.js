@@ -20,7 +20,11 @@
     if(!response.ok)throw new Error(Object.values(data.errors||{}).flat().join(' ')||data.message||'Could not save preferences. Please try again.');
     if(!data.preferences)throw new Error('Could not confirm the save. Please reload and try again.');
     saved=signature(data.preferences);saving=false;
-    if(!updateSave())saveState.textContent='Preferences saved.';
+    if(!updateSave()){
+     // Leave only once every displayed change has been confirmed saved.
+     saving=true;save.disabled=true;save.textContent='Saved';saveState.textContent='Saved. Opening your team…';
+     window.location.assign(data.redirect_url||'/teams/current');
+    }
    }catch(error){saving=false;updateSave();saveState.textContent=error.message;saveState.dataset.state='error';}
   });
  }

@@ -32,7 +32,9 @@ class OwnerNotificationsController {
    // Clear queued events together with the preference update.
    \Illuminate\Support\Facades\DB::table('push_deliveries')->whereIn('subscription_id',\Illuminate\Support\Facades\DB::table('push_subscriptions')->where('user_id',$r->user()->id)->select('id'))->delete();
   });
-  if($r->expectsJson())return response()->json(['message'=>'Notification preferences saved.','preferences'=>$p]);
-  return back()->with('notice','Notification preferences saved.');
+  $claim=$r->user()->claim;
+  $redirect=$claim?'/teams/current/'.\Illuminate\Support\Str::slug($claim->team_name):'/teams/current';
+  if($r->expectsJson())return response()->json(['message'=>'Notification preferences saved.','preferences'=>$p,'redirect_url'=>$redirect]);
+  return redirect($redirect)->with('notice','Notification preferences saved.');
  }
 }
