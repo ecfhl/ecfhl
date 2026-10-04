@@ -28,6 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const difference = 100 - sum;
     inputs.forEach(input => {
       const units = Number(input.value), percent = Math.round(units * 10);
+      // Highlight the portion each slider could give up to remove the total excess.
+      // At 110%, a 7-unit slider is gold through 6 units and red from 6 to 7.
+      const excess = Math.max(0, -difference);
+      input.style.setProperty('--slider-fill', percent + '%');
+      input.style.setProperty('--slider-warning-start', Math.max(0, percent - excess) + '%');
+      input.style.setProperty('--slider-warning-end', percent + '%');
       document.getElementById('value-' + key(input)).textContent = units + ' / 10 · ' + percent + '%';
       input.setAttribute('aria-valuetext', units + ' out of 10 units, ' + percent + ' percent');
       const target = Math.round((units + difference / 10) * 10) / 10;

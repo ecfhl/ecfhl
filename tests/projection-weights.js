@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 class Element {
-  constructor(props = {}) { Object.assign(this, {disabled: false, hidden: false, textContent: '', children: [], handlers: {}, dataset: {}, classList: {toggle() {}}}, props); }
+  constructor(props = {}) { Object.assign(this, {disabled: false, hidden: false, textContent: '', children: [], handlers: {}, dataset: {}, classList: {toggle() {}}, style: {values: {}, setProperty(key, value) { this.values[key] = value; }}}, props); }
   addEventListener(type, fn) { this.handlers[type] = fn; }
   setAttribute(key, value) { this[key] = value; }
   append(child) { this.children.push(child); }
@@ -38,10 +38,19 @@ const click = () => preview.handlers.click();
   assert.match(elements['projection-total-help'].textContent, /Add 2 units \(20%\)/);
   assert.match(elements['adjust-season'].textContent, /Increase to 4 \/ 10 \(40%\)/);
   assert.equal(preview.disabled, true);
+  change('fantrax', 7);
+  assert.equal(inputs[0].style.values['--slider-warning-start'], '60%', 'At 110%, the last unit of the 7-unit slider is red.');
+  assert.equal(inputs[0].style.values['--slider-warning-end'], '70%');
+  for (const input of inputs.slice(1, 3)) {
+    assert.equal(input.style.values['--slider-warning-start'], '10%', 'The last unit of each 2-unit slider is red.');
+    assert.equal(input.style.values['--slider-warning-end'], '20%');
+  }
+  assert.equal(inputs[3].style.values['--slider-warning-start'], '0%', 'Empty sliders have no red segment.');
   change('fantrax', 8);
   assert.match(elements['projection-total-help'].textContent, /Remove 2 units \(20%\)/);
   assert.match(elements['adjust-season'].textContent, /Reduce to 0 \/ 10 \(0%\)/);
   change('fantrax', 7); change('season', 1);
+  assert.equal(inputs[0].style.values['--slider-warning-start'], inputs[0].style.values['--slider-warning-end'], 'Red disappears at a 100% total.');
   assert.equal(save.disabled, true, 'Valid changes still require a preview.');
   send = async () => response(data);
   await click();
