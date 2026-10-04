@@ -26,6 +26,32 @@ Route::post('/admin/lineup-advisor/reset-and-refresh', function () {
     ],$exitCode===0?200:500);
 });
 
+Route::get('/team-icons/{slug}/thumbnail', function(string $slug) {
+    $size=max(24,min(160,(int)request('size',64)));
+    $fallback=function() use ($size) {
+        $svg='<svg xmlns="http://www.w3.org/2000/svg" width="'.$size.'" height="'.$size.'" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="#e2e8f0"/><path d="M24 31l16-10 10 8 10-8 16 10-8 14-8-5v36H40V40l-8 5-8-14z" fill="#0b5f9e"/><path d="M43 34h14v8H43z" fill="#fff"/><circle cx="50" cy="59" r="11" fill="#fff" opacity=".9"/><path d="M44 59h12M50 53v12" stroke="#0b5f9e" stroke-width="5" stroke-linecap="round"/></svg>';
+        return response($svg,200,['Content-Type'=>'image/svg+xml','Cache-Control'=>'public, max-age=86400']);
+    };
+    if(!\Illuminate\Support\Facades\Schema::hasTable('team_icons')) return $fallback();
+    $icon=DB::table('team_icons')->where('team_slug',$slug)->first();
+    if(!$icon) return $fallback();
+    $bytes=base64_decode((string)$icon->image_data,true);
+    if($bytes===false || !function_exists('imagecreatefromstring')) return $fallback();
+    $source=@imagecreatefromstring($bytes);
+    if(!$source) return $fallback();
+    $w=imagesx($source); $h=imagesy($source);
+    $side=max($w,$h);
+    $thumb=imagecreatetruecolor($size,$size);
+    imagealphablending($thumb,false); imagesavealpha($thumb,true);
+    $transparent=imagecolorallocatealpha($thumb,0,0,0,127); imagefill($thumb,0,0,$transparent);
+    $scale=min($size/$w,$size/$h);
+    $dw=max(1,(int)round($w*$scale)); $dh=max(1,(int)round($h*$scale));
+    imagecopyresampled($thumb,$source,(int)(($size-$dw)/2),(int)(($size-$dh)/2),0,0,$dw,$dh,$w,$h);
+    ob_start(); imagewebp($thumb,null,72); $out=ob_get_clean();
+    imagedestroy($source); imagedestroy($thumb);
+    return response($out,200,['Content-Type'=>'image/webp','Cache-Control'=>'public, max-age=86400']);
+})->where('slug','[A-Za-z0-9\\-]+');
+
 Route::get('/team-icons/{slug}', function(string $slug) {
     $generic=function(){
         $svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="#e2e8f0"/><path d="M24 31l16-10 10 8 10-8 16 10-8 14-8-5v36H40V40l-8 5-8-14z" fill="#0b5f9e"/><path d="M43 34h14v8H43z" fill="#fff"/><circle cx="50" cy="59" r="11" fill="#fff" opacity=".9"/><path d="M44 59h12M50 53v12" stroke="#0b5f9e" stroke-width="5" stroke-linecap="round"/></svg>';
