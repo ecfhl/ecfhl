@@ -499,6 +499,10 @@ html[data-theme="dark"] .matchup-summary-side .matchup-projected-score{backgroun
   .matchup-summary-home .matchup-projected-score{left:0!important;right:auto!important;text-align:left}
   .matchup-summary-meta{margin-top:1px!important}
 }
+
+/* Keep unchanged scores readable in dark mode while preserving red/green movement colors. */
+html[data-theme="dark"] .matchup-week-score.score-same,
+html[data-theme="dark"] .matchup-day-score.score-same{color:#f8fafc!important}
 </style>
 
 <script>
