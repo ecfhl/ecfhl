@@ -435,6 +435,29 @@ html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#3
   .matchup-playing-counts{display:none!important}
 }
 html[data-theme="dark"] .matchup-summary-side .matchup-projected-score{background:#3b291d;color:#fdba74!important}
+
+/* compact mobile matchup override */
+@media(max-width:800px){
+  .current-matchup-list{gap:7px}
+  .matchup-summary{grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr);grid-template-rows:auto auto;min-height:0;padding:9px 12px 8px!important;gap:3px 6px;align-items:start}
+  .matchup-side-header{top:7px}
+  .matchup-summary-name{padding-top:12px}
+  .matchup-team-name-row{display:grid!important;grid-template-columns:48px minmax(0,1fr);grid-template-rows:auto;align-items:center!important;gap:6px!important}
+  .matchup-team-name-row-home{grid-template-columns:minmax(0,1fr) 48px}
+  .matchup-team-name-row .team-icon-uploader{grid-row:1;width:48px}
+  .matchup-team-name-row-away .team-icon-uploader{grid-column:1}.matchup-team-name-row-away a{grid-column:2}
+  .matchup-team-name-row-home .team-icon-uploader{grid-column:2}.matchup-team-name-row-home a{grid-column:1}
+  .matchup-team-name-row .team-icon-uploader img{width:48px;height:48px;border-radius:12px}
+  .matchup-summary-name a{font-size:12px;line-height:1.08}
+  .matchup-summary-meta{margin-top:3px;gap:2px}
+  .matchup-live-games{font-size:8px}
+  .matchup-daily-cats{font-size:9px;gap:2px}
+  .matchup-summary-away .matchup-summary-score,.matchup-summary-home .matchup-summary-score{grid-column:2;grid-row:1;align-self:start;margin-top:8px!important;transform:none}
+  .matchup-summary-away .matchup-summary-score{justify-content:flex-start}.matchup-summary-home .matchup-summary-score{justify-content:flex-end}
+  .matchup-week-score{font-size:27px}.matchup-day-score{font-size:15px}
+  .matchup-summary-vs{grid-column:2;grid-row:1;align-self:start;margin-top:43px;padding:0;font-size:9px}
+  .matchup-summary-side .matchup-projected-score{margin-top:3px!important;padding:3px 6px;font-size:10px!important}
+}
 </style>
 
 <script>
