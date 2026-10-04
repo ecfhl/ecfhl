@@ -155,8 +155,17 @@ DB::table('live_scoring_snapshots')->where('id',$snapshotRow->id)->update(['payl
 $snapshotPolicy=new OwnerNotificationPolicy;
 verifyOwner($snapshotPolicy->accepts($a->fresh(),'goalie-status',null,array_replace($ownContext,['goalie_key'=>'LAK|newsnapshotgoalie'])),'Snapshot roster membership ignored');
 verifyOwner(!$snapshotPolicy->accepts($a->fresh(),'goalie-status',null,$ownContext),'Stale roster used over current snapshot');
+(require __DIR__.'/../database/migrations/2026_10_03_210000_add_season_actuals_to_player_projections.php')->up();
+foreach([['sam','Sam Goalie','MTL',4.25],['late','Late Night','VAN',4.25],['early','Z Early','TOR',0]] as [$id,$name,$team,$projection]){
+ DB::table('player_projection_baselines')->insert(['player_id'=>$id,'player_name'=>$name,'nhl_team'=>$team,'position'=>'G','season_id'=>'2026-27','source_rank'=>1,'fantrax_fpts_per_game'=>99,'fantrax_season_fpts'=>999,'season_start'=>'2026-10-01','captured_at'=>'2026-10-02 12:00:00']);
+ $row=['player_id'=>$id,'as_of_date'=>$day,'window_end_date'=>'2026-10-01','projected_fpts_per_game'=>$projection,'refreshed_at'=>'2026-10-02 12:00:00'];
+ foreach([7,14,21] as $window){$row['fpts_'.$window.'d']=0;$row['gp_'.$window.'d']=0;$row['fpts_per_game_'.$window.'d']=0;}
+ DB::table('player_projections')->insert($row);
+}
+DB::table('active_available_goalies')->where('player_name','Unknown Time')->update(['projected_fpts'=>500]);
 $options=app(App\Support\OwnerGoalies::class)->options();
-verifyOwner($options->where('day','Today')->pluck('name')->values()->all()===['Z Early','Sam Goalie','Late Night','Unknown Time'],'Start-time ordering / confirmed / backup / live / final / exact-start filtering failed: '.$options->toJson());
+verifyOwner($options->where('day','Today')->pluck('name')->values()->all()===['Sam Goalie','Late Night','Z Early','Unknown Time'],'Custom projection ordering / start-time ties / missing vs zero /  confirmed / backup / live / final / exact-start filtering failed: '.$options->toJson());
+verifyOwner($options->firstWhere('name','Sam Goalie')['projected_points']===4.25 && $options->firstWhere('name','Unknown Time')['projected_points']===null,'Watch list used Fantrax estimates instead of my projections');
 verifyOwner($options->where('day','Tomorrow')->pluck('name')->values()->all()===['Sam Goalie'],'Today/tomorrow grouping lost a repeated goalie');
 verifyOwner($options->firstWhere('name','Sam Goalie')['start_time']==='8:00 pm ADT','Snapshot instant not used for Atlantic start display');
 verifyOwner($options->firstWhere('name','Late Night')['start']==='2026-10-03T00:30:00-03:00','Atlantic midnight date rolled backward');
@@ -183,4 +192,4 @@ $guestBell=view('account.goalie-bell',['goalie'=>['name'=>'Z Early','team'=>'TOR
 verifyOwner(str_contains($guestBell,'href="/login"'),'Guest bell lacks sign-in link');
 verifyOwner(str_contains(view('account.goalie-bell',['goalie'=>['name'=>'Sam Goalie','team'=>'MTL'],'date'=>'2026-10-03'])->render(),'goalie-watch-bell'),'Tomorrow unknown status bell missing');
 CarbonImmutable::setTestNow();
-echo "Owner account checks passed: pages, optional browsing, exclusive claims, reserved admin invitation, admin routes/actions, password hashing/login, Google state/linking, own/opponent scoring, goalie filters, date groups/start-time ordering, confirmed/nonstarter/started-game exclusions, bell toggle/auth/preference preservation, waiver dates, own-goalie roster slots/current snapshot/toggle/delivery, isolated push delivery, and SSRF rejection.\n";
+echo "Owner account checks passed: pages, optional browsing, exclusive claims, reserved admin invitation, admin routes/actions, password hashing/login, Google state/linking, own/opponent scoring, goalie filters, date groups/custom projection ordering/start-time ties, confirmed/nonstarter/started-game exclusions, bell toggle/auth/preference preservation, waiver dates, own-goalie roster slots/current snapshot/toggle/delivery, isolated push delivery, and SSRF rejection.\n";

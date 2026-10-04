@@ -20,7 +20,7 @@ class OwnerGoalies {
   });
  }
  public function options(): \Illuminate\Support\Collection {
-  $days=(new FantasyDay)->dates();$rows=collect();$now=CarbonImmutable::now();
+  $days=(new FantasyDay)->dates();$rows=collect();$now=CarbonImmutable::now();$projections=new PlayerProjections;
   foreach(['today','tomorrow'] as $label){
    $date=$days[$label];$available=$this->available($date);$statuses=[];$confirmedTeams=[];
    foreach(DB::table('active_starting_goalies')->whereDate('game_date',$date)->get() as $g){
@@ -40,10 +40,10 @@ class OwnerGoalies {
     if(isset($confirmedTeams[$team]) || in_array($status,['confirmed','not starting'],true))continue;
     $game=$games[$team]??[];$start=$game['start']??null;
     if(($game['started']??false) || ($start && $start->lessThanOrEqualTo($now)))continue;
-    $dayRows->push(['key'=>$key,'name'=>$g->player_name,'team'=>$team,'day'=>ucfirst($label),
+    $dayRows->push(['key'=>$key,'name'=>$g->player_name,'team'=>$team,'day'=>ucfirst($label),'projected_points'=>$projections->rate($g),
      'start'=>$start?->toIso8601String(),'start_time'=>$start?->setTimezone('America/Halifax')->format('g:i a T')??'Time TBD']);
    }
-   $rows=$rows->concat($dayRows->sort(fn($a,$b)=>(($a['start']?strtotime($a['start']):PHP_INT_MAX)<=>($b['start']?strtotime($b['start']):PHP_INT_MAX))?:strcasecmp($a['name'],$b['name'])));
+   $rows=$rows->concat($dayRows->sort(fn($a,$b)=>(($b['projected_points']??-INF)<=>($a['projected_points']??-INF))?: (($a['start']?strtotime($a['start']):PHP_INT_MAX)<=>($b['start']?strtotime($b['start']):PHP_INT_MAX))?:strcasecmp($a['name'],$b['name'])));
   }
   return $rows->values();
  }
