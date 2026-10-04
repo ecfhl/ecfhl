@@ -14,9 +14,6 @@
   @if($scheduleLabel)
     <div class="matchup-period-label">
       <span>{{ $scheduleLabel }}</span>
-      @if($scoreLastUpdate)
-        <span class="matchup-period-updated">Updated @include('partials.updated-time',['value'=>$scoreLastUpdate])</span>
-      @endif
     </div>
   @endif
 
