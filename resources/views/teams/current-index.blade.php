@@ -537,6 +537,14 @@ html[data-theme="dark"] .matchup-day-score.score-same{color:#f8fafc!important}
   .matchup-player-row{padding:7px 8px 42px!important}
   .matchup-player-metrics>div:first-child{right:8px!important;bottom:7px!important}
 }
+
+/* Expanded roster game-state colors */
+.matchup-player-row.team-game-live-row{background:#ecfdf5!important}
+.matchup-player-row.team-game-finished-row{background:#f1f5f9!important}
+.matchup-player-row.team-game-upcoming-row{background:#fffbeb!important}
+html[data-theme="dark"] .matchup-player-row.team-game-live-row{background:#12372b!important}
+html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#1e293b!important}
+html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:#352d16!important}
 </style>
 
 <script>
