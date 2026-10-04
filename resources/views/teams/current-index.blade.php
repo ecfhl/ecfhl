@@ -458,6 +458,26 @@ html[data-theme="dark"] .matchup-summary-side .matchup-projected-score{backgroun
   .matchup-summary-vs{grid-column:2;grid-row:1;align-self:start;margin-top:43px;padding:0;font-size:9px}
   .matchup-summary-side .matchup-projected-score{margin-top:3px!important;padding:3px 6px;font-size:10px!important}
 }
+
+/* mobile matchup layout: team name row, logo below, score opposite logo */
+@media(max-width:800px){
+  .matchup-summary{grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr);grid-template-rows:auto;gap:4px 5px;padding:9px 12px 8px!important}
+  .matchup-summary-side{display:flex!important;position:relative!important;flex-direction:column;align-items:stretch!important;padding:15px 0 0!important;min-width:0}
+  .matchup-summary-away{grid-column:1;grid-row:1}.matchup-summary-home{grid-column:3;grid-row:1}
+  .matchup-summary-name,.matchup-summary-away .matchup-summary-name,.matchup-summary-home .matchup-summary-name{display:flex!important;flex-direction:column;width:100%!important;max-width:none!important;padding:0!important;align-items:stretch!important;text-align:inherit!important}
+  .matchup-team-name-row,.matchup-team-name-row-home{display:flex!important;flex-direction:column!important;align-items:stretch!important;width:100%;gap:5px!important;padding:0!important}
+  .matchup-team-name-row a{order:-2;width:100%!important;min-height:28px;font-size:12px;line-height:1.08;white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+  .matchup-team-name-row-home a{text-align:right!important}
+  .matchup-team-name-row .team-icon-uploader{position:static!important;order:-1!important;width:48px!important;align-self:flex-start}
+  .matchup-team-name-row-home .team-icon-uploader{align-self:flex-end}
+  .matchup-team-name-row .team-icon-uploader img{width:48px;height:48px}
+  .matchup-summary-score,.matchup-summary-away .matchup-summary-score,.matchup-summary-home .matchup-summary-score{position:absolute!important;top:48px!important;bottom:auto!important;transform:none!important;margin:0!important;display:flex;gap:3px;z-index:2}
+  .matchup-summary-away .matchup-summary-score{right:0!important;left:auto!important}
+  .matchup-summary-home .matchup-summary-score{left:0!important;right:auto!important}
+  .matchup-week-score{font-size:27px}.matchup-day-score{font-size:15px}
+  .matchup-summary-vs{grid-column:2;grid-row:1;align-self:start;margin-top:69px;padding:0;font-size:9px}
+  .matchup-summary-meta{margin-top:4px}
+}
 </style>
 
 <script>
