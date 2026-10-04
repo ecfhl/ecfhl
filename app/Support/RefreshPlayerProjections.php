@@ -43,6 +43,7 @@ final class RefreshPlayerProjections
             if ($log) $log($days.'-day actual FPts/GP collected through '.$end.'.');
         }
         $now = now();
+        $weights = ProjectionSettings::weights();
         $rows = [];
         foreach ($baseline as $player) {
             $row = ['player_id'=>$player['player_id'], 'as_of_date'=>$date, 'window_end_date'=>$end, 'refreshed_at'=>$now];
@@ -59,7 +60,10 @@ final class RefreshPlayerProjections
                 $row['fpts_per_game_'.$days.'d'] = $rate;
                 $rates[] = $rate;
             }
-            $row['projected_fpts_per_game'] = ProjectionMath::average((float)$player['fantrax_fpts_per_game'], ...$rates);
+            $row['projected_fpts_per_game'] = ProjectionMath::weighted([
+                'fantrax'=>(float)$player['fantrax_fpts_per_game'], 'season'=>$row['season_fpts_per_game'],
+                '7d'=>$rates[0], '14d'=>$rates[1], '21d'=>$rates[2],
+            ], $weights);
             $rows[] = $row;
         }
         DB::transaction(function () use ($capture, $baseline, $rows, $now) {

@@ -17,6 +17,7 @@ use Carbon\CarbonImmutable;
 function verifyOwner($ok,$message){if(!$ok)throw new RuntimeException($message);}
 config(['database.connections.sqlite'=>['driver'=>'sqlite','database'=>':memory:','prefix'=>'','foreign_key_constraints'=>true],'session.secure'=>false]);
 foreach(glob(__DIR__.'/../database/migrations/*create*.php') as $f)(require $f)->up();
+(require __DIR__.'/../database/migrations/2026_10_03_210000_add_season_actuals_to_player_projections.php')->up();
 (require __DIR__.'/../database/migrations/2026_10_01_235500_add_fantasy_team_to_push_notifications.php')->up();
 (require __DIR__.'/../database/migrations/2026_10_02_010000_add_fantasy_team_to_push_subscriptions.php')->up();
 CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-10-03T00:30:00-03:00'));
@@ -48,6 +49,8 @@ verifyOwner(str_contains($response->getContent(),'/team-icons/alpha'),'Team logo
 verifyOwner(!str_contains($response->getContent(),'value="lone"'),'Reserved team offered publicly');
 verifyOwner(!str_contains($response->getContent(),'href="/admin"'),'Admin menu exposed to guest');
 verifyOwner(ownerRequest('GET','/admin',[],$guest)->getStatusCode()===401,'Guest admin access allowed');
+verifyOwner(ownerRequest('GET','/admin/projections',[],$guest)->getStatusCode()===401,'Guest projection settings access allowed');
+verifyOwner(ownerRequest('POST','/admin/projections',['weights'=>App\Support\ProjectionMath::DEFAULT_WEIGHTS],$guest)->getStatusCode()===401,'Guest projection mutation allowed');
 verifyOwner(ownerRequest('POST','/job-status/run/all',[],$guest)->getStatusCode()===401,'Guest collector trigger allowed');
 verifyOwner(ownerRequest('POST','/team-icons/alpha',[],$guest)->getStatusCode()===401,'Guest image mutation allowed');
 $alpha=[];$response=ownerRequest('POST','/register',['name'=>'Owner A','email'=>'a@example.org','password'=>'strong-example-a','password_confirmation'=>'strong-example-a','team_id'=>'a'],$alpha);
@@ -73,6 +76,7 @@ $response=ownerRequest('POST','/login',['_token'=>'expired'],$guest);
 verifyOwner($response->getStatusCode()===419&&str_contains($response->getContent(),'Reload this page'),'AJAX expired-session message unclear');
 $app['env']='testing';
 verifyOwner(ownerRequest('GET','/admin',[],$alpha)->getStatusCode()===403,'Regular owner admin access allowed');
+verifyOwner(ownerRequest('POST','/admin/projections',['weights'=>App\Support\ProjectionMath::DEFAULT_WEIGHTS],$alpha)->getStatusCode()===403,'Regular owner projection mutation allowed');
 verifyOwner(ownerRequest('POST','/lineup-advisors/mike/profile',['first_name'=>'Oops'],$alpha)->getStatusCode()===403,'Regular owner admin mutation allowed');
 $second=[];$response=ownerRequest('POST','/register',['name'=>'Duplicate','email'=>'duplicate@example.org','password'=>'strong-example-b','password_confirmation'=>'strong-example-b','team_id'=>'a'],$second);
 verifyOwner($response->getStatusCode()===422 && !User::where('email','duplicate@example.org')->exists(),'Duplicate claim left an orphan account: '.$response->getStatusCode().' '.$response->getContent());
@@ -84,6 +88,13 @@ $response=ownerRequest('POST','/register',['name'=>'Dan','email'=>'dan@example.o
 verifyOwner($response->getStatusCode()===302 && User::where('email','dan@example.org')->value('is_admin'),'Admin invitation did not assign administrator');
 verifyOwner(ownerRequest('GET','/account/admin-invite?token='.$configInvite,[],$guest)->getStatusCode()===410,'Admin invitation reusable after activation');
 $response=ownerRequest('GET','/account',[],$admin,['HTTP_ACCEPT'=>'text/html']);verifyOwner(str_contains($response->getContent(),'href="/admin"'),'Administrator menu absent');
+verifyOwner(str_contains($response->getContent(),'href="/admin/projections"'),'Projection weights link missing from administrator menu');
+$response=ownerRequest('GET','/admin/projections',[],$admin,['HTTP_ACCEPT'=>'text/html']);
+verifyOwner($response->getStatusCode()===200 && str_contains($response->getContent(),'Season to date') && str_contains($response->getContent(),'weights[21d]'),'Projection settings page failed to render');
+$response=ownerRequest('POST','/admin/projections',['weights'=>['fantrax'=>20,'season'=>30,'7d'=>25,'14d'=>15,'21d'=>10]],$admin);
+verifyOwner($response->getStatusCode()===302 && App\Support\ProjectionSettings::weights()['season']===30.0,'Admin weights were not persisted');
+$response=ownerRequest('POST','/admin/projections',['weights'=>['fantrax'=>30,'season'=>30,'7d'=>25,'14d'=>15,'21d'=>10]],$admin);
+verifyOwner($response->getStatusCode()===422 && App\Support\ProjectionSettings::weights()['fantrax']===20.0,'Invalid total changed saved settings');
 // Authorization policy covers distinct scoring/goalie combinations and Pacific fantasy-day boundaries.
 $b=User::create(['name'=>'B','email'=>'b@example.org','password'=>'strong-example-b']);(new OwnerTeams)->claim($b,'b');
 $p=new OwnerNotificationPolicy;
@@ -179,7 +190,6 @@ DB::table('live_scoring_snapshots')->where('id',$snapshotRow->id)->update(['payl
 $snapshotPolicy=new OwnerNotificationPolicy;
 verifyOwner($snapshotPolicy->accepts($a->fresh(),'goalie-status',null,array_replace($ownContext,['goalie_key'=>'LAK|newsnapshotgoalie'])),'Snapshot roster membership ignored');
 verifyOwner(!$snapshotPolicy->accepts($a->fresh(),'goalie-status',null,$ownContext),'Stale roster used over current snapshot');
-(require __DIR__.'/../database/migrations/2026_10_03_210000_add_season_actuals_to_player_projections.php')->up();
 foreach([['sam','Sam Goalie','MTL',4.25],['late','Late Night','VAN',4.25],['early','Z Early','TOR',0]] as [$id,$name,$team,$projection]){
  DB::table('player_projection_baselines')->insert(['player_id'=>$id,'player_name'=>$name,'nhl_team'=>$team,'position'=>'G','season_id'=>'2026-27','source_rank'=>1,'fantrax_fpts_per_game'=>99,'fantrax_season_fpts'=>999,'season_start'=>'2026-10-01','captured_at'=>'2026-10-02 12:00:00']);
  $row=['player_id'=>$id,'as_of_date'=>$day,'window_end_date'=>'2026-10-01','projected_fpts_per_game'=>$projection,'refreshed_at'=>'2026-10-02 12:00:00'];

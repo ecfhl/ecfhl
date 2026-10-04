@@ -117,6 +117,34 @@ $refresh->refresh(CarbonImmutable::parse('2026-09-28 04:00', 'America/Halifax'),
 checkProjection($source->calls === [], 'Before any completed season games, use zero actual rates without querying future dates.');
 checkProjection((float)DB::table('player_projections')->where('player_id','p5')->value('projected_fpts_per_game') === 1.0, 'Keep the 50% baseline weight before the first game.');
 
+// Admin weight changes reuse stored inputs and must also survive the next collector run.
+(require __DIR__.'/../database/migrations/2026_10_04_192000_create_projection_settings.php')->up();
+checkProjection(App\Support\ProjectionSettings::weights() === ProjectionMath::DEFAULT_WEIGHTS, 'Preserve existing weights on migration.');
+DB::table('player_projections')->where('player_id', 'p5')->update(['season_fpts_per_game'=>10, 'fpts_per_game_7d'=>4, 'fpts_per_game_14d'=>6, 'fpts_per_game_21d'=>8]);
+$statsBefore = DB::table('player_projections')->where('player_id', 'p5')->first();
+$sourceCalls = count($source->calls);
+$customWeights = ['fantrax'=>20, 'season'=>30, '7d'=>25, '14d'=>15, '21d'=>10];
+checkProjection(App\Support\ProjectionSettings::save($customWeights) === 1000, 'Recalculate all 1,000 stored projections.');
+checkProjection(abs((float)DB::table('player_projections')->where('player_id', 'p5')->value('projected_fpts_per_game') - 6.1) < 0.000001, 'Apply distinct weights including season stats.');
+checkProjection(count($source->calls) === $sourceCalls, 'Changing weights must not fetch Fantrax.');
+checkProjection(DB::table('player_projections')->where('player_id', 'p5')->value('refreshed_at') === $statsBefore->refreshed_at, 'Changing weights must not disguise old collected stats as fresh.');
+checkProjection(abs((new PlayerProjections)->rate((object)['player_id'=>'p5']) - 6.1) < 0.000001, 'New requests immediately use recalculated values.');
+$savedBefore = DB::table('player_projections')->orderBy('player_id')->get()->toJson();
+foreach ([['fantrax'=>21]+$customWeights, ['season'=>-1]+$customWeights, ['fantrax'=>20.001]+$customWeights, ['fantrax'=>101]+$customWeights] as $invalid) {
+    try { App\Support\ProjectionSettings::save($invalid); throw new RuntimeException('Invalid weights accepted.'); }
+    catch (Illuminate\Validation\ValidationException $e) {}
+}
+checkProjection(DB::table('player_projections')->orderBy('player_id')->get()->toJson() === $savedBefore, 'Invalid weights must not mutate stored projections.');
+$lock=fopen(storage_path('app/player-projections.lock'), 'c');flock($lock, LOCK_EX);
+try { App\Support\ProjectionSettings::save($customWeights); throw new RuntimeException('Concurrent collector overwrite allowed.'); }
+catch (Illuminate\Validation\ValidationException $e) {} finally { flock($lock, LOCK_UN);fclose($lock); }
+$refresh->refresh($date, true);
+checkProjection(abs((float)DB::table('player_projections')->where('player_id', 'p5')->value('projected_fpts_per_game') - 3.6) < 0.000001, 'Daily refresh uses the saved five-source weights.');
+checkProjection(DB::table('player_projection_baselines')->orderBy('source_rank')->get()->toJson() === $frozen, 'Weight changes preserve the frozen baseline.');
+App\Support\ProjectionSettings::save(['fantrax'=>0,'season'=>100,'7d'=>0,'14d'=>0,'21d'=>0]);
+checkProjection((float)DB::table('player_projections')->where('player_id', 'p5')->value('projected_fpts_per_game') === 4.0, 'Support 100% season with all other sources disabled.');
+App\Support\ProjectionSettings::save(ProjectionMath::DEFAULT_WEIGHTS);
+
 // The source parser must reject changed dates, missing GP and truncated pages.
 class FixtureProjectionSource extends FantraxProjectionSource
 {

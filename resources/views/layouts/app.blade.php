@@ -88,6 +88,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
     <a href="/job-status">Collector Status</a>
     <a href="/admin/advisors">Advisors</a>
     <a href="/admin/team-images">Team Images</a>
+    <a href="/admin/projections">Projection Weights</a>
   </div>
 </div>
 @endif
