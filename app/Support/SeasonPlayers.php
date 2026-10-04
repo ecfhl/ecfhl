@@ -16,6 +16,12 @@ final class SeasonPlayers
         $positions = array_values(array_intersect(['F', 'D', 'G'], explode(',', (string)$request->query('positions', 'F,D'))));
         $rookies = $request->query('rookies') === '1';
         $search = mb_substr(trim((string)$request->query('q', '')), 0, 100);
+        $availability = (string)$request->query('availability', 'all');
+        if (!in_array($availability, ['all', 'available', 'taken'], true)) $availability = 'all';
+        $teamOptions = DB::table('active_fantasy_rosters')->where('game_date', fn($q)=>$q->from('active_fantasy_rosters')->selectRaw('MAX(game_date)'))
+            ->select('fantasy_team_id')->selectRaw('MAX(fantasy_team_name) as fantasy_team_name')->groupBy('fantasy_team_id')->orderBy('fantasy_team_name')->get();
+        $selectedTeam = (string)$request->query('team', '');
+        if ($selectedTeam !== '' && !$teamOptions->contains('fantasy_team_id', $selectedTeam)) $selectedTeam = '';
         $groups = PublicData::remember('season-player-columns', 60, fn()=>DB::table('season_player_stat_columns')->pluck('columns_json', 'group')->all());
         $columns = array_intersect(['F', 'D'], $positions) || !$positions ? self::SKATER_COLUMNS : [];
         if (in_array('G', $positions, true)) {
@@ -35,7 +41,10 @@ final class SeasonPlayers
             ->leftJoinSub($roster, 'latest_roster', 'latest_roster.player_id', '=', 's.player_id')
             ->leftJoin('active_fantasy_rosters as r', 'r.id', '=', 'latest_roster.roster_id')
             ->whereIn('s.position', $positions)
-            ->select('s.*', 'p.projected_fpts_per_game', 'r.fantasy_team_name');
+            ->select('s.*', 'p.projected_fpts_per_game', 'r.fantasy_team_id', 'r.fantasy_team_name');
+        if ($selectedTeam !== '') $query->where('r.fantasy_team_id', $selectedTeam);
+        if ($availability === 'available') $query->whereNull('r.id');
+        if ($availability === 'taken') $query->whereNotNull('r.id');
         if ($rookies) $query->where('s.rookie', true);
         if ($search !== '') $query->where('s.player_name', 'like', '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search).'%');
         [$expression, $bindings] = $this->sortExpression($sort);
@@ -45,14 +54,14 @@ final class SeasonPlayers
             ->orderByRaw('season_sort_value IS NULL')->orderBy('season_sort_value', $direction)
             ->orderBy('s.player_name')->orderBy('s.player_id')
             ->paginate(25, ['*'], 'page', max(1, (int)$request->query('page', 1)))->appends([
-                'positions'=>implode(',', $positions), 'rookies'=>$rookies ? '1' : '0', 'q'=>$search, 'sort'=>$sort, 'direction'=>$direction,
+                'positions'=>implode(',', $positions), 'rookies'=>$rookies ? '1' : '0', 'q'=>$search, 'sort'=>$sort, 'direction'=>$direction, 'team'=>$selectedTeam, 'availability'=>$availability,
             ]);
         $players->getCollection()->transform(function ($row) {
             $row->stats = json_decode($row->stats_json, true) ?: [];
             $row->stats['Pts'] = $row->stats['Pt'] ?? $row->stats['Pts'] ?? '';
             return $row;
         });
-        return compact('players', 'positions', 'rookies', 'search', 'columns', 'headers', 'sort', 'direction')
+        return compact('players', 'positions', 'rookies', 'search', 'columns', 'headers', 'sort', 'direction', 'teamOptions', 'selectedTeam', 'availability')
             + ['statsThrough'=>DB::table('season_player_stats')->max('stats_through')];
     }
 

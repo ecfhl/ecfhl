@@ -1,4 +1,13 @@
 (() => {
+  const table = document.querySelector('.season-player-table');
+  if (table) {
+    const firstColumn = table.querySelector('thead th');
+    const scroll = table.closest('.player-table-scroll');
+    const updateOffset = () => scroll.style.setProperty('--player-sticky-offset', `${firstColumn.getBoundingClientRect().width}px`);
+    updateOffset();
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(updateOffset).observe(firstColumn);
+    else window.addEventListener('resize', updateOffset);
+  }
   const button = document.getElementById('season-player-more');
   if (!button) return;
   const rows = document.getElementById('season-player-rows');

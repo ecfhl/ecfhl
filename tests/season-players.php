@@ -62,4 +62,22 @@ $json=json_decode(seasonRequest('/players?positions=F,D&page=2',true)->getConten
 verifySeason(substr_count($json['html'],'data-player-id=')===25&&$json['shown']===50&&$json['total']===60&&str_contains($json['next_url'],'positions=F%2CD'),'Show More must return next rows with preserved filters.');
 $final=json_decode(seasonRequest('/players?positions=G&rookies=1',true)->getContent(),true);verifySeason($final['shown']===1&&$final['total']===1&&$final['next_url']===null,'Filtered Show More termination failed.');
 $admin=view('admin.index')->render();foreach(['/admin/projections','/job-status','/admin/advisors','/admin/team-images'] as $url)verifySeason(str_contains($admin,'class="card admin-menu-card" href="'.$url.'"'),'Admin card missing: '.$url);
-echo "Season players checks passed: defaults, full stats, rookies, positions, search, latest ownership, MyProj, escaped SSR, 25-row pagination, full-dataset sorting, requested column order and admin cards.\n";
+// Ownership filters include every roster slot and ignore released players' old teams.
+for($i=3;$i<=40;$i++) DB::table('active_fantasy_rosters')->insert(['game_date'=>'2026-10-04','fantasy_team_id'=>$i<=35?'beta':'gamma','fantasy_team_name'=>$i<=35?'Beta':'Gamma','player_id'=>'p'.$i,'player_name'=>'Player '.$i,'position'=>'F','roster_status'=>['ACTIVE','BENCH','MINORS','INJURED_RESERVE'][$i%4]]);
+$taken=$service->data(Request::create('/players?availability=taken&sort=A&direction=desc'));
+verifySeason($taken['players']->total()===39&&$taken['players']->getCollection()->every(fn($p)=>$p->fantasy_team_id!==null),'Taken must include all current roster slots, without duplicate players.');
+$available=$service->data(Request::create('/players?availability=available'));
+verifySeason($available['players']->total()===21&&$available['players']->getCollection()->contains('player_id','p2')&&$available['players']->getCollection()->every(fn($p)=>$p->fantasy_team_id===null),'Available must include released players and exclude all currently owned players.');
+$beta=$service->data(Request::create('/players?team=beta&availability=taken&sort=G&direction=asc'));
+verifySeason($beta['players']->total()===34&&$beta['players']->getCollection()->every(fn($p)=>$p->fantasy_team_id==='beta'),'Team and Taken filters must combine with numeric sorting.');
+verifySeason(str_contains($beta['players']->nextPageUrl(),'team=beta')&&str_contains($beta['players']->nextPageUrl(),'availability=taken')&&str_contains($beta['players']->nextPageUrl(),'sort=G'),'Show More must preserve team, availability and sorting.');
+verifySeason(!$beta['teamOptions']->contains('fantasy_team_id','old')&&$beta['teamOptions']->contains('fantasy_team_id','gamma'),'Team slicer must use the current snapshot, not old owners.');
+$betaRookies=$service->data(Request::create('/players?team=beta&availability=taken&rookies=1'));
+verifySeason($betaRookies['players']->total()===11&&$betaRookies['players']->getCollection()->every(fn($p)=>(bool)$p->rookie&&$p->fantasy_team_id==='beta'),'Team and availability filters must preserve rookie filtering.');
+$invalidFilters=$service->data(Request::create('/players?team=unknown&availability=bad'));verifySeason($invalidFilters['selectedTeam']===''&&$invalidFilters['availability']==='all','Unknown filters must fall back to All.');
+$betaHtml=seasonRequest('/players?team=beta&availability=taken&sort=G&direction=asc')->getContent();
+verifySeason(str_contains($betaHtml,'value="beta" selected')&&str_contains($betaHtml,'name="team" value="beta"')&&str_contains($betaHtml,'name="availability" value="taken"'),'Team selection and search preservation failed.');
+verifySeason(str_contains($betaHtml,'class="player-team-logo"')&&str_contains($betaHtml,'width="32" height="32"')&&str_contains($betaHtml,'<span>Beta</span>'),'Team thumbnail must appear before the team name.');
+$betaMore=json_decode(seasonRequest('/players?team=beta&availability=taken&sort=G&direction=asc&page=2',true)->getContent(),true);
+verifySeason($betaMore['shown']===34&&$betaMore['total']===34&&substr_count($betaMore['html'],'data-player-id=')===9&&substr_count($betaMore['html'],'class="player-team-logo"')===9,'Filtered Show More must append the right players and their logos.');
+echo "Season players checks passed: defaults, full stats, rookies, positions, search, latest ownership, MyProj, escaped SSR, 25-row pagination, full-dataset sorting, requested column order, current team/availability filters, thumbnails and admin cards.\n";
