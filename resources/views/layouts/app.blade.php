@@ -298,6 +298,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 .team-icon-modal{position:fixed;inset:0;z-index:5000;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(2,6,23,.82);backdrop-filter:blur(3px)}
 .team-icon-modal.open{display:flex}
 .team-icon-modal-card{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;max-width:min(92vw,760px);max-height:88vh}
+.team-icon-modal-loader{display:none;width:46px;height:46px;border:4px solid rgba(255,255,255,.28);border-top-color:#fff;border-radius:50%;animation:team-icon-spin .75s linear infinite}.team-icon-modal.loading .team-icon-modal-loader{display:block}.team-icon-modal.loading .team-icon-modal-image{display:none}@keyframes team-icon-spin{to{transform:rotate(360deg)}}
 .team-icon-modal-image{display:block;max-width:100%;max-height:calc(88vh - 58px);width:auto;height:auto;border-radius:18px;box-shadow:0 18px 60px rgba(0,0,0,.45);background:#fff}
 .team-icon-modal-actions{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
 .team-icon-advisor-name{display:none;align-items:center;gap:7px}
@@ -317,6 +318,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 </style>
 <div id="team-icon-modal" class="team-icon-modal" role="dialog" aria-modal="true" aria-label="Team icon preview" aria-hidden="true">
   <div class="team-icon-modal-card">
+    <div class="team-icon-modal-loader" role="status" aria-label="Loading full-size team logo"></div>
     <img id="team-icon-modal-image" class="team-icon-modal-image" alt="">
     <div class="team-icon-modal-actions">
       @if(auth()->user()?->is_admin)<div id="team-icon-advisor-name" class="team-icon-advisor-name">
@@ -348,7 +350,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   let activeAdvisorKey='';
 
   const closeModal=()=>{
-    modal.classList.remove('open');
+    modal.classList.remove('open','loading');
     modal.setAttribute('aria-hidden','true');
     document.body.style.removeProperty('overflow');
     fileInput.value='';
@@ -366,8 +368,13 @@ document.addEventListener('DOMContentLoaded',()=>{
       lastTrigger=button;
       activeSlug=button.dataset.teamSlug||'';
       activeAdvisorKey=button.dataset.advisorKey||'';
-      modalImage.src=img.dataset.fullSrc||img.currentSrc||img.src;
+      const fullSrc=img.dataset.fullSrc||img.currentSrc||img.src;
+      modal.classList.add('loading');
+      modalImage.removeAttribute('src');
       modalImage.alt=img.alt||'Team icon';
+      modalImage.onload=()=>modal.classList.remove('loading');
+      modalImage.onerror=()=>modal.classList.remove('loading');
+      modalImage.src=fullSrc;
       if(advisorNameRow&&advisorNameInput){
         advisorNameInput.value='';
         advisorNameRow.classList.remove('open');
