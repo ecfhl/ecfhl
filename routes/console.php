@@ -858,10 +858,19 @@ Artisan::command('ecfhl:refresh-scoring-period-matchups', function (FantraxSched
 });
 
 Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $fantrax, FantraxSchedule $fantraxSchedule) {
+    $path = storage_path('app/standings.lock');
+    if (!is_dir(dirname($path))) mkdir(dirname($path), 0775, true);
+    $lock = fopen($path, 'c');
+    if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) {
+        $this->warn('Standings refresh already running.');
+        if ($lock) fclose($lock);
+        return 1;
+    }
     $seasonId='2026-27';
     $source='https://www.fantrax.com/fantasy/league/'.FantraxStandings::LEAGUE_ID.'/standings';
 
     try {
+        DB::table('collector_job_statuses')->updateOrInsert(['job_key'=>'standings'], ['status'=>'running','message'=>'Refreshing finalized standings.','ran_at'=>now(),'updated_at'=>now(),'created_at'=>now()]);
         $data=$fantrax->fetch();
         $seasonRows=DB::table('team_seasons')->where('season_id',$seasonId)->get();
         if($seasonRows->isEmpty())throw new \RuntimeException('No 2026-27 team_seasons rows exist.');
@@ -912,6 +921,7 @@ Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $
                 DB::table('team_seasons')->where('team_season_id',$teamSeasonId)->update($values);
             }
         });
+        \App\Support\PublicData::forget('archive:team_seasons');
 
         try {
             $periods=$fantraxSchedule->periods(true);
@@ -948,19 +958,25 @@ Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $
 
         DB::table('job_run_history')->insert([
             'job_name'=>'ecfhl:refresh-current-standings',
-            'target_date'=>app(FantasyDay::class)->today()->toDateString(),
+            'target_date'=>$data['completed_through'],
             'rows_processed'=>count($updates),
             'completed_at'=>now(),
             'created_at'=>now(),
             'updated_at'=>now(),
         ]);
 
-        $this->info(count($updates).' Fantrax standings rows refreshed for '.$seasonId);
+        $message=count($updates).' Fantrax standings rows refreshed through '.$data['completed_through'];
+        DB::table('collector_job_statuses')->updateOrInsert(['job_key'=>'standings'], ['status'=>'success','message'=>$message,'ran_at'=>now(),'updated_at'=>now(),'created_at'=>now()]);
+        $this->info($message);
         return 0;
     } catch (\Throwable $e) {
         Log::error('Fantrax current standings refresh failed',['error'=>$e->getMessage()]);
+        DB::table('collector_job_statuses')->updateOrInsert(['job_key'=>'standings'], ['status'=>'failed','message'=>$e->getMessage(),'ran_at'=>now(),'updated_at'=>now(),'created_at'=>now()]);
         $this->error($e->getMessage());
         return 1;
+    } finally {
+        flock($lock, LOCK_UN);
+        fclose($lock);
     }
 });
 
@@ -1220,9 +1236,10 @@ Schedule::command('ecfhl:refresh-scoring-period-matchups')
     ->runInBackground();
 
 Schedule::command('ecfhl:refresh-current-standings')
-    ->cron('*/5 * * * *')
-    ->withoutOverlapping(4)
-    ->runInBackground();
+    ->everyMinute()
+    ->withoutOverlapping(10)
+    ->runInBackground()
+    ->when(fn()=>app(\App\Support\LiveScoring\RefreshLiveScoring::class)->due());
 
 
 Schedule::command('ecfhl:refresh-daily-players')->cron('*/15 * * * *')->withoutOverlapping(14);

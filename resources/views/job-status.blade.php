@@ -23,7 +23,7 @@
             $jobKey = $job['key'];
             $displaySchedule = $job['schedule'];
         @endphp
-        <section class="card status-card" data-job-key="{{ $jobKey }}">
+        <section id="collector-{{ $jobKey }}" class="card status-card" data-job-key="{{ $jobKey }}">
             <div class="status-head"><div><h2>{{ $job['name'] }}</h2><p class="subtle">{{ $displaySchedule }}</p></div>
                 @if($job['outcome'])
                   <span class="pill {{ $job['outcome']==='success'?'status-ok':($job['outcome']==='warning'?'status-stale':'status-failed-pill') }}">{{ $job['outcome']==='success'?'Successful':($job['outcome']==='warning'?'Warning':'Failed') }}</span>
