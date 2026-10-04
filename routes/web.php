@@ -383,9 +383,9 @@ Route::get('/teams/current/{slug}', function(string $slug) {
 
     $normName=function($v){$name=trim((string)$v);if(str_contains($name,',')){[$last,$first]=array_map('trim',explode(',',$name,2));if($first!==''&&$last!=='')$name=$first.' '.$last;}return preg_replace('/[^\pL\pN]+/u','',mb_strtolower($name))??'';};
     $normTeam=function($v){$t=strtoupper(trim((string)$v));return match($t){'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>$t};};
-    $pp=DB::table('active_pp_lines')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name));
-    $lines=DB::table('active_line_combinations')->get()->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name).'|'.strtoupper(trim($r->position_group)));
-    $oddsByTeam=DB::table('todays_odds')->where('game_date',$date)->get()->keyBy(fn($r)=>$normTeam($r->team));
+    $pp=\App\Support\PublicData::remember('badges:active_pp_lines',30,fn()=>DB::table('active_pp_lines')->get())->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name));
+    $lines=\App\Support\PublicData::remember('badges:active_line_combinations',30,fn()=>DB::table('active_line_combinations')->get())->keyBy(fn($r)=>$normTeam($r->team).'|'.$normName($r->player_name).'|'.strtoupper(trim($r->position_group)));
+    $oddsByTeam=\App\Support\PublicData::remember('badges:todays_odds:'.$date,30,fn()=>DB::table('todays_odds')->where('game_date',$date)->get())->keyBy(fn($r)=>$normTeam($r->team));
     $goalieStatusByPlayer=DB::table('active_starting_goalies')
         ->where('game_date',$date)
         ->get()
@@ -473,8 +473,8 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     }
 
     $targetGroups=\App\Support\AiTips::groups([], $date);
-    $targetGroups=collect($targetGroups)->map(function($players,$position)use($pp,$lines,$normName,$normTeam,$date){
-        $decorated=collect($players)->map(function($player)use($position,$pp,$lines,$normName,$normTeam,$date){
+    $targetGroups=collect($targetGroups)->map(function($players,$position)use($pp,$lines,$normName,$normTeam,$date,$oddsByTeam){
+        $decorated=collect($players)->map(function($player)use($position,$pp,$lines,$normName,$normTeam,$date,$oddsByTeam){
             $team=$normTeam($player['team']??'');
             $name=$normName($player['name']??'');
             $line=$lines[$team.'|'.$name.'|'.$position]??null;
@@ -492,10 +492,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
                 default=>'goalie-status-na',
             };
             if($position==='G'){
-                $odds=\Illuminate\Support\Facades\DB::table('todays_odds')
-                    ->where('game_date',$date)
-                    ->whereRaw('UPPER(TRIM(team)) = ?', [$team])
-                    ->first();
+                $odds=$oddsByTeam[$team]??null;
                 $player['vegas_odds']=$odds?->american_odds;
                 $player['vegas_odds_class']=$odds && $odds->american_odds!==null
                     ? ($odds->american_odds<=-130?'vegas-odds-good':($odds->american_odds>=130?'vegas-odds-bad':'vegas-odds-even'))

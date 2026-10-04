@@ -105,7 +105,10 @@ final class TeamImages
     public static function warm(): int
     {
         $count = 0;
-        foreach (DB::table('team_icons')->select('team_slug','image_data','mime_type')->cursor() as $icon) {
+        // PDO MySQL buffers cursor results; fetch one original at a time instead.
+        foreach (DB::table('team_icons')->pluck('team_slug') as $slug) {
+            $icon = DB::table('team_icons')->where('team_slug',$slug)->first(['team_slug','image_data','mime_type']);
+            if (!$icon) continue;
             try {
                 self::generate($icon->team_slug, base64_decode($icon->image_data, true), $icon->mime_type); $count++;
             } catch (\Throwable $e) { report($e); }

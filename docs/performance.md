@@ -1,10 +1,10 @@
 # Performance changes (October 2026)
 
-The web container uses Nginx and four on-demand PHP-FPM workers, rather than the single-worker PHP development server. OPcache is enabled; PHP workers recycle after 500 requests. PHP uses a 128 MB per-process memory limit. Nginx serves static files directly and compresses text responses. The existing scheduler runs alongside the web server.
+The web container uses Nginx and three on-demand PHP-FPM workers, rather than the single-worker PHP development server. OPcache is enabled; PHP workers recycle after 500 requests. PHP uses a 192 MB per-process memory limit. Nginx serves static files directly and compresses text responses. The existing scheduler runs alongside the web server.
 
 ## Images
 
-Database originals remain authoritative. `php artisan ecfhl:warm-images` rebuilds originals and real 64, 160 and 640 pixel WebP thumbnails under `public/media/team-icons` before accepting traffic. Uploads regenerate those files and atomically publish a new manifest. Content hashes in URLs allow immutable browser caching, while image viewers retain access to the original. Missing images can be generated on demand through public routes without session middleware. Generated files need no persistent volume and are rebuilt on deployment.
+Database originals remain authoritative. `php artisan ecfhl:warm-images` rebuilds originals and real 64, 160 and 640 pixel WebP thumbnails under `public/media/team-icons` before accepting traffic. The image warmer reads one original at a time and uses a separate 256 MB CLI limit. Uploads regenerate those files and atomically publish a new manifest. Content hashes in URLs allow immutable browser caching, while image viewers retain access to the original. Missing images can be generated on demand through public routes without session middleware. Generated files need no persistent volume and are rebuilt on deployment.
 
 ## Data and SQL
 

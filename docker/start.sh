@@ -8,7 +8,7 @@ php artisan migrate --force
 php artisan config:cache
 php artisan view:cache
 # Prebuild originals and thumbnails before accepting page requests.
-php artisan ecfhl:warm-images || echo 'Image warmup incomplete; missing images will be generated on first use.' >&2
+php -d memory_limit=256M artisan ecfhl:warm-images || echo 'Image warmup incomplete; missing images will be generated on first use.' >&2
 chown -R www-data:www-data storage bootstrap/cache public/media/team-icons
 nginx -t -c /tmp/ecfhl-nginx.conf
 php-fpm -F &
