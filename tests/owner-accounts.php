@@ -90,11 +90,15 @@ verifyOwner(ownerRequest('GET','/account/admin-invite?token='.$configInvite,[],$
 $response=ownerRequest('GET','/account',[],$admin,['HTTP_ACCEPT'=>'text/html']);verifyOwner(str_contains($response->getContent(),'href="/admin"'),'Administrator menu absent');
 verifyOwner(str_contains($response->getContent(),'href="/admin/projections"'),'Projection weights link missing from administrator menu');
 $response=ownerRequest('GET','/admin/projections',[],$admin,['HTTP_ACCEPT'=>'text/html']);
-verifyOwner($response->getStatusCode()===200 && str_contains($response->getContent(),'Season to date') && str_contains($response->getContent(),'weights[21d]'),'Projection settings page failed to render');
+verifyOwner($response->getStatusCode()===200 && str_contains($response->getContent(),'Season to date') && str_contains($response->getContent(),'units[21d]'),'Projection settings page failed to render');
 $response=ownerRequest('POST','/admin/projections',['weights'=>['fantrax'=>20,'season'=>30,'7d'=>25,'14d'=>15,'21d'=>10]],$admin);
 verifyOwner($response->getStatusCode()===302 && App\Support\ProjectionSettings::weights()['season']===30.0,'Admin weights were not persisted');
 $response=ownerRequest('POST','/admin/projections',['weights'=>['fantrax'=>30,'season'=>30,'7d'=>25,'14d'=>15,'21d'=>10]],$admin);
 verifyOwner($response->getStatusCode()===422 && App\Support\ProjectionSettings::weights()['fantrax']===20.0,'Invalid total changed saved settings');
+$response=ownerRequest('POST','/admin/projections',['units'=>['fantrax'=>6,'season'=>2,'7d'=>2,'14d'=>0,'21d'=>0]],$admin);
+verifyOwner($response->getStatusCode()===302 && App\Support\ProjectionSettings::weights()===['fantrax'=>60.0,'season'=>20.0,'7d'=>20.0,'14d'=>0.0,'21d'=>0.0],'Slider units must convert 6/2/2 into 60%/20%/20%');
+$response=ownerRequest('POST','/admin/projections',['units'=>['fantrax'=>7,'season'=>2,'7d'=>2,'14d'=>0,'21d'=>0]],$admin);
+verifyOwner($response->getStatusCode()===422 && App\Support\ProjectionSettings::weights()['fantrax']===60.0,'A slider total over 10 units changed saved settings');
 // Authorization policy covers distinct scoring/goalie combinations and Pacific fantasy-day boundaries.
 $b=User::create(['name'=>'B','email'=>'b@example.org','password'=>'strong-example-b']);(new OwnerTeams)->claim($b,'b');
 $p=new OwnerNotificationPolicy;

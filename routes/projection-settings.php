@@ -13,8 +13,11 @@ Route::get('/admin/projections', function () {
 
 Route::post('/admin/projections', function () {
     $rules = [];
-    foreach (ProjectionSettings::LABELS as $key => $_) $rules['weights.'.$key] = 'required|numeric|between:0,100|decimal:0,2';
+    $sliders = request()->has('units');
+    foreach (ProjectionSettings::LABELS as $key => $_) $rules[($sliders ? 'units.' : 'weights.').$key] = $sliders
+        ? 'required|numeric|between:0,10|decimal:0,1' : 'required|numeric|between:0,100|decimal:0,2';
     $validated = request()->validate($rules);
-    $count = ProjectionSettings::save($validated['weights']);
+    $weights = $sliders ? array_map(fn($units)=>(float)$units * 10, $validated['units']) : $validated['weights'];
+    $count = ProjectionSettings::save($weights);
     return redirect('/admin/projections')->with('notice', 'Projection weights saved. '.$count.' player projections recalculated.');
 });
