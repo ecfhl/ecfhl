@@ -30,6 +30,7 @@ function collectStandings(string $instant,array $states,bool $badNhl=false):arra
     global $schedule;
     CarbonImmutable::setTestNow(CarbonImmutable::parse($instant));
     Cache::flush();
+    Http::swap(new \Illuminate\Http\Client\Factory);
     Http::fake(function($request)use($states,$badNhl,$schedule){
         if(str_contains($request->url(),'api-web.nhle.com')){
             $date=basename($request->url());
