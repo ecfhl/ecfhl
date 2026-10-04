@@ -366,7 +366,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       lastTrigger=button;
       activeSlug=button.dataset.teamSlug||'';
       activeAdvisorKey=button.dataset.advisorKey||'';
-      modalImage.src=img.currentSrc||img.src;
+      modalImage.src=img.dataset.fullSrc||img.currentSrc||img.src;
       modalImage.alt=img.alt||'Team icon';
       if(advisorNameRow&&advisorNameInput){
         advisorNameInput.value='';
@@ -455,7 +455,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       const data=await response.json();
       const freshUrl=(data.url||('/team-icons/'+activeSlug))+(String(data.url||'').includes('?')?'&':'?')+'t='+Date.now();
       modalImage.src=freshUrl;
-      document.querySelectorAll('[data-team-icon-viewer][data-team-slug="'+CSS.escape(activeSlug)+'"] img').forEach(img=>img.src=freshUrl);
+      document.querySelectorAll('[data-team-icon-viewer][data-team-slug="'+CSS.escape(activeSlug)+'"] img').forEach(img=>{img.dataset.fullSrc=freshUrl;img.src='/team-icons/'+encodeURIComponent(activeSlug)+'/thumbnail?size=64&t='+Date.now();});
     }catch(error){
       alert(error.message||'Could not upload team icon.');
     }finally{
