@@ -29,6 +29,11 @@ Route::post('/admin/lineup-advisor/reset-and-refresh', function () {
 Route::post('/team-icons/{slug}', function(string $slug) {
     abort_unless(\Illuminate\Support\Facades\Schema::hasTable('team_icons'),503);
 
+    $user=request()->user();
+    abort_unless($user,401);
+    $ownedSlug=$user->claim ? \Illuminate\Support\Str::slug((string)$user->claim->team_name) : null;
+    abort_unless($user->is_admin || $ownedSlug===$slug,403);
+
     $validCurrent=DB::table('team_seasons as ts')
         ->join('seasons as s','s.season_id','=','ts.season_id')
         ->where('s.season_name','2026-27')
