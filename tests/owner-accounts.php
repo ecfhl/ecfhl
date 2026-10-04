@@ -42,6 +42,8 @@ $guest=[];$response=ownerRequest('GET','/register',[],$guest,['HTTP_ACCEPT'=>'te
 verifyOwner($response->getStatusCode()===200,'Register render failed: '.substr(strip_tags($response->getContent()),0,1000));
 verifyOwner(str_contains($response->headers->get('Cache-Control'),'no-store'),'Signup page can cache a stale session token');
 verifyOwner(str_contains($response->getContent(),'/submit-guard.js'),'Shared submit protection missing');
+verifyOwner(!str_contains($response->getContent(),'id="guest-signup-dialog"'),'Signup page must not show a signup invitation');
+verifyOwner(str_contains($response->getContent(),'class="nav-create-account"'),'Guest menu needs a prominent signup action');
 verifyOwner(str_contains($response->getContent(),'/team-icons/alpha'),'Team logo absent');
 verifyOwner(!str_contains($response->getContent(),'value="lone"'),'Reserved team offered publicly');
 verifyOwner(!str_contains($response->getContent(),'href="/admin"'),'Admin menu exposed to guest');
@@ -54,6 +56,7 @@ $a=User::where('email','a@example.org')->first();verifyOwner($a && $a->claim->fa
 verifyOwner($a->password!=='strong-example-a','Password was not hashed');
 $response=ownerRequest('GET','/account',[],$alpha,['HTTP_ACCEPT'=>'text/html']);verifyOwner($response->getStatusCode()===200,'Account render failed: '.$response->getContent());
 verifyOwner(str_contains($response->headers->get('Cache-Control'),'no-store'),'Private account page can be cached');
+verifyOwner(!str_contains($response->getContent(),'id="guest-signup-dialog"')&&!str_contains($response->getContent(),'class="nav-create-account"'),'Signed-in owner received signup prompts');
 // Enable real CSRF middleware for expired forms and repeats after successful sign-in.
 $app['env']='local';
 foreach(['/login','/register'] as $authUrl){
@@ -208,6 +211,8 @@ $response=ownerRequest('GET','/daily-targets?date='.$day,[],$alpha,['HTTP_ACCEPT
 verifyOwner($response->getStatusCode()===200&&str_contains($response->getContent(),'data-goalie-watch="TOR|zearly"'),'Daily Targets bell not rendered: '.substr(strip_tags($response->getContent()),0,1000));
 verifyOwner(!str_contains($response->getContent(),'data-goalie-watch="CAR|confirmedstarter"'),'Confirmed goalie received a bell');
 ownerRequest('GET','/notifications',[],$guest,['HTTP_ACCEPT'=>'text/html']);
+verifyOwner(str_contains(view('layouts.app')->render(),'id="guest-signup-dialog"'),'Signed-out browsing needs a signup invitation');
+verifyOwner(str_contains(view('layouts.app')->render(),'Already have an account?'),'Signup invitation must include sign-in');
 $guestBell=view('account.goalie-bell',['goalie'=>['name'=>'Z Early','team'=>'TOR','starting_status'=>'Probable'],'date'=>$day])->render();
 verifyOwner(str_contains($guestBell,'href="/login"'),'Guest bell lacks sign-in link');
 verifyOwner(str_contains(view('account.goalie-bell',['goalie'=>['name'=>'Sam Goalie','team'=>'MTL'],'date'=>'2026-10-03'])->render(),'goalie-watch-bell'),'Tomorrow unknown status bell missing');

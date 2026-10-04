@@ -1,0 +1,24 @@
+.main-nav a.nav-create-account{background:var(--accent);color:#1f1a0d;font-weight:800;text-align:center}
+.main-nav a.nav-create-account:hover{background:#efc75d;color:#1f1a0d}
+.navigation-loading[hidden],.navigation-loading button[hidden]{display:none!important}
+.navigation-loading{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(7,26,51,.3);backdrop-filter:blur(2px);cursor:wait}
+.navigation-loading-card{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px;max-width:360px;padding:22px 26px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);font-weight:700;text-align:center}
+.navigation-spinner{width:22px;height:22px;flex-shrink:0;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:navigation-spin .8s linear infinite}
+.navigation-loading-card button{width:100%;margin-top:4px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font:inherit;padding:8px 12px;border-radius:8px;cursor:pointer}
+.navigation-pending .nav-dropdown-menu{display:none!important}
+.nav-dropdown.menu-dismissed .nav-dropdown-menu{display:none!important}
+.guest-signup-dialog{width:min(420px,calc(100% - 32px));max-height:calc(100dvh - 40px);overflow:auto;padding:28px;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);box-shadow:0 24px 80px rgba(0,0,0,.3);text-align:center}
+.guest-signup-dialog::backdrop{background:rgba(7,17,31,.7);backdrop-filter:blur(3px)}
+.guest-signup-logo{width:68px;height:68px;object-fit:contain;margin:4px auto 12px}
+.guest-signup-dialog h2{margin:0 0 12px;font-size:26px;line-height:1.15;letter-spacing:-.5px}
+.guest-signup-description{margin:0 0 22px;color:var(--muted);font-size:15px;line-height:1.6}
+.guest-signup-primary{width:100%;min-height:48px;font-size:16px}
+.guest-signup-close{position:absolute;top:10px;right:10px;width:36px;height:36px;border:0;border-radius:50%;background:var(--panel-2);color:var(--text);font-size:25px;cursor:pointer}
+.guest-signup-browse{display:block;width:100%;margin-top:12px;padding:9px;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.guest-signup-signin{margin:22px 0 0;padding-top:18px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.guest-signup-signin a{color:var(--text);font-weight:800;text-underline-offset:3px}
+.login-create-account{margin:22px 0;padding:18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;text-align:center}
+.login-create-account p{margin:0 0 10px;font-weight:700}.login-create-account .button{width:100%;min-height:46px}
+@keyframes navigation-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.navigation-spinner{animation:none}}
+@media(max-width:900px){.nav-toggle{display:block}.main-nav{display:none;position:absolute;left:0;right:0;top:58px;max-height:calc(100dvh - 58px);overflow-y:auto;background:var(--navy);padding:10px 16px;flex-direction:column;align-items:stretch}.nav-open .main-nav{display:flex}.main-nav a.nav-create-account{margin-bottom:6px;padding:12px!important;text-align:center!important}.guest-signup-dialog{padding:26px 22px}}

@@ -6,6 +6,7 @@
     <meta name="color-scheme" content="light dark">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="/submit-guard.js?v=1"></script>
+    <script src="/navigation-feedback.js?v=1" defer></script>
     @php
         if (request()->is('/')) {$browserTitle='East Coast Fantasy Hockey League';}
         elseif(request()->is('teams/current/*')&&isset($teamName)){$browserTitle='ECFHL - '.$teamName;}
@@ -22,7 +23,7 @@
             ->all();
     @endphp
     <title>{{ $browserTitle }}</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7"><link rel="shortcut icon" href="/favicon.svg?v=7"><link rel="apple-touch-icon" href="/ecfhl-logo.png?v=7"><link rel="stylesheet" href="/app.css?v=6"><link rel="stylesheet" href="/header-filters.css?v=3">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7"><link rel="shortcut icon" href="/favicon.svg?v=7"><link rel="apple-touch-icon" href="/ecfhl-logo.png?v=7"><link rel="stylesheet" href="/app.css?v=6"><link rel="stylesheet" href="/header-filters.css?v=3"><link rel="stylesheet" href="/navigation-feedback.css?v=1">
 <style>
 .button:disabled{opacity:.6;cursor:not-allowed}.submit-pending{cursor:wait!important}.submit-pending::before{content:'';display:inline-block;width:12px;height:12px;margin-right:7px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-2px;animation:submit-spin .8s linear infinite}@keyframes submit-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.submit-pending::before{animation:none}}
 html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relative;display:flex;align-items:center}.push-team-picker{display:none;position:absolute;right:0;top:calc(100% + 8px);z-index:1200;width:230px;padding:10px;background:#082f4f;border:1px solid #6b88a0;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,.28)}.push-team-picker.open{display:block}.push-team-picker-label{display:block;margin:0 0 6px;color:#dce6f2;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}.push-team-select{width:100%;padding:7px 9px;border:1px solid rgba(255,255,255,.3);border-radius:8px;background:#0d3a5e;color:#fff;font-size:11px;font-weight:700}.push-switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;color:#dce6f2;font-size:10px;font-weight:800}.push-switch{position:relative;display:inline-flex;align-items:center;flex:0 0 auto;width:42px;height:22px;cursor:pointer}.push-switch input{position:absolute;opacity:0;pointer-events:none}.push-switch-track{position:absolute;inset:0;border-radius:999px;background:#64748b;border:1px solid rgba(255,255,255,.25);transition:.18s ease}.push-switch-thumb{position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.18s ease}.push-switch input:checked~.push-switch-track{background:#22c55e;border-color:#4ade80}.push-switch input:checked~.push-switch-thumb{transform:translateX(20px)}.push-switch input:focus-visible~.push-switch-track{outline:2px solid #93c5fd;outline-offset:2px}.push-notification-toggle{border:0;background:transparent;color:inherit;font-size:18px;line-height:1;cursor:pointer;padding:7px;border-radius:8px}.push-notification-toggle:hover{background:var(--surface-2,rgba(255,255,255,.08))}.push-notification-toggle.push-enabled{background:#dcfce7;color:#166534}.push-notification-toggle.push-blocked{opacity:.5}
@@ -31,7 +32,8 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 </style>
 </head>
 <body>
-<header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><a class="brand" href="/"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a></div><div class="header-actions"><a class="push-notification-toggle" href="/notifications" aria-label="Notification settings" title="Notification settings">🔔</a><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav">
+<header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><a class="brand" href="/" data-loading-label="Overview"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></a></div><div class="header-actions"><a class="push-notification-toggle" href="/notifications" data-loading-label="Notifications" aria-label="Notification settings" title="Notification settings">🔔</a><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav" id="main-navigation">
+@guest<a href="/register" class="nav-create-account">Create account</a>@endguest
 <a href="/" class="{{ request()->is('/')?'active':'' }}"><span class="nav-item-icon">⌂</span>Overview</a>
 <a id="my-team-nav-link" class="my-team-link" data-my-team-link href="#"><span class="nav-item-icon">★</span>My Team</a>
 <a href="/teams/current" class="{{ request()->is('teams/current','teams/current/*')?'active':'' }}"><span class="nav-item-icon nav-live-icon">●</span><span class="nav-live-text">Live Scoring</span></a>
@@ -40,7 +42,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 <div class="nav-dropdown {{ request()->is('teams')||request()->is('teams/*')&&!request()->is('teams/current','teams/current/*')?'active':'' }}">
   <div class="nav-dropdown-row">
     <a class="nav-dropdown-main-link" href="/standings"><span class="nav-item-icon nav-teams-icon">👥</span>Teams</a>
-    <button type="button" class="nav-dropdown-toggle" onclick="this.closest('.nav-dropdown').classList.toggle('open')" aria-label="Open Teams menu" aria-expanded="false"><span aria-hidden="true">▾</span></button>
+    <button type="button" class="nav-dropdown-toggle" onclick="const menu=this.closest('.nav-dropdown');menu.classList.remove('menu-dismissed');this.setAttribute('aria-expanded',String(menu.classList.toggle('open')))" aria-label="Open Teams menu" aria-expanded="false"><span aria-hidden="true">▾</span></button>
   </div>
   <div class="nav-dropdown-menu">
     @foreach($currentTeamMenu as $currentTeamName)
@@ -52,7 +54,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 <div class="nav-dropdown {{ request()->is('seasons','seasons/*','prizes','trades','draft','players')?'active':'' }}">
   <div class="nav-dropdown-row">
     <a class="nav-dropdown-main-link" href="/teams"><span class="nav-item-icon">📖</span>Archive</a>
-    <button type="button" class="nav-dropdown-toggle" onclick="this.closest('.nav-dropdown').classList.toggle('open')" aria-label="Open Archive menu" aria-expanded="false"><span aria-hidden="true">▾</span></button>
+    <button type="button" class="nav-dropdown-toggle" onclick="const menu=this.closest('.nav-dropdown');menu.classList.remove('menu-dismissed');this.setAttribute('aria-expanded',String(menu.classList.toggle('open')))" aria-label="Open Archive menu" aria-expanded="false"><span aria-hidden="true">▾</span></button>
   </div>
   <div class="nav-dropdown-menu archive-menu">
     <a href="/teams">Franchise History</a>
@@ -68,7 +70,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 <div class="nav-dropdown {{ request()->is('admin','admin/*','job-status')?'active':'' }}">
   <div class="nav-dropdown-row">
     <a class="nav-dropdown-main-link" href="/admin"><span class="nav-item-icon">⚙</span>Admin</a>
-    <button type="button" class="nav-dropdown-toggle" onclick="this.closest('.nav-dropdown').classList.toggle('open')" aria-label="Open Admin menu" aria-expanded="false"><span aria-hidden="true">▾</span></button>
+    <button type="button" class="nav-dropdown-toggle" onclick="const menu=this.closest('.nav-dropdown');menu.classList.remove('menu-dismissed');this.setAttribute('aria-expanded',String(menu.classList.toggle('open')))" aria-label="Open Admin menu" aria-expanded="false"><span aria-hidden="true">▾</span></button>
   </div>
   <div class="nav-dropdown-menu archive-menu">
     <a href="/job-status">Collector Status</a>
@@ -83,6 +85,22 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 @if($showSeasonFilter)<div class="season-filter-bar"><div class="shell"><div class="header-season-filter" role="group" aria-label="Season type">@foreach(['h2h'=>'Head-to-Head','total'=>'Total Points'] as $value=>$label)<button type="button" class="header-filter-button season-type-choice {{ in_array($seasonMode,[$value,'all'])?'active':'' }}" data-value="{{ $value }}">{{ $label }}</button>@endforeach</div></div></div>@endif
 <main>@yield('content')</main>
 <footer class="site-footer"><div class="shell footer-inner"><div><strong>ECFHL HISTORY</strong><br><span>2007–08 → present</span></div><div class="footer-right">Database-backed league archive</div></div></footer>
+<div id="navigation-loading" class="navigation-loading" hidden>
+  <div class="navigation-loading-card"><span class="navigation-spinner" aria-hidden="true"></span><span id="navigation-loading-message" role="status" aria-live="polite">Loading…</span><button id="navigation-cancel" type="button" hidden>Cancel loading</button></div>
+</div>
+@guest
+@unless(request()->is('login','register','auth/*'))
+<dialog id="guest-signup-dialog" class="guest-signup-dialog" aria-labelledby="guest-signup-title" aria-describedby="guest-signup-description">
+  <button class="guest-signup-close" type="button" data-dismiss-signup aria-label="Close account invitation">×</button>
+  <img class="guest-signup-logo" src="/ecfhl-logo.png" alt="">
+  <h2 id="guest-signup-title">Claim your ECFHL team</h2>
+  <p id="guest-signup-description" class="guest-signup-description">Create an account to choose your team, save your preferences, and get scoring and goalie alerts.</p>
+  <a class="button primary guest-signup-primary" href="/register" autofocus>Create account</a>
+  <button class="guest-signup-browse" type="button" data-dismiss-signup>Continue browsing</button>
+  <p class="guest-signup-signin">Already have an account? <a href="/login">Sign in</a></p>
+</dialog>
+@endunless
+@endguest
 <script>(function(){const saved=localStorage.getItem('ecfhl-theme');if(saved)document.documentElement.dataset.theme=saved;if(location.pathname==='/draft'&&location.hash){history.replaceState(null,'',location.pathname+location.search);window.scrollTo(0,0);}})();function toggleTheme(){const next=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=next;localStorage.setItem('ecfhl-theme',next);}</script>
 <script>
 (function(){

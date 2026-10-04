@@ -8,5 +8,5 @@
 <label>Password<input name="password" type="password" required autocomplete="current-password"></label>
 <label class="owner-checkbox"><input type="checkbox" name="remember" value="1" checked>Keep me signed in</label>
 <button class="button primary" type="submit">Sign in</button>
-</form><p><a href="/register">Create an account</a> · <a href="/teams/current">Continue browsing</a></p></div>
+</form><div class="login-create-account"><p>New to ECFHL?</p><a class="button primary" href="/register">Create account</a></div><p><a href="/teams/current">Continue browsing</a></p></div>
 @endsection
