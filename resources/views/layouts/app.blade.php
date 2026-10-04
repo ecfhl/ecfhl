@@ -27,12 +27,12 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 
 .mobile-primary-nav{display:none}
 @media(max-width:900px){
- html{scroll-padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
- body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
- .mobile-primary-nav{position:fixed;left:0;right:0;bottom:0;z-index:1100;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));background:var(--panel);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(15,23,42,.15)}
- .mobile-primary-nav a{min-width:0;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:5px 2px;border:2px solid transparent;border-radius:9px;color:#fff;text-decoration:none;font-size:11px;font-weight:800;line-height:1.15;text-align:center}
- .mobile-primary-nav .mobile-nav-label{display:flex;align-items:center;justify-content:center;min-height:26px}
- .mobile-primary-nav .mobile-nav-icon{font-size:18px;line-height:1}
+ html{scroll-padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
+ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
+ .mobile-primary-nav{position:fixed;left:0;right:0;bottom:0;z-index:1100;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px max(4px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px));background:var(--panel);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(15,23,42,.15)}
+ .mobile-primary-nav a{min-width:0;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:3px 1px;border:2px solid transparent;border-radius:7px;color:#fff;text-decoration:none;font-size:clamp(10px,2.7vw,11px);font-weight:800;line-height:1.15;text-align:center}
+ .mobile-primary-nav .mobile-nav-label{display:flex;align-items:center;justify-content:center;min-height:0;white-space:nowrap}
+ .mobile-primary-nav .mobile-nav-icon{font-size:15px;line-height:1}
  .mobile-primary-nav .mobile-nav-live{background:#cf0020}
  .mobile-primary-nav .mobile-nav-team{background:#007d82}
  .mobile-primary-nav .mobile-nav-standings{background:#00699f}
