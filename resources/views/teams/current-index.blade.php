@@ -503,6 +503,18 @@ html[data-theme="dark"] .matchup-summary-side .matchup-projected-score{backgroun
 /* Keep unchanged scores readable in dark mode while preserving red/green movement colors. */
 html[data-theme="dark"] .matchup-week-score.score-same,
 html[data-theme="dark"] .matchup-day-score.score-same{color:#f8fafc!important}
+
+@media(max-width:800px){
+  .matchup-card[open] .matchup-summary{min-height:0}
+  .matchup-player-row{overflow:hidden;min-width:0}
+  .matchup-player-main{width:100%;padding-right:34px}
+  .matchup-player-name{display:block!important;font-size:12px;line-height:1.15}
+  .matchup-player-name strong{display:block;overflow-wrap:anywhere}
+  .matchup-player-opponent{display:block!important;font-size:10px;line-height:1.15;white-space:normal!important;overflow:hidden}
+  .matchup-player-opponent .team-playing-text,.matchup-player-opponent .team-away,.matchup-player-opponent .team-home{display:block;white-space:normal!important;overflow-wrap:anywhere}
+  .matchup-player-cats{font-size:9px!important}
+  .matchup-player-metrics>div:first-child{right:7px!important}
+}
 </style>
 
 <script>
