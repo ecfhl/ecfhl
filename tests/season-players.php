@@ -29,7 +29,7 @@ $d=$service->data(Request::create('/players'));
 verifySeason($d['positions']===['F','D']&&$d['players']->total()===60&&$d['players']->count()===25,'Defaults must show F/D only and 25 players.');
 verifySeason($d['players'][0]->fantasy_team_name==='Beta'&&$d['players'][1]->fantasy_team_name===null,'Latest snapshot ownership / deduplicated roster join failed.');
 verifySeason((float)$d['players'][0]->projected_fpts_per_game===6.25&&$d['players'][1]->projected_fpts_per_game===null,'MyProj must use saved custom rates and preserve untracked nulls.');
-verifySeason(array_keys($d['columns'])===['A','G','Pts','PPG','SHG','GWG','SOG','TOI']&&$d['players'][0]->stats['TOI']==='71:11','Full stat columns / time values were lost.');
+verifySeason(array_keys($d['columns'])===['G','A','Pts','PPG','SHG','GWG','SOG','TOI']&&$d['players'][0]->stats['TOI']==='71:11','Full stat columns / time values were lost.');
 $rookies=$service->data(Request::create('/players?positions=F,D&rookies=1'));
 verifySeason($rookies['players']->total()===20&&$rookies['players']->getCollection()->every(fn($p)=>(bool)$p->rookie),'Rookie On must exclude veterans.');
 $all=$service->data(Request::create('/players?positions=F,D,G&rookies=0'));
@@ -63,7 +63,8 @@ verifySeason(substr_count($html,'data-player-id=')===25&&str_contains($html,'Pla
 verifySeason(str_contains($html,'EC Proj')&&str_contains($html,'71:11')&&str_contains($html,'/teams/current/beta')&&str_contains($html,'Free Agent'),'Stats / ownership / custom projection rendering failed.');
 verifySeason(str_contains($html,'aria-pressed="true" href="/players?positions=D')&&str_contains($html,'aria-pressed="true" href="/players?positions=F')&&str_contains($html,'aria-pressed="false" href="/players?positions=F%2CD%2CG'),'Default filter button states failed.');
 preg_match_all('/<th scope="col"[^>]*>.*?<a[^>]*>(.*?) <span/s',$html,$headerMatches);
-verifySeason($headerMatches[1]===['Player','Team','GP','FPts','FPts/gp','EC Proj','A','G','Pts','PPG','SHG','GWG','SOG','TOI'],'Column order and labels must match the requested stats exactly.');
+verifySeason($headerMatches[1]===['Player','Team','EC Proj','FPts','FPts/gp','GP','G','A','Pts','PPG','SHG','GWG','SOG','TOI'],'Column order and labels must match the requested stats exactly.');
+verifySeason(preg_match('/<td class="myproj">6\.25<\/td>\s*<td>99\.00<\/td>\s*<td>9\.90<\/td>\s*<td>10<\/td>\s*<td>2<\/td>\s*<td>9<\/td>/', $html), 'Row values must follow EC Proj, FPts, FPts/gp, GP, G and A header order.');
 $sortHtml=seasonRequest('/players?rookies=1&sort=A&direction=asc')->getContent();
 verifySeason(str_contains($sortHtml,'aria-sort="ascending"')&&str_contains($sortHtml,'sort=A&amp;direction=desc')&&str_contains($sortHtml,'name="sort" value="A"'),'Sort arrows / toggle links / search preservation failed.');
 $json=json_decode(seasonRequest('/players?positions=F,D&page=2',true)->getContent(),true);

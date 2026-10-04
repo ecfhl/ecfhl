@@ -7,9 +7,9 @@ use Illuminate\Support\Facades\DB;
 
 final class SeasonPlayers
 {
-    private const SKATER_COLUMNS = ['A'=>'Assists', 'G'=>'Goals', 'Pts'=>'Points', 'PPG'=>'Power-play goals',
+    private const SKATER_COLUMNS = ['G'=>'Goals', 'A'=>'Assists', 'Pts'=>'Points', 'PPG'=>'Power-play goals',
         'SHG'=>'Short-handed goals', 'GWG'=>'Game-winning goals', 'SOG'=>'Shots on goal', 'TOI'=>'Time on ice'];
-    private const BASE_HEADERS = ['player'=>'Player', 'team'=>'Team', 'gp'=>'GP', 'fpts'=>'FPts', 'fpts_gp'=>'FPts/gp', 'ec_proj'=>'EC Proj'];
+    private const BASE_HEADERS = ['player'=>'Player', 'team'=>'Team', 'ec_proj'=>'EC Proj', 'fpts'=>'FPts', 'fpts_gp'=>'FPts/gp', 'gp'=>'GP'];
 
     public function data(Request $request): array
     {
