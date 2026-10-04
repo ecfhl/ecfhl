@@ -10,3 +10,8 @@ if ! php artisan ecfhl:refresh-live-scoring; then
 fi
 # Historical data is already stored in MySQL. Import only as an explicit operation;
 # the public domain now serves this app, not the old JSON archive endpoints.
+
+# Repair standings with finalized days before switching production traffic.
+if ! php artisan ecfhl:refresh-current-standings; then
+    echo 'WARNING: Standings refresh failed; existing standings preserved.'
+fi

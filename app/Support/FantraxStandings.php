@@ -3,6 +3,8 @@
 namespace App\Support;
 
 use Carbon\CarbonImmutable;
+use App\Support\LiveScoring\FantraxClient;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -39,6 +41,7 @@ class FantraxStandings
         if(!is_array($data))throw new RuntimeException('Fantrax standings schedule returned no response data.');
 
         $today=(new FantasyDay)->today();
+        $completedThrough=app(NhlScoringDays::class)->latestCompletedDate();
         $teams=[];
 
         foreach(($data['tableList']??[]) as $table){
@@ -48,7 +51,8 @@ class FantraxStandings
 
             // Ignore future scoring periods entirely.
             if($start->gt($today))continue;
-            $completed=$end->lt($today);
+            $completed=$end->lte($completedThrough);
+            $dailyTotals=$completed ? [] : $this->completedDailyTotals($start,$completedThrough);
 
             foreach(($table['rows']??[]) as $row){
                 $cells=$row['cells']??[];
@@ -75,11 +79,20 @@ class FantraxStandings
                     }
                 }
 
-                if($awayScore!==null)$teams[$awayId]['fantasy_points_for']+=$awayScore;
-                if($homeScore!==null)$teams[$homeId]['fantasy_points_for']+=$homeScore;
+                // A period result becomes official only after its last day's games.
+                // During an open period, use daily totals through the last finished
+                // day, excluding all of today's points until its final game ends.
+                if($completed){
+                    if($awayScore===null||$homeScore===null)throw new RuntimeException('Missing completed-period scores. Existing standings preserved.');
+                    $teams[$awayId]['fantasy_points_for']+=$awayScore;
+                    $teams[$homeId]['fantasy_points_for']+=$homeScore;
+                }else{
+                    foreach([$awayId,$homeId] as $id){
+                        if($start->lte($completedThrough)&&!array_key_exists($id,$dailyTotals))throw new RuntimeException('Missing completed daily team scores. Existing standings preserved.');
+                        $teams[$id]['fantasy_points_for']+=$dailyTotals[$id]??0.0;
+                    }
+                }
 
-                // Current-period scores are live FPts, but W/L/T are only official
-                // after the scoring period is complete.
                 if(!$completed||$awayScore===null||$homeScore===null)continue;
 
                 if(abs($awayScore-$homeScore)<0.0001){
@@ -113,7 +126,30 @@ class FantraxStandings
         foreach($rows as $i=>&$row)$row['rank']=$i+1;
         unset($row);
 
-        return ['rows'=>$rows,'url'=>$url];
+        return ['rows'=>$rows,'url'=>$url,'completed_through'=>$completedThrough->toDateString()];
+    }
+
+    private function completedDailyTotals(CarbonImmutable $start, CarbonImmutable $end): array
+    {
+        $totals=[];
+        for($date=$start;$date->lte($end);$date=$date->addDay()){
+            $day=$date->toDateString();
+            $scores=Cache::remember('standings:completed-day:'.self::LEAGUE_ID.':'.$day,300,function()use($day){
+                $data=app(FantraxClient::class)->matchup($day,'1');
+                $scores=[];
+                foreach(($data['fantasyTeams']??[]) as $team){
+                    if(!empty($team['pseudo']))continue;
+                    $id=(string)($team['id']??'');
+                    $active=$data['statsPerTeam']['allTeamsStats'][$id]['ACTIVE']??null;
+                    if($id===''||!is_numeric($active['totalFpts']??null))throw new RuntimeException('Missing finalized Fantrax daily score. Existing standings preserved.');
+                    $scores[$id]=(float)$active['totalFpts']+(float)($active['pointsAdjustment']??0);
+                }
+                if(count($scores)<10)throw new RuntimeException('Incomplete finalized Fantrax daily scores. Existing standings preserved.');
+                return $scores;
+            });
+            foreach($scores as $id=>$score)$totals[$id]=($totals[$id]??0.0)+$score;
+        }
+        return $totals;
     }
 
     private function dateRange(string $value): ?array
@@ -124,8 +160,8 @@ class FantraxStandings
         }
 
         try{
-            $start=CarbonImmutable::createFromFormat('!D M j, Y',$m[1],'America/Halifax');
-            $end=CarbonImmutable::createFromFormat('!D M j, Y',$m[2],'America/Halifax');
+            $start=CarbonImmutable::createFromFormat('!D M j, Y',$m[1],FantasyDay::TIMEZONE);
+            $end=CarbonImmutable::createFromFormat('!D M j, Y',$m[2],FantasyDay::TIMEZONE);
             return ($start&&$end)?[$start,$end]:null;
         }catch(\Throwable){
             return null;

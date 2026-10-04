@@ -1222,37 +1222,8 @@ Schedule::command('ecfhl:refresh-scoring-period-matchups')
 Schedule::command('ecfhl:refresh-current-standings')
     ->cron('*/5 * * * *')
     ->withoutOverlapping(4)
-    ->runInBackground()
-    ->when(function () {
-        $fantasyDay=app(\App\Support\FantasyDay::class)->today();
-        $day=$fantasyDay->toDateString();
+    ->runInBackground();
 
-        try {
-            $response=Http::timeout(12)->retry(1,500)->get('https://api-web.nhle.com/v1/score/'.$day);
-            $response->throw();
-            $starts=collect($response->json('games')??[])
-                ->map(function($game){
-                    $utc=$game['startTimeUTC']??null;
-                    if(!$utc)return null;
-                    try{return CarbonImmutable::parse($utc)->utc();}catch(\Throwable){return null;}
-                })
-                ->filter();
-
-            if($starts->isEmpty())return false;
-
-            $now=CarbonImmutable::now('UTC');
-            $first=$starts->sort()->first();
-            $last=$starts->sortDesc()->first();
-
-            return $now->betweenIncluded($first,$last->addHours(4));
-        } catch (\Throwable $e) {
-            Log::warning('Current standings game-window check failed',[
-                'date'=>$day,
-                'error'=>$e->getMessage(),
-            ]);
-            return false;
-        }
-    });
 
 Schedule::command('ecfhl:refresh-daily-players')->cron('*/15 * * * *')->withoutOverlapping(14);
 Schedule::command('ecfhl:refresh-fantasy-rosters')->cron('*/15 * * * *')->withoutOverlapping(14)->runInBackground();
