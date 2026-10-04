@@ -515,6 +515,17 @@ html[data-theme="dark"] .matchup-day-score.score-same{color:#f8fafc!important}
   .matchup-player-cats{font-size:9px!important}
   .matchup-player-metrics>div:first-child{right:7px!important}
 }
+
+@media(max-width:800px){
+  .matchup-player-main{padding-right:42px!important;overflow:hidden}
+  .matchup-player-name{display:block!important;white-space:nowrap!important;overflow:hidden!important;font-size:11px!important;line-height:1.15}
+  .matchup-player-name strong{display:block!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;overflow-wrap:normal!important}
+  .matchup-player-opponent{display:block!important;white-space:nowrap!important;overflow:hidden!important;font-size:9px!important;line-height:1.2}
+  .matchup-player-opponent .team-playing-text,.matchup-player-opponent .team-away,.matchup-player-opponent .team-home{display:block!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:clip!important;overflow-wrap:normal!important}
+  .matchup-player-metrics>div:first-child{right:7px!important;bottom:7px!important;gap:3px!important}
+  .matchup-player-metrics>div:first-child span{font-size:9px!important}
+  .matchup-player-metrics>div:first-child strong{font-size:21px!important;line-height:1!important;font-weight:900!important}
+}
 </style>
 
 <script>
