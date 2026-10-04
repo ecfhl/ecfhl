@@ -115,9 +115,11 @@ $unclaimed=User::create(['name'=>'No team','email'=>'unclaimed@example.org','pas
 verifyOwner(!$ownPolicy->accepts($unclaimed,'goalie-status',null,$ownContext),'Unclaimed owner received own-goalie alert');
 $a->notification_preferences=['own_goalies'=>false];$a->save();verifyOwner(!$ownPolicy->accepts($a,'goalie-status',null,$ownContext),'Own-goalie switch off ignored');
 $response=ownerRequest('POST','/notifications',['own_goalies'=>'1'],$alpha);
-verifyOwner($response->getStatusCode()===302&&$a->fresh()->notification_preferences['own_goalies']===true,'Own-goalie preference did not save');
+verifyOwner($response->getStatusCode()===200&&json_decode($response->getContent(),true)['preferences']['own_goalies']===true&&$a->fresh()->notification_preferences['own_goalies']===true,'Own-goalie preference did not save / confirm');
 $response=ownerRequest('GET','/notifications',[],$alpha,['HTTP_ACCEPT'=>'text/html']);
 verifyOwner(str_contains($response->getContent(),'name="own_goalies" value="1" checked'),'Own-goalie saved switch not checked');
+$response=ownerRequest('POST','/notifications',['own_goalies'=>'1'],$alpha,['HTTP_ACCEPT'=>'text/html']);
+verifyOwner($response->getStatusCode()===302,'Native preference form fallback did not redirect');
 $push->notify('goalie-status','Goalie Status','Owned goalie confirmed','/notifications',null,$ownContext);
 $feed=ownerRequest('GET','/push/notifications',[],$guest,['HTTP_AUTHORIZATION'=>'Bearer token-alpha']);
 verifyOwner(count(json_decode($feed->getContent(),true)['notifications'])===1,'Own-goalie push delivery missing');
