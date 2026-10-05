@@ -34,10 +34,10 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
  .mobile-primary-nav a{min-width:0;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:3px 1px;border:2px solid transparent;border-radius:7px;color:#fff;text-decoration:none;font-size:clamp(10px,2.7vw,11px);font-weight:800;line-height:1.15;text-align:center}
  .mobile-primary-nav .mobile-nav-label{display:flex;align-items:center;justify-content:center;min-height:0;white-space:nowrap}
  .mobile-primary-nav .mobile-nav-icon{font-size:15px;line-height:1}
- .mobile-primary-nav .mobile-nav-live{background:#cf0020}
- .mobile-primary-nav .mobile-nav-team{background:#007d82}
- .mobile-primary-nav .mobile-nav-standings{background:#00699f}
- .mobile-primary-nav .mobile-nav-players{background:#ffcc25;color:#231d08}
+ .mobile-primary-nav .mobile-nav-live{background:#a9232d}
+ .mobile-primary-nav .mobile-nav-team{background:#176d70}
+ .mobile-primary-nav .mobile-nav-standings{background:#17628c}
+ .mobile-primary-nav .mobile-nav-players{background:#d6a92b;color:#231d08}
  .mobile-primary-nav a.active{border-color:var(--text);box-shadow:0 0 0 1px var(--panel)}
  .mobile-primary-nav a:focus-visible{outline:3px solid var(--text);outline-offset:1px}
  .mobile-primary-nav a:active{filter:brightness(.9)}
