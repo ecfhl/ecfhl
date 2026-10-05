@@ -990,12 +990,3 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 @endsection
-
-
-/* Compact Live Scoring player rows */
-@media(max-width:700px){
- .team-live-expanded .matchup-player-row{min-height:78px!important;padding:8px 9px 6px!important}
- .team-live-expanded .matchup-player-name{font-size:15px!important}
- .team-live-expanded .matchup-player-opponent{margin-top:4px!important}
- .team-live-expanded .matchup-player-today{bottom:6px!important}
-}
