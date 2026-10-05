@@ -770,6 +770,46 @@ html[data-theme="dark"] .team-live-expanded .matchup-bench-title{color:#cbd5e1!i
   .team-live-vs{font-size:7px;margin-top:12px}
 }
 .team-live-matchup{margin-bottom:10px}.team-live-matchup-summary{padding:7px 28px 7px 9px!important;gap:6px!important}.team-live-body{min-height:0!important;padding-top:4px!important;gap:6px!important}.team-live-logo{width:48px!important;height:48px!important;flex-basis:48px!important}.team-live-matchup-label{margin-bottom:3px!important}.team-matchup-period-label{padding:4px 7px!important}.team-opponent-record{display:block;margin-top:5px;font-size:11px;color:var(--muted);line-height:1.4}.team-future-picks{padding:10px 12px;margin:10px 0 14px}.team-future-picks summary{cursor:pointer;font-weight:800;font-size:13px}.team-future-picks summary span{font-size:11px;color:var(--muted);font-weight:500;margin-left:8px}.team-pick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-top:10px}.team-pick{padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2)}.team-pick strong,.team-pick small{display:block}.team-pick strong{font-size:12px}.team-pick small,.team-pick-note{font-size:10px;color:var(--muted)}
+
+/* Team scoreboard: grouped identities and a clear weekly score hierarchy. */
+.team-live-matchup-card{border-radius:16px;box-shadow:0 3px 14px rgba(15,23,42,.05)}
+.team-live-matchup-card[open]{border-width:1px;box-shadow:0 0 0 2px rgba(37,99,235,.15)}
+.team-live-matchup-card .team-live-matchup-summary{padding:16px 36px 16px 18px!important;gap:24px!important;background:linear-gradient(110deg,var(--panel),var(--panel-2),var(--panel));align-items:center}
+.team-live-matchup-card .team-live-side{gap:12px!important}
+.team-live-matchup-card .team-live-name-row a{font-size:15px!important;line-height:1.3!important;font-weight:800;letter-spacing:-.015em;color:var(--text)}
+.team-live-matchup-card .team-live-body{justify-content:flex-start;align-items:center!important;gap:18px!important;padding:0!important;min-height:72px!important}
+.team-live-matchup-card .team-live-side-right .team-live-body{justify-content:flex-end}
+.team-live-matchup-card .team-live-logo{width:72px!important;height:72px!important;flex:0 0 72px!important;border-radius:0!important;background:transparent;box-shadow:none;object-fit:contain}
+.team-live-matchup-card .team-live-logo img{width:100%;height:100%;object-fit:contain}
+.team-live-matchup-card .team-live-scores{margin:0!important;gap:8px!important;align-items:flex-start!important;align-self:center!important}
+.team-live-matchup-card .team-live-score{align-items:flex-start}
+.team-live-matchup-card .team-live-side-right .team-live-scores,.team-live-matchup-card .team-live-side-right .team-live-score{align-items:flex-end!important}
+.team-live-matchup-card .team-live-weekly{order:-1}
+.team-live-matchup-card .team-live-weekly strong{font-size:42px!important;line-height:1!important;letter-spacing:-.035em;font-weight:900!important;font-variant-numeric:tabular-nums;color:var(--text)}
+.team-live-matchup-card .team-live-weekly small{font-size:9px!important;line-height:1.2!important;letter-spacing:.12em;margin-top:4px!important;color:var(--muted)}
+.team-live-matchup-card .team-live-today{flex-direction:row!important;align-items:center!important;gap:6px!important}
+.team-live-matchup-card .team-live-today strong{font-size:18px!important;line-height:1!important;letter-spacing:0;font-variant-numeric:tabular-nums;color:var(--text)}
+.team-live-matchup-card .team-live-today small{order:-1;font-size:9px!important;margin:0!important;letter-spacing:.04em;color:var(--muted)}
+.team-live-matchup-card .team-live-vs{margin:0!important;padding:7px 9px!important;font-size:10px!important;letter-spacing:.08em;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);box-shadow:none}
+.team-live-matchup-card .team-live-chevron{right:12px;font-size:12px;color:var(--muted)}
+html[data-theme="dark"] .team-live-matchup-card .team-live-matchup-summary{background:linear-gradient(110deg,#0d1d32,#101f34,#0d1d32)!important}
+html[data-theme="dark"] .team-live-matchup-card .team-live-vs{background:#142943;color:#a9bdd4!important;border-color:#2a4566;box-shadow:none}
+html[data-theme="dark"] .team-live-matchup-card .team-live-logo{box-shadow:none}
+@media(max-width:700px){
+ .team-live-matchup-card .team-live-matchup-summary{padding:12px 25px 12px 10px!important;gap:8px!important}
+ .team-live-matchup-card .team-live-side{gap:9px!important}
+ .team-live-matchup-card .team-live-name-row a{font-size:12px!important;line-height:1.3!important}
+ .team-live-matchup-card .team-live-body{gap:8px!important;min-height:56px!important}
+ .team-live-matchup-card .team-live-logo{width:44px!important;height:44px!important;flex-basis:44px!important}
+ .team-live-matchup-card .team-live-weekly strong{font-size:30px!important}
+ .team-live-matchup-card .team-live-weekly small{font-size:8px!important;letter-spacing:.07em}
+ .team-live-matchup-card .team-live-today strong{font-size:15px!important}
+ .team-live-matchup-card .team-live-today small{font-size:8px!important}
+ .team-live-matchup-card .team-live-today{gap:4px!important}
+ .team-live-matchup-card .team-live-vs{font-size:8px!important;padding:5px!important}
+ .team-live-matchup-card .team-live-chevron{right:7px;font-size:10px}
+}
+@media(max-width:380px){.team-live-matchup-card .team-live-body{flex-direction:column!important;gap:7px!important}.team-live-matchup-card .team-live-scores,.team-live-matchup-card .team-live-side-right .team-live-scores{align-items:center!important}.team-live-matchup-card .team-live-score,.team-live-matchup-card .team-live-side-right .team-live-score{align-items:center!important}.team-live-matchup-card .team-live-side-right .team-live-logo{order:-1}}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
