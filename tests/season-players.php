@@ -242,7 +242,7 @@ foreach (['p61'=>['MTL','confirmed'],'p62'=>['TOR','likely'],'p63'=>['BOS','unco
  if($status) DB::table('active_starting_goalies')->insert(['game_date'=>$date,'team'=>$team,'player_name'=>$row->player_name,'starting_status'=>$status,'source_url'=>'https://example.com','checked_at'=>now()]);
 }
 $dfoGoalies=$service->data(Request::create('/players?availability=all&positions=G&dfo_sort=1'));
-verifySeason($dfoGoalies['players']->getCollection()->pluck('player_id')->all()===['p61','p62','p65','p64','p63'],'Goalies must follow confirmed, likely, then depth and projection.');
+verifySeason($dfoGoalies['players']->getCollection()->pluck('player_id')->all()===['p61','p62','p63','p64','p65'],'Goalies must follow confirmed, likely, not confirmed, NA, not starting, with ECFHL Score within each group.');
 $dfoHtml=seasonRequest($dfoUrl)->getContent();
 $dfoDoc=new DOMDocument;@$dfoDoc->loadHTML($dfoHtml);$dfoPath=new DOMXPath($dfoDoc);
 $toggle=$dfoPath->query('//a[@aria-label="Daily Faceoff priority sorting"]')->item(0);
