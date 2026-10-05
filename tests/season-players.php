@@ -54,7 +54,7 @@ foreach(['gp'=>'p2','fpts_gp'=>'p2','PPG'=>'p2','GWG'=>'p2','A'=>'p2','G'=>'p2',
 $names=$service->data(Request::create('/players?availability=all&sort=player&direction=asc'));verifySeason($names['players'][0]->player_id==='p2','Player sorting must use names alphabetically.');
 $ascending=$service->data(Request::create('/players?availability=all&sort=A&direction=asc'));verifySeason($ascending['players'][0]->player_id==='p60','Negative stats must sort before zero/positive stats.');
 $minutes=$service->data(Request::create('/players?availability=all&sort=TOI&direction=desc'));verifySeason($minutes['players'][1]->player_id==='p2'&&$minutes['players'][2]->player_id==='p1','TOI must compare seconds when minutes tie.');
-$missing=$service->data(Request::create('/players?availability=all&sort=ec_proj&direction=asc'));verifySeason($missing['players'][0]->player_id==='p1','Unavailable ECFHL score must stay last when ascending.');
+$missing=$service->data(Request::create('/players?availability=all&sort=ec_proj&direction=asc'));verifySeason($missing['players'][0]->player_id==='p1','Unavailable ECFHL Score must stay last when ascending.');
 $teams=$service->data(Request::create('/players?availability=all&sort=team&direction=asc'));verifySeason($teams['players'][0]->fantasy_team_name==='Beta','Team sorting must use displayed ECFHL team.');
 $invalid=$service->data(Request::create('/players?availability=all&sort=DROP%20TABLE&direction=INVALID'));verifySeason($invalid['sort']==='fpts'&&$invalid['direction']==='desc','Reject unknown SQL sort fields and directions.');
 $sortedRookies=$service->data(Request::create('/players?availability=all&positions=F,D&rookies=1&sort=A&direction=asc'));verifySeason($sortedRookies['players'][0]->player_id==='p60'&&$sortedRookies['players']->total()===20,'Sorting must preserve rookie/position filters.');
@@ -65,27 +65,27 @@ $defaultHtml=seasonRequest('/players')->getContent();
 verifySeason(str_contains($html,'player-assignment-tag player-assignment-2">L2</span>')&&str_contains($html,'player-assignment-tag player-assignment-2">PP2</span>')&&!str_contains($html,'Pair2'),'Defensemen and PP assignments must use colored L/PP stickers.');
 verifySeason(str_contains($html,'player-assignment-tag player-assignment-1">L1</span>')&&str_contains($html,'player-assignment-tag player-assignment-1">PP1</span>'),'Forwards must show the same colored L/PP stickers.');
 verifySeason(substr_count($html,'data-player-id=')===25&&str_contains($html,'Player &lt;unsafe&gt;')&&!str_contains($html,'Player <unsafe>'),'SSR row count / escaped names failed.');
-verifySeason(str_contains($html,'ECFHL score')&&str_contains($html,'71:11')&&str_contains($html,'/teams/current/beta')&&str_contains($html,'Free Agent'),'Stats / ownership / custom projection rendering failed.');
+verifySeason(str_contains($html,'ECFHL Score')&&str_contains($html,'71:11')&&str_contains($html,'/teams/current/beta')&&str_contains($html,'Free Agent'),'Stats / ownership / custom projection rendering failed.');
 verifySeason(str_contains($html,'aria-pressed="true" href="/players?positions=D')&&str_contains($html,'aria-pressed="true" href="/players?positions=F')&&str_contains($html,'aria-pressed="false" href="/players?positions=F%2CD%2CG'),'Default filter button states failed.');
 verifySeason(str_contains($html,'class="player-filter player-targets-link" href="/daily-targets"'),'Daily Targets shortcut missing.');
 preg_match('/<thead>(.*?)<\/thead>/s',$html,$tableHead);
 preg_match_all('/<th scope="col"[^>]*>(.*?)<\/th>/s',$tableHead[1],$headCells);
 $headerLabels=array_map(fn($v)=>rtrim(trim(strip_tags($v)), ' ↑↓↕'),$headCells[1]);
-verifySeason($headerLabels===['Rank','Player','Team','ECFHL score','FPts','FPts/gp','GP','TodayAtlantic time','TomorrowAtlantic time','G','A','Pts','PPG','SHG','GWG','SOG','TOI'],'Column order and labels must match the requested stats exactly.');
-verifySeason(preg_match('/<td class="myproj">6\.25<\/td>\s*<td>99<\/td>\s*<td>9\.90<\/td>\s*<td>10<\/td>\s*<td class="player-game-cell">.*?<\/td>\s*<td class="player-game-cell">.*?<\/td>\s*<td>2<\/td>\s*<td>9<\/td>/', $html), 'Row values must follow ECFHL score, FPts, FPts/gp, GP, G and A header order.');
+verifySeason($headerLabels===['Rank','Player','Team','ECFHL Score','FPts','FPts/gp','GP','TodayAtlantic time','TomorrowAtlantic time','G','A','Pts','PPG','SHG','GWG','SOG','TOI'],'Column order and labels must match the requested stats exactly.');
+verifySeason(preg_match('/<td class="myproj">6\.25<\/td>\s*<td>99<\/td>\s*<td>9\.90<\/td>\s*<td>10<\/td>\s*<td class="player-game-cell">.*?<\/td>\s*<td class="player-game-cell">.*?<\/td>\s*<td>2<\/td>\s*<td>9<\/td>/', $html), 'Row values must follow ECFHL Score, FPts, FPts/gp, GP, G and A header order.');
 $sortHtml=seasonRequest('/players?availability=all&rookies=1&sort=A&direction=asc')->getContent();
 verifySeason(str_contains($sortHtml,'aria-sort="ascending"')&&str_contains($sortHtml,'sort=A&amp;direction=desc')&&str_contains($sortHtml,'name="sort" value="A"'),'Sort arrows / toggle links / search preservation failed.');
 // The visible sort form must preserve every filter and use the existing numeric score sort.
 $sortDoc=new DOMDocument(); @$sortDoc->loadHTML($sortHtml); $sortPath=new DOMXPath($sortDoc);
 $sortForm=$sortPath->query('//form[@aria-label="Player sorting"]')->item(0);
 verifySeason($sortForm!==null&&$sortPath->query('ancestor::details',$sortForm)->length===0,'Sort controls must be visible without opening Advanced filters.');
-verifySeason($sortPath->query('.//select[@name="sort"]/option[@value="ec_proj"]',$sortForm)->item(0)->textContent==='ECFHL score','Visible score sort must use the renamed label.');
+verifySeason($sortPath->query('.//select[@name="sort"]/option[@value="ec_proj"]',$sortForm)->item(0)->textContent==='ECFHL Score','Visible score sort must use the renamed label.');
 verifySeason($sortPath->query('.//select[@name="sort"]/option[@selected]',$sortForm)->item(0)->getAttribute('value')==='A'&&$sortPath->query('.//select[@name="direction"]/option[@selected]',$sortForm)->item(0)->getAttribute('value')==='asc','Sort controls must reflect the current sort and direction.');
 $sortParams=[];
 foreach ($sortPath->query('.//input[@type="hidden"]',$sortForm) as $input) $sortParams[$input->getAttribute('name')]=$input->getAttribute('value');
 verifySeason($sortParams===['team'=>'','availability'=>'all','positions'=>'F,D','rookies'=>'1','q'=>'','line'=>'1,2,3,4,none','pp'=>'1,2,none','dataset'=>'season','playing'=>'all'],'Changing sort must preserve every active filter.');
 $scoreHtml=seasonRequest('/players?'.http_build_query($sortParams+['sort'=>'ec_proj','direction'=>'desc']))->getContent();
-verifySeason(str_contains($scoreHtml,'Sorted by ECFHL score · Highest first')&&str_contains($scoreHtml,'aria-label="Sort ECFHL score ascending"')&&!str_contains($scoreHtml,'EC Proj'),'Score sort summary and table header must use the same renamed label.');
+verifySeason(str_contains($scoreHtml,'Sorted by ECFHL Score · Highest first')&&str_contains($scoreHtml,'aria-label="Sort ECFHL Score ascending"')&&!str_contains($scoreHtml,'EC Proj'),'Score sort summary and table header must use the same renamed label.');
 $json=json_decode(seasonRequest('/players?availability=all&positions=F,D&page=2',true)->getContent(),true);
 verifySeason(substr_count($json['html'],'data-player-id=')===25&&$json['shown']===50&&$json['total']===60&&str_contains($json['next_url'],'positions=F%2CD'),'Show More must return next rows with preserved filters.');
 $final=json_decode(seasonRequest('/players?availability=all&positions=G&rookies=1',true)->getContent(),true);verifySeason($final['shown']===1&&$final['total']===1&&$final['next_url']===null,'Filtered Show More termination failed.');
@@ -137,7 +137,7 @@ verifySeason(str_contains($lineButtons[0],'aria-pressed="true"')&&str_contains($
 verifySeason(str_contains($betaHtml,'aria-label="Beta"')&&str_contains($betaHtml,'class="player-team-name"')&&str_contains($betaHtml,'--team-column-width:44px')&&str_contains($betaHtml,'.player-team-link .player-team-name{display:none}'),'Mobile must keep accessible team logos while hiding team names in a narrow frozen column.');
 DB::table('season_player_stats')->where('player_id','p1')->update(['season_fpts'=>1234.5]);
 $roundedHtml=seasonRequest('/players?availability=all&q=Player%20%3Cunsafe%3E')->getContent();
-verifySeason(preg_match('/<td class="myproj">6\.25<\/td>\s*<td>1,235<\/td>\s*<td>9\.90<\/td>/', $roundedHtml),'FPts must display whole numbers with grouping while ECFHL score and FPts/gp retain decimals.');
+verifySeason(preg_match('/<td class="myproj">6\.25<\/td>\s*<td>1,235<\/td>\s*<td>9\.90<\/td>/', $roundedHtml),'FPts must display whole numbers with grouping while ECFHL Score and FPts/gp retain decimals.');
 // Dataset values must come from the selected source, including sort and paging.
 for($i=1;$i<=62;$i++) {
  $row=$projection;$row['player_id']='p'.$i;$row['projected_fpts_per_game']=$i===1?6.25:9-$i/100;
@@ -212,5 +212,44 @@ $reset=$service->data(Request::create('/players?playing=invalid&availability=inv
 $defaultHtml=seasonRequest('/players')->getContent();
 verifySeason(str_contains($html,'player-assignment-tag player-assignment-2">L2</span>')&&str_contains($html,'player-assignment-tag player-assignment-2">PP2</span>')&&!str_contains($html,'Pair2'),'Defensemen and PP assignments must use colored L/PP stickers.');preg_match('/id="season-player-playing".*?<\/div>/s',$defaultHtml,$dayButtons);preg_match('/aria-label="Player availability".*?<\/div>/s',$defaultHtml,$availabilityButtons);
 verifySeason(preg_match('/aria-pressed="true"[^>]*>All<\/a>/',$dayButtons[0])&&preg_match('/aria-pressed="true"[^>]*>Available<\/a>/',$availabilityButtons[0]),'Default slicer buttons must visibly select All game days and Available.');
+// Daily Targets mode ranks the entire pool before slicing pages, independent of manual direction.
+foreach (['active_line_combinations','active_pp_lines','active_daily_players','active_available_goalies','active_starting_goalies','player_projections'] as $table) DB::table($table)->delete();
+$date=app(\App\Support\FantasyDay::class)->today()->toDateString();
+foreach (['p1'=>100,'p2'=>200,'p3'=>3,'p4'=>5,'p6'=>0,'p7'=>5,'p60'=>10] as $id=>$score) {
+ DB::table('player_projections')->insert(array_merge($projection,['player_id'=>$id,'projected_fpts_per_game'=>$score]));
+}
+foreach (['p1'=>[1,2],'p2'=>[2,1],'p3'=>[1,1],'p4'=>[1,1],'p5'=>[1,1],'p6'=>[1,1],'p7'=>[1,1],'p60'=>[1,1]] as $id=>[$unit,$line]) {
+ $row=DB::table('season_player_stats')->where('player_id',$id)->first();
+ DB::table('active_line_combinations')->insert(['team'=>$row->nhl_team,'player_name'=>$row->player_name,'position_group'=>$row->position,'line_number'=>$line,'source_url'=>'https://example.com','last_update'=>now()]);
+ DB::table('active_pp_lines')->insert(['team'=>$row->nhl_team,'player_name'=>$row->player_name,'pp_unit'=>$unit,'source_url'=>'https://example.com','last_update'=>now()]);
+ if (in_array($id,['p4','p7'])) DB::table('active_daily_players')->insert(['game_date'=>$date,'team'=>$row->nhl_team,'player_name'=>$row->player_name,'source_rank'=>$id==='p7'?1:2]);
+}
+$dfoUrl='/players?availability=all&positions=F,D&sort=player&direction=asc&dfo_sort=1';
+$dfo=$service->data(Request::create($dfoUrl));
+verifySeason($dfo['dailyTargetsSort']&&$dfo['players']->getCollection()->take(8)->pluck('player_id')->all()===['p60','p7','p4','p3','p6','p5','p1','p2'],'Daily Targets skaters must prioritize PP, line, projection (null last), source rank, then name before pagination.');
+$descending=$service->data(Request::create(str_replace('direction=asc','direction=desc',$dfoUrl)));
+verifySeason($descending['players']->getCollection()->pluck('player_id')->all()===$dfo['players']->getCollection()->pluck('player_id')->all(),'Manual direction must not reverse Daily Targets priority.');
+$allIds=[];
+foreach ([1,2,3] as $page) $allIds=array_merge($allIds,$service->data(Request::create($dfoUrl.'&page='.$page))['players']->getCollection()->pluck('player_id')->all());
+verifySeason(count($allIds)===60&&count(array_unique($allIds))===60&&str_contains($dfo['players']->nextPageUrl(),'dfo_sort=1'),'Daily Targets pagination must preserve mode with no missing or duplicated players.');
+$off=$service->data(Request::create(str_replace('dfo_sort=1','dfo_sort=0',$dfoUrl)));
+verifySeason(!$off['dailyTargetsSort']&&$off['sort']==='player'&&$off['direction']==='asc'&&$off['players'][0]->player_id!=='p60','Turning the toggle off must restore the chosen column sort.');
+$dfoFiltered=$service->data(Request::create($dfoUrl.'&rookies=1&line=1&pp=1'));
+verifySeason($dfoFiltered['players']->total()===3&&$dfoFiltered['players']->getCollection()->pluck('player_id')->all()===['p60','p3','p6'],'Daily Targets mode must preserve and apply existing filters.');
+foreach (['p61'=>['MTL','confirmed'],'p62'=>['TOR','likely'],'p63'=>['BOS','unconfirmed'],'p64'=>['SEA',null],'p65'=>['MTL',null]] as $id=>[$team,$status]) {
+ DB::table('season_player_stats')->where('player_id',$id)->update(['nhl_team'=>$team]);
+ $row=DB::table('season_player_stats')->where('player_id',$id)->first();
+ DB::table('player_projections')->insert(array_merge($projection,['player_id'=>$id,'projected_fpts_per_game'=>(int)substr($id,1)]));
+ if($status) DB::table('active_starting_goalies')->insert(['game_date'=>$date,'team'=>$team,'player_name'=>$row->player_name,'starting_status'=>$status,'source_url'=>'https://example.com','checked_at'=>now()]);
+}
+$dfoGoalies=$service->data(Request::create('/players?availability=all&positions=G&dfo_sort=1'));
+verifySeason($dfoGoalies['players']->getCollection()->pluck('player_id')->all()===['p61','p62','p63','p64','p65'],'Goalies must follow confirmed, likely, unconfirmed, unknown, then confirmed teammate backup, ahead of projection.');
+$dfoHtml=seasonRequest($dfoUrl)->getContent();
+$dfoDoc=new DOMDocument;@$dfoDoc->loadHTML($dfoHtml);$dfoPath=new DOMXPath($dfoDoc);
+$toggle=$dfoPath->query('//a[@aria-label="Sort like Daily Targets"]')->item(0);
+verifySeason($toggle&&$toggle->getAttribute('aria-pressed')==='true'&&str_contains($toggle->getAttribute('href'),'dfo_sort=0')&&$dfoPath->query('.//img[contains(@src,"dailyfaceoff-icon")]',$toggle)->length===1&&str_contains($dfoHtml,'Daily Targets order'),'Logo toggle must show its state, offer off, and summarize the active sort.');
+verifySeason($dfoPath->query('//th[@aria-sort="ascending" or @aria-sort="descending"]')->length===0,'Daily Targets mode must not mark a single column as the active sort.');
+verifySeason($dfoPath->query('//form[@class="player-search"]//input[@name="dfo_sort" and @value="1"]')->length===1&&$dfoPath->query('//form[@class="player-slicers"]//input[@name="dfo_sort" and @value="1"]')->length===1&&$dfoPath->query('//form[@aria-label="Player sorting"]//input[@name="dfo_sort"]')->length===0,'Search/team must retain Daily Targets mode; explicit column Sort must clear it.');
+verifySeason(str_contains($dfoHtml,'filter:grayscale(1);opacity:.35')&&str_contains($dfoHtml,'img{filter:none;opacity:1}'),'Logo states must use CSS grayscale/opacity and restore full color.');
 \Carbon\CarbonImmutable::setTestNow();
 echo "Season players checks passed: Available/All defaults, both game-day filters and Pacific rollover, four schedule sources, aliases, combined datasets/sorts/pagination, compact panes and owner highlighting.\n";

@@ -3,13 +3,14 @@
 namespace App\Support;
 
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 final class SeasonPlayers
 {
     private const SKATER_COLUMNS = ['G'=>'Goals', 'A'=>'Assists', 'Pts'=>'Points', 'PPG'=>'Power-play goals',
         'SHG'=>'Short-handed goals', 'GWG'=>'Game-winning goals', 'SOG'=>'Shots on goal', 'TOI'=>'Time on ice'];
-    private const BASE_HEADERS = ['player'=>'Player', 'team'=>'Team', 'ec_proj'=>'ECFHL score', 'fpts'=>'FPts', 'fpts_gp'=>'FPts/gp', 'gp'=>'GP', 'today'=>'Today', 'tomorrow'=>'Tomorrow'];
+    private const BASE_HEADERS = ['player'=>'Player', 'team'=>'Team', 'ec_proj'=>'ECFHL Score', 'fpts'=>'FPts', 'fpts_gp'=>'FPts/gp', 'gp'=>'GP', 'today'=>'Today', 'tomorrow'=>'Tomorrow'];
     public const DATASETS = ['season'=>'Season', '7d'=>'7 days', '14d'=>'14 days', '21d'=>'21 days', 'fantrax'=>'Fantrax proj'];
     private const TEAM_ALIASES = ['LA'=>'LAK', 'NJ'=>'NJD', 'SJ'=>'SJS', 'TB'=>'TBL'];
 
@@ -60,6 +61,7 @@ final class SeasonPlayers
         $sort = (string)$request->query('sort', 'fpts');
         if (in_array($sort,['rank','today','tomorrow'],true) || !isset($headers[$sort])) $sort = 'fpts';
         $direction = $request->query('direction', in_array($sort, ['player','team'], true) ? 'asc' : 'desc') === 'asc' ? 'asc' : 'desc';
+        $dailyTargetsSort = $request->query('dfo_sort') === '1';
         // Use only the latest roster snapshot; an old ownership record must not
         // make a released player appear to belong to their former team.
         $roster = DB::table('active_fantasy_rosters')->select('player_id')->selectRaw('MAX(id) as roster_id')
@@ -92,15 +94,21 @@ final class SeasonPlayers
             $query->whereIn('s.player_id', $ids);
         }
         if ($search !== '') $query->where('s.player_name', 'like', '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search).'%');
-        [$expression, $bindings] = $this->sortExpression($sort, $datasetFields);
-        // Sort in SQL before pagination, with unavailable values last in either
-        // direction. Player ID resolves ties so Show More has a stable order.
-        $players = $query->selectRaw($expression.' as season_sort_value', $bindings)
-            ->orderByRaw('season_sort_value IS NULL')->orderBy('season_sort_value', $direction)
-            ->orderBy('s.player_name')->orderBy('s.player_id')
-            ->paginate(25, ['*'], 'page', max(1, (int)$request->query('page', 1)))->appends([
-                'positions'=>implode(',', $positions), 'rookies'=>$rookies ? '1' : '0', 'q'=>$search, 'sort'=>$sort, 'direction'=>$direction, 'team'=>$selectedTeam, 'availability'=>$availability, 'line'=>$selectedLine, 'pp'=>$selectedPp, 'dataset'=>$dataset, 'playing'=>$playing,
-            ]);
+        $page = max(1, (int)$request->query('page', 1));
+        if ($dailyTargetsSort) {
+            $players = $this->dailyTargetsPage($query, $lines, $pp, $playingDate ?? app(FantasyDay::class)->today()->toDateString(), $page);
+        } else {
+            [$expression, $bindings] = $this->sortExpression($sort, $datasetFields);
+            // Sort in SQL before pagination, with unavailable values last in either
+            // direction. Player ID resolves ties so Show More has a stable order.
+            $players = $query->selectRaw($expression.' as season_sort_value', $bindings)
+                ->orderByRaw('season_sort_value IS NULL')->orderBy('season_sort_value', $direction)
+                ->orderBy('s.player_name')->orderBy('s.player_id')
+                ->paginate(25, ['*'], 'page', $page);
+        }
+        $players->appends([
+            'positions'=>implode(',', $positions), 'rookies'=>$rookies ? '1' : '0', 'q'=>$search, 'sort'=>$sort, 'direction'=>$direction, 'team'=>$selectedTeam, 'availability'=>$availability, 'line'=>$selectedLine, 'pp'=>$selectedPp, 'dataset'=>$dataset, 'playing'=>$playing, 'dfo_sort'=>$dailyTargetsSort ? '1' : '0',
+        ]);
         $fantasyToday=app(FantasyDay::class)->today();
         $games=app(PlayerGames::class);
         $todayGames=$games->forDate($fantasyToday->toDateString());
@@ -120,7 +128,52 @@ final class SeasonPlayers
             'season'=>DB::table('season_player_stats')->max('stats_through'),
             default=>DB::table('player_projections')->max('window_end_date'),
         };
-        return compact('players', 'positions', 'rookies', 'search', 'columns', 'headers', 'sort', 'direction', 'teamOptions', 'selectedTeam', 'availability', 'selectedLine', 'selectedPp', 'selectedLines', 'selectedPps', 'dataset', 'datasetLabel', 'statsThrough', 'ownedTeamId', 'playing', 'playingDate');
+        return compact('players', 'positions', 'rookies', 'search', 'columns', 'headers', 'sort', 'direction', 'dailyTargetsSort', 'teamOptions', 'selectedTeam', 'availability', 'selectedLine', 'selectedPp', 'selectedLines', 'selectedPps', 'dataset', 'datasetLabel', 'statsThrough', 'ownedTeamId', 'playing', 'playingDate');
+    }
+
+    private function dailyTargetsPage($query, $lines, $pp, string $date, int $page): LengthAwarePaginator
+    {
+        $sources = [];
+        foreach (['active_daily_players', 'active_available_goalies'] as $table) {
+            $sources[$table] = DB::table($table)->where('game_date', $date)->get(['team', 'player_name', 'source_rank'])
+                ->keyBy(fn($row)=>$this->assignmentKey($row->team, $row->player_name));
+        }
+        $starters = DB::table('active_starting_goalies')->where('game_date', $date)->get(['team', 'player_name', 'starting_status']);
+        $confirmed = [];
+        foreach ($starters as $row) {
+            if (strtolower(trim((string)$row->starting_status)) === 'confirmed') {
+                $confirmed[$this->teamCode($row->team)] = $this->assignmentKey($row->team, $row->player_name);
+            }
+        }
+        $starters = $starters->keyBy(fn($row)=>$this->assignmentKey($row->team, $row->player_name));
+        // Rank only lightweight records across the complete filtered pool. Fetch
+        // full stats for the requested page after sorting, so Show More is stable.
+        $ordered = (clone $query)->select('s.player_id', 's.player_name', 's.nhl_team', 's.position', 'p.projected_fpts_per_game')->get()
+            ->map(function($row) use ($lines, $pp, $sources, $starters, $confirmed) {
+                $key = $this->assignmentKey($row->nhl_team, $row->player_name);
+                $goalie = $row->position === 'G';
+                $unit = $goalie ? null : ($pp[$key]->pp_unit ?? null);
+                // The Canucks' forward and defenseman share a name.
+                if ($key === 'VAN|eliaspettersson' && $row->position !== 'F') $unit = null;
+                return [
+                    'player_id'=>$row->player_id, 'name'=>$row->player_name, 'goalie'=>$goalie,
+                    'projected_points'=>$row->projected_fpts_per_game,
+                    'pp_unit'=>$unit, 'line_number'=>$lines[$key.'|'.$row->position]->line_number ?? null,
+                    'source_rank'=>$sources[$goalie ? 'active_available_goalies' : 'active_daily_players'][$key]->source_rank ?? null,
+                    'starting_status'=>$starters[$key]->starting_status ?? null,
+                    'not_starting'=>$goalie && isset($confirmed[$this->teamCode($row->nhl_team)]) && $confirmed[$this->teamCode($row->nhl_team)] !== $key,
+                ];
+            })->sort(function($a, $b) {
+                // Mixed position results keep skaters together, then goalies.
+                return ($a['goalie'] <=> $b['goalie'])
+                    ?: ($a['goalie'] ? DailyTargetsOrder::goalies($a, $b) : DailyTargetsOrder::skaters($a, $b))
+                    ?: strcmp($a['player_id'], $b['player_id']);
+            })->values();
+        $ids = $ordered->slice(($page - 1) * 25, 25)->pluck('player_id');
+        $rows = (clone $query)->whereIn('s.player_id', $ids)->get()->keyBy('player_id');
+        return new LengthAwarePaginator($ids->map(fn($id)=>$rows[$id])->values(), $ordered->count(), 25, $page, [
+            'path'=>LengthAwarePaginator::resolveCurrentPath(), 'pageName'=>'page',
+        ]);
     }
 
     private function selections(mixed $input, array $choices): array

@@ -35,58 +35,15 @@
         $key=strtoupper(trim($player['team']??'')).'|'.mb_strtolower(trim($player['name']??'')).'|'.$position;
         return isset($evenStrengthLines[$key])?(int)$evenStrengthLines[$key]->line_number:null;
     };
-    $sortSkaters = function(array &$players) use ($ppUnit, $lineNumber) {
-        usort($players, function($a, $b) use ($ppUnit, $lineNumber) {
-            $rank = function($player) use ($ppUnit, $lineNumber) {
-                $pp = $ppUnit($player);
-                $line = $lineNumber($player);
-                return [
-                    match($pp) {
-                        1 => 1,
-                        2 => 2,
-                        default => 3,
-                    },
-                    in_array($line, [1, 2, 3, 4], true) ? $line : 99,
-                ];
-            };
-            $aRank = $rank($a);
-            $bRank = $rank($b);
-            if ($aRank[0] !== $bRank[0]) return $aRank[0] <=> $bRank[0];
-            if ($aRank[1] !== $bRank[1]) return $aRank[1] <=> $bRank[1];
-            $aPoints = $a['projected_points'] ?? -PHP_FLOAT_MAX;
-            $bPoints = $b['projected_points'] ?? -PHP_FLOAT_MAX;
-            return ($bPoints <=> $aPoints)
-                ?: (($a['source_rank'] ?? PHP_INT_MAX) <=> ($b['source_rank'] ?? PHP_INT_MAX))
-                ?: strcasecmp($a['name'] ?? '', $b['name'] ?? '');
-        });
-    };
-    $sortGoalies = function(array &$players) {
-        usort($players, function($a, $b) {
-            $rank = function($player) {
-                if (!empty($player['not_starting'])) return 5;
-                $status = strtolower(trim($player['starting_status'] ?? ''));
-                return match($status) {
-                    'starting', 'confirmed' => 1,
-                    'likely', 'probable' => 2,
-                    'unconfirmed' => 3,
-                    '', 'na', 'n/a' => 4,
-                    'not starting', 'not_starting' => 5,
-                    default => 4,
-                };
-            };
-            $aRank = $rank($a);
-            $bRank = $rank($b);
-            if ($aRank !== $bRank) return $aRank <=> $bRank;
-            $aPoints = $a['projected_points'] ?? -PHP_FLOAT_MAX;
-            $bPoints = $b['projected_points'] ?? -PHP_FLOAT_MAX;
-            return ($bPoints <=> $aPoints)
-                ?: (($a['source_rank'] ?? PHP_INT_MAX) <=> ($b['source_rank'] ?? PHP_INT_MAX))
-                ?: strcasecmp($a['name'] ?? '', $b['name'] ?? '');
-        });
-    };
-    $sortGoalies($groups['G']);
-    $sortSkaters($groups['F']);
-    $sortSkaters($groups['D']);
+    foreach (['F', 'D'] as $position) {
+        foreach ($groups[$position] as &$player) {
+            $player['pp_unit'] = $ppUnit($player);
+            $player['line_number'] = $lineNumber($player);
+        }
+        unset($player);
+        usort($groups[$position], [\App\Support\DailyTargetsOrder::class, 'skaters']);
+    }
+    usort($groups['G'], [\App\Support\DailyTargetsOrder::class, 'goalies']);
     $hasTips = count($groups['G']) + count($groups['F']) + count($groups['D']) > 0;
     $fantraxUpdated = \Illuminate\Support\Facades\DB::table('active_daily_players')->where('game_date',$date)->max('last_update');
     $goaliesUpdated = \Illuminate\Support\Facades\DB::table('active_starting_goalies')->where('game_date',$date)->max('checked_at');
