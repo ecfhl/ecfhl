@@ -794,7 +794,7 @@ html[data-theme="dark"] .team-live-expanded .matchup-bench-title{color:#cbd5e1!i
 .team-live-matchup-card .team-live-weekly strong{font-size:32px!important;line-height:1!important;font-weight:900!important;font-variant-numeric:tabular-nums;color:var(--text)}
 .team-live-matchup-card .team-live-today strong{font-size:16px!important;line-height:1.1!important;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text)}
 .team-live-matchup-card .team-live-score small{font-size:8px!important;line-height:1.2!important;letter-spacing:.04em;margin:0!important;color:var(--muted);order:1}
-.team-live-matchup-card .team-live-vs{margin:0!important;padding:0!important;font-size:10px!important;background:transparent!important;border:0!important;box-shadow:none!important;color:var(--muted);align-self:center}
+.team-live-matchup-card .team-live-vs{margin:6px 0 0!important;padding:0!important;font-size:10px!important;background:transparent!important;border:0!important;box-shadow:none!important;color:var(--muted);align-self:start}
 .team-live-matchup-card .team-live-chevron{right:10px;color:var(--muted)}
 html[data-theme="dark"] .team-live-matchup-card{border-color:#2a4566}
 html[data-theme="dark"] .team-live-matchup-card .team-live-matchup-summary{background:#123452!important}
