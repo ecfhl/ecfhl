@@ -113,9 +113,29 @@ final class SeasonPlayers
         $games=app(PlayerGames::class);
         $todayGames=$games->forDate($fantasyToday->toDateString());
         $tomorrowGames=$games->forDate($fantasyToday->addDay()->toDateString());
-        $players->getCollection()->transform(function ($row) use ($lines, $pp, $todayGames, $tomorrowGames) {
+        $goalieStatuses = [];
+        foreach (['today'=>$fantasyToday->toDateString(), 'tomorrow'=>$fantasyToday->addDay()->toDateString()] as $day=>$date) {
+            $starters = DB::table('active_starting_goalies')->where('game_date', $date)->orderBy('checked_at')->orderBy('id')->get(['team', 'player_name', 'starting_status']);
+            $confirmed = [];
+            foreach ($starters as $starter) {
+                if (in_array(strtolower(trim((string)$starter->starting_status)), ['starting','confirmed'], true)) $confirmed[$this->teamCode($starter->team)] = $this->assignmentKey($starter->team, $starter->player_name);
+            }
+            $goalieStatuses[$day] = ['players'=>$starters->keyBy(fn($r)=>$this->assignmentKey($r->team, $r->player_name)), 'confirmed'=>$confirmed];
+        }
+        $players->getCollection()->transform(function ($row) use ($lines, $pp, $todayGames, $tomorrowGames, $goalieStatuses) {
             $row->today_game=$todayGames[PlayerGames::team($row->nhl_team)]??null;
             $row->tomorrow_game=$tomorrowGames[PlayerGames::team($row->nhl_team)]??null;
+            foreach (['today','tomorrow'] as $day) {
+                $row->{$day.'_goalie_status'} = null;
+                if ($row->position !== 'G' || !$row->{$day.'_game'}) continue;
+                $key = $this->assignmentKey($row->nhl_team, $row->player_name);
+                $status = strtolower(trim((string)($goalieStatuses[$day]['players'][$key]->starting_status ?? '')));
+                $confirmed = $goalieStatuses[$day]['confirmed'][$this->teamCode($row->nhl_team)] ?? null;
+                $row->{$day.'_goalie_status'} = $confirmed && $confirmed !== $key ? 'Not starting' : match($status) {
+                    'confirmed', 'starting'=>'Confirmed', 'likely', 'probable'=>'Likely',
+                    'not starting', 'not_starting'=>'Not starting', default=>'Unconfirmed',
+                };
+            }
             $row->stats = json_decode($row->stats_json, true) ?: [];
             $row->stats['Pts'] = $row->stats['Pt'] ?? $row->stats['Pts'] ?? '';
             $key = $this->assignmentKey($row->nhl_team, $row->player_name);
