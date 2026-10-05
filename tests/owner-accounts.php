@@ -233,9 +233,7 @@ verifyOwner(ownerRequest('POST','/notifications/goalie',['key'=>'CAR|confirmedst
 verifyOwner(ownerRequest('POST','/notifications/goalie',['key'=>'BOS|alreadystarted','enabled'=>true],$alpha)->getStatusCode()===422,'Started game watch accepted');
 verifyOwner(ownerRequest('POST','/notifications/goalie',['key'=>'CAR|confirmedstarter','enabled'=>false],$alpha)->getStatusCode()===200,'Hidden watch cannot be removed');
 $response=ownerRequest('GET','/daily-targets?date='.$day,[],$alpha,['HTTP_ACCEPT'=>'text/html']);
-verifyOwner($response->getStatusCode()===200&&str_contains($response->getContent(),'data-goalie-watch="TOR|zearly"'),'Daily Targets bell not rendered: '.substr(strip_tags($response->getContent()),0,1000));
-verifyOwner(!str_contains($response->getContent(),'data-goalie-watch="CAR|confirmedstarter"'),'Confirmed goalie received a bell');
-verifyOwner(!str_contains($response->getContent(),'class="tips-refresh-status'), 'Daily Targets collector footer link must be removed');
+verifyOwner($response->getStatusCode()===301&&str_contains($response->headers->get('Location'),'/players?')&&str_contains($response->headers->get('Location'),'dfo_sort=1'),'Retired Daily Targets must redirect to Players with priority sorting.');
 ownerRequest('GET','/notifications',[],$guest,['HTTP_ACCEPT'=>'text/html']);
 verifyOwner(str_contains(view('layouts.app')->render(),'id="guest-signup-dialog"'),'Signed-out browsing needs a signup invitation');
 verifyOwner(str_contains(view('layouts.app')->render(),'Already have an account?'),'Signup invitation must include sign-in');

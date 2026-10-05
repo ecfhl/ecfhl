@@ -67,7 +67,7 @@ verifySeason(str_contains($html,'player-assignment-tag player-assignment-1">L1</
 verifySeason(substr_count($html,'data-player-id=')===25&&str_contains($html,'Player &lt;unsafe&gt;')&&!str_contains($html,'Player <unsafe>'),'SSR row count / escaped names failed.');
 verifySeason(str_contains($html,'ECFHL Score')&&str_contains($html,'71:11')&&str_contains($html,'/teams/current/beta')&&str_contains($html,'Free Agent'),'Stats / ownership / custom projection rendering failed.');
 verifySeason(str_contains($html,'aria-pressed="true" href="/players?positions=D')&&str_contains($html,'aria-pressed="true" href="/players?positions=F')&&str_contains($html,'aria-pressed="false" href="/players?positions=F%2CD%2CG'),'Default filter button states failed.');
-verifySeason(str_contains($html,'class="player-filter player-targets-link" href="/daily-targets"'),'Daily Targets shortcut missing.');
+verifySeason(!str_contains($html,'href="/daily-targets"'),'Retired Daily Targets shortcut must be absent.');
 preg_match('/<thead>(.*?)<\/thead>/s',$html,$tableHead);
 preg_match_all('/<th scope="col"[^>]*>(.*?)<\/th>/s',$tableHead[1],$headCells);
 $headerLabels=array_map(fn($v)=>rtrim(trim(strip_tags($v)), ' ↑↓↕'),$headCells[1]);
@@ -175,7 +175,7 @@ $otherHtml=seasonRequest('/players?availability=all&team=gamma')->getContent();
 verifySeason(!str_contains($otherHtml,' player-on-my-team"'),'Selecting a different ECFHL team must not highlight that roster as your own.');
 verifySeason(str_contains($ownedHtml,'data-team-icon-viewer data-team-slug="beta" data-team-name="Beta"')&&str_contains($ownedHtml,'data-full-src="/team-icons/beta"'),'Player logos must open the full-size team viewer.');
 preg_match('/<nav class="mobile-primary-nav".*?<\/nav>/s',$ownedHtml,$mobileNav);
-verifySeason(str_contains($mobileNav[0],'mobile-nav-players active')&&!str_contains($mobileNav[0],'/daily-targets')&&str_contains($ownedHtml,'href="/daily-targets"'),'Players must replace the bottom Targets shortcut while Targets remains in the menu.');
+verifySeason(str_contains($mobileNav[0],'mobile-nav-players active')&&!str_contains($mobileNav[0],'/daily-targets')&&!str_contains($ownedHtml,'href="/daily-targets"'),'Players must replace the bottom Targets shortcut and Targets must be absent from navigation.');
 verifySeason(str_contains($ownedHtml,'id="team-icon-modal-title"')&&str_contains($ownedHtml,'id="team-icon-modal-view-team"')&&str_contains($ownedHtml,'/team-image-viewer.js?v=10'),'Shared titled viewer and View Team action missing.');
 $unclaimed = new \App\Models\User(['name'=>'Unclaimed']);$unclaimed->setRelation('claim',null);
 \Illuminate\Support\Facades\Auth::guard()->setUser($unclaimed);
@@ -245,7 +245,7 @@ $dfoGoalies=$service->data(Request::create('/players?availability=all&positions=
 verifySeason($dfoGoalies['players']->getCollection()->pluck('player_id')->all()===['p61','p62','p65','p64','p63'],'Goalies must follow confirmed, likely, then depth and projection.');
 $dfoHtml=seasonRequest($dfoUrl)->getContent();
 $dfoDoc=new DOMDocument;@$dfoDoc->loadHTML($dfoHtml);$dfoPath=new DOMXPath($dfoDoc);
-$toggle=$dfoPath->query('//a[@aria-label="Sort like Daily Targets"]')->item(0);
+$toggle=$dfoPath->query('//a[@aria-label="Daily Faceoff priority sorting"]')->item(0);
 verifySeason($toggle&&$toggle->getAttribute('aria-pressed')==='true'&&str_contains($toggle->getAttribute('href'),'dfo_sort=0')&&$dfoPath->query('.//img[contains(@src,"dailyfaceoff-icon")]',$toggle)->length===1&&!str_contains($dfoHtml,'Daily Targets priority'),'Logo toggle must show its state, offer off, and summarize the active sort.');
 $dayButtons=$dfoPath->query('//div[@id="season-player-playing"]/a');
 verifySeason($dayButtons->length===2&&$dayButtons->item(0)->getAttribute('aria-pressed')==='false'&&$dayButtons->item(1)->getAttribute('aria-pressed')==='false','Enabling Daily Faceoff shows two initially unselected day buttons.');

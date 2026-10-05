@@ -85,7 +85,7 @@
       @empty
         <p class="overview-home__empty">No games listed for today.</p>
       @endforelse
-      <a class="overview-target-link" href="/daily-targets">Find players for today's games →</a>
+      <a class="overview-target-link" href="/players?playing=today&amp;dfo_sort=1&amp;sort=ec_proj&amp;direction=desc">Find players for today's games →</a>
     </section>
   </div>
   <div class="overview-home__history"><span>19 years of league history</span><a href="/seasons">Explore the archive →</a></div>

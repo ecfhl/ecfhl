@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Players · ECFHL')
 @section('content')
-<div class="page-head"><div class="shell"><div class="eyebrow">2026–27 season</div><h1>Players</h1><p>Stats, projections and ECFHL team ownership.</p><a class="player-filter player-targets-link" href="/daily-targets">Daily Targets →</a></div></div>
+<div class="page-head"><div class="shell"><div class="eyebrow">2026–27 season</div><h1>Players</h1><p>Stats, projections and ECFHL team ownership.</p></div></div>
 <div class="shell season-players">
   @php
     $filterUrl = fn($changes)=>'/players?'.http_build_query(array_merge(['positions'=>implode(',', $positions),'rookies'=>$rookies?'1':'0','q'=>$search,'sort'=>$sort,'direction'=>$direction,'team'=>$selectedTeam,'availability'=>$availability,'line'=>$selectedLine,'pp'=>$selectedPp,'dataset'=>$dataset,'playing'=>$playing,'dfo_sort'=>$dailyTargetsSort?'1':'0'], $changes));
@@ -21,7 +21,7 @@
         <div class="player-filter-row player-availability-row"><span class="filter-label">Player availability</span><div class="player-buttons" role="group" aria-label="Player availability">@foreach(['all'=>'All','available'=>'Available','taken'=>'Taken'] as $key=>$label)<a class="player-filter {{ $availability===$key?'selected':'' }}" role="button" aria-pressed="{{ $availability===$key?'true':'false' }}" href="{{ $filterUrl(['availability'=>$key]) }}">{{ $label }}</a>@endforeach</div></div>
         <div class="player-filter-row player-main-stats"><span class="filter-label">Stats period</span><div id="season-player-dataset" class="player-buttons" role="group" aria-label="Stats period">@foreach(\App\Support\SeasonPlayers::DATASETS as $key=>$label)<a class="player-filter {{ $dataset===$key?'selected':'' }}" role="button" aria-pressed="{{ $dataset===$key?'true':'false' }}" href="{{ $filterUrl(['dataset'=>$key]) }}">{{ $label }}</a>@endforeach</div></div>
     <div class="player-sort-controls" role="group" aria-label="Daily Faceoff filters">
-      <a class="player-filter player-dfo-sort" role="button" aria-pressed="{{ $dailyTargetsSort?'true':'false' }}" aria-label="Sort like Daily Targets" title="Daily Targets order: PP1, PP2, then ECFHL Score; goalies: Confirmed, Likely, G1, G2, then ECFHL Score" href="{{ $filterUrl(['dfo_sort'=>$dailyTargetsSort?'0':'1']) }}"><img src="/dailyfaceoff-icon.png?v=6" alt="" width="44" height="44"></a>
+      <a class="player-filter player-dfo-sort" role="button" aria-pressed="{{ $dailyTargetsSort?'true':'false' }}" aria-label="Daily Faceoff priority sorting" title="Daily Faceoff order: PP1, PP2, then ECFHL Score; goalies: Confirmed, Likely, G1, G2, then ECFHL Score" href="{{ $filterUrl(['dfo_sort'=>$dailyTargetsSort?'0':'1']) }}"><img src="/dailyfaceoff-icon.png?v=6" alt="" width="44" height="44"></a>
         <span class="filter-label">Game day</span><div id="season-player-playing" class="player-buttons" role="group" aria-label="NHL game day">
           @foreach(['today'=>'Playing Today','tomorrow'=>'Playing Tomorrow'] as $key=>$label)
             @php

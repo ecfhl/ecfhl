@@ -55,7 +55,6 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 <a href="/teams/current" class="{{ request()->is('teams/current')?'active':'' }}"><span aria-hidden="true" class="nav-item-icon nav-live-icon">●</span><span class="nav-live-text">Live Scoring</span></a>
 <a href="/standings" class="{{ request()->is('standings')?'active':'' }}"><span class="nav-item-icon" aria-hidden="true">🏆</span>Standings</a>
 <a href="/players" class="{{ request()->is('players','players/*')?'active':'' }}"><span class="nav-item-icon" aria-hidden="true">🏒</span>Players</a>
-<a href="/daily-targets" class="{{ request()->is('daily-targets')?'active':'' }}"><span aria-hidden="true" class="nav-item-icon nav-target-icon">🎯</span>Daily Targets</a>
 <div class="nav-dropdown {{ request()->is('teams')||request()->is('teams/*')&&!request()->is('teams/current','teams/current/*')?'active':'' }}">
   <div class="nav-dropdown-row">
     <a class="nav-dropdown-main-link" href="/teams/league"><span aria-hidden="true" class="nav-item-icon nav-teams-icon">👥</span>Teams</a>

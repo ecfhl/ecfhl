@@ -1,9 +1,9 @@
 @extends('layouts.app')
 @section('content')
-<div class="page-head"><div class="shell"><div class="eyebrow">Data collectors</div><h1>Collector Status</h1><p>Current status of the automated data used by Daily Targets.</p></div></div>
+<div class="page-head"><div class="shell"><div class="eyebrow">Data collectors</div><h1>Collector Status</h1><p>Current status of the automated data used by Players and Live Scoring.</p></div></div>
 <div class="shell job-status">
     <div class="status-actions">
-        <a class="button status-back" href="/daily-targets">← Back to Daily Targets</a>
+        <a class="button status-back" href="/players">← Back to Players</a>
         <div class="status-action-buttons">
             <form method="POST" action="/job-status/test-scoring-notification" class="test-notification-form">
                 @csrf

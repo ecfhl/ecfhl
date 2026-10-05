@@ -30,7 +30,7 @@ Route::post('/job-status/run/{job}', function (string $job) {
 
     abort_unless(isset($commands[$job]) || $job === 'all', 404);
 
-    $returnTo = in_array(request('return_to'), ['daily-targets','ai-tips'], true) ? '/daily-targets' : '/job-status';
+    $returnTo = in_array(request('return_to'), ['daily-targets','ai-tips'], true) ? '/players' : '/job-status';
     $jobsToRun = $job === 'all' ? $commands : [$job => $commands[$job]];
     $labels = ['projections' => 'Projected FPts', 'players' => 'Fantrax players', 'goalies' => 'Starting goalies', 'lines' => 'Power-play lines', 'odds' => 'NHL odds', 'teams' => 'Fantasy team rosters', 'scores' => 'Live daily scores', 'standings' => 'Current standings', 'advisor' => 'Lineup Advisor'];
     $results = [];

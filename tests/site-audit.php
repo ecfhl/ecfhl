@@ -45,7 +45,7 @@ function auditPage(string $path, bool $signedIn=false, bool $fragment=false): ar
     }
     return ['path'=>$path,'queries'=>count(DB::getQueryLog()),'ms'=>round((microtime(true)-$start)*1000,1),'bytes'=>strlen($html)];
 }
-$public=['/','/seasons','/standings','/teams','/teams/league','/teams/current','/trades','/draft','/prizes','/players/history?q=Sidney','/rules','/daily-targets','/players','/notifications','/login','/register'];
+$public=['/','/seasons','/standings','/teams','/teams/league','/teams/current','/trades','/draft','/prizes','/players/history?q=Sidney','/rules','/players','/notifications','/login','/register'];
 $app->instance('request',Request::create('/?type=all'));
 $archive=app(Archive::class);
 foreach($archive->seasons() as $season)$public[]='/seasons/'.rawurlencode($season['season']).'?type=all';
