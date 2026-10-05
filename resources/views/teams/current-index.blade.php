@@ -318,13 +318,13 @@
 .matchup-player-name strong{flex-basis:100%;width:100%}
 .matchup-player-name a{text-decoration:none!important}
 .matchup-player-name .pill{padding:1px 4px!important;font-size:9px!important;line-height:1.05}
-.matchup-player-opponent{margin-top:4px;padding-right:38px;font-size:10px;line-height:1.15;min-height:25px;display:flex;align-items:flex-end}
+.matchup-player-opponent{margin-top:3px;padding-right:38px;font-size:10px;line-height:1.15;min-height:18px;display:flex;align-items:flex-start}
 .matchup-player-cats{display:flex;gap:5px;font-size:9px;color:var(--muted);font-weight:800}
-.matchup-player-metrics{position:absolute;right:8px;bottom:2px;display:flex;align-items:flex-end}
+.matchup-player-metrics{position:absolute;right:8px;top:50px;display:flex;align-items:flex-end}
 .matchup-player-today{display:flex;align-items:flex-end;gap:3px}
 .matchup-player-today span{font-size:8px;color:var(--muted);font-weight:700}
 .matchup-player-today strong{font-size:28px;line-height:1;font-weight:900}
-.matchup-player-blank{min-height:52px}
+.matchup-player-blank{min-height:44px}
 .matchup-empty{padding:12px;color:var(--muted);font-size:12px}
 .matchup-player-row.team-game-live-row{background:#ecfdf5!important}
 .matchup-player-row.team-game-finished-row{background:#f1f5f9!important}
@@ -352,9 +352,10 @@ html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:va
  .matchup-projected-score{position:absolute;top:68px;margin:0}
  .matchup-summary-away .matchup-projected-score{right:0}
  .matchup-summary-home .matchup-projected-score{left:0}
- .matchup-player-row{padding:6px 8px 2px}
+ .matchup-player-row{padding:5px 8px 2px}
  .matchup-player-name{font-size:15px}
- .matchup-player-opponent{font-size:10px;margin-top:4px}
+ .matchup-player-opponent{font-size:10px;margin-top:3px}
+ .matchup-player-metrics{top:50px;bottom:auto}
  .matchup-player-today strong{font-size:28px}
 }
 </style>
