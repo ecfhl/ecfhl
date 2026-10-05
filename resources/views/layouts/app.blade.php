@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     <button id="team-icon-modal-close" class="team-icon-modal-close" type="button" aria-label="Close team icon preview">×</button>
   </div>
 </div>
-<script src="/team-image-viewer.js?v=11" defer></script>
+<script src="/team-image-viewer.js?v=10" defer></script>
 <dialog id="player-stats-dialog" class="player-stats-dialog" aria-label="Player stats"><button type="button" class="player-stats-close" aria-label="Close player stats">×</button><div id="player-stats-content" aria-live="polite"></div></dialog>
 <link rel="stylesheet" href="/player-profile.css?v=1"><script src="/player-profile.js?v=2" defer></script>
 
