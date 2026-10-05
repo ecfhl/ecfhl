@@ -19,7 +19,7 @@
       <input name="q" type="search" aria-label="Search players" placeholder="Search player name" value="{{ $search }}"><button class="player-filter" type="submit">Search</button>
     </form>
     <div class="player-sort-controls" role="group" aria-label="Daily Faceoff filters">
-      <a class="player-filter player-dfo-sort" role="button" aria-pressed="{{ $dailyTargetsSort?'true':'false' }}" aria-label="Sort like Daily Targets" title="Daily Targets order: PP unit, line, ECFHL Score; goalies: starting status, ECFHL Score" href="{{ $filterUrl(['dfo_sort'=>$dailyTargetsSort?'0':'1','playing'=>'all']) }}"><img src="/dailyfaceoff-icon.png?v=4" alt="" width="32" height="32"></a>
+      <a class="player-filter player-dfo-sort" role="button" aria-pressed="{{ $dailyTargetsSort?'true':'false' }}" aria-label="Sort like Daily Targets" title="Daily Targets order: PP unit, line, ECFHL Score; goalies: starting status, ECFHL Score" href="{{ $filterUrl(['dfo_sort'=>$dailyTargetsSort?'0':'1','playing'=>'all']) }}"><img src="/dailyfaceoff-icon.png?v=5" alt="" width="32" height="32"></a>
       @if($dailyTargetsSort)
         <div id="season-player-playing" class="player-buttons" role="group" aria-label="NHL game day">
           @foreach(['today'=>'Playing Today','tomorrow'=>'Playing Tomorrow'] as $key=>$label)
