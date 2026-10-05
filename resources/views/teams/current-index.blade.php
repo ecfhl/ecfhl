@@ -289,7 +289,7 @@
 .matchup-team-name-row{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .matchup-team-name-row-away a{order:-1}
 .matchup-team-name-row-home{align-items:flex-end}
-.matchup-team-name-row a{font-weight:900;color:var(--text);text-decoration:underline;white-space:normal}
+.matchup-team-name-row a{font-weight:900;color:var(--text);text-decoration:none;white-space:normal}
 .matchup-team-name-row .team-icon-uploader{width:64px}
 .matchup-team-name-row .team-icon-uploader img{display:block;width:64px;height:64px;object-fit:contain}
 .matchup-summary-home{text-align:right}
