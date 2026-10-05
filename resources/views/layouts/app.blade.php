@@ -368,7 +368,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 </style>
 <div id="team-icon-modal" class="team-icon-modal" role="dialog" aria-modal="true" aria-labelledby="team-icon-modal-title" aria-hidden="true" data-owned-team-slug="{{ auth()->user()?->claim ? \Illuminate\Support\Str::slug(auth()->user()->claim->team_name) : '' }}" data-is-admin="{{ auth()->user()?->is_admin ? '1' : '0' }}">
   <div class="team-icon-modal-card">
-    <h2 id="team-icon-modal-title" class="team-icon-modal-title">Team logo</h2>
+    <h2 id="team-icon-modal-title" class="team-icon-modal-title">East Coast Fantasy Hockey League</h2>
     <div class="team-icon-modal-loader" role="status" aria-label="Loading full-size team logo"></div>
     <img id="team-icon-modal-image" class="team-icon-modal-image" alt="">
     <div class="team-icon-modal-actions">
