@@ -1,0 +1,868 @@
+{
+  "displayedSelections": {
+    "projectionsAvailable": true,
+    "period": 1,
+    "timeStartType": "PERIOD_ONLY",
+    "view": "REGULAR_SEASON",
+    "optimal": false,
+    "showTabs": true,
+    "hideGoBackDays": true,
+    "timeframeType": "YEAR_TO_DATE",
+    "proj": false,
+    "displayedStartDate": 1790654400000,
+    "showOptimal": true,
+    "displayedEndDate": 1791086400000
+  },
+  "tableList": [
+    {
+      "fixedRows": true,
+      "tableType": "H2hPointsBased1",
+      "fixedHeader": {
+        "cells": [
+          {
+            "sortDirection": 1,
+            "name": "Rank",
+            "shortName": "Rk",
+            "key": "rank"
+          },
+          {
+            "align": "LEFT",
+            "sortDirection": 1,
+            "name": "Team",
+            "shortName": "Team",
+            "key": "team"
+          }
+        ]
+      },
+      "caption": "Standings",
+      "header": {
+        "cells": [
+          {
+            "sortDirection": 1,
+            "name": "Win",
+            "shortName": "W",
+            "key": "win"
+          },
+          {
+            "sortDirection": 1,
+            "name": "Loss",
+            "shortName": "L",
+            "key": "loss"
+          },
+          {
+            "sortDirection": 1,
+            "name": "Tie",
+            "shortName": "T",
+            "key": "tie"
+          },
+          {
+            "sortDirection": 1,
+            "name": "Points",
+            "shortName": "Points",
+            "key": "points"
+          },
+          {
+            "sortDirection": 1,
+            "name": "Win Percentage",
+            "shortName": "Win%",
+            "key": "winpc"
+          },
+          {
+            "sortDirection": 1,
+            "name": "Games Back",
+            "shortName": "GB",
+            "key": "gamesback"
+          },
+          {
+            "sortDirection": 1,
+            "name": "Waiver Wire Claim Order",
+            "shortName": "WW",
+            "key": "wwOrder"
+          },
+          {
+            "sortDirection": 1,
+            "name": "Total season fantasy points for",
+            "shortName": "FPtsF",
+            "key": "pointsFor"
+          },
+          {
+            "sortDirection": 1,
+            "name": "Total season fantasy points against",
+            "shortName": "FPtsA",
+            "key": "pointsAgainst"
+          },
+          {
+            "sortDirection": 1,
+            "name": "Streak",
+            "shortName": "Streak",
+            "key": "streak"
+          },
+          {
+            "sortDirection": 1,
+            "name": "Chance of making the playoffs, from simulating the rest of the regular season. Each team's expected weekly score blends its finished weekly scores with its Fantrax projected points for the current period, weighted as 3 games",
+            "shortName": "% Playoffs",
+            "key": "playoffOdds"
+          }
+        ]
+      },
+      "rows": [
+        {
+          "cells": [
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "-"
+            },
+            {
+              "content": "0"
+            },
+            {
+              "content": "3"
+            },
+            {
+              "content": "40",
+              "toolTip": "40"
+            },
+            {
+              "content": "30",
+              "toolTip": "30"
+            },
+            {
+              "content": ""
+            },
+            {
+              "content": "100%"
+            }
+          ],
+          "fixedCells": [
+            {
+              "content": "1"
+            },
+            {
+              "content": "One Man Bang 💥",
+              "leagueId": "092zcn40molvao69",
+              "id": "092zcn40molvao69",
+              "teamId": "6ud887psmolvao6p"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "-"
+            },
+            {
+              "content": "0"
+            },
+            {
+              "content": "8"
+            },
+            {
+              "content": "39",
+              "toolTip": "39"
+            },
+            {
+              "content": "34",
+              "toolTip": "34"
+            },
+            {
+              "content": ""
+            },
+            {
+              "content": "99%"
+            }
+          ],
+          "fixedCells": [
+            {
+              "content": "2"
+            },
+            {
+              "content": "Multiple Scoregasms",
+              "leagueId": "092zcn40molvao69",
+              "id": "092zcn40molvao69",
+              "teamId": "xvwjmsf4molvao6q"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "-"
+            },
+            {
+              "content": "0"
+            },
+            {
+              "content": "10"
+            },
+            {
+              "content": "36",
+              "toolTip": "36"
+            },
+            {
+              "content": "31",
+              "toolTip": "31"
+            },
+            {
+              "content": ""
+            },
+            {
+              "content": "86%"
+            }
+          ],
+          "fixedCells": [
+            {
+              "content": "3"
+            },
+            {
+              "content": "Mullet Mafia",
+              "leagueId": "092zcn40molvao69",
+              "id": "092zcn40molvao69",
+              "teamId": "s5e5a78qmolvao6q"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "-"
+            },
+            {
+              "content": "0"
+            },
+            {
+              "content": "5"
+            },
+            {
+              "content": "36",
+              "toolTip": "36"
+            },
+            {
+              "content": "33",
+              "toolTip": "33"
+            },
+            {
+              "content": ""
+            },
+            {
+              "content": "99%"
+            }
+          ],
+          "fixedCells": [
+            {
+              "content": "4"
+            },
+            {
+              "content": "North Shore Explorers",
+              "leagueId": "092zcn40molvao69",
+              "id": "092zcn40molvao69",
+              "teamId": "dwj19p34molvao6p"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "-"
+            },
+            {
+              "content": "0"
+            },
+            {
+              "content": "12"
+            },
+            {
+              "content": "34",
+              "toolTip": "34"
+            },
+            {
+              "content": "24",
+              "toolTip": "24"
+            },
+            {
+              "content": ""
+            },
+            {
+              "content": "84%"
+            }
+          ],
+          "fixedCells": [
+            {
+              "content": "5"
+            },
+            {
+              "content": "Ꮮ૦ท૯⚡️𐌕รคг",
+              "leagueId": "092zcn40molvao69",
+              "id": "092zcn40molvao69",
+              "teamId": "65yfc2nwmolvao6q"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "-"
+            },
+            {
+              "content": "0"
+            },
+            {
+              "content": "13"
+            },
+            {
+              "content": "34",
+              "toolTip": "34"
+            },
+            {
+              "content": "39",
+              "toolTip": "39"
+            },
+            {
+              "content": ""
+            },
+            {
+              "content": "99%"
+            }
+          ],
+          "fixedCells": [
+            {
+              "content": "6"
+            },
+            {
+              "content": "Morning Sherwoods",
+              "leagueId": "092zcn40molvao69",
+              "id": "092zcn40molvao69",
+              "teamId": "24zgt63wmolvao6p"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "-"
+            },
+            {
+              "content": "0"
+            },
+            {
+              "content": "6"
+            },
+            {
+              "content": "33",
+              "toolTip": "33"
+            },
+            {
+              "content": "36",
+              "toolTip": "36"
+            },
+            {
+              "content": ""
+            },
+            {
+              "content": "30%"
+            }
+          ],
+          "fixedCells": [
+            {
+              "content": "7"
+            },
+            {
+              "content": "BookHockey",
+              "leagueId": "092zcn40molvao69",
+              "id": "092zcn40molvao69",
+              "teamId": "fbasmfzamolvao6p"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "-"
+            },
+            {
+              "content": "0"
+            },
+            {
+              "content": "1"
+            },
+            {
+              "content": "31",
+              "toolTip": "31"
+            },
+            {
+              "content": "36",
+              "toolTip": "36"
+            },
+            {
+              "content": ""
+            },
+            {
+              "content": "74%"
+            }
+          ],
+          "fixedCells": [
+            {
+              "content": "8"
+            },
+            {
+              "content": "Orcas",
+              "leagueId": "092zcn40molvao69",
+              "id": "092zcn40molvao69",
+              "teamId": "3xbyx8bbmolvao6p"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "-"
+            },
+            {
+              "content": "0"
+            },
+            {
+              "content": "7"
+            },
+            {
+              "content": "30",
+              "toolTip": "30"
+            },
+            {
+              "content": "40",
+              "toolTip": "40"
+            },
+            {
+              "content": ""
+            },
+            {
+              "content": "16%"
+            }
+          ],
+          "fixedCells": [
+            {
+              "content": "9"
+            },
+            {
+              "content": "Ammon Keys Balls",
+              "leagueId": "092zcn40molvao69",
+              "id": "092zcn40molvao69",
+              "teamId": "ivcrqifmmolvao6p"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "-"
+            },
+            {
+              "content": "0"
+            },
+            {
+              "content": "11"
+            },
+            {
+              "content": "29",
+              "toolTip": "29"
+            },
+            {
+              "content": "22",
+              "toolTip": "22"
+            },
+            {
+              "content": ""
+            },
+            {
+              "content": "2%"
+            }
+          ],
+          "fixedCells": [
+            {
+              "content": "10"
+            },
+            {
+              "content": "Brasse Camarade",
+              "leagueId": "092zcn40molvao69",
+              "id": "092zcn40molvao69",
+              "teamId": "wehi1k58molvao6p"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "-"
+            },
+            {
+              "content": "0"
+            },
+            {
+              "content": "2"
+            },
+            {
+              "content": "29",
+              "toolTip": "29"
+            },
+            {
+              "content": "28",
+              "toolTip": "28"
+            },
+            {
+              "content": ""
+            },
+            {
+              "content": "0%"
+            }
+          ],
+          "fixedCells": [
+            {
+              "content": "11"
+            },
+            {
+              "content": "Big Bogan Beaking",
+              "leagueId": "092zcn40molvao69",
+              "id": "092zcn40molvao69",
+              "teamId": "eqd43mtdmolvao6p"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "-"
+            },
+            {
+              "content": "0"
+            },
+            {
+              "content": "14"
+            },
+            {
+              "content": "28",
+              "toolTip": "28"
+            },
+            {
+              "content": "29",
+              "toolTip": "29"
+            },
+            {
+              "content": ""
+            },
+            {
+              "content": "9%"
+            }
+          ],
+          "fixedCells": [
+            {
+              "content": "12"
+            },
+            {
+              "content": "Young Guns",
+              "leagueId": "092zcn40molvao69",
+              "id": "092zcn40molvao69",
+              "teamId": "8sno4b55molvao6p"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "-"
+            },
+            {
+              "content": "0"
+            },
+            {
+              "content": "9"
+            },
+            {
+              "content": "24",
+              "toolTip": "24"
+            },
+            {
+              "content": "34",
+              "toolTip": "34"
+            },
+            {
+              "content": ""
+            },
+            {
+              "content": "0%"
+            }
+          ],
+          "fixedCells": [
+            {
+              "content": "13"
+            },
+            {
+              "content": "Formenton’s Construction Company",
+              "leagueId": "092zcn40molvao69",
+              "id": "092zcn40molvao69",
+              "teamId": "ay4pe09nmolvao6p"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "0",
+              "toolTip": "0"
+            },
+            {
+              "content": "-"
+            },
+            {
+              "content": "0"
+            },
+            {
+              "content": "4"
+            },
+            {
+              "content": "22",
+              "toolTip": "22"
+            },
+            {
+              "content": "29",
+              "toolTip": "29"
+            },
+            {
+              "content": ""
+            },
+            {
+              "content": "0%"
+            }
+          ],
+          "fixedCells": [
+            {
+              "content": "14"
+            },
+            {
+              "content": "Green Machine",
+              "leagueId": "092zcn40molvao69",
+              "id": "092zcn40molvao69",
+              "teamId": "eixol9zjmolvao6p"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

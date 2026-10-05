@@ -2,170 +2,75 @@
 
 namespace App\Support;
 
-use Carbon\CarbonImmutable;
 use App\Support\LiveScoring\FantraxClient;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 class FantraxStandings
 {
     public const LEAGUE_ID = '092zcn40molvao69';
-    private const API_VERSION = '186.1.9';
 
     public function fetch(): array
     {
-        $url='https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/standings';
-        $requestData=['leagueId'=>self::LEAGUE_ID,'view'=>'SCHEDULE'];
-        $payload=[
-            'msgs'=>[['method'=>'getStandings','data'=>$requestData]],
-            'uiv'=>3,
-            'refUrl'=>$url.';view=SCHEDULE',
-            'dt'=>0,
-            'at'=>0,
-            'av'=>'0.0',
-            'tz'=>'America/Halifax',
-            'v'=>self::API_VERSION,
+        // Fantrax owns rank, tie-breaking, finalized records and season FPts.
+        // Reconstructing them from daily scores omits corrections and current points.
+        $data=app(FantraxClient::class)->request('getStandings',[
+            'leagueId'=>self::LEAGUE_ID,'view'=>'REGULAR_SEASON','proj'=>false,'optimal'=>false,
+        ]);
+        $rows=$this->parse($data);
+        return [
+            'rows'=>$rows,
+            'url'=>'https://www.fantrax.com/fantasy/league/'.self::LEAGUE_ID.'/standings',
+            'as_of_date'=>(new FantasyDay)->today()->toDateString(),
         ];
+    }
 
-        $response=Http::timeout(45)->retry(2,1000)->withHeaders([
-            'User-Agent'=>'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/154 Safari/537.36',
-            'Accept'=>'application/json',
-            'Content-Type'=>'application/json',
-            'Referer'=>$url,
-        ])->post('https://www.fantrax.com/fxpa/req?leagueId='.self::LEAGUE_ID,$payload);
-
-        $response->throw();
-        $json=$response->json();
-        $data=$json['responses'][0]['data']??null;
-        if(!is_array($data))throw new RuntimeException('Fantrax standings schedule returned no response data.');
-
-        $today=(new FantasyDay)->today();
-        $completedThrough=app(NhlScoringDays::class)->latestCompletedDate();
-        $teams=[];
-
-        foreach(($data['tableList']??[]) as $table){
-            $range=$this->dateRange((string)($table['subCaption']??''));
-            if(!$range)continue;
-            [$start,$end]=$range;
-
-            // Ignore future scoring periods entirely.
-            if($start->gt($today))continue;
-            $completed=$end->lte($completedThrough);
-            $dailyTotals=$completed ? [] : $this->completedDailyTotals($start,$completedThrough);
-
-            foreach(($table['rows']??[]) as $row){
-                $cells=$row['cells']??[];
-                if(!is_array($cells)||count($cells)<4)continue;
-
-                $awayId=trim((string)($cells[0]['teamId']??''));
-                $homeId=trim((string)($cells[2]['teamId']??''));
-                $awayName=$this->text($cells[0]['content']??'');
-                $homeName=$this->text($cells[2]['content']??'');
-                $awayScore=$this->numeric($cells[1]['content']??null);
-                $homeScore=$this->numeric($cells[3]['content']??null);
-
-                if($awayId===''||$homeId===''||$awayName===''||$homeName==='')continue;
-
-                foreach([[$awayId,$awayName],[$homeId,$homeName]] as [$id,$name]){
-                    if(!isset($teams[$id])){
-                        $teams[$id]=[
-                            'team_id'=>$id,
-                            'team_name'=>$name,
-                            'w'=>0,'l'=>0,'t'=>0,
-                            'standings_points'=>0,
-                            'fantasy_points_for'=>0.0,
-                        ];
-                    }
+    public function parse(array $data): array
+    {
+        $selections=$data['displayedSelections']??[];
+        if(($selections['view']??null)!=='REGULAR_SEASON'||!array_key_exists('proj',$selections)
+            ||$selections['proj']!==false||($selections['optimal']??false)!==false
+            ||($selections['timeframeType']??null)!=='YEAR_TO_DATE'){
+            throw new RuntimeException('Fantrax did not return actual regular-season standings. Existing standings preserved.');
+        }
+        $rows=[];
+        foreach($data['tableList']??[] as $table){
+            $fixed=$this->columns($table['fixedHeader']['cells']??[]);
+            $columns=$this->columns($table['header']['cells']??[]);
+            if(!isset($fixed['rank'],$fixed['team'])||!isset($columns['win'],$columns['loss'],$columns['tie'],$columns['points'],$columns['pointsFor']))continue;
+            foreach($table['rows']??[] as $row){
+                $identity=$row['fixedCells'][$fixed['team']]??[];
+                $id=trim((string)($identity['teamId']??''));
+                $name=$this->text($identity['content']??'');
+                if($id===''||$name===''||isset($rows[$id]))throw new RuntimeException('Missing or duplicate Fantrax standings team. Existing standings preserved.');
+                $value=fn($key)=>$this->numeric($row['cells'][$columns[$key]]['content']??null);
+                $rank=$this->numeric($row['fixedCells'][$fixed['rank']]['content']??null);
+                $win=$value('win');$loss=$value('loss');$tie=$value('tie');
+                $points=$value('points');$fpts=$value('pointsFor');
+                foreach([$rank,$win,$loss,$tie,$points,$fpts] as $number){
+                    if($number===null)throw new RuntimeException('Missing official Fantrax standings value. Existing standings preserved.');
                 }
-
-                // A period result becomes official only after its last day's games.
-                // During an open period, use daily totals through the last finished
-                // day, excluding all of today's points until its final game ends.
-                if($completed){
-                    if($awayScore===null||$homeScore===null)throw new RuntimeException('Missing completed-period scores. Existing standings preserved.');
-                    $teams[$awayId]['fantasy_points_for']+=$awayScore;
-                    $teams[$homeId]['fantasy_points_for']+=$homeScore;
-                }else{
-                    foreach([$awayId,$homeId] as $id){
-                        if($start->lte($completedThrough)&&!array_key_exists($id,$dailyTotals))throw new RuntimeException('Missing completed daily team scores. Existing standings preserved.');
-                        $teams[$id]['fantasy_points_for']+=$dailyTotals[$id]??0.0;
-                    }
+                foreach([$rank,$win,$loss,$tie] as $integer){
+                    if($integer<0||floor($integer)!==$integer)throw new RuntimeException('Invalid official standings record. Existing standings preserved.');
                 }
-
-                if(!$completed||$awayScore===null||$homeScore===null)continue;
-
-                if(abs($awayScore-$homeScore)<0.0001){
-                    $teams[$awayId]['t']++;
-                    $teams[$homeId]['t']++;
-                }elseif($awayScore>$homeScore){
-                    $teams[$awayId]['w']++;
-                    $teams[$homeId]['l']++;
-                }else{
-                    $teams[$homeId]['w']++;
-                    $teams[$awayId]['l']++;
-                }
+                if($rank<1)throw new RuntimeException('Invalid official standings rank. Existing standings preserved.');
+                $rows[$id]=[
+                    'team_id'=>$id,'team_name'=>$name,'rank'=>(int)$rank,
+                    'w'=>(int)$win,'l'=>(int)$loss,'t'=>(int)$tie,
+                    'standings_points'=>$points,'fantasy_points_for'=>$fpts,
+                ];
             }
         }
-
-        if(count($teams)<10){
-            throw new RuntimeException('Fantrax schedule returned fewer than 10 standings teams.');
-        }
-
-        foreach($teams as &$team){
-            $team['standings_points']=2*$team['w']+$team['t'];
-        }
-        unset($team);
-
-        $rows=array_values($teams);
-        usort($rows,function($a,$b){
-            return ($b['standings_points']<=>$a['standings_points'])
-                ?:($b['fantasy_points_for']<=>$a['fantasy_points_for'])
-                ?:strnatcasecmp($a['team_name'],$b['team_name']);
-        });
-        foreach($rows as $i=>&$row)$row['rank']=$i+1;
-        unset($row);
-
-        return ['rows'=>$rows,'url'=>$url,'completed_through'=>$completedThrough->toDateString()];
+        if(count($rows)!==14)throw new RuntimeException('Fantrax returned '.count($rows).' of 14 regular-season standings teams. Existing standings preserved.');
+        $rows=array_values($rows);
+        usort($rows,fn($a,$b)=>$a['rank']<=>$b['rank']);
+        return $rows;
     }
 
-    private function completedDailyTotals(CarbonImmutable $start, CarbonImmutable $end): array
+    private function columns(array $cells): array
     {
-        $totals=[];
-        for($date=$start;$date->lte($end);$date=$date->addDay()){
-            $day=$date->toDateString();
-            $scores=Cache::remember('standings:completed-day:'.self::LEAGUE_ID.':'.$day,300,function()use($day){
-                $data=app(FantraxClient::class)->matchup($day,'1');
-                $scores=[];
-                foreach(($data['fantasyTeams']??[]) as $team){
-                    if(!empty($team['pseudo']))continue;
-                    $id=(string)($team['id']??'');
-                    $active=$data['statsPerTeam']['allTeamsStats'][$id]['ACTIVE']??null;
-                    if($id===''||!is_numeric($active['totalFpts']??null))throw new RuntimeException('Missing finalized Fantrax daily score. Existing standings preserved.');
-                    $scores[$id]=(float)$active['totalFpts']+(float)($active['pointsAdjustment']??0);
-                }
-                if(count($scores)<10)throw new RuntimeException('Incomplete finalized Fantrax daily scores. Existing standings preserved.');
-                return $scores;
-            });
-            foreach($scores as $id=>$score)$totals[$id]=($totals[$id]??0.0)+$score;
-        }
-        return $totals;
-    }
-
-    private function dateRange(string $value): ?array
-    {
-        $text=trim($value," \t\n\r\0\x0B()");
-        if(!preg_match('/([A-Z][a-z]{2}\s+[A-Z][a-z]{2}\s+\d{1,2},\s+\d{4})\s+-\s+([A-Z][a-z]{2}\s+[A-Z][a-z]{2}\s+\d{1,2},\s+\d{4})/',$text,$m)){
-            return null;
-        }
-
-        try{
-            $start=CarbonImmutable::createFromFormat('!D M j, Y',$m[1],FantasyDay::TIMEZONE);
-            $end=CarbonImmutable::createFromFormat('!D M j, Y',$m[2],FantasyDay::TIMEZONE);
-            return ($start&&$end)?[$start,$end]:null;
-        }catch(\Throwable){
-            return null;
-        }
+        $columns=[];
+        foreach($cells as $index=>$cell)if(isset($cell['key']))$columns[(string)$cell['key']]=$index;
+        return $columns;
     }
 
     private function text(mixed $value): string
@@ -176,7 +81,8 @@ class FantraxStandings
     private function numeric(mixed $value): ?float
     {
         if($value===null||$value==='')return null;
-        $clean=preg_replace('/[^0-9.\-]/','',html_entity_decode(strip_tags((string)$value)));
-        return is_numeric($clean)?(float)$clean:null;
+        $text=$this->text($value);
+        if(!preg_match('/^-?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?$/',$text))return null;
+        return (float)str_replace(',','',$text);
     }
 }

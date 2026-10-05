@@ -1,6 +1,6 @@
 <?php
-// Standings must freeze live days, including the last day of a scoring period.
-putenv('SESSION_DRIVER=array'); putenv('CACHE_STORE=array'); putenv('APP_ENV=testing');
+// Real public Fantrax regular-season response; no network or production writes.
+putenv('SESSION_DRIVER=array');putenv('CACHE_STORE=array');putenv('APP_ENV=testing');
 putenv('APP_KEY=base64:'.base64_encode(str_repeat('x',32)));
 require __DIR__.'/../vendor/autoload.php';
 $app=require __DIR__.'/../bootstrap/app.php';
@@ -9,69 +9,66 @@ set_exception_handler(function(Throwable $e){fwrite(STDERR,$e->getMessage()."\n"
 
 use App\Support\FantraxStandings;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 function assertStanding(bool $ok,string $message):void{if(!$ok)throw new RuntimeException($message);}
-function standingsTable(string $range,float $away,float $home):array{
-    $rows=[];
-    for($i=0;$i<14;$i+=2)$rows[]=['cells'=>[
-        ['teamId'=>'t'.$i,'content'=>'Team '.$i],['content'=>$away],
-        ['teamId'=>'t'.($i+1),'content'=>'Team '.($i+1)],['content'=>$home],
-    ]];
-    return ['subCaption'=>$range,'rows'=>$rows];
+$fixture=json_decode(file_get_contents(__DIR__.'/fixtures/fantrax-regular-standings.json'),true,512,JSON_THROW_ON_ERROR);
+$collector=new FantraxStandings;
+$rows=$collector->parse($fixture);
+$teams=array_column($rows,null,'team_id');
+assertStanding(count($rows)===14,'All 14 current teams must be collected.');
+assertStanding($rows[0]['team_name']==='One Man Bang 💥'&&$rows[0]['fantasy_points_for']===40.0,'Official leader and FPts lost.');
+assertStanding($teams['65yfc2nwmolvao6q']['rank']===5&&$teams['65yfc2nwmolvao6q']['fantasy_points_for']===34.0,'Lone Tsar regression: must use official rank 5 / 34 FPts, not reconstructed rank 9 / 29.');
+assertStanding($rows[2]['team_name']==='Mullet Mafia'&&$rows[3]['team_name']==='North Shore Explorers'&&$rows[2]['fantasy_points_for']===$rows[3]['fantasy_points_for'],'Preserve Fantrax tie-breaking, not alphabetical ordering.');
+foreach($rows as $row)assertStanding($row['w']===0&&$row['l']===0&&$row['t']===0&&$row['standings_points']===0.0,'Open-period results must remain the official unfinished 0–0–0.');
+
+// Future/schedule tables cannot replace the primary regular-season standings.
+$extra=$fixture;$extra['tableList'][]=['subCaption'=>'Future period','rows'=>[['cells'=>[['teamId'=>'future','content'=>'Future'],['content'=>'999999']]]]];
+assertStanding($collector->parse($extra)===$rows,'Schedule rows entered regular-season standings.');
+// Column indices are resolved by header keys, not their positions.
+$reordered=$fixture;$table=&$reordered['tableList'][0];
+$table['header']['cells']=array_reverse($table['header']['cells']);
+$table['fixedHeader']['cells']=array_reverse($table['fixedHeader']['cells']);
+foreach($table['rows'] as &$row){$row['cells']=array_reverse($row['cells']);$row['fixedCells']=array_reverse($row['fixedCells']);}unset($row,$table);
+assertStanding($collector->parse($reordered)===$rows,'Fantrax column reorder changed values.');
+$final=$fixture;
+$final['tableList'][0]['rows'][0]['cells'][0]['content']='2';
+$final['tableList'][0]['rows'][0]['cells'][1]['content']='1';
+$final['tableList'][0]['rows'][0]['cells'][2]['content']='1';
+$final['tableList'][0]['rows'][0]['cells'][3]['content']='5';
+$final['tableList'][0]['rows'][0]['cells'][7]['content']='1,234.50';
+$finalRows=$collector->parse($final);
+assertStanding($finalRows[0]['w']===2&&$finalRows[0]['l']===1&&$finalRows[0]['t']===1&&$finalRows[0]['standings_points']===5.0&&$finalRows[0]['fantasy_points_for']===1234.5,'Official finalized W/L/T/Points and decimal/comma FPts lost.');
+$zero=$fixture;$zero['tableList'][0]['rows'][0]['cells'][7]['content']='0';
+assertStanding($collector->parse($zero)[0]['fantasy_points_for']===0.0,'True zero FPts must remain valid.');
+$negative=$fixture;$negative['tableList'][0]['rows'][0]['cells'][7]['content']='-2.5';
+assertStanding($collector->parse($negative)[0]['fantasy_points_for']===-2.5,'Negative point adjustment must remain valid.');
+foreach(['projection','optimal','schedule','wrong-timeframe','missing-selection','missing-fpts','missing-header','incomplete','duplicate','invalid-record','invalid-rank'] as $case){
+    $bad=$fixture;
+    switch($case){
+        case 'projection':$bad['displayedSelections']['proj']=true;break;
+        case 'optimal':$bad['displayedSelections']['optimal']=true;break;
+        case 'schedule':$bad['displayedSelections']['view']='SCHEDULE';break;
+        case 'wrong-timeframe':$bad['displayedSelections']['timeframeType']='LAST_7_DAYS';break;
+        case 'missing-selection':unset($bad['displayedSelections']['proj']);break;
+        case 'missing-fpts':$bad['tableList'][0]['rows'][0]['cells'][7]['content']='—';break;
+        case 'missing-header':unset($bad['tableList'][0]['header']['cells'][7]);break;
+        case 'incomplete':array_pop($bad['tableList'][0]['rows']);break;
+        case 'duplicate':$bad['tableList'][0]['rows'][1]['fixedCells'][1]['teamId']=$bad['tableList'][0]['rows'][0]['fixedCells'][1]['teamId'];break;
+        case 'invalid-record':$bad['tableList'][0]['rows'][0]['cells'][0]['content']='1.5';break;
+        case 'invalid-rank':$bad['tableList'][0]['rows'][0]['fixedCells'][0]['content']='0';break;
+    }
+    try{$collector->parse($bad);throw new LogicException('Invalid response accepted: '.$case);}catch(RuntimeException $e){assertStanding(str_contains($e->getMessage(),'Existing standings preserved'),'Wrong failure: '.$case);}
 }
-$schedule=['tableList'=>[
-    standingsTable('(Mon Sep 28, 2026 - Wed Sep 30, 2026)',10,20),
-    standingsTable('(Thu Oct 1, 2026 - Sun Oct 4, 2026)',1000,2000),
-    standingsTable('(Mon Oct 5, 2026 - Sun Oct 11, 2026)',5000,6000),
-]];
-function collectStandings(string $instant,array $states,bool $badNhl=false):array{
-    global $schedule;
-    CarbonImmutable::setTestNow(CarbonImmutable::parse($instant));
-    Cache::flush();
-    Http::swap(new \Illuminate\Http\Client\Factory);
-    Http::fake(function($request)use($states,$badNhl,$schedule){
-        if(str_contains($request->url(),'api-web.nhle.com')){
-            $date=basename($request->url());
-            if($badNhl)return Http::response(['games'=>[]]);
-            $games=array_map(fn($s)=>['gameState'=>$s],$states[$date]??[]);
-            return Http::response(['currentDate'=>$date,'games'=>$games]);
-        }
-        $message=$request->data()['msgs'][0];
-        if($message['method']==='getStandings')return Http::response(['responses'=>[['data'=>$schedule]]]);
-        $day=$message['data']['date'];
-        $teams=[];$stats=[];
-        for($i=0;$i<14;$i++){
-            $id='t'.$i;$teams[]=['id'=>$id,'name'=>'Team '.$i];
-            $stats[$id]=['ACTIVE'=>['totalFpts'=>(float)substr($day,-2),'pointsAdjustment'=>$i===0?-1:0]];
-        }
-        return Http::response(['responses'=>[['data'=>[
-            'date'=>$day,'displayedSelections'=>['date'=>$day,'viewTypeId'=>'1','realOrStatProjProvider'=>['id'=>'-1']],
-            'fantasyTeams'=>$teams,'statsPerTeam'=>['allTeamsStats'=>$stats],
-        ]]]]);
-    });
-    return (new FantraxStandings)->fetch();
-}
-$yesterday=['2026-10-03'=>['OFF','FINAL']];
-foreach([['FUT','FUT'],['FINAL','LIVE'],['FINAL','FUT'],['OFF','CRIT']] as $todayStates){
-    $result=collectStandings('2026-10-04T17:00:00Z',$yesterday+['2026-10-04'=>$todayStates]);
-    $teams=array_column($result['rows'],null,'team_id');
-    assertStanding($result['completed_through']==='2026-10-03','Incomplete day entered standings');
-    assertStanding($teams['t0']['l']===1&&$teams['t1']['w']===1,'Open period awarded W/L early');
-    assertStanding($teams['t0']['fantasy_points_for']===13.0&&$teams['t1']['fantasy_points_for']===26.0,'Live FPts entered standings or daily adjustment lost');
-}
-$atlanticMidnight=collectStandings('2026-10-05T00:30:00Z',$yesterday+['2026-10-04'=>['LIVE','FUT']]);
-assertStanding($atlanticMidnight['completed_through']==='2026-10-03','Atlantic midnight finalized the Pacific fantasy day');
-$late=collectStandings('2026-10-05T07:01:00Z',$yesterday+['2026-10-04'=>['FINAL','LIVE'],'2026-10-05'=>['FUT']]);
-assertStanding($late['completed_through']==='2026-10-03','Midnight finalized a game still running');
-$final=collectStandings('2026-10-04T23:30:00Z',$yesterday+['2026-10-04'=>['FINAL','OFF']]);
-$teams=array_column($final['rows'],null,'team_id');
-assertStanding($final['completed_through']==='2026-10-04','Final game did not release same-day standings');
-assertStanding($teams['t0']['l']===2&&$teams['t1']['w']===2&&$teams['t1']['standings_points']===4,'Finished scoring period did not award W/L/PTS');
-assertStanding($teams['t0']['fantasy_points_for']===1010.0&&$teams['t1']['fantasy_points_for']===2020.0,'Final period scores or future period isolation failed');
-$empty=collectStandings('2026-10-04T17:00:00Z',$yesterday);
-assertStanding($empty['completed_through']==='2026-10-03','Empty current-day schedule finalized today');
-try{collectStandings('2026-10-04T17:00:00Z',[],true);throw new LogicException('Invalid NHL response accepted');}catch(RuntimeException $e){assertStanding(str_contains($e->getMessage(),'Existing standings preserved'),'Wrong NHL failure');}
+CarbonImmutable::setTestNow('2026-10-05T00:30:00Z');
+Http::preventStrayRequests();$requests=0;
+Http::fake(function($request)use($fixture,&$requests){
+    $requests++;assertStanding(str_starts_with($request->url(),'https://www.fantrax.com/fxpa/req'),'Standings must use only Fantrax official data.');
+    $message=$request->data()['msgs'][0];
+    assertStanding($message['method']==='getStandings'&&$message['data']['view']==='REGULAR_SEASON'&&$message['data']['proj']===false&&$message['data']['optimal']===false,'Wrong upstream standings request.');
+    return Http::response(['responses'=>[['data'=>$fixture]]]);
+});
+$result=$collector->fetch();
+assertStanding($result['rows']===$rows&&$result['as_of_date']==='2026-10-04'&&$requests===1,'Publish official rows for the Pacific fantasy day without reconstructing NHL/daily scores.');
 CarbonImmutable::setTestNow();
-echo "Standings checks passed: live/future games, final-game release, completed daily FPts/adjustments, period W/L/PTS, future periods, Atlantic/Pacific midnight, late games, empty schedule, and invalid upstream data.\n";
+echo "Standings checks passed: real official 14-team fixture, Lone Tsar rank/FPts regression, Fantrax tie-breaking and finalized records, header reordering, future isolation, strict validation, Pacific date and one upstream request.\n";

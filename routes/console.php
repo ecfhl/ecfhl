@@ -870,7 +870,7 @@ Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $
     $source='https://www.fantrax.com/fantasy/league/'.FantraxStandings::LEAGUE_ID.'/standings';
 
     try {
-        DB::table('collector_job_statuses')->updateOrInsert(['job_key'=>'standings'], ['status'=>'running','message'=>'Refreshing finalized standings.','ran_at'=>now(),'updated_at'=>now(),'created_at'=>now()]);
+        DB::table('collector_job_statuses')->updateOrInsert(['job_key'=>'standings'], ['status'=>'running','message'=>'Collecting Fantrax regular-season standings.','ran_at'=>now(),'updated_at'=>now(),'created_at'=>now()]);
         $data=$fantrax->fetch();
         $seasonRows=DB::table('team_seasons')->where('season_id',$seasonId)->get();
         if($seasonRows->isEmpty())throw new \RuntimeException('No 2026-27 team_seasons rows exist.');
@@ -961,14 +961,14 @@ Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $
         \App\Support\PublicData::forget('current-periods');
         DB::table('job_run_history')->insert([
             'job_name'=>'ecfhl:refresh-current-standings',
-            'target_date'=>$data['completed_through'],
+            'target_date'=>$data['as_of_date']??$data['completed_through'],
             'rows_processed'=>count($updates),
             'completed_at'=>now(),
             'created_at'=>now(),
             'updated_at'=>now(),
         ]);
 
-        $message=count($updates).' Fantrax standings rows refreshed through '.$data['completed_through'];
+        $message=count($updates).' official Fantrax regular-season standings rows refreshed for '.($data['as_of_date']??$data['completed_through']);
         DB::table('collector_job_statuses')->updateOrInsert(['job_key'=>'standings'], ['status'=>'success','message'=>$message,'ran_at'=>now(),'updated_at'=>now(),'created_at'=>now()]);
         $this->info($message);
         return 0;

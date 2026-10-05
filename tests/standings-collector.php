@@ -10,7 +10,8 @@ use App\Support\FantraxStandings;
 use App\Support\FantraxSchedule;
 function checkCollector($ok,$message){if(!$ok)throw new RuntimeException($message);}
 foreach(glob(__DIR__.'/../database/migrations/*create*.php') as $f)(require $f)->up();
-config(['performance.public_data_cache'=>true,'cache.stores.file.path'=>sys_get_temp_dir().'/ecfhl-standings-'.getmypid()]);
+$cacheDirectory=sys_get_temp_dir().'/ecfhl-standings-'.bin2hex(random_bytes(8));
+config(['performance.public_data_cache'=>true,'cache.stores.file.path'=>$cacheDirectory]);
 Illuminate\Support\Facades\Cache::forgetDriver('file');
 DB::table('seasons')->insert(['season_id'=>'2026-27','season_name'=>'2026-27','sequence'=>20,'format'=>'Head-to-Head']);
 DB::table('source_cache')->insert(['source_key'=>'history','source_url'=>'https://example.com','payload'=>json_encode(['seasons'=>[['season'=>'2026-27','sequence'=>20,'format'=>'Head-to-Head']]])]);
@@ -56,7 +57,7 @@ foreach([['2026-10-04T17:16:00Z',true],['2026-10-04T17:17:00Z',false]] as [$inst
 }
 \Carbon\CarbonImmutable::setTestNow();
 $kernel=$app->make(Illuminate\Contracts\Http\Kernel::class);$request=Illuminate\Http\Request::create('/standings');$response=$kernel->handle($request);$kernel->terminate($request,$response);
-checkCollector($response->getStatusCode()===200&&str_contains($response->getContent(),'/standings.js?v=1')&&str_contains($response->getContent(),'Updates automatically every minute'),'Standings page must load automatic refresh: '.$response->getStatusCode().' '.($response->headers->get('Location')??substr(strip_tags($response->getContent()),0,160)));
+checkCollector($response->getStatusCode()===200&&str_contains($response->getContent(),'/standings.js?v=1')&&str_contains($response->getContent(),'updated automatically every minute'),'Standings page must load automatic refresh: '.$response->getStatusCode().' '.($response->headers->get('Location')??substr(strip_tags($response->getContent()),0,160)));
 checkCollector(str_contains($response->getContent(),'Scoring Period 1')&&str_contains($response->getContent(),'data-period-number="1"'),'Standings must read the matchup table written by the collector.');
 foreach(['h2h','total','none'] as $type){
  $app->forgetScopedInstances();$request=Illuminate\Http\Request::create('/standings?type='.$type,'GET',[],[],[],['HTTP_X_REQUESTED_WITH'=>'XMLHttpRequest']);$partial=$kernel->handle($request);$kernel->terminate($request,$partial);
@@ -69,5 +70,26 @@ checkCollector(!str_contains($response->getContent(),'/job-status#collector-stan
 $admin=new \App\Models\User;$admin->forceFill(['is_admin'=>true]);$admin->setRelation('claim',null);\Illuminate\Support\Facades\Auth::guard()->setUser($admin);$app->forgetScopedInstances();
 $request=Illuminate\Http\Request::create('/standings');$response=$kernel->handle($request);$kernel->terminate($request,$response);
 checkCollector($response->getStatusCode()===200&&str_contains($response->getContent(),'/job-status#collector-standings'),'Administrator needs direct access to the standings collector card');
-(new Illuminate\Filesystem\Filesystem)->deleteDirectory(sys_get_temp_dir().'/ecfhl-standings-'.getmypid());
+// Reproduce the production mismatch end-to-end with the actual official response.
+$official=(new FantraxStandings)->parse(json_decode(file_get_contents(__DIR__.'/fixtures/fantrax-regular-standings.json'),true));
+foreach($official as $index=>$row)DB::table('team_seasons')->where('team_season_id','ts'.$index)->update(['original_name'=>$row['team_name'],'rank'=>14-$index,'fantasy_points_for'=>1]);
+$app->instance(FantraxStandings::class,new class($official) extends FantraxStandings{
+ public function __construct(private array $rows){}
+ public function fetch():array{return ['rows'=>$this->rows,'as_of_date'=>'2026-10-04'];}
+});
+checkCollector(Artisan::call('ecfhl:refresh-current-standings')===0,'Official regular-season response failed publication.');
+checkCollector(DB::table('job_run_history')->orderByDesc('id')->value('target_date')==='2026-10-04','Collector history must record the actual collected fantasy day.');
+$published=\App\Support\CurrentTeams::standings();
+foreach($official as $index=>$row){
+ checkCollector($published[$index]['team']===$row['team_name']&&(int)$published[$index]['rank']===$row['rank']&&(float)$published[$index]['fantasy_points_for']===$row['fantasy_points_for'],'Official collector output was replaced by historical/calculated/cached standings.');
+}
+$app->forgetScopedInstances();$request=Illuminate\Http\Request::create('/standings','GET',[],[],[],['HTTP_X_REQUESTED_WITH'=>'XMLHttpRequest']);$response=$kernel->handle($request);$kernel->terminate($request,$response);
+$dom=new DOMDocument;@$dom->loadHTML('<?xml encoding="UTF-8">'.$response->getContent());$xpath=new DOMXPath($dom);
+$displayed=$xpath->query('//table/tbody/tr');
+checkCollector($response->getStatusCode()===200&&$displayed->length===14,'Official standings fragment did not render all 14 teams.');
+foreach($official as $index=>$row){
+ $cells=$displayed->item($index)->getElementsByTagName('td');
+ checkCollector(trim($cells->item(0)->textContent)===(string)$row['rank']&&str_contains($cells->item(1)->textContent,$row['team_name'])&&trim($cells->item(6)->textContent)===number_format($row['fantasy_points_for'],0),'Rendered standings must exactly match official collector rank/team/FPts.');
+}
+(new Illuminate\Filesystem\Filesystem)->deleteDirectory($cacheDirectory);
 echo "Standings collector checks passed: real command publication/outcomes/history, failure preservation, locks, shared cadence and auto-refresh page.\n";

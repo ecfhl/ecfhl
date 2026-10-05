@@ -2,7 +2,7 @@
   <div class="page-head">
     <div class="eyebrow">2026-27 season</div>
     <h1>🏆 Standings</h1>
-    <p class="subtle standings-refresh-status" role="status">Updates automatically every minute. Results count after the last NHL game finishes.</p>
+    <p class="subtle standings-refresh-status" role="status">Fantrax regular-season standings, updated automatically every minute. Records follow finalized Fantrax results.</p>
     @if(auth()->user()?->is_admin)<p class="standings-collector-link"><a href="/job-status#collector-standings">Standings collector</a></p>@endif
     @if(!empty($standingsLastUpdate))
       <p class="subtle standings-updated">Updated @include('partials.updated-time',['value'=>$standingsLastUpdate])</p>
