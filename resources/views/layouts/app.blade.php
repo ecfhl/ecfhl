@@ -31,9 +31,9 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 @media(max-width:900px){
  html{scroll-padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
  body{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
- .mobile-primary-nav{position:fixed;left:10px;right:10px;bottom:8px;z-index:1100;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--line);border-radius:20px;box-shadow:0 8px 28px rgba(15,23,42,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+ .mobile-primary-nav{position:fixed;left:10px;right:10px;bottom:8px;z-index:1100;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--line);border-radius:20px;box-shadow:0 8px 28px rgba(15,23,42,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
  .mobile-primary-nav a{min-width:0;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:5px 2px;border:0;border-radius:15px;background:transparent!important;color:var(--muted);text-decoration:none;font-size:clamp(9px,2.6vw,11px);font-weight:800;line-height:1.1;text-align:center;transition:background .16s ease,color .16s ease,transform .12s ease}
- .mobile-primary-nav .mobile-nav-label{display:flex;align-items:center;justify-content:center;white-space:nowrap}
+ .mobile-primary-nav .mobile-nav-label{display:flex;align-items:center;justify-content:center;max-width:100%;overflow-wrap:anywhere}
  .mobile-primary-nav .mobile-nav-icon{font-size:19px;line-height:1}
  .mobile-primary-nav .mobile-nav-live .mobile-nav-icon{color:#b32634}
  .mobile-primary-nav .mobile-nav-team .mobile-nav-icon{color:#17787a}
@@ -98,6 +98,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 <main>@yield('content')</main>
 
 <nav class="mobile-primary-nav" aria-label="Primary navigation">
+  <a class="mobile-nav-home {{ request()->is('/')?'active':'' }}" href="/" data-loading-label="Home" @if(request()->is('/')) aria-current="page" @endif><span class="mobile-nav-icon" aria-hidden="true">⌂</span><span class="mobile-nav-label">Home</span></a>
   <a class="mobile-nav-live {{ request()->is('teams/current')?'active':'' }}" href="/teams/current" data-loading-label="Live Scoring" @if(request()->is('teams/current')) aria-current="page" @endif><span class="mobile-nav-icon" aria-hidden="true">●</span><span class="mobile-nav-label">Live Scoring</span></a>
   <a id="mobile-my-team-nav-link" class="mobile-nav-team" data-my-team-link href="{{ auth()->user()?->claim ? '/teams/current/'.\Illuminate\Support\Str::slug(auth()->user()->claim->team_name) : '/account/claim-team' }}" data-loading-label="My Team"><span class="mobile-nav-icon" aria-hidden="true">★</span><span class="mobile-nav-label">My Team</span></a>
   <a class="mobile-nav-standings {{ request()->is('standings')?'active':'' }}" href="/standings" data-loading-label="Standings" @if(request()->is('standings')) aria-current="page" @endif><span class="mobile-nav-icon" aria-hidden="true">🏆</span><span class="mobile-nav-label">Standings</span></a>

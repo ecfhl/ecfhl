@@ -240,6 +240,7 @@ Route::get('/', function () {
     $ownedPlayerIds=DB::table('active_fantasy_rosters')->where('game_date',$latestRosterDate)->pluck('player_id');
     $scoringLeaders=DB::table('season_player_stats as s')
         ->leftJoin('player_projections as p','p.player_id','=','s.player_id')
+        ->where('s.season_id','2026-27')
         ->whereIn('s.position',['F','D','G'])
         ->whereNotIn('s.player_id',$ownedPlayerIds)
         ->select('s.*','p.projected_fpts_per_game')
