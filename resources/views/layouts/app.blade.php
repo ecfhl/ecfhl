@@ -28,19 +28,20 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 
 .mobile-primary-nav{display:none}
 @media(max-width:900px){
- html{scroll-padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
- body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
- .mobile-primary-nav{position:fixed;left:0;right:0;bottom:0;z-index:1100;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px max(4px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px));background:var(--panel);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(15,23,42,.15)}
- .mobile-primary-nav a{min-width:0;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:3px 1px;border:2px solid transparent;border-radius:7px;color:#fff;text-decoration:none;font-size:clamp(10px,2.7vw,11px);font-weight:800;line-height:1.15;text-align:center}
- .mobile-primary-nav .mobile-nav-label{display:flex;align-items:center;justify-content:center;min-height:0;white-space:nowrap}
- .mobile-primary-nav .mobile-nav-icon{font-size:15px;line-height:1}
- .mobile-primary-nav .mobile-nav-live{background:#a9232d}
- .mobile-primary-nav .mobile-nav-team{background:#176d70}
- .mobile-primary-nav .mobile-nav-standings{background:#17628c}
- .mobile-primary-nav .mobile-nav-players{background:#d6a92b;color:#231d08}
- .mobile-primary-nav a.active{border-color:var(--text);box-shadow:0 0 0 1px var(--panel)}
- .mobile-primary-nav a:focus-visible{outline:3px solid var(--text);outline-offset:1px}
- .mobile-primary-nav a:active{filter:brightness(.9)}
+ html{scroll-padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+ body{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+ .mobile-primary-nav{position:fixed;left:10px;right:10px;bottom:8px;z-index:1100;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--line);border-radius:20px;box-shadow:0 8px 28px rgba(15,23,42,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+ .mobile-primary-nav a{min-width:0;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:5px 2px;border:0;border-radius:15px;background:transparent!important;color:var(--muted);text-decoration:none;font-size:clamp(9px,2.6vw,11px);font-weight:800;line-height:1.1;text-align:center;transition:background .16s ease,color .16s ease,transform .12s ease}
+ .mobile-primary-nav .mobile-nav-label{display:flex;align-items:center;justify-content:center;white-space:nowrap}
+ .mobile-primary-nav .mobile-nav-icon{font-size:19px;line-height:1}
+ .mobile-primary-nav .mobile-nav-live .mobile-nav-icon{color:#b32634}
+ .mobile-primary-nav .mobile-nav-team .mobile-nav-icon{color:#17787a}
+ .mobile-primary-nav .mobile-nav-standings .mobile-nav-icon{color:#b78922}
+ .mobile-primary-nav .mobile-nav-players .mobile-nav-icon{color:#b78922}
+ .mobile-primary-nav a.active{background:color-mix(in srgb,currentColor 12%,transparent)!important;color:var(--text);box-shadow:none}
+ .mobile-primary-nav a.active .mobile-nav-label{color:var(--text)}
+ .mobile-primary-nav a:focus-visible{outline:2px solid #60a5fa;outline-offset:1px}
+ .mobile-primary-nav a:active{transform:scale(.96);filter:none}
 }
 </style>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('ecfhl-theme')||'light';}catch(e){}</script>
