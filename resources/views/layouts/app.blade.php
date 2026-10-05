@@ -351,9 +351,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 .team-icon-advisor-name.open{display:flex}
 .team-icon-advisor-label{font-size:11px;font-weight:800;color:#fff}
 .team-icon-advisor-input{width:150px;padding:8px 9px;border:1px solid rgba(255,255,255,.3);border-radius:8px;background:#fff;color:#0f172a;font-size:12px;font-weight:700}
-.team-icon-advisor-save,.team-icon-modal-upload{appearance:none;border:1px solid rgba(255,255,255,.22);background:#0b5f9e;color:#fff;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2)}
-.team-icon-advisor-save:hover,.team-icon-modal-upload:hover{background:#0d6fb8}
-.team-icon-advisor-save:disabled,.team-icon-modal-upload:disabled{opacity:.6;cursor:wait}
+.team-icon-advisor-save,.team-icon-modal-upload,.team-icon-modal-save{appearance:none;border:1px solid rgba(255,255,255,.22);background:#0b5f9e;color:#fff;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.team-icon-advisor-save:hover,.team-icon-modal-upload:hover,.team-icon-modal-save:hover{background:#0d6fb8}
+.team-icon-advisor-save:disabled,.team-icon-modal-upload:disabled,.team-icon-modal-save:disabled{opacity:.6;cursor:wait}
 .team-icon-modal-upload{appearance:none;border:1px solid rgba(255,255,255,.22);background:#0b5f9e;color:#fff;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2)}
 .team-icon-modal-upload:hover{background:#0d6fb8}
 .team-icon-modal-upload:disabled{opacity:.6;cursor:wait}
@@ -376,12 +376,13 @@ document.addEventListener('DOMContentLoaded',()=>{
       </div>@endif
 
       <button id="team-icon-modal-upload" class="team-icon-modal-upload" type="button" hidden>Change Image</button>
+      <button id="team-icon-modal-save" class="team-icon-modal-save" type="button" hidden>Save Logo</button>
       <input id="team-icon-modal-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
     </div>
     <button id="team-icon-modal-close" class="team-icon-modal-close" type="button" aria-label="Close team icon preview">×</button>
   </div>
 </div>
-<script src="/team-image-viewer.js?v=10" defer></script>
+<script src="/team-image-viewer.js?v=12" defer></script>
 <dialog id="player-stats-dialog" class="player-stats-dialog" aria-label="Player stats"><button type="button" class="player-stats-close" aria-label="Close player stats">×</button><div id="player-stats-content" aria-live="polite"></div></dialog>
 <link rel="stylesheet" href="/player-profile.css?v=1"><script src="/player-profile.js?v=2" defer></script>
 
