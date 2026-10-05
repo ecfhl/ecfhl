@@ -24,7 +24,12 @@
       <a class="player-filter player-dfo-sort" role="button" aria-pressed="{{ $dailyTargetsSort?'true':'false' }}" aria-label="Sort like Daily Targets" title="Daily Targets order: PP1, PP2, then ECFHL Score; goalies: Confirmed, Likely, G1, G2, then ECFHL Score" href="{{ $filterUrl(['dfo_sort'=>$dailyTargetsSort?'0':'1']) }}"><img src="/dailyfaceoff-icon.png?v=6" alt="" width="44" height="44"></a>
         <span class="filter-label">Game day</span><div id="season-player-playing" class="player-buttons" role="group" aria-label="NHL game day">
           @foreach(['today'=>'Playing Today','tomorrow'=>'Playing Tomorrow'] as $key=>$label)
-            <a class="player-filter {{ $playing===$key?'selected':'' }}" role="button" aria-pressed="{{ $playing===$key?'true':'false' }}" href="{{ $filterUrl(['playing'=>$playing===$key?'all':$key]) }}">{{ $label }}</a>
+            @php
+              $selected = $playing === $key || $playing === 'both';
+              $other = $key === 'today' ? 'tomorrow' : 'today';
+              $nextPlaying = $selected ? ($playing === 'both' ? $other : 'all') : ($playing === $other ? 'both' : $key);
+            @endphp
+            <a class="player-filter {{ $selected?'selected':'' }}" role="button" aria-pressed="{{ $selected?'true':'false' }}" href="{{ $filterUrl(['playing'=>$nextPlaying]) }}">{{ $label }}</a>
           @endforeach
         </div>
     </div>
@@ -43,7 +48,7 @@
       </div>
     </details>
   </div>
-  <div class="player-table-meta"><span class="player-position-legend"><span><i class="legend-f"></i>F</span><span><i class="legend-d"></i>D</span><span><i class="legend-g"></i>G</span>@if($ownedTeamId)<span><i class="legend-own"></i>My team</span>@endif</span><span><strong>{{ $datasetLabel }}</strong> · @if($dailyTargetsSort)Daily Targets priority · @endif Sorted by {{ $headers[$sort] }} · {{ in_array($sort,['player','team']) ? ($direction==='asc'?'A–Z':'Z–A') : ($direction==='asc'?'Lowest first':'Highest first') }}</span>@if($statsThrough)<span>{{ $dataset==='fantrax'?'Frozen on':'Stats through' }} {{ \Carbon\Carbon::parse($statsThrough)->format('M j, Y') }}</span>@endif</div>
+  <div class="player-table-meta"><span class="player-position-legend"><span><i class="legend-f"></i>F</span><span><i class="legend-d"></i>D</span><span><i class="legend-g"></i>G</span>@if($ownedTeamId)<span><i class="legend-own"></i>My team</span>@endif</span>@if($statsThrough)<span>{{ $dataset==='fantrax'?'Frozen on':'Stats through' }} {{ \Carbon\Carbon::parse($statsThrough)->format('M j, Y') }}</span>@endif</div>
   <div id="season-player-fixed-header" class="player-fixed-header" hidden aria-label="Frozen player table header"></div>
   <div class="card player-table-scroll" tabindex="0" role="region" aria-label="Player stats: scroll horizontally for more stats" style="--player-stat-count:{{ count($headers)-3 }}"><table class="season-player-table"><colgroup><col class="rank-col"><col class="player-col"><col class="team-col">@foreach(array_slice($headers,3) as $label)<col class="stat-col">@endforeach</colgroup><thead><tr>
     @foreach($headers as $key=>$label)

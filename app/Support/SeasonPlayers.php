@@ -10,7 +10,7 @@ final class SeasonPlayers
 {
     private const SKATER_COLUMNS = ['G'=>'Goals', 'A'=>'Assists', 'Pts'=>'Points', 'PPG'=>'Power-play goals',
         'SHG'=>'Short-handed goals', 'GWG'=>'Game-winning goals', 'SOG'=>'Shots on goal', 'TOI'=>'Time on ice'];
-    private const BASE_HEADERS = ['player'=>'Player', 'team'=>'Team', 'ec_proj'=>'ECFHL', 'fpts'=>'FPts', 'fpts_gp'=>'FPts/gp', 'gp'=>'GP', 'today'=>'Today', 'tomorrow'=>'Tomorrow'];
+    private const BASE_HEADERS = ['player'=>'Player', 'team'=>'Team', 'ec_proj'=>'ECFHL', 'fpts'=>'FPts', 'fpts_gp'=>'FPts/gp', 'today'=>'Today', 'tomorrow'=>'Tomorrow', 'gp'=>'GP'];
     public const DATASETS = ['season'=>'Season', '7d'=>'7 days', '14d'=>'14 days', '21d'=>'21 days', 'fantrax'=>'Fantrax proj'];
     private const TEAM_ALIASES = ['LA'=>'LAK', 'NJ'=>'NJD', 'SJ'=>'SJS', 'TB'=>'TBL'];
 
@@ -31,8 +31,8 @@ final class SeasonPlayers
         $availability = (string)$request->query('availability', 'available');
         if (!in_array($availability, ['all', 'available', 'taken'], true)) $availability = 'available';
         $playing = (string)$request->query('playing', 'all');
-        if (!in_array($playing, ['all', 'today', 'tomorrow'], true)) $playing = 'all';
-        $playingDate = $playing === 'all' ? null : app(FantasyDay::class)->today()->addDays($playing === 'tomorrow' ? 1 : 0)->toDateString();
+        if (!in_array($playing, ['all', 'today', 'tomorrow', 'both'], true)) $playing = 'all';
+        $playingDate = in_array($playing, ['all','both'], true) ? null : app(FantasyDay::class)->today()->addDays($playing === 'tomorrow' ? 1 : 0)->toDateString();
         $teamOptions = DB::table('active_fantasy_rosters')->where('game_date', fn($q)=>$q->from('active_fantasy_rosters')->selectRaw('MAX(game_date)'))
             ->select('fantasy_team_id')->selectRaw('MAX(fantasy_team_name) as fantasy_team_name')->groupBy('fantasy_team_id')->orderBy('fantasy_team_name')->get();
         $selectedTeam = (string)$request->query('team', '');
@@ -79,7 +79,12 @@ final class SeasonPlayers
         if ($selectedTeam !== '') $query->where('r.fantasy_team_id', $selectedTeam);
         if ($availability === 'available') $query->whereNull('r.id');
         if ($availability === 'taken') $query->whereNotNull('r.id');
-        if ($playingDate) $query->whereIn(DB::raw('UPPER(TRIM(s.nhl_team))'), $this->playingTeams($playingDate));
+        if ($playing !== 'all') {
+            $dates = $playing === 'both' ? [app(FantasyDay::class)->today()->toDateString(), app(FantasyDay::class)->today()->addDay()->toDateString()] : [$playingDate];
+            $teams = [];
+            foreach ($dates as $date) $teams = array_merge($teams, $this->playingTeams($date));
+            $query->whereIn(DB::raw('UPPER(TRIM(s.nhl_team))'), array_unique($teams));
+        }
         if ($rookies) $query->where('s.rookie', true);
         if (count($selectedLines)!==count($lineChoices) || count($selectedPps)!==count($ppChoices)) {
             // Apply the selected union within each group, and intersect Line with PP.

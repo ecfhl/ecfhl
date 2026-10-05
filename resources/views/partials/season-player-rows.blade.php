@@ -12,8 +12,8 @@
   <td class="myproj">{{ $player->projected_fpts_per_game === null ? '—' : number_format($player->projected_fpts_per_game, 2) }}</td>
   <td>{{ number_format($player->dataset_fpts, 0) }}</td>
   <td>{{ number_format($player->dataset_fpts_per_game, 2) }}</td>
-  @if(isset($headers['gp']))<td>{{ $player->dataset_gp }}</td>@endif
   @foreach(['today_game','tomorrow_game'] as $gameField)<td class="player-game-cell">@if($player->{$gameField})<strong>{{ $player->{$gameField}['away'] ? '@' : '' }}{{ $player->{$gameField}['opponent'] }}</strong><small>{{ $player->{$gameField}['time'] ?: 'Time unavailable' }}</small>@php $status=$player->{str_replace('_game','_goalie_status',$gameField)}; @endphp @if($status)<span class="player-goalie-status player-goalie-{{ match($status){'Confirmed'=>'confirmed','Likely'=>'likely','Not starting'=>'not-starting',default=>'unconfirmed'} }}">{{ $status }}</span>@endif @else<span class="muted">—</span>@endif</td>@endforeach
+  @if(isset($headers['gp']))<td>{{ $player->dataset_gp }}</td>@endif
   @foreach($columns as $label=>$description)<td>{{ ($player->stats[$label] ?? '') !== '' ? $player->stats[$label] : '—' }}</td>@endforeach
 </tr>
 @endforeach
