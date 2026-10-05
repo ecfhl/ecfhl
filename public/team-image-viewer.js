@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       const leagueLogo=event.target.closest('.brand-logo');
       if(!teamButton&&!leagueLogo)return;
       event.preventDefault();
-      if(leagueLogo)event.stopPropagation();
+      if(leagueLogo)event.stopImmediatePropagation();
       const button=teamButton||leagueLogo;
       const img=leagueLogo||teamButton?.querySelector('img');
       if(!img)return;
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       lastTrigger=viewingLeagueLogo?leagueLogo:button;
       activeSlug=viewingLeagueLogo?'':button.dataset.teamSlug||'';
       activeAdvisorKey=viewingLeagueLogo?'':button.dataset.advisorKey||'';
-      if(modalTitle)modalTitle.textContent=viewingLeagueLogo?'ECFHL League Logo':button.dataset.teamName||button.dataset.advisorFirstName||img.alt||'Team logo';
+      if(modalTitle)modalTitle.textContent=viewingLeagueLogo?'East Coast Fantasy Hockey League':button.dataset.teamName||button.dataset.advisorFirstName||img.alt||'Team logo';
       if(viewTeamButton){
         viewTeamButton.hidden=viewingLeagueLogo||!activeSlug||!!activeAdvisorKey;
         if(viewTeamButton.hidden)viewTeamButton.removeAttribute('href');
