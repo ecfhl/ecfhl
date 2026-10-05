@@ -236,7 +236,10 @@ Route::get('/', function () {
     $currentPeriod=DB::table('scoring_period_matchups')->where('season_id','2026-27')
         ->where('start_date','<=',$today)->where('end_date','>=',$today)->orderBy('period_number')->first();
     $matchups=$currentPeriod ? DB::table('scoring_period_matchups')->where('season_id','2026-27')->where('period_number',$currentPeriod->period_number)->get() : collect();
-    $scoringLeaders=DB::table('season_player_stats')->orderByDesc('season_fpts')->orderBy('player_id')->limit(5)->get();
+    $scoringLeaders=DB::table('season_player_stats')
+        ->whereIn('position',['F','D','G'])
+        ->orderByDesc('season_fpts')->orderBy('player_id')->get()
+        ->groupBy('position')->map(fn($players)=>$players->take(3));
     $topScoring=collect($standings)->filter(fn($t)=>$t['fantasy_points_for']!==null)->sortByDesc('fantasy_points_for')->first();
     $games=app(\App\Support\PlayerGames::class)->forDate($today);
     return view('home',compact('standings','today','snapshot','currentPeriod','matchups','scoringLeaders','topScoring','games'));
