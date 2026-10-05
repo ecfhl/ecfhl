@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 
   closeButton.addEventListener('click',closeModal);
-  modal.addEventListener('click',event=>{if(event.target===modal||event.target.classList.contains('team-icon-modal-card'))closeModal();});
+  modal.addEventListener('click',event=>{if(viewingLeagueLogo){closeModal();return;}if(event.target===modal||event.target.classList.contains('team-icon-modal-card'))closeModal();});
   document.addEventListener('keydown',event=>{
     if(!modal.classList.contains('open'))return;
     if(event.key==='Escape')closeModal();
