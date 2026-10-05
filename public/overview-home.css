@@ -65,3 +65,12 @@
   .overview-matchup img { flex-basis: 32px; width: 32px; height: 32px; }
   .overview-home__history { font-size: 12px; }
 }
+
+/* Show both period and fantasy-day totals in the Home matchup card. */
+.overview-matchup-scores{display:flex;align-items:flex-start;justify-content:center;gap:9px;white-space:nowrap;font-variant-numeric:tabular-nums;text-align:center}
+.overview-matchup-scores>div{display:flex;flex-direction:column;gap:3px}
+.overview-matchup-weekly strong{font-size:16px;line-height:1.1;color:var(--text)}
+.overview-matchup-daily strong{font-size:11px;line-height:1.1;color:var(--text)}
+.overview-matchup-scores small{font-size:8px;font-weight:600;line-height:1;color:var(--muted);padding:0}
+.overview-matchup-scores strong span{color:var(--muted);font-weight:400}
+@media(max-width:420px){.overview-matchup-scores{gap:5px}.overview-matchup-weekly strong{font-size:14px}.overview-matchup-daily strong{font-size:10px}}

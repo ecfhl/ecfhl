@@ -33,7 +33,10 @@
         @endphp
         <div class="overview-matchup">
           <a href="/teams/current/{{ $awaySlug }}"><img src="{{ \App\Support\TeamImages::url($awaySlug,64) }}" alt="" width="32" height="32" loading="lazy"><span>{{ $matchup->away_team_name }}</span></a>
-          <strong>{{ number_format($awayLive['period_fpts'] ?? $matchup->away_score ?? 0,0) }} <small>–</small> {{ number_format($homeLive['period_fpts'] ?? $matchup->home_score ?? 0,0) }}</strong>
+          <div class="overview-matchup-scores">
+            <div class="overview-matchup-weekly"><strong>{{ number_format($awayLive['period_fpts'] ?? $matchup->away_score ?? 0,0) }} <span>–</span> {{ number_format($homeLive['period_fpts'] ?? $matchup->home_score ?? 0,0) }}</strong><small>Weekly</small></div>
+            <div class="overview-matchup-daily"><strong>{{ number_format($awayLive['daily_fpts'] ?? 0,0) }} <span>–</span> {{ number_format($homeLive['daily_fpts'] ?? 0,0) }}</strong><small>Daily</small></div>
+          </div>
           <a href="/teams/current/{{ $homeSlug }}"><span>{{ $matchup->home_team_name }}</span><img src="{{ \App\Support\TeamImages::url($homeSlug,64) }}" alt="" width="32" height="32" loading="lazy"></a>
         </div>
       @empty
