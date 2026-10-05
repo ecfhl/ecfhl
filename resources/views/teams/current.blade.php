@@ -57,8 +57,8 @@
         <summary class="team-live-matchup-summary">
           <div class="team-live-side team-live-score-left">
             <div class="team-live-name-row">
-              <a href="/teams/current/{{ $slug }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $liveMatchup['team_name'] }}</a>
               <button type="button" class="team-logo-viewer team-live-logo" data-team-icon-viewer data-team-slug="{{ $slug }}" data-team-name="{{ $liveMatchup['team_name'] }}" aria-label="View {{ $liveMatchup['team_name'] }} logo"><img class="team-viewer-logo-image" data-full-src="{{ \App\Support\TeamImages::url($slug) }}" src="{{ \App\Support\TeamImages::url($slug,160) }}" width="160" height="160" decoding="async" alt="{{ $liveMatchup['team_name'] }} team icon"></button>
+              <a href="/teams/current/{{ $slug }}?date={{ $date }}" onclick="event.stopPropagation()">{{ $liveMatchup['team_name'] }}</a>
             </div>
             <div class="team-live-body">
               
@@ -780,7 +780,7 @@ html[data-theme="dark"] .team-live-expanded .matchup-bench-title{color:#cbd5e1!i
 .team-live-matchup-card .team-live-side{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between;gap:16px!important;min-width:0}
 .team-live-matchup-card .team-live-side-right{flex-direction:row-reverse!important}
 .team-live-matchup-card .team-live-name-row{display:flex;align-items:center;justify-content:flex-start;gap:9px;min-width:0}
-.team-live-matchup-card .team-live-side-right .team-live-name-row{flex-direction:row-reverse;justify-content:flex-start;text-align:right}
+.team-live-matchup-card .team-live-side-right .team-live-name-row{flex-direction:row;justify-content:flex-end;text-align:right}
 .team-live-matchup-card .team-live-name-row a{font-size:15px!important;line-height:1.3!important;font-weight:900;color:var(--text);white-space:normal;overflow-wrap:anywhere}
 .team-live-matchup-card .team-live-logo{width:36px!important;height:36px!important;flex:0 0 36px!important;border:0;background:transparent!important;box-shadow:none!important;border-radius:0!important;padding:0}
 .team-live-matchup-card .team-live-logo img{width:100%;height:100%;object-fit:contain}

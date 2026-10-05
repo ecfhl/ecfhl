@@ -132,8 +132,8 @@
             @if($away)
               <div class="matchup-summary-name">
                 <div class="matchup-team-name-row matchup-team-name-row-away">
-                  <a href="/teams/current/{{ $away['slug'] }}?date={{ $date }}">{{ $away['name'] }}</a>
                   @include('teams.partials.team-icon-uploader',['slug'=>$away['slug'],'name'=>$away['name']])
+                  <a href="/teams/current/{{ $away['slug'] }}?date={{ $date }}">{{ $away['name'] }}</a>
                 </div>
                 <div class="matchup-summary-meta matchup-summary-meta-away">
                   <div class="matchup-meta-row">
@@ -163,8 +163,8 @@
               <span class="matchup-summary-score"><strong class="matchup-week-score {{ $homeWeekClass }}">{{ number_format($home['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $homeDayClass }}">{{ number_format($homeDay,0) }}</small></span>
               <div class="matchup-summary-name">
                 <div class="matchup-team-name-row matchup-team-name-row-home">
-                  @include('teams.partials.team-icon-uploader',['slug'=>$home['slug'],'name'=>$home['name']])
                   <a href="/teams/current/{{ $home['slug'] }}?date={{ $date }}">{{ $home['name'] }}</a>
+                  @include('teams.partials.team-icon-uploader',['slug'=>$home['slug'],'name'=>$home['name']])
                 </div>
                 <div class="matchup-summary-meta matchup-summary-meta-home">
                   <div class="matchup-meta-row matchup-meta-row-home">
@@ -542,6 +542,17 @@ html[data-theme="dark"] .matchup-day-score.score-same{color:#f8fafc!important}
 html[data-theme="dark"] .matchup-player-row.team-game-live-row{background:#12372b!important}
 html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#1e293b!important}
 html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:#352d16!important}
+/* Keep team logos at the outside edge on every screen size. */
+.matchup-summary .matchup-team-name-row{display:flex!important;flex-direction:row!important;align-items:center!important;gap:7px;position:relative;min-width:0}
+.matchup-summary .matchup-team-name-row-away{justify-content:flex-start!important}
+.matchup-summary .matchup-team-name-row-home{justify-content:flex-end!important}
+.matchup-summary .matchup-team-name-row .team-icon-uploader{position:static!important;order:0!important;align-self:center!important;width:34px!important;flex:0 0 34px!important}
+.matchup-summary .matchup-team-name-row .team-icon-uploader img{width:34px!important;height:34px!important}
+.matchup-summary .matchup-team-name-row a{order:0!important;min-width:0;white-space:normal!important;overflow-wrap:anywhere}
+@media(max-width:800px){
+ .matchup-summary .matchup-team-name-row .team-icon-uploader{width:28px!important;flex-basis:28px!important}
+ .matchup-summary .matchup-team-name-row .team-icon-uploader img{width:28px!important;height:28px!important}
+}
 </style>
 
 <script>
