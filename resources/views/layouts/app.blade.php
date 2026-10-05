@@ -73,7 +73,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
  <div class="nav-dropdown-menu archive-menu">
   <span class="other-menu-heading">Archive</span>
   <a href="/teams">Franchise History</a><a href="/seasons">Seasons History</a><a href="/prizes">Prizes History</a><a href="/trades">Trades History</a><a href="/draft">Draft History</a><a href="/players/history">Players History</a>
-  <a class="nav-history-link" href="/rules">Rules</a><a href="/account">Account</a>
+  <a class="nav-history-link" href="/rules">Rules</a><a href="/notifications">Notification Settings</a><a href="/account">Account</a>
   @guest<a href="/login">Sign in</a><a href="/register" class="nav-create-account">Create account</a>@endguest
  </div>
 </div>
