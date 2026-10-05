@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       const img=leagueLogo||teamButton?.querySelector('img');
       if(!img)return;
       viewingLeagueLogo=!!leagueLogo;
-      lastTrigger=viewingLeagueLogo?leagueLogo.closest('a,button')||leagueLogo:button;
+      lastTrigger=viewingLeagueLogo?leagueLogo:button;
       activeSlug=viewingLeagueLogo?'':button.dataset.teamSlug||'';
       activeAdvisorKey=viewingLeagueLogo?'':button.dataset.advisorKey||'';
       if(modalTitle)modalTitle.textContent=viewingLeagueLogo?'ECFHL League Logo':button.dataset.teamName||button.dataset.advisorFirstName||img.alt||'Team logo';
