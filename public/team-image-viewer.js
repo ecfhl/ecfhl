@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(uploadButton)uploadButton.textContent='Uploading...';
 
     try{
-      const uploadUrl=viewingLeagueLogo?'/league-logo':'/team-icons/'+encodeURIComponent(activeSlug);
+      const uploadUrl=viewingLeagueLogo?'/team-icons/league-logo':'/team-icons/'+encodeURIComponent(activeSlug);
       const response=await fetch(uploadUrl,{
         method:'POST',
         headers:{'X-CSRF-TOKEN':csrf,'Accept':'application/json'},
