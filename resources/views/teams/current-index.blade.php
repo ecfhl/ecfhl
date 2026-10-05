@@ -312,14 +312,15 @@
 .matchup-roster-grid{display:grid;grid-template-columns:1fr 1fr}
 .matchup-roster-col{min-width:0;border-right:1px solid var(--line)}
 .matchup-roster-col:last-child{border-right:0}
-.matchup-player-row{position:relative;min-width:0;min-height:0;padding:7px 8px 6px;border-bottom:1px solid var(--line)}
+.matchup-player-row{position:relative;min-width:0;min-height:0;padding:6px 8px 2px;border-bottom:1px solid var(--line)}
 .matchup-player-main{width:100%;min-width:0}
 .matchup-player-name{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:15px;line-height:1.1}
 .matchup-player-name strong{flex-basis:100%;width:100%}
+.matchup-player-name a{text-decoration:none!important}
 .matchup-player-name .pill{padding:1px 4px!important;font-size:9px!important;line-height:1.05}
 .matchup-player-opponent{margin-top:4px;padding-right:38px;font-size:10px;line-height:1.15}
 .matchup-player-cats{display:flex;gap:5px;font-size:9px;color:var(--muted);font-weight:800}
-.matchup-player-metrics{position:absolute;right:8px;bottom:6px}
+.matchup-player-metrics{position:absolute;right:8px;bottom:2px}
 .matchup-player-today{display:flex;align-items:baseline;gap:3px}
 .matchup-player-today span{font-size:8px;color:var(--muted);font-weight:700}
 .matchup-player-today strong{font-size:28px;line-height:.9;font-weight:900}
@@ -351,7 +352,7 @@ html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:va
  .matchup-projected-score{position:absolute;top:68px;margin:0}
  .matchup-summary-away .matchup-projected-score{right:0}
  .matchup-summary-home .matchup-projected-score{left:0}
- .matchup-player-row{padding:7px 8px 5px}
+ .matchup-player-row{padding:6px 8px 2px}
  .matchup-player-name{font-size:15px}
  .matchup-player-opponent{font-size:10px;margin-top:4px}
  .matchup-player-today strong{font-size:28px}
