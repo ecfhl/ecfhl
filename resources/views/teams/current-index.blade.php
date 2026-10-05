@@ -287,6 +287,7 @@
 .matchup-summary-side{position:relative;display:flex;flex-direction:column;min-width:0}
 .matchup-summary-name{min-width:0}
 .matchup-team-name-row{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.matchup-team-name-row-away a{order:-1}
 .matchup-team-name-row-home{align-items:flex-end}
 .matchup-team-name-row a{font-weight:900;color:var(--text);text-decoration:underline;white-space:normal}
 .matchup-team-name-row .team-icon-uploader{width:64px}
@@ -298,7 +299,7 @@
 .matchup-week-score.score-up,.matchup-day-score.score-up{color:#16834f!important}
 .matchup-week-score.score-down,.matchup-day-score.score-down{color:#dc2626!important}
 .matchup-summary-vs{text-align:center;align-self:center;font-size:10px;font-weight:900;color:var(--muted)}
-.matchup-projected-score{display:inline-block;margin-top:4px;padding:3px 7px;border-radius:7px;background:#fff1e6;color:#b45309!important;font-size:11px!important;font-weight:800!important;width:max-content}
+.matchup-projected-score{display:inline-block;margin-top:10px;padding:3px 7px;border-radius:7px;background:#fff1e6;color:#b45309!important;font-size:11px!important;font-weight:800!important;width:max-content}
 .matchup-summary-home .matchup-projected-score{margin-left:auto}
 .matchup-playing-counts,.matchup-side-header{display:none!important}
 .matchup-summary-meta{margin-top:4px}
@@ -347,7 +348,7 @@ html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:va
  .matchup-summary-away .matchup-summary-score{right:0}
  .matchup-summary-home .matchup-summary-score{left:0}
  .matchup-summary-vs{margin-top:53px}
- .matchup-projected-score{position:absolute;top:62px;margin:0}
+ .matchup-projected-score{position:absolute;top:68px;margin:0}
  .matchup-summary-away .matchup-projected-score{right:0}
  .matchup-summary-home .matchup-projected-score{left:0}
  .matchup-player-row{padding:7px 8px 5px}
