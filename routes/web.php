@@ -74,7 +74,7 @@ Route::post('/team-icons/{slug}', function(string $slug) {
             if($slug===$advisorSlug){$advisorSlugAllowed=true;break;}
         }
     }
-    abort_unless($advisorSlugAllowed||$validCurrent||$validFranchise,404);
+    abort_unless($slug==='league-logo'||$advisorSlugAllowed||$validCurrent||$validFranchise,404);
 
     $validated=request()->validate(['image'=>'required|file|mimes:jpg,jpeg,png,webp|max:2048']);
     $file=$validated['image'];
