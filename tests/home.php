@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Http;
 
 Http::preventStrayRequests();
 CarbonImmutable::setTestNow('2026-10-05T18:00:00Z');
-foreach (['season_player_stats','player_projections','active_fantasy_rosters','team_seasons','scoring_period_matchups'] as $table) DB::table($table)->delete();
+foreach (['season_player_stats','player_projections','active_fantasy_rosters','team_seasons','scoring_period_matchups','active_pp_lines','active_line_combinations','active_starting_goalies','active_daily_players','active_available_goalies'] as $table) DB::table($table)->delete();
 
 $names=['One Man Bang 💥','North Shore Explorers','Mullet Mafia','Lone Tsar','Brasse Camarade','Big Bogan Beaking','Morning Sherwoods','Multiple Scoregasms','BookHockey','West Coast','Ammon Keys Balls','Young Guns','Green Machine','Formenton’s Construction Company'];
 foreach ($names as $i=>$name) DB::table('team_seasons')->insert(['team_season_id'=>'home-'.$i,'season_id'=>'2026-27','franchise_id'=>'home-'.$i,'original_name'=>$name,'rank'=>$i+1,'w'=>7,'l'=>2,'t'=>1,'fantasy_points_for'=>12345-$i]);
@@ -25,6 +25,19 @@ foreach (['F'=>['Benjamin Kindel','Parker Kelly','Nicolas Roy'],'D'=>['Josh Mans
         if ($i===6) DB::table('active_fantasy_rosters')->insert(['game_date'=>'2026-10-05','fantasy_team_id'=>'owner','fantasy_team_name'=>'Owner','player_id'=>$id,'player_name'=>'Owned '.$id,'position'=>$position,'roster_status'=>['F'=>'BENCH','D'=>'MINORS','G'=>'INJURED_RESERVE'][$position]]);
     }
 }
+// PP assignment must outrank a higher raw projection, while owned/old-season rows stay out.
+foreach (['F','D'] as $position) {
+    foreach ([1=>2,3=>1,4=>2,5=>1,6=>1] as $i=>$unit) {
+        $row=DB::table('season_player_stats')->where('player_id',$position.$i)->first();
+        DB::table('active_pp_lines')->insert(['team'=>'MTL','player_name'=>$row->player_name,'pp_unit'=>$unit,'source_url'=>'https://example.com','last_update'=>now(),'checked_at'=>now()]);
+    }
+}
+// Lower-projection confirmed/likely starters outrank unconfirmed and ruled-out goalies.
+foreach ([1=>['TOR','unconfirmed'],3=>['BOS','likely'],4=>['MTL','confirmed'],5=>['SEA','confirmed'],6=>['NYR','confirmed']] as $i=>[$team,$status]) {
+    DB::table('season_player_stats')->where('player_id','G'.$i)->update(['nhl_team'=>$team]);
+    $row=DB::table('season_player_stats')->where('player_id','G'.$i)->first();
+    DB::table('active_starting_goalies')->insert(['game_date'=>'2026-10-05','team'=>$team,'player_name'=>$row->player_name,'starting_status'=>$status,'source_url'=>'https://example.com','checked_at'=>now()]);
+}
 // A released player was owned yesterday but must be available today.
 DB::table('active_fantasy_rosters')->insert(['game_date'=>'2026-10-04','fantasy_team_id'=>'owner','fantasy_team_name'=>'Owner','player_id'=>'F1','player_name'=>'Released player','position'=>'F']);
 
@@ -36,14 +49,16 @@ function homeDocument(string $html): DOMXPath {
 $html=seasonRequest('/')->getContent();
 $xpath=homeDocument($html);
 $hasClass=fn($class)=>'contains(concat(" ",normalize-space(@class)," ")," '.$class.' ")';
+$expected=['F'=>[3,1,4],'D'=>[3,1,4],'G'=>[4,3,1]];
 foreach (['F','D','G'] as $i=>$position) {
     $rows=$xpath->query('(//div['.$hasClass('overview-player-group').'])['.($i+1).']/a');
     verifySeason($rows->length===3,'Home must keep exactly three available players per position.');
     foreach ($rows as $j=>$row) {
-        verifySeason($row->getAttribute('href')==='/players/'.$position.($j+1),'Home must sort by EC Proj, ignore old-season players, and exclude every owned roster slot.');
-        verifySeason(str_contains($row->textContent,(string)(101+$j).' FPts'),'Home must display actual season FPts, not the projection used for sorting.');
+        verifySeason($row->getAttribute('href')==='/players/'.$position.$expected[$position][$j],'Home must use Daily Faceoff priority with ECFHL Score, ignore old-season players, and exclude every owned roster slot.');
+        verifySeason(str_contains($row->textContent,(string)(100+$expected[$position][$j]).' FPts'),'Home must display actual season FPts, not the projection used for sorting.');
     }
 }
+verifySeason(str_contains($html,'positions=F,D,G&amp;dfo_sort=1&amp;sort=ec_proj'),'Available players link must open the matching Daily Faceoff ranking.');
 $cards=$xpath->query('//div[@data-overview-cards]/section');
 verifySeason($cards->length===4,'Home must render exactly four cards in normal document flow.');
 foreach (['week','standings','watch','league'] as $i=>$name) verifySeason($cards->item($i)->getAttribute('data-overview-card')===$name,'Mobile DOM reading order must match the visible card order.');
@@ -61,4 +76,4 @@ DB::table('season_player_stats')->delete();
 $empty=homeDocument(seasonRequest('/')->getContent());
 verifySeason($empty->query('//div['.$hasClass('overview-player-group').']/h3')->length===3&&$empty->query('//div['.$hasClass('overview-player-group').']/p')->length===3,'Empty Player Watch must still show all three position headings and useful empty states.');
 CarbonImmutable::setTestNow();
-echo "Home checks passed: available-only EC Proj ordering, actual FPts, three players per position, released/bench/minors/IR ownership, current season, valid card/footer structure and mobile Home link.\n";
+echo "Home checks passed: available-only Daily Faceoff PP/goalie priority and ECFHL Score ordering, actual FPts, three players per position, released/bench/minors/IR ownership, current season, valid card/footer structure and mobile Home link.\n";

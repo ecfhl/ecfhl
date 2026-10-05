@@ -236,17 +236,7 @@ Route::get('/', function () {
     $currentPeriod=DB::table('scoring_period_matchups')->where('season_id','2026-27')
         ->where('start_date','<=',$today)->where('end_date','>=',$today)->orderBy('period_number')->first();
     $matchups=$currentPeriod ? DB::table('scoring_period_matchups')->where('season_id','2026-27')->where('period_number',$currentPeriod->period_number)->get() : collect();
-    $latestRosterDate=DB::table('active_fantasy_rosters')->max('game_date');
-    $ownedPlayerIds=DB::table('active_fantasy_rosters')->where('game_date',$latestRosterDate)->pluck('player_id');
-    $scoringLeaders=DB::table('season_player_stats as s')
-        ->leftJoin('player_projections as p','p.player_id','=','s.player_id')
-        ->where('s.season_id','2026-27')
-        ->whereIn('s.position',['F','D','G'])
-        ->whereNotIn('s.player_id',$ownedPlayerIds)
-        ->select('s.*','p.projected_fpts_per_game')
-        ->orderByRaw('p.projected_fpts_per_game IS NULL')
-        ->orderByDesc('p.projected_fpts_per_game')->orderBy('s.player_name')->get()
-        ->groupBy('position')->map(fn($players)=>$players->take(3));
+    $scoringLeaders=app(\App\Support\SeasonPlayers::class)->homeRecommendations($today);
     $topScoring=collect($standings)->filter(fn($t)=>$t['fantasy_points_for']!==null)->sortByDesc('fantasy_points_for')->first();
     $games=app(\App\Support\PlayerGames::class)->forDate($today);
     return view('home',compact('standings','today','snapshot','currentPeriod','matchups','scoringLeaders','topScoring','games'));

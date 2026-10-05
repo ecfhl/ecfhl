@@ -156,7 +156,27 @@ final class SeasonPlayers
         return compact('players', 'positions', 'rookies', 'search', 'columns', 'headers', 'sort', 'direction', 'dailyTargetsSort', 'teamOptions', 'selectedTeam', 'availability', 'selectedLine', 'selectedPp', 'selectedLines', 'selectedPps', 'dataset', 'datasetLabel', 'statsThrough', 'ownedTeamId', 'playing', 'playingDate');
     }
 
-    private function dailyTargetsPage($query, $lines, $pp, string $date, int $page, string $sort, string $direction, array $datasetFields): LengthAwarePaginator
+    public function homeRecommendations(string $date): \Illuminate\Support\Collection
+    {
+        return PublicData::remember('home-player-watch:dfo:'.$date, 30, function () use ($date) {
+            $lines = PublicData::remember('badges:active_line_combinations', 30, fn()=>DB::table('active_line_combinations')->orderBy('checked_at')->orderBy('id')->get())
+                ->keyBy(fn($r)=>$this->assignmentKey($r->team, $r->player_name).'|'.strtoupper(trim($r->position_group)));
+            $pp = PublicData::remember('badges:active_pp_lines', 30, fn()=>DB::table('active_pp_lines')->orderBy('checked_at')->orderBy('id')->get())
+                ->keyBy(fn($r)=>$this->assignmentKey($r->team, $r->player_name));
+            $query = DB::table('season_player_stats as s')
+                ->leftJoin('player_projections as p', 'p.player_id', '=', 's.player_id')
+                ->where('s.season_id', '2026-27')->whereIn('s.position', ['F', 'D', 'G'])
+                ->whereNotIn('s.player_id', fn($q)=>$q->from('active_fantasy_rosters')->select('player_id')
+                    ->where('game_date', fn($latest)=>$latest->from('active_fantasy_rosters')->selectRaw('MAX(game_date)')))
+                ->select('s.*', 'p.projected_fpts_per_game');
+            $ordered = $this->dailyTargetsPool($query, $lines, $pp, $date, 'ec_proj', 'desc', ['fpts'=>'s.season_fpts', 'gp'=>'s.season_gp', 'fpts_gp'=>'s.season_fpts_per_game']);
+            $ids = $ordered->groupBy('position')->flatMap(fn($players)=>$players->take(3)->pluck('player_id'))->values();
+            $rows = (clone $query)->whereIn('s.player_id', $ids)->get()->keyBy('player_id');
+            return $ids->map(fn($id)=>$rows[$id])->groupBy('position');
+        });
+    }
+
+    private function dailyTargetsPool($query, $lines, $pp, string $date, string $sort, string $direction, array $datasetFields): \Illuminate\Support\Collection
     {
         $sources = [];
         foreach (['active_daily_players', 'active_available_goalies'] as $table) {
@@ -182,7 +202,7 @@ final class SeasonPlayers
                 // The Canucks' forward and defenseman share a name.
                 if ($key === 'VAN|eliaspettersson' && $row->position !== 'F') $unit = null;
                 return [
-                    'player_id'=>$row->player_id, 'name'=>$row->player_name, 'goalie'=>$goalie,
+                    'player_id'=>$row->player_id, 'position'=>$row->position, 'name'=>$row->player_name, 'goalie'=>$goalie,
                     'projected_points'=>$row->projected_fpts_per_game, 'sort_value'=>$row->season_sort_value,
                     'pp_unit'=>$unit, 'line_number'=>$lines[$key.'|'.$row->position]->line_number ?? null,
                     'source_rank'=>$sources[$goalie ? 'active_available_goalies' : 'active_daily_players'][$key]->source_rank ?? null,
@@ -198,6 +218,12 @@ final class SeasonPlayers
                     ?: ($a['goalie'] ? DailyTargetsOrder::goalies($a, $b) : DailyTargetsOrder::skaters($a, $b))
                     ?: strcmp($a['player_id'], $b['player_id']);
             })->values();
+        return $ordered;
+    }
+
+    private function dailyTargetsPage($query, $lines, $pp, string $date, int $page, string $sort, string $direction, array $datasetFields): LengthAwarePaginator
+    {
+        $ordered = $this->dailyTargetsPool($query, $lines, $pp, $date, $sort, $direction, $datasetFields);
         $ids = $ordered->slice(($page - 1) * 25, 25)->pluck('player_id');
         $rows = (clone $query)->whereIn('s.player_id', $ids)->get()->keyBy('player_id');
         return new LengthAwarePaginator($ids->map(fn($id)=>$rows[$id])->values(), $ordered->count(), 25, $page, [
