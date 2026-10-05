@@ -656,27 +656,17 @@ html[data-theme="dark"] .team-next-lineup-player .team-minors{background:#15365f
  html[data-theme="dark"] .team-next-lineup-player{font-size:10px!important;line-height:1.2!important}
 }
 
-/* Tighten mobile player rows and lift day score */
-@media(max-width:700px){
- .team-live-expanded .matchup-player-row{min-height:82px!important;padding-bottom:7px!important}
- .team-live-expanded .matchup-player-today{bottom:18px!important}
- .team-live-expanded .matchup-player-opponent{margin-top:3px!important}
-}
-
 /* Mobile player metric layout */
 @media(max-width:700px){
-.team-live-expanded .matchup-player-row{position:relative!important;display:block!important;padding:9px 9px 10px!important;min-height:96px!important}
-.team-live-expanded .matchup-player-main{display:block!important;width:100%!important;min-width:0!important}
-.team-live-expanded .matchup-player-name{display:flex!important;width:100%!important;padding-right:0!important;font-size:13px!important;line-height:1.15!important}
-.team-live-expanded .matchup-player-name strong{flex-basis:100%!important;width:100%!important;order:-10}
-.team-live-expanded .matchup-player-opponent{padding-right:34px!important;margin-top:5px!important}
-.team-live-expanded .matchup-player-metrics{position:static!important;display:block!important}
-.team-live-expanded .matchup-player-metrics>div:first-child{position:absolute!important;right:9px!important;top:38px!important;display:flex!important;align-items:baseline!important;gap:3px!important;text-align:right!important}
-.team-live-expanded .matchup-player-metrics>div:first-child span{font-size:7px!important}
-.team-live-expanded .matchup-player-metrics>div:first-child strong{font-size:12px!important;line-height:1!important}
-.team-live-expanded .matchup-player-today{position:absolute!important;right:9px!important;bottom:9px!important;text-align:right!important}
-.team-live-expanded .matchup-player-today span{display:none!important}
-.team-live-expanded .matchup-player-today strong{font-size:22px!important;line-height:1!important}
+ .team-live-expanded .matchup-player-row{position:relative!important;display:block!important;padding:7px 9px 5px!important;min-height:72px!important}
+ .team-live-expanded .matchup-player-main{display:block!important;width:100%!important;min-width:0!important}
+ .team-live-expanded .matchup-player-name{display:flex!important;width:100%!important;padding-right:0!important;font-size:15px!important;line-height:1.1!important}
+ .team-live-expanded .matchup-player-name strong{flex-basis:100%!important;width:100%!important;order:-10}
+ .team-live-expanded .matchup-player-opponent{padding-right:34px!important;margin-top:3px!important}
+ .team-live-expanded .matchup-player-metrics{position:static!important;display:block!important}
+ .team-live-expanded .matchup-player-today{position:absolute!important;right:9px!important;bottom:5px!important;text-align:right!important}
+ .team-live-expanded .matchup-player-today span{display:inline!important;font-size:8px!important;margin-right:3px}
+ .team-live-expanded .matchup-player-today strong{font-size:28px!important;line-height:.9!important}
 }
 
 /* Keep matchup logos aligned when team names wrap */
