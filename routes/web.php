@@ -86,21 +86,27 @@ Route::post('/lineup-advisors/{advisor}/profile', function(string $advisor) {
 
 Route::get('/admin', fn()=>view('admin.index'));
 
-Route::get('/admin/team-images', function () {
+Route::get('/admin/teams', function () {
     abort_unless(\Illuminate\Support\Facades\Schema::hasTable('team_icons'),503);
-    $teams=DB::table('team_seasons as ts')
-        ->join('seasons as s','s.season_id','=','ts.season_id')
-        ->where('s.season_name','2026-27')
-        ->select('ts.original_name')
-        ->distinct()
-        ->orderBy('ts.original_name')
-        ->get()
-        ->map(fn($team)=>(object)[
-            'name'=>(string)$team->original_name,
-            'slug'=>\Illuminate\Support\Str::slug((string)$team->original_name),
-        ]);
+    $teams=\App\Support\CurrentTeams::administration();
     return view('admin.team-images',compact('teams'));
 });
+Route::get('/admin/team-images', fn()=>redirect('/admin/teams'));
+
+Route::post('/admin/teams/{teamId}/unlink', function (string $teamId) {
+    $expected=request()->validate(['user_id'=>'required|integer']);
+    $name=DB::transaction(function () use ($teamId, $expected) {
+        $claim=\App\Models\TeamClaim::whereKey($teamId)->lockForUpdate()->first();
+        abort_unless($claim,404,'This team no longer has an associated account.');
+        abort_unless((int)$claim->user_id===(int)$expected['user_id'],409,'The associated account changed. Refresh this page.');
+        // Stop queued alerts for the former team without disabling the account or devices.
+        DB::table('push_deliveries')->whereIn('subscription_id',DB::table('push_subscriptions')->where('user_id',$claim->user_id)->select('id'))->delete();
+        $name=$claim->team_name;
+        $claim->delete();
+        return $name;
+    });
+    return redirect('/admin/teams')->with('notice','Account unlinked from '.$name.'.');
+})->where('teamId','[A-Za-z0-9_-]+');
 
 Route::get('/admin/advisors', function () {
     abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles'),503);
@@ -217,10 +223,11 @@ Route::get('/seasons', function (EcfhlData $data) {
 });
 Route::get('/standings', function(EcfhlData $data){
     $seasonName='2026-27';
-    $season=$data->season($seasonName);
+    $season=(array)DB::table('seasons')->where('season_id',$seasonName)->first();
     if(!$season)return redirect('/seasons');
+    $season['season']=$seasonName;
 
-    $standings=$data->teamSeasons($seasonName);
+    $standings=\App\Support\CurrentTeams::standings();
     $standingsLastUpdate=DB::table('job_run_history')
         ->where('job_name','ecfhl:refresh-current-standings')
         ->max('completed_at');
@@ -229,14 +236,11 @@ Route::get('/standings', function(EcfhlData $data){
     $scoringPeriods=[];
 
     try {
-        if(\Illuminate\Support\Facades\Schema::hasTable('fantrax_scoring_period_matchups')){
+        if(\Illuminate\Support\Facades\Schema::hasTable('scoring_period_matchups')){
             // The scheduled collector fills dates; page views never wait on upstream requests.
 
-            $rows=DB::table('fantrax_scoring_period_matchups')
-                ->where('season_id',$seasonName)
-                ->orderBy('period_number')
-                ->orderBy('id')
-                ->get();
+            $rows=\App\Support\PublicData::remember('current-periods',30,fn()=>DB::table('scoring_period_matchups')
+                ->where('season_id',$seasonName)->orderBy('period_number')->orderBy('id')->get());
 
             $scoringPeriods=$rows->groupBy('period_number')->map(function($group,$periodNumber){
                 $first=$group->first();
@@ -271,53 +275,29 @@ Route::get('/standings', function(EcfhlData $data){
         report($e);
     }
 
-    $awardRaces=[];
-    try {
-        if(\Illuminate\Support\Facades\Schema::hasTable('player_projections') && \Illuminate\Support\Facades\Schema::hasTable('player_projection_baselines')){
-            $rosterDate=DB::table('active_fantasy_rosters')->max('game_date');
-            $rosters=$rosterDate
-                ? DB::table('active_fantasy_rosters')->where('game_date',$rosterDate)->get()->keyBy(fn($r)=>(string)$r->player_id)
-                : collect();
-            $stats=DB::table('player_projections as p')
-                ->join('player_projection_baselines as b','b.player_id','=','p.player_id')
-                ->select('p.player_id','p.season_fpts','p.season_gp','p.season_fpts_per_game','b.player_name','b.nhl_team','b.position')
-                ->get()->map(function($p)use($rosters){
-                    $roster=$rosters->get((string)$p->player_id);
-                    $p->fantasy_team=$roster?->fantasy_team_name;
-                    return $p;
-                });
-            $leaders=function($rows,$limit=3){
-                return $rows->sort(function($a,$b){
-                    $cmp=(float)$b->season_fpts<=>(float)$a->season_fpts;
-                    return $cmp!==0?$cmp:((float)$b->season_fpts_per_game<=>(float)$a->season_fpts_per_game);
-                })->take($limit)->values()->map(fn($p)=>[
-                    'name'=>$p->player_name,'nhl_team'=>$p->nhl_team,'fantasy_team'=>$p->fantasy_team,
-                    'fpts'=>(float)$p->season_fpts,'gp'=>(int)$p->season_gp,'fpts_g'=>(float)$p->season_fpts_per_game,
-                ])->all();
-            };
-            $awardRaces=[
-                'art_ross'=>['label'=>'Art Ross','icon'=>'🏒','detail'=>'Forwards','leaders'=>$leaders($stats->filter(fn($p)=>strtoupper((string)$p->position)==='F'))],
-                'norris'=>['label'=>'Norris','icon'=>'🛡️','detail'=>'Defensemen','leaders'=>$leaders($stats->filter(fn($p)=>strtoupper((string)$p->position)==='D'))],
-                'vezina'=>['label'=>'Vezina','icon'=>'🥅','detail'=>'Goalies','leaders'=>$leaders($stats->filter(fn($p)=>strtoupper((string)$p->position)==='G'))],
-                'calder'=>['label'=>'Calder','icon'=>'🌱','detail'=>'Rookies','leaders'=>$leaders($stats->filter(function($p){
-                    static $rookies=null;
-                    if($rookies===null){
-                        $rookies=array_fill_keys(array_map(fn($n)=>\App\Support\PlayerProjections::name($n),[
-                            'Gavin McKenna','Ivar Stenberg','Roman Kantserov','Chase Reid','Viggo Bjorck','Caleb Malhotra',
-                            'Keaton Verhoeff','Nikita Klepov','Carson Carels','Daxon Rudolph','Wyatt Cullen','Alberts Smits',
-                            'Ilya Protas','Ryan Lin','Markus Ruck','Ethan Belchetz','Xavier Villeneuve','Liam Ruck',
-                            'Tommy Bleyl','Maddox Dagenais','Oliver Suvanto','J.P. Hurlbert'
-                        ]),true);
-                    }
-                    return isset($rookies[\App\Support\PlayerProjections::name((string)$p->player_name)]);
-                }))],
-            ];
+    $awardRaces=\App\Support\PublicData::remember('standings-awards',60,function(){
+        $latest=DB::table('active_fantasy_rosters')->select('player_id')->selectRaw('MAX(id) as roster_id')
+            ->where('game_date',fn($q)=>$q->from('active_fantasy_rosters')->selectRaw('MAX(game_date)'))->groupBy('player_id');
+        $races=[];
+        foreach([
+            'art_ross'=>['Art Ross','🏒','Forwards','F'],
+            'norris'=>['Norris','🛡️','Defensemen','D'],
+            'vezina'=>['Vezina','🥅','Goalies','G'],
+            'calder'=>['Calder','🌱','Rookies',null],
+        ] as $key=>[$label,$icon,$detail,$position]){
+            $query=DB::table('season_player_stats as s')->leftJoinSub($latest,'latest','latest.player_id','=','s.player_id')
+                ->leftJoin('active_fantasy_rosters as r','r.id','=','latest.roster_id');
+            if($position)$query->where('s.position',$position);else $query->where('s.rookie',true);
+            $leaders=$query->orderByDesc('s.season_fpts')->orderByDesc('s.season_fpts_per_game')->orderBy('s.player_id')->limit(3)
+                ->get(['s.player_name as name','s.nhl_team','r.fantasy_team_name as fantasy_team','s.season_fpts as fpts','s.season_gp as gp','s.season_fpts_per_game as fpts_g'])
+                ->map(fn($p)=>(array)$p)->all();
+            $races[$key]=compact('label','icon','detail','leaders');
         }
-    } catch (\Throwable $e) {
-        report($e);
-    }
+        return $races;
+    });
 
-    return view('standings',compact('season','standings','standingsLastUpdate','scoringPeriods','currentPeriodNumber','awardRaces'));
+    $viewData=compact('season','standings','standingsLastUpdate','scoringPeriods','currentPeriodNumber','awardRaces');
+    return view(request()->ajax()?'partials.standings-content':'standings',$viewData);
 });
 
 Route::get('/seasons/{season}', function(string $season,EcfhlData $data){
@@ -330,6 +310,7 @@ Route::get('/seasons/{season}', function(string $season,EcfhlData $data){
     return view('seasons.show',['season'=>$row,'tradeLeaders'=>$tradeLeaders,'standings'=>$standings,'awards'=>$data->seasonAwards($season),'tradeCount'=>$data->seasonTradeCount($season),'topPicks'=>$firstRoundPicks,'standingsLastUpdate'=>$standingsLastUpdate]);
 })->where('season','.*');
 Route::get('/teams', function(EcfhlData $data){$type=$data->mode();$status=request('status','all');$allTeams=$data->teamLedger($type,'all');$teams=$data->teamLedger($type,$status);$overview=$data->overviewLeaders();$totals=[];foreach($data->teamSeasons() as $r){$id=$r['franchise_id']??null;if($id&&$r['fantasy_points_for']!==null)$totals[$id]=($totals[$id]??0)+(float)$r['fantasy_points_for'];}foreach($teams as &$t)$t['total_fpts']=$totals[$t['id']]??null;unset($t);$pres=[];foreach($allTeams as $t)if(($t['president']??0)>0)$pres[]=['team'=>$t['team'],'value'=>$t['president'],'score'=>$t['president']];usort($pres,fn($a,$b)=>$b['score']<=>$a['score']);$franchiseLeaders=['championships'=>$overview['championships'],'presidents'=>$pres,'winning_pct'=>$overview['winning_pct'],'first_picks'=>$overview['first_picks'],'trades'=>$overview['trades'],'awards'=>$overview['awards']];return view('teams.index',compact('teams','allTeams','type','status','franchiseLeaders'));});
+Route::get('/teams/league', fn()=>view('teams.league', ['teams'=>\App\Support\CurrentTeams::standings()]));
 Route::get('/teams/current', \App\Http\Controllers\LiveScoringController::class);
 
 Route::get('/api/live-scoring', function (\App\Support\FantasyDay $days, \App\Support\LiveScoring\SnapshotRepository $repository) {
@@ -560,9 +541,9 @@ Route::get('/teams/current/{slug}', function(string $slug) {
 
     $nextWeekOpponent=null;
     try {
-        if(\Illuminate\Support\Facades\Schema::hasTable('fantrax_scoring_period_matchups')){
+        if(\Illuminate\Support\Facades\Schema::hasTable('scoring_period_matchups')){
             $fantasyToday=app(\App\Support\FantasyDay::class)->today();
-            $currentPeriod=DB::table('fantrax_scoring_period_matchups')
+            $currentPeriod=DB::table('scoring_period_matchups')
                 ->where('season_id','2026-27')
                 ->whereNotNull('start_date')
                 ->where('start_date','<=',$fantasyToday->toDateString())
@@ -572,7 +553,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
             if($currentPeriod){
                 $normalizeFantasyTeamName=fn($v)=>preg_replace('/[^\\pL\\pN]+/u','',mb_strtolower((string)$v))??'';
                 $teamKey=$normalizeFantasyTeamName($teamName);
-                $nextRows=DB::table('fantrax_scoring_period_matchups')
+                $nextRows=DB::table('scoring_period_matchups')
                     ->where('season_id','2026-27')
                     ->where('period_number',(int)$currentPeriod+1)
                     ->get();

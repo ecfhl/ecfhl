@@ -282,4 +282,28 @@ verifyOwner(!DB::table('push_subscriptions')->where('endpoint_hash',hash('sha256
 DB::table('push_notifications')->where('category','live-score')->delete();
 try{$push->testLatestScore($adminOwner->id,hash('sha256','https://fcm.googleapis.com/fcm/send/admin-other'));throw new RuntimeException('No scorer invented a test');}catch(Illuminate\Validation\ValidationException $e){verifyOwner(str_contains($e->getMessage(),'No scoring alert'),'Empty scoring history gave an unclear error');}
 CarbonImmutable::setTestNow();
+
+// Team administration exposes account details only to admins and unlinks atomically.
+$adminTeams=ownerRequest('GET','/admin/teams',[],$admin,['HTTP_ACCEPT'=>'text/html']);
+verifyOwner($adminTeams->getStatusCode()===200&&str_contains($adminTeams->getContent(),'Account linked')&&str_contains($adminTeams->getContent(),'a@example.org')&&str_contains($adminTeams->getContent(),'Change Image'),'Admin Teams must show linked accounts and image controls.');
+verifyOwner(ownerRequest('GET','/admin/team-images',[],$admin)->headers->get('Location')==='http://localhost/admin/teams','Old Team Images URL must redirect to Teams.');
+verifyOwner(ownerRequest('GET','/admin/teams',[],$alpha)->getStatusCode()===403,'An owner cannot inspect other linked accounts.');
+verifyOwner(ownerRequest('POST','/admin/teams/a/unlink',['user_id'=>$a->id],$guest)->getStatusCode()===401,'Guests cannot unlink accounts.');
+verifyOwner(ownerRequest('POST','/admin/teams/a/unlink',['user_id'=>$a->id],$alpha)->getStatusCode()===403,'Owners cannot unlink teams through administration.');
+verifyOwner(ownerRequest('POST','/admin/teams/a/unlink',['user_id'=>$b->id],$admin)->getStatusCode()===409&&$a->fresh()->claim,'A stale admin page cannot unlink a different account.');
+$betaPending=DB::table('push_deliveries')->whereIn('subscription_id',DB::table('push_subscriptions')->where('user_id',$b->id)->select('id'))->count();
+$unlinked=ownerRequest('POST','/admin/teams/a/unlink',['user_id'=>$a->id],$admin);
+verifyOwner($unlinked->getStatusCode()===302&&!$a->fresh()->claim&&User::whereKey($a->id)->exists(),'Unlinking must keep the account and remove only the team association.');
+verifyOwner(DB::table('push_deliveries')->whereIn('subscription_id',DB::table('push_subscriptions')->where('user_id',$a->id)->select('id'))->count()===0,'Queued former-team notifications must be cleared.');
+verifyOwner(DB::table('push_deliveries')->whereIn('subscription_id',DB::table('push_subscriptions')->where('user_id',$b->id)->select('id'))->count()===$betaPending,'Unlinking one account must not affect other owners.');
+verifyOwner(ownerRequest('POST','/account/claim-team',['team_id'=>'a'],$alpha)->getStatusCode()===302&&$a->fresh()->claim,'A released team can be claimed again.');
+// Renewing a device subscription must not expose the previous owner feed.
+$device=DB::table('push_subscriptions')->where('endpoint_hash',hash('sha256','https://fcm.googleapis.com/fcm/send/alpha'))->first();
+DB::table('push_deliveries')->insert(['subscription_id'=>$device->id,'notification_id'=>DB::table('push_notifications')->max('id')]);
+$push->subscribe($device->endpoint,$b->id,'replacement-token');
+verifyOwner(DB::table('push_deliveries')->where('subscription_id',$device->id)->count()===0,'Device renewal retained previous-account events.');
+$feed=ownerRequest('GET','/push/notifications',[],$guest,['HTTP_AUTHORIZATION'=>'Bearer replacement-token']);
+verifyOwner(json_decode($feed->getContent(),true)['notifications']===[],'A new owner can read old device events.');
+$feed=ownerRequest('GET','/push/notifications',[],$guest,['HTTP_AUTHORIZATION'=>'Bearer token-alpha']);
+verifyOwner(json_decode($feed->getContent(),true)['notifications']===[],'Old device token survived reassignment.');
 echo "Owner account checks passed: pages, optional browsing, exclusive claims, reserved admin invitation, admin routes/actions, password hashing/login, Google state/linking, own/opponent scoring, goalie filters, date groups/custom projection ordering/start-time ties, confirmed/nonstarter/started-game exclusions, bell toggle/auth/preference preservation, waiver dates, own-goalie roster slots/current snapshot/toggle/delivery, isolated push delivery, latest-score test replay/legacy formatting/device isolation/failed delivery, and SSRF rejection.\n";

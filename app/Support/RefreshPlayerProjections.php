@@ -98,6 +98,7 @@ final class RefreshPlayerProjections
         });
         PublicData::forget('player-projections');
         PublicData::forget('season-player-columns');
+        PublicData::forget('standings-awards');
         if ($log && $storeSeason) $log(count($seasonRows).' complete season player stat lines stored, including Fantrax rookie flags.');
         if ($log) $log(count($rows).' player projections regenerated for '.$date.'. Fantrax baseline '.($capture ? 'captured' : 'unchanged').'.');
         return count($rows);

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 
 class WebPush
 {
+    private ?array $keys = null;
     public function publicKey(): string
     {
         [$publicKey] = $this->ensureKeys();
@@ -21,17 +22,22 @@ class WebPush
             throw new \InvalidArgumentException('Invalid push subscription endpoint.');
         }
 
-        DB::table('push_subscriptions')->updateOrInsert(
-            ['endpoint_hash'=>hash('sha256',$endpoint)],
-            [
-                'endpoint'=>$endpoint,
-                'enabled'=>true,
-                'user_id'=>$userId,
-                'feed_token_hash'=>hash('sha256',$feedToken),
-                'updated_at'=>now(),
-                'created_at'=>now(),
-            ]
-        );
+        DB::transaction(function () use ($endpoint, $userId, $feedToken) {
+            DB::table('push_subscriptions')->updateOrInsert(
+                ['endpoint_hash'=>hash('sha256',$endpoint)],
+                [
+                    'endpoint'=>$endpoint,
+                    'enabled'=>true,
+                    'user_id'=>$userId,
+                    'feed_token_hash'=>hash('sha256',$feedToken),
+                    'updated_at'=>now(),
+                    'created_at'=>now(),
+                ]
+            );
+            $id=DB::table('push_subscriptions')->where('endpoint_hash',hash('sha256',$endpoint))->value('id');
+            // A renewed feed starts now, including when another account uses this device.
+            DB::table('push_deliveries')->where('subscription_id',$id)->delete();
+        });
 
         return (int)(DB::table('push_notifications')->max('id') ?? 0);
     }
@@ -159,9 +165,10 @@ class WebPush
 
     private function ensureKeys(): array
     {
+        if ($this->keys !== null) return $this->keys;
         $public=DB::table('push_settings')->where('setting_key','vapid_public')->value('setting_value');
         $private=DB::table('push_settings')->where('setting_key','vapid_private')->value('setting_value');
-        if($public && $private)return [(string)$public,(string)$private];
+        if($public && $private)return $this->keys = [(string)$public,(string)$private];
 
         $resource=openssl_pkey_new([
             'private_key_type'=>OPENSSL_KEYTYPE_EC,
@@ -190,7 +197,7 @@ class WebPush
             );
         });
 
-        return [$publicKey,$privatePem];
+        return $this->keys = [$publicKey,$privatePem];
     }
 
     private function b64(string $value): string

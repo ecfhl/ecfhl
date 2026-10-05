@@ -10,7 +10,7 @@
     || ($finalCheckText !== '' && preg_match('/(?:\bF\b|\bFinal\b)\s*$/i', $finalCheckText));
   $gameStateClass = $isGameFinished ? 'team-game-finished-row' : (!empty($player->game_in_progress) ? 'team-game-live-row' : 'team-game-upcoming-row');
 @endphp
-<div class="matchup-player-row {{ $gameStateClass }} {{ $player->is_ir?'team-ir-row':'' }} {{ $player->is_bench?'team-bench-row':'' }} {{ strtoupper((string)$player->roster_status)==='MINORS'?'team-minors-row':'' }}" @if($isGameFinished) style="background:#fffbea !important" @endif>
+<div class="matchup-player-row {{ $gameStateClass }} {{ $player->is_ir?'team-ir-row':'' }} {{ $player->is_bench?'team-bench-row':'' }} {{ strtoupper((string)$player->roster_status)==='MINORS'?'team-minors-row':'' }}">
   <div class="matchup-player-main">
     <div class="matchup-player-name">
       @if($player->is_ir)<span class="pill team-ir">IR</span>@endif

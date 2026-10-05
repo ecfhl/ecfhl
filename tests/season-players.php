@@ -63,6 +63,7 @@ function seasonRequest($url,$json=false){global $app,$kernel;$app->forgetScopedI
 $html=seasonRequest('/players?availability=all')->getContent();
 $defaultHtml=seasonRequest('/players')->getContent();
 verifySeason(str_contains($html,'player-assignment-tag player-assignment-2">L2</span>')&&str_contains($html,'player-assignment-tag player-assignment-2">PP2</span>')&&!str_contains($html,'Pair2'),'Defensemen and PP assignments must use colored L/PP stickers.');
+verifySeason(str_contains($html,'player-assignment-tag player-assignment-1">L1</span>')&&str_contains($html,'player-assignment-tag player-assignment-1">PP1</span>'),'Forwards must show the same colored L/PP stickers.');
 verifySeason(substr_count($html,'data-player-id=')===25&&str_contains($html,'Player &lt;unsafe&gt;')&&!str_contains($html,'Player <unsafe>'),'SSR row count / escaped names failed.');
 verifySeason(str_contains($html,'EC Proj')&&str_contains($html,'71:11')&&str_contains($html,'/teams/current/beta')&&str_contains($html,'Free Agent'),'Stats / ownership / custom projection rendering failed.');
 verifySeason(str_contains($html,'aria-pressed="true" href="/players?positions=D')&&str_contains($html,'aria-pressed="true" href="/players?positions=F')&&str_contains($html,'aria-pressed="false" href="/players?positions=F%2CD%2CG'),'Default filter button states failed.');
@@ -77,7 +78,7 @@ verifySeason(str_contains($sortHtml,'aria-sort="ascending"')&&str_contains($sort
 $json=json_decode(seasonRequest('/players?availability=all&positions=F,D&page=2',true)->getContent(),true);
 verifySeason(substr_count($json['html'],'data-player-id=')===25&&$json['shown']===50&&$json['total']===60&&str_contains($json['next_url'],'positions=F%2CD'),'Show More must return next rows with preserved filters.');
 $final=json_decode(seasonRequest('/players?availability=all&positions=G&rookies=1',true)->getContent(),true);verifySeason($final['shown']===1&&$final['total']===1&&$final['next_url']===null,'Filtered Show More termination failed.');
-$admin=view('admin.index')->render();foreach(['/admin/projections','/job-status','/admin/advisors','/admin/team-images'] as $url)verifySeason(str_contains($admin,'class="card admin-menu-card" href="'.$url.'"'),'Admin card missing: '.$url);
+$admin=view('admin.index')->render();foreach(['/admin/projections','/job-status','/admin/advisors','/admin/teams'] as $url)verifySeason(str_contains($admin,'class="card admin-menu-card" href="'.$url.'"'),'Admin card missing: '.$url);
 // Ownership filters include every roster slot and ignore released players' old teams.
 for($i=3;$i<=40;$i++) DB::table('active_fantasy_rosters')->insert(['game_date'=>'2026-10-04','fantasy_team_id'=>$i<=35?'beta':'gamma','fantasy_team_name'=>$i<=35?'Beta':'Gamma','player_id'=>'p'.$i,'player_name'=>'Player '.$i,'position'=>'F','roster_status'=>['ACTIVE','BENCH','MINORS','INJURED_RESERVE'][$i%4]]);
 $taken=$service->data(Request::create('/players?availability=taken&sort=A&direction=desc'));

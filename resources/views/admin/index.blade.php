@@ -7,7 +7,7 @@
     ['/admin/projections', '📊', 'Projection Weights', 'Adjust your MyProj formula and preview the top players.'],
     ['/job-status', '🔄', 'Collector Status', 'Check data refreshes and run collectors.'],
     ['/admin/advisors', '💬', 'Advisors', 'Manage lineup advisors and their profiles.'],
-    ['/admin/team-images', '🖼️', 'Team Images', 'Upload and update league team logos.'],
+    ['/admin/teams', '👥', 'Teams', 'Manage team logos and associated accounts.'],
   ] as [$url, $icon, $title, $description])
     <a class="card admin-menu-card" href="{{ $url }}"><span class="admin-menu-icon" aria-hidden="true">{{ $icon }}</span><div><h2>{{ $title }}</h2><p>{{ $description }}</p></div><span class="admin-menu-arrow" aria-hidden="true">→</span></a>
   @endforeach

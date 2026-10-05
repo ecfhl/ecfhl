@@ -141,11 +141,11 @@
 .tips-section-heading .tips-source-button img[src="/fantrax-icon.png"]{width:12px!important;height:12px!important}
 @media(max-width:600px){.tips-section-heading{gap:1px!important}.tips-section-heading .tips-section-links{gap:3px!important}.tips-section-heading .tips-source-button{font-size:8px!important;padding:1px 2px!important;gap:2px!important}.tips-section-heading .tips-source-button img[src="/dailyfaceoff-icon.png?v=4"]{width:14px!important;height:14px!important}.tips-section-heading .tips-source-button img[src="/fantrax-icon.png"]{width:12px!important;height:12px!important}}
 @media(max-width:800px){
-.tips-result-row,.tips-table tbody tr.tips-result-row{background:#fff!important}
-[data-theme="dark"] .tips-result-row,[data-theme="dark"] .tips-table tbody tr.tips-result-row{background:#fff!important;color:#0f172a!important;border-color:#64748b!important}
-[data-theme="dark"] .tips-result-row .tips-player-name,[data-theme="dark"] .tips-result-row .tips-proj-value,[data-theme="dark"] .tips-result-row strong{color:#0f172a!important}
-[data-theme="dark"] .tips-result-row td[data-label="Proj. FPts/GP"]::before{color:#64748b!important}
-[data-theme="dark"] .tips-result-row td[data-label="Proj. FPts/GP"]{border-left-color:#cbd5e1!important}
+.tips-result-row,.tips-table tbody tr.tips-result-row{background:var(--panel)!important}
+[data-theme="dark"] .tips-result-row,[data-theme="dark"] .tips-table tbody tr.tips-result-row{background:var(--panel)!important;color:var(--text)!important;border-color:var(--line)!important}
+[data-theme="dark"] .tips-result-row .tips-player-name,[data-theme="dark"] .tips-result-row .tips-proj-value,[data-theme="dark"] .tips-result-row strong{color:var(--text)!important}
+[data-theme="dark"] .tips-result-row td[data-label="Proj. FPts/GP"]::before{color:var(--muted)!important}
+[data-theme="dark"] .tips-result-row td[data-label="Proj. FPts/GP"]{border-left-color:var(--line)!important}
 }</style>
 
 @endsection

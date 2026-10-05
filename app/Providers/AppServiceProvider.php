@@ -11,6 +11,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(\App\Support\Archive::class);
         $this->app->scoped(\App\Support\LiveScoring\SnapshotRepository::class);
         $this->app->scoped(\App\Support\PlayerProjections::class);
+        $this->app->scoped(\App\Support\WebPush::class);
     }
 
     public function boot(): void

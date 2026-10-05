@@ -922,6 +922,8 @@ Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $
             }
         });
         \App\Support\PublicData::forget('archive:team_seasons');
+        \App\Support\PublicData::forget('joined-team-seasons');
+        \App\Support\PublicData::forget('current-teams');
 
         try {
             $periods=$fantraxSchedule->periods(true);
@@ -956,6 +958,7 @@ Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $
             Log::warning('Scoring period matchup history refresh failed',['error'=>$e->getMessage()]);
         }
 
+        \App\Support\PublicData::forget('current-periods');
         DB::table('job_run_history')->insert([
             'job_name'=>'ecfhl:refresh-current-standings',
             'target_date'=>$data['completed_through'],
@@ -1060,6 +1063,7 @@ Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $
                 ]);
             }
         });
+        \App\Support\PublicData::forget('standings-awards');
         $this->info(count($moveRows).' team move-limit rows refreshed.');
 
         try {

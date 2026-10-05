@@ -34,6 +34,7 @@ DB::enableQueryLog();
 $optimized=class_exists(PublicData::class);
 $cacheDirectory=sys_get_temp_dir().'/ecfhl-performance-'.getmypid();
 config(['cache.stores.file.path'=>$cacheDirectory.'/cache','performance.public_data_cache'=>$optimized]);
+Illuminate\Support\Facades\Cache::forgetDriver('file');
 $budgets=['/'=>5,'/seasons'=>5,'/teams'=>5,'/trades'=>5,'/draft'=>5,'/players/history?q=Sidney'=>3,'/rules'=>2,'/register'=>6];
 foreach(['/','/seasons','/teams','/trades','/draft','/players/history?q=Sidney','/rules','/register'] as $path){
  $counts=[];

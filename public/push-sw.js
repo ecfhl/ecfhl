@@ -4,12 +4,13 @@ const KEY='lastNotificationId';
 const TEAM_KEY='notificationTeamId';
 const FEED_KEY='ownerFeedToken';
 
+let database;
 function openDb(){
-  return new Promise((resolve,reject)=>{
+  return database ||= new Promise((resolve,reject)=>{
     const req=indexedDB.open(DB_NAME,1);
     req.onupgradeneeded=()=>req.result.createObjectStore(STORE);
     req.onsuccess=()=>resolve(req.result);
-    req.onerror=()=>reject(req.error);
+    req.onerror=()=>{database=undefined;reject(req.error)};
   });
 }
 
@@ -57,46 +58,53 @@ async function getFeedToken(){const db=await openDb();return new Promise((resolv
 async function setOwnerFeed(token,id){const db=await openDb();await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(token,FEED_KEY);tx.objectStore(STORE).put(Number(id||0),KEY);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}
 self.addEventListener('install',event=>{self.skipWaiting();});
 self.addEventListener('activate',event=>{event.waitUntil(clients.claim());});
+let delivery=Promise.resolve();
+let feedVersion=0;
+const serialize=task=>{const next=delivery.catch(()=>{}).then(task);delivery=next;return next;};
 self.addEventListener('message',event=>{
-  if(event.data?.type==='set-owner-feed'){event.waitUntil(setOwnerFeed(String(event.data.token||''),event.data.lastId).then(()=>event.ports[0]?.postMessage({ok:true})));}
-  if(event.data?.type==='set-last-notification-id'){
-    event.waitUntil(setLastId(event.data.id||0));
+  if(event.data?.type==='set-owner-feed'){
+    feedVersion++;
+    event.waitUntil(serialize(()=>setOwnerFeed(String(event.data.token||''),event.data.lastId)).then(()=>event.ports[0]?.postMessage({ok:true})));
   }
-  if(event.data?.type==='set-notification-team'){
-    event.waitUntil(setNotificationTeamId(event.data.teamId||''));
-  }
+  if(event.data?.type==='set-last-notification-id')event.waitUntil(serialize(()=>setLastId(event.data.id||0)));
+  if(event.data?.type==='set-notification-team')event.waitUntil(setNotificationTeamId(event.data.teamId||''));
 });
 
 self.addEventListener('push',event=>{
-  event.waitUntil((async()=>{
+  event.waitUntil(serialize(async()=>{
+    const version=feedVersion;
     const token=await getFeedToken();
     if(!token)return;
-    const lastId=await getLastId();
-    const response=await fetch('/push/notifications?after='+encodeURIComponent(lastId),{
-      credentials:'same-origin',
-      headers:{Authorization:'Bearer '+token},
-      cache:'no-store'
-    });
-    if(!response.ok)return;
-    const data=await response.json();
-    const notifications=Array.isArray(data.notifications)?data.notifications:[];
-    let maxId=lastId;
-
-
-    for(const item of notifications){
-      maxId=Math.max(maxId,Number(item.id||0));
-
-      await self.registration.showNotification(item.title||'ECFHL',{
-        body:item.body||'',
-        icon:'/ecfhl-logo.png',
-        badge:'/favicon.svg',
-        tag:'ecfhl-'+String(item.id||Date.now()),
-        data:{url:item.url||'/teams/current'}
-      });
+    let lastId=await getLastId();
+    // Drain the feed in order. Overlapping wakeups share one cursor, so no alert repeats.
+    for(let page=0;page<3;page++){
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),8000);
+      let response;
+      try{
+        response=await fetch('/push/notifications?after='+encodeURIComponent(lastId),{
+          credentials:'same-origin',headers:{Authorization:'Bearer '+token},cache:'no-store',signal:controller.signal
+        });
+      }finally{clearTimeout(timeout);}
+      if(!response.ok||version!==feedVersion)return;
+      const data=await response.json();
+      const notifications=Array.isArray(data.notifications)?data.notifications:[];
+      let advanced=false;
+      for(const item of notifications){
+        const id=Number(item.id);
+        if(!Number.isInteger(id)||id<=lastId)continue;
+        if(version!==feedVersion)return;
+        await self.registration.showNotification(item.title||'ECFHL',{
+          body:item.body||'',icon:'/ecfhl-logo.png',badge:'/favicon.svg',tag:'ecfhl-'+id,
+          data:{url:item.url||'/teams/current'}
+        });
+        lastId=id;advanced=true;
+        // Keep delivered alerts delivered even if a later notification fails.
+        await setLastId(lastId);
+      }
+      if(notifications.length<100||!advanced)return;
     }
-
-    if(maxId>lastId)await setLastId(maxId);
-  })());
+  }));
 });
 
 self.addEventListener('notificationclick',event=>{

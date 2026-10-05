@@ -1,0 +1,62 @@
+:root {
+  --badge-green-bg:#dcfce7;--badge-green-text:#166534;--badge-green-line:#86efac;
+  --badge-yellow-bg:#fef3c7;--badge-yellow-text:#854d0e;--badge-yellow-line:#fcd34d;
+  --badge-orange-bg:#ffedd5;--badge-orange-text:#9a3412;--badge-orange-line:#fdba74;
+  --badge-red-bg:#fee2e2;--badge-red-text:#991b1b;--badge-red-line:#fca5a5;
+  --game-live:#e9f8ef;--game-finished:#eef2f7;--game-upcoming:#fffbeb;--selection-bg:#eaf5ff;
+  --eyebrow-text:#805a11;
+}
+html[data-theme="dark"] {
+  color-scheme:dark;
+  --badge-green-bg:#163d2a;--badge-green-text:#86efac;--badge-green-line:#3a8756;
+  --badge-yellow-bg:#453510;--badge-yellow-text:#fde68a;--badge-yellow-line:#9b792b;
+  --badge-orange-bg:#482b16;--badge-orange-text:#fdba74;--badge-orange-line:#a76636;
+  --badge-red-bg:#482027;--badge-red-text:#fecaca;--badge-red-line:#a95160;
+  --game-live:#12372b;--game-finished:#1e293b;--game-upcoming:#352d16;--selection-bg:#123452;
+  --eyebrow-text:#e5bc55;
+}
+html[data-theme="light"]{color-scheme:light}
+.page-head .eyebrow{color:var(--eyebrow-text)}
+main .button.secondary{background:var(--panel-2);color:var(--text);border-color:var(--line)}
+main .hero .button.secondary{background:#ffffff10;color:#fff;border-color:#ffffff50}
+/* Shared assignment stickers apply to forwards and defensemen on every page. */
+:is(.line-1,.pp1,.goalie-1,.tips-line-1,.tips-pp1,.tips-g1,.player-assignment-1,.tips-odds-good,.vegas-odds-good,.contract-green){background:var(--badge-green-bg)!important;color:var(--badge-green-text)!important;border-color:var(--badge-green-line)!important}
+:is(.line-2,.pp2,.goalie-2,.tips-line-2,.tips-pp2,.tips-g2,.player-assignment-2,.tips-odds-even,.vegas-odds-even,.contract-yellow){background:var(--badge-yellow-bg)!important;color:var(--badge-yellow-text)!important;border-color:var(--badge-yellow-line)!important}
+:is(.line-3,.tips-line-3,.player-assignment-3){background:var(--badge-orange-bg)!important;color:var(--badge-orange-text)!important;border-color:var(--badge-orange-line)!important}
+:is(.line-4,.tips-line-4,.player-assignment-4,.tips-odds-bad,.vegas-odds-bad,.contract-red){background:var(--badge-red-bg)!important;color:var(--badge-red-text)!important;border-color:var(--badge-red-line)!important}
+:is(.team-player-lines,.matchup-player-name) :is(.line-1,.line-2,.line-3,.line-4,.pp1,.pp2){display:inline-flex!important;font-size:9px;padding:1px 4px;white-space:nowrap}
+html[data-theme="dark"] :is(.team-next-opponent,.team-lineup-advisor,.team-live-matchup-card,.team-live-matchup-summary,.team-live-matchup-expanded,.matchup-card,.matchup-summary,.matchup-expanded,.matchup-roster-grid,.matchup-roster-col,.matchup-player-row,.matchup-bench){background:var(--panel)!important;color:var(--text)!important;border-color:var(--line)!important}
+html[data-theme="dark"] :is(.matchup-player-name,.matchup-team-name,.matchup-stat-value,.matchup-summary-name){color:var(--text)!important}
+html[data-theme="dark"] :is(.matchup-roster-section-title,.matchup-roster-heading,.matchup-section-title,.matchup-bench-title){background:var(--panel-2)!important;color:var(--muted)!important;border-color:var(--line)!important}
+html[data-theme="dark"] :is(.matchup-player-cats,.matchup-daily-cats,.matchup-stat-label,.matchup-player-metrics span,.team-live-score small){color:var(--muted)!important}
+html[data-theme="dark"] .notification-team-matchup>.matchup-summary{background:var(--selection-bg)!important}
+html[data-theme] .matchup-player-row.team-game-live-row{background:var(--game-live)!important}
+html[data-theme] .matchup-player-row.team-game-finished-row{background:var(--game-finished)!important}
+html[data-theme] .matchup-player-row.team-game-upcoming-row{background:var(--game-upcoming)!important}
+html[data-theme] .score-up,html[data-theme] :is(.team-live-score,.matchup-summary-side,.matchup-player-row,.team-roster-table) .score-up{color:var(--success)!important}
+html[data-theme] .score-down,html[data-theme] :is(.team-live-score,.matchup-summary-side,.matchup-player-row,.team-roster-table) .score-down{color:var(--danger)!important}
+html[data-theme] .score-same,html[data-theme] :is(.team-live-score,.matchup-summary-side,.matchup-player-row,.team-roster-table) .score-same{color:var(--text)!important}
+html[data-theme] :is(.team-live-score,.matchup-summary-side,.matchup-player-row,.team-roster-table) strong.score-up{color:var(--success)!important}
+html[data-theme] :is(.team-live-score,.matchup-summary-side,.matchup-player-row,.team-roster-table) strong.score-down{color:var(--danger)!important}
+html[data-theme] :is(.team-live-score,.matchup-summary-side,.matchup-player-row,.team-roster-table) strong.score-same{color:var(--text)!important}
+html[data-theme="dark"] .team-lineup-advisor-title{background:var(--panel-2);color:var(--text)}
+html[data-theme="dark"] :is(.admin-notice,.owner-notice,.projection-notice,.job-message-ok,.tips-refresh-success){background:var(--badge-green-bg);color:var(--badge-green-text);border-color:var(--badge-green-line)}
+html[data-theme="dark"] :is(.owner-errors,.projection-errors,.job-message-error){background:var(--badge-red-bg);color:var(--badge-red-text);border-color:var(--badge-red-line)}
+html[data-theme="dark"] :is(.tips-date-inactive,.tips-start-unconfirmed,.tips-start-na,.team-bench){background:var(--panel-2)!important;color:var(--text)!important;border-color:var(--line)!important}
+html[data-theme="dark"] .tips-result-row{background:var(--panel)!important;color:var(--text)!important}
+html[data-theme="dark"] .tips-player-cell.tips-home:after{color:var(--badge-green-text)}
+html[data-theme="dark"] .tips-player-cell.tips-away:after{color:var(--badge-yellow-text)}
+html[data-theme="dark"] .tips-table td[data-label="Status"] .tips-fa{background:var(--panel-2);color:var(--text);border-color:var(--line)}
+html[data-theme="dark"] .tips-table td[data-label="Status"] .tips-waiver{background:var(--badge-yellow-bg);color:var(--badge-yellow-text);border-color:var(--badge-yellow-line)}
+/* Administrative states and image controls share the same theme as public pages. */
+html[data-theme="dark"] :is(.status-card-success,.job-run-active.status-card-success,.status-ok,.job-live-results.ok,.advisor-style-balanced,.team-active,.goalie-status-confirmed){background:var(--badge-green-bg)!important;color:var(--badge-green-text)!important;border-color:var(--badge-green-line)!important}
+html[data-theme="dark"] :is(.status-card-warning,.job-run-active.status-card-warning,.status-stale,.job-live-results.warning,.advisor-style-conservative,.goalie-status-likely,.target-waiver){background:var(--badge-yellow-bg)!important;color:var(--badge-yellow-text)!important;border-color:var(--badge-yellow-line)!important}
+html[data-theme="dark"] :is(.status-card-failed,.job-run-active.status-card-failed,.status-failed-pill,.job-live-results.error,.advisor-style-aggressive,.advisor-delete,.goalie-status-not-starting){background:var(--badge-red-bg)!important;color:var(--badge-red-text)!important;border-color:var(--badge-red-line)!important}
+html[data-theme="dark"] .job-outcomes-cleared .status-card:not(.job-run-active){background:var(--panel)!important;color:var(--text)!important;border-color:var(--line)!important}
+html[data-theme="dark"] :is(.team-image-preview,.advisor-admin-image,.team-icon-modal-close,.team-icon-advisor-input,.team-lineup-advisor-body,.position-count-pill,.status-empty){background:var(--panel-2);color:var(--text);border-color:var(--line)}
+html[data-theme="dark"] .job-live-results:not(.ok):not(.error):not(.warning){background:var(--selection-bg);color:var(--text);border-color:var(--line)}
+html[data-theme="dark"] :is(.team-next-lineup-empty,.team-next-opponent-vs){color:var(--muted)!important}
+html[data-theme="dark"] .tips-line-filter.active,html[data-theme="dark"] .tips-goalie-filter.active,html[data-theme="dark"] .tips-pp-filter.active{background:var(--badge-green-bg);color:var(--badge-green-text);border-color:var(--badge-green-line)}
+html[data-theme="dark"] :is(.tips-line-filter[data-line="2"].active,.tips-goalie-filter[data-goalie="2"].active,.tips-pp-filter[data-pp="2"].active){background:var(--badge-yellow-bg);color:var(--badge-yellow-text);border-color:var(--badge-yellow-line)}
+html[data-theme="dark"] .tips-line-filter[data-line="3"].active{background:var(--badge-orange-bg);color:var(--badge-orange-text);border-color:var(--badge-orange-line)}
+html[data-theme="dark"] :is(.tips-line-filter[data-line="4"].active,.tips-injury-filter.active){background:var(--badge-red-bg);color:var(--badge-red-text);border-color:var(--badge-red-line)}
