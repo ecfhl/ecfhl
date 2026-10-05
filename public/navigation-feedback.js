@@ -19,7 +19,7 @@
     if (cancel) cancel.hidden = true;
   };
   const isNavigation = (event, link) => {
-    if (!link || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return false;
+    if (!link || event.button !== 0 || event.defaultPrevented || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return false;
     if (!link.closest('.site-header, .mobile-primary-nav, #guest-signup-dialog') || link.hasAttribute('download')) return false;
     if (link.target && link.target !== '_self') return false;
     const url = new URL(link.href, location.href);
@@ -52,7 +52,8 @@
   });
   cancel?.addEventListener('click', () => { window.stop(); reset(); });
   document.querySelectorAll('.nav-dropdown').forEach(menu => menu.addEventListener('pointerleave', () => menu.classList.remove('menu-dismissed')));
-  window.addEventListener('pageshow', event => { if (event.persisted) { closeMenus(); reset(); } });
+  window.addEventListener('pageshow', () => { closeMenus(); reset(); });
+  window.addEventListener('pagehide', reset);
 
   if (!invitation) return;
   document.querySelectorAll('[data-dismiss-signup]').forEach(button => button.addEventListener('click', () => invitation.close()));
