@@ -20,6 +20,9 @@
   };
   const isNavigation = (event, link) => {
     if (!link || event.button !== 0 || event.defaultPrevented || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return false;
+    // Clicking an image-viewer trigger inside a link is a local modal action, not page navigation.
+    // In particular, the league logo lives inside the header's Overview link.
+    if (event.target.closest('.brand-logo, [data-team-icon-viewer]')) return false;
     if (!link.closest('.site-header, .mobile-primary-nav, #guest-signup-dialog') || link.hasAttribute('download')) return false;
     if (link.target && link.target !== '_self') return false;
     const url = new URL(link.href, location.href);
