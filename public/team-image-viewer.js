@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const viewTeamButton=document.getElementById('team-icon-modal-view-team');
   const closeButton=document.getElementById('team-icon-modal-close');
   const uploadButton=document.getElementById('team-icon-modal-upload');
+  const saveButton=document.getElementById('team-icon-modal-save');
   const fileInput=document.getElementById('team-icon-modal-file');
   const advisorNameRow=document.getElementById('team-icon-advisor-name');
   const advisorNameInput=document.getElementById('team-icon-advisor-input');
@@ -29,6 +30,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   let activeSlug='';
   let activeAdvisorKey='';
   let viewingLeagueLogo=false;
+  let pendingLeagueFile=null;
 
   const closeModal=()=>{
     modal.classList.remove('open','loading');
@@ -37,6 +39,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     fileInput.value='';
     fileInput.disabled=false;
     if(uploadButton)uploadButton.hidden=true;
+    if(saveButton)saveButton.hidden=true;
+    pendingLeagueFile=null;
     activeAdvisorKey='';
     viewingLeagueLogo=false;
     advisorNameRow?.classList.remove('open');
@@ -75,6 +79,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       }
       if(viewingLeagueLogo){
         if(uploadButton)uploadButton.hidden=!isAdmin;
+        if(saveButton)saveButton.hidden=true;
         fileInput.disabled=!isAdmin;
       }else if(activeAdvisorKey){
         if(uploadButton)uploadButton.hidden=true;
@@ -132,47 +137,76 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 
   uploadButton?.addEventListener('click',()=>fileInput.click());
-  fileInput.addEventListener('change',async()=>{
-    const file=fileInput.files?.[0];
-    if(!file||(!viewingLeagueLogo&&!activeSlug))return;
-    if(file.size>2*1024*1024){
-      alert('Team icon must be 2 MB or smaller.');
-      fileInput.value='';
-      return;
-    }
 
+  const uploadSelectedFile=async(file)=>{
+    if(!file||(!viewingLeagueLogo&&!activeSlug))return;
     const form=new FormData();
     form.append('image',file);
     if(uploadButton)uploadButton.disabled=true;
-    if(uploadButton)uploadButton.textContent='Uploading...';
-
+    if(saveButton)saveButton.disabled=true;
+    const actionButton=viewingLeagueLogo?saveButton:uploadButton;
+    const oldText=actionButton?.textContent||'';
+    if(actionButton)actionButton.textContent='Saving...';
     try{
       const uploadUrl=viewingLeagueLogo?'/team-icons/league-logo':'/team-icons/'+encodeURIComponent(activeSlug);
-      const response=await fetch(uploadUrl,{
-        method:'POST',
-        headers:{'X-CSRF-TOKEN':csrf,'Accept':'application/json'},
-        body:form
-      });
+      const response=await fetch(uploadUrl,{method:'POST',headers:{'X-CSRF-TOKEN':csrf,'Accept':'application/json'},body:form});
       if(!response.ok){
-        let message='Could not upload team icon.';
+        let message='Could not save image.';
         try{const data=await response.json();message=data.message||message;}catch(e){}
         throw new Error(message);
       }
       const data=await response.json();
-      const freshUrl=(data.url||(viewingLeagueLogo?'/team-icons/league-logo':'/team-icons/'+activeSlug))+(String(data.url||'').includes('?')?'&':'?')+'t='+Date.now();
+      const stamp='t='+Date.now();
+      const freshUrl=(data.url||(viewingLeagueLogo?'/team-icons/league-logo':'/team-icons/'+activeSlug))+(String(data.url||'').includes('?')?'&':'?')+stamp;
       modalImage.src=freshUrl;
       if(viewingLeagueLogo){
-        document.querySelectorAll('[data-league-logo] img').forEach(img=>{img.dataset.fullSrc=freshUrl;img.removeAttribute('srcset');img.src=(data.thumbnail_url||'/team-icons/league-logo/thumbnail?size=160')+(String(data.thumbnail_url||'').includes('?')?'&':'?')+'t='+Date.now();});
+        document.querySelectorAll('[data-league-logo] img').forEach(img=>{
+          img.dataset.fullSrc=freshUrl;
+          img.removeAttribute('srcset');
+          const thumb=data.thumbnail_url||'/team-icons/league-logo/thumbnail?size=160';
+          img.src=thumb+(thumb.includes('?')?'&':'?')+stamp;
+        });
+        pendingLeagueFile=null;
+        if(saveButton)saveButton.hidden=true;
+        if(uploadButton)uploadButton.textContent='Change Image';
       }else{
-        document.querySelectorAll('[data-team-icon-viewer][data-team-slug="'+CSS.escape(activeSlug)+'"] img').forEach(img=>{img.dataset.fullSrc=freshUrl;img.removeAttribute('srcset');img.src=data.thumbnail_url||('/team-icons/'+encodeURIComponent(activeSlug)+'/thumbnail?size=160&t='+Date.now());});
+        document.querySelectorAll('[data-team-icon-viewer][data-team-slug="'+CSS.escape(activeSlug)+'"] img').forEach(img=>{
+          img.dataset.fullSrc=freshUrl;img.removeAttribute('srcset');
+          img.src=data.thumbnail_url||('/team-icons/'+encodeURIComponent(activeSlug)+'/thumbnail?size=160&'+stamp);
+        });
       }
     }catch(error){
-      alert(error.message||'Could not upload team icon.');
+      alert(error.message||'Could not save image.');
     }finally{
       if(uploadButton)uploadButton.disabled=false;
-      if(uploadButton)uploadButton.textContent='Change Image';
+      if(saveButton)saveButton.disabled=false;
+      if(actionButton)actionButton.textContent=oldText;
       fileInput.value='';
     }
+  };
+
+  fileInput.addEventListener('change',()=>{
+    const file=fileInput.files?.[0];
+    if(!file)return;
+    if(file.size>2*1024*1024){
+      alert('Image must be 2 MB or smaller.');
+      fileInput.value='';
+      return;
+    }
+    if(viewingLeagueLogo){
+      pendingLeagueFile=file;
+      const preview=URL.createObjectURL(file);
+      modalImage.onload=()=>URL.revokeObjectURL(preview);
+      modalImage.src=preview;
+      if(saveButton)saveButton.hidden=false;
+      if(uploadButton)uploadButton.textContent='Choose Different Image';
+      return;
+    }
+    uploadSelectedFile(file);
+  });
+
+  saveButton?.addEventListener('click',()=>{
+    if(pendingLeagueFile)uploadSelectedFile(pendingLeagueFile);
   });
 
   closeButton.addEventListener('click',event=>{event.stopPropagation();closeModal();});
