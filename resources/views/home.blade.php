@@ -2,7 +2,7 @@
 @section('title','Overview: Home')
 @section('content')
 <section class="home-hero"><div class="shell home-hero-inner">
-  <button type="button" class="league-logo-viewer home-league-logo" data-team-icon-viewer data-league-logo data-team-name="East Coast Fantasy Hockey League" aria-label="View East Coast Fantasy Hockey League logo"><img src="/ecfhl-logo.png" alt="East Coast Fantasy Hockey League logo" width="140" height="140"></button>
+  <button type="button" class="league-logo-viewer home-league-logo" data-team-icon-viewer data-league-logo data-team-name="East Coast Fantasy Hockey League" aria-label="View East Coast Fantasy Hockey League logo"><img src="{{ \App\Support\TeamImages::url('league-logo',160) }}" data-full-src="{{ \App\Support\TeamImages::url('league-logo') }}" alt="East Coast Fantasy Hockey League logo" width="140" height="140"></button>
   <div><div class="eyebrow">Established in 2007</div><h1>East Coast Fantasy Hockey League</h1><p>Your 2026–27 season hub. Follow the matchups, track the standings, and build your next winning lineup.</p><span class="home-season-chip">2026–27 Season</span></div>
 </div></section>
 <div class="shell season-home">
