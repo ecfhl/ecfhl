@@ -779,8 +779,10 @@ html[data-theme="dark"] .team-live-expanded .matchup-bench-title{color:#cbd5e1!i
 .team-live-matchup-card .team-live-matchup-summary{padding:16px 30px 16px 16px!important;gap:12px!important;background:#eaf5ff!important;align-items:center;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr)}
 .team-live-matchup-card .team-live-side{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between;gap:16px!important;min-width:0}
 .team-live-matchup-card .team-live-side-right{flex-direction:row-reverse!important}
-.team-live-matchup-card .team-live-name-row{display:flex;align-items:center;justify-content:flex-start;gap:9px;min-width:0}
-.team-live-matchup-card .team-live-side-right .team-live-name-row{flex-direction:row;justify-content:flex-end;text-align:right}
+.team-live-matchup-card .team-live-name-row{display:flex;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-start;gap:6px;min-width:0}
+.team-live-matchup-card .team-live-side-right .team-live-name-row{flex-direction:column!important;align-items:flex-end!important;text-align:right}
+.team-live-matchup-card .team-live-name-row a{order:0!important}
+.team-live-matchup-card .team-live-name-row .team-live-logo{order:1!important;flex-shrink:0!important;flex-basis:auto!important}
 .team-live-matchup-card .team-live-name-row a{font-size:15px!important;line-height:1.3!important;font-weight:900;color:var(--text);white-space:normal;overflow-wrap:anywhere}
 .team-live-matchup-card .team-live-logo{width:36px!important;height:36px!important;flex:0 0 36px!important;border:0;background:transparent!important;box-shadow:none!important;border-radius:0!important;padding:0}
 .team-live-matchup-card .team-live-logo img{width:100%;height:100%;object-fit:contain}
@@ -1017,4 +1019,3 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 @endsection
-

@@ -538,19 +538,19 @@ html[data-theme="dark"] .matchup-day-score.score-same{color:#f8fafc!important}
 /* Expanded roster game-state colors */
 .matchup-player-row.team-game-live-row{background:#ecfdf5!important}
 .matchup-player-row.team-game-finished-row{background:#f1f5f9!important}
-.matchup-player-row.team-game-upcoming-row{background:#fffbeb!important}
+.matchup-player-row.team-game-upcoming-row{background:var(--game-upcoming)!important}
 html[data-theme="dark"] .matchup-player-row.team-game-live-row{background:#12372b!important}
 html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#1e293b!important}
-html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:#352d16!important}
-/* Keep team logos at the outside edge on every screen size. */
-.matchup-summary .matchup-team-name-row{display:flex!important;flex-direction:row!important;align-items:center!important;gap:7px;position:relative;min-width:0}
-.matchup-summary .matchup-team-name-row-away{justify-content:flex-start!important}
-.matchup-summary .matchup-team-name-row-home{justify-content:flex-end!important}
-.matchup-summary .matchup-team-name-row .team-icon-uploader{position:static!important;order:0!important;align-self:center!important;width:34px!important;flex:0 0 34px!important}
+html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:var(--game-upcoming)!important}
+/* Stack logos under names inside the existing identity area; scores keep their own layout. */
+.matchup-summary .matchup-team-name-row{display:flex!important;flex-direction:column!important;gap:6px;position:relative;min-width:0}
+.matchup-summary .matchup-team-name-row-away{align-items:flex-start!important;justify-content:flex-start!important}
+.matchup-summary .matchup-team-name-row-home{align-items:flex-end!important;justify-content:flex-start!important}
+.matchup-summary .matchup-team-name-row .team-icon-uploader{position:static!important;order:1!important;align-self:auto!important;width:34px!important;flex:0 0 auto!important}
 .matchup-summary .matchup-team-name-row .team-icon-uploader img{width:34px!important;height:34px!important}
 .matchup-summary .matchup-team-name-row a{order:0!important;min-width:0;white-space:normal!important;overflow-wrap:anywhere}
 @media(max-width:800px){
- .matchup-summary .matchup-team-name-row .team-icon-uploader{width:28px!important;flex-basis:28px!important}
+ .matchup-summary .matchup-team-name-row .team-icon-uploader{width:28px!important}
  .matchup-summary .matchup-team-name-row .team-icon-uploader img{width:28px!important;height:28px!important}
 }
 </style>

@@ -22,8 +22,9 @@
 .overview-matchup { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); font-size: 11px; }
 .overview-matchup-team { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px; min-width: 0; }
 .overview-matchup-team--home { grid-template-columns: auto minmax(0, 1fr); }
-.overview-matchup-team > a { display: flex; gap: 6px; align-items: center; color: var(--text); text-decoration: none; min-width: 0; font-weight: 600; }
-.overview-matchup-team--home > a { justify-content: flex-end; text-align: right; }
+.overview-matchup-team > a { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; color: var(--text); text-decoration: none; min-width: 0; font-weight: 600; }
+.overview-matchup-team > a img { order: 1; flex-shrink: 0; }
+.overview-matchup-team--home > a { align-items: flex-end; text-align: right; }
 .overview-matchup span { min-width: 0; overflow-wrap: anywhere; line-height: 1.3; }
 .overview-matchup img { flex: 0 0 25px; width: 25px; height: 25px; object-fit: contain; }
 
