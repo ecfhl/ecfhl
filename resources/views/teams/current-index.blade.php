@@ -326,8 +326,8 @@
 .matchup-player-today strong{font-size:28px;line-height:1;font-weight:900}
 .matchup-player-blank{min-height:44px}
 .matchup-empty{padding:12px;color:var(--muted);font-size:12px}
-.matchup-player-row.team-game-live-row{background:#ecfdf5!important}
-.matchup-player-row.team-game-finished-row{background:#f1f5f9!important}
+.matchup-player-row.team-game-live-row{background:#e8f7ee!important}
+.matchup-player-row.team-game-finished-row{background:#eef1f5!important}
 .matchup-player-row.team-game-upcoming-row{background:var(--game-upcoming)!important}
 html[data-theme="dark"] .matchup-card{background:#0f1c2b;border-color:#334155}
 html[data-theme="dark"] .matchup-card.notification-team-matchup>.matchup-summary{background:#123452}
@@ -337,8 +337,8 @@ html[data-theme="dark"] .matchup-projected-score{background:#3b291d;color:#fdba7
 html[data-theme="dark"] .matchup-section-title{background:#1f2937;color:#e5e7eb}
 html[data-theme="dark"] .matchup-roster-col{border-color:#334155}
 html[data-theme="dark"] .matchup-player-row{color:#f8fafc;border-color:#334155}
-html[data-theme="dark"] .matchup-player-row.team-game-live-row{background:#12372b!important}
-html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#1e293b!important}
+html[data-theme="dark"] .matchup-player-row.team-game-live-row{background:#123d30!important}
+html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#263243!important}
 html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:var(--game-upcoming)!important}
 @media(max-width:800px){
  .matchup-summary{padding:7px 12px 6px}
