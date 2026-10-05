@@ -14,7 +14,6 @@ final class DailyTargetsOrder
     {
         return [
             match ((int)($player['pp_unit'] ?? 0)) { 1 => 1, 2 => 2, default => 3 },
-            in_array((int)($player['line_number'] ?? 0), [1, 2, 3, 4], true) ? (int)$player['line_number'] : 99,
         ];
     }
 
@@ -25,13 +24,10 @@ final class DailyTargetsOrder
 
     public static function goaliePriority(array $player): int
     {
-        if (!empty($player['not_starting'])) return 5;
         return match (strtolower(trim($player['starting_status'] ?? ''))) {
             'starting', 'confirmed' => 1,
             'likely', 'probable' => 2,
-            'unconfirmed' => 3,
-            'not starting', 'not_starting' => 5,
-            default => 4,
+            default => match ((int)($player['line_number'] ?? 0)) { 1 => 3, 2 => 4, default => 5 },
         };
     }
 

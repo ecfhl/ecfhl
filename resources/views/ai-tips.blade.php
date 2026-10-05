@@ -43,6 +43,8 @@
         unset($player);
         usort($groups[$position], [\App\Support\DailyTargetsOrder::class, 'skaters']);
     }
+    foreach ($groups['G'] as &$player) $player['line_number'] = $lineNumber($player);
+    unset($player);
     usort($groups['G'], [\App\Support\DailyTargetsOrder::class, 'goalies']);
     $hasTips = count($groups['G']) + count($groups['F']) + count($groups['D']) > 0;
     $fantraxUpdated = \Illuminate\Support\Facades\DB::table('active_daily_players')->where('game_date',$date)->max('last_update');

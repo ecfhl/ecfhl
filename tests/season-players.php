@@ -220,9 +220,9 @@ foreach (['p1'=>[1,2],'p2'=>[2,1],'p3'=>[1,1],'p4'=>[1,1],'p5'=>[1,1],'p6'=>[1,1
 }
 $dfoUrl='/players?availability=all&positions=F,D&sort=ec_proj&direction=desc&dfo_sort=1';
 $dfo=$service->data(Request::create($dfoUrl));
-verifySeason($dfo['dailyTargetsSort']&&$dfo['players']->getCollection()->take(8)->pluck('player_id')->all()===['p60','p7','p4','p3','p6','p5','p1','p2'],'Daily Targets skaters must prioritize PP, line, projection (null last), source rank, then name before pagination.');
+verifySeason($dfo['dailyTargetsSort']&&$dfo['players']->getCollection()->take(8)->pluck('player_id')->all()===['p1','p60','p7','p4','p3','p6','p5','p2'],'Daily Targets skaters must prioritize PP, projection (null last), source rank, then name before pagination.');
 $descending=$service->data(Request::create(str_replace('direction=desc','direction=asc',$dfoUrl)));
-verifySeason($descending['players']->getCollection()->take(8)->pluck('player_id')->all()===['p6','p3','p7','p4','p60','p5','p1','p2'],'Ascending score must apply within the same PP/line priority groups.');
+verifySeason($descending['players']->getCollection()->take(8)->pluck('player_id')->all()===['p6','p3','p7','p4','p60','p1','p5','p2'],'Ascending score must apply within the same PP priority groups.');
 $allIds=[];
 foreach ([1,2,3] as $page) $allIds=array_merge($allIds,$service->data(Request::create($dfoUrl.'&page='.$page))['players']->getCollection()->pluck('player_id')->all());
 verifySeason(count($allIds)===60&&count(array_unique($allIds))===60&&str_contains($dfo['players']->nextPageUrl(),'dfo_sort=1'),'Daily Targets pagination must preserve mode with no missing or duplicated players.');
@@ -237,7 +237,7 @@ foreach (['p61'=>['MTL','confirmed'],'p62'=>['TOR','likely'],'p63'=>['BOS','unco
  if($status) DB::table('active_starting_goalies')->insert(['game_date'=>$date,'team'=>$team,'player_name'=>$row->player_name,'starting_status'=>$status,'source_url'=>'https://example.com','checked_at'=>now()]);
 }
 $dfoGoalies=$service->data(Request::create('/players?availability=all&positions=G&dfo_sort=1'));
-verifySeason($dfoGoalies['players']->getCollection()->pluck('player_id')->all()===['p61','p62','p63','p64','p65'],'Goalies must follow confirmed, likely, unconfirmed, unknown, then confirmed teammate backup, ahead of projection.');
+verifySeason($dfoGoalies['players']->getCollection()->pluck('player_id')->all()===['p61','p62','p65','p64','p63'],'Goalies must follow confirmed, likely, then depth and projection.');
 $dfoHtml=seasonRequest($dfoUrl)->getContent();
 $dfoDoc=new DOMDocument;@$dfoDoc->loadHTML($dfoHtml);$dfoPath=new DOMXPath($dfoDoc);
 $toggle=$dfoPath->query('//a[@aria-label="Sort like Daily Targets"]')->item(0);
