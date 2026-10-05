@@ -6,3 +6,14 @@
 .home-thescore-link{display:flex;align-items:center;justify-content:center}
 .home-thescore-link img{width:34px;height:34px;object-fit:contain;border-radius:7px}
 .thescore-mark{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;background:linear-gradient(180deg,#1559a6,#082b58);color:#fff;font-size:25px;font-weight:1000;font-style:italic;line-height:1;border-bottom:4px solid #ffc323}
+
+/* Compact Player Watch */
+.home-player-watch{padding-top:14px;padding-bottom:14px}
+.home-player-watch .section-title{margin-bottom:6px}
+.home-player-watch .home-player-position{margin:7px 0 1px;font-size:10px}
+.home-player-watch .home-leader{padding:5px 0;min-height:0}
+.home-player-watch .home-leader img{width:26px;height:26px}
+.home-player-watch .home-leader strong{font-size:12px}
+.home-player-watch .home-leader small{font-size:9px;margin-top:0}
+.home-player-watch .home-leader b{font-size:13px}
+.home-player-watch .home-rank{font-size:10px}
