@@ -11,7 +11,7 @@ final class CurrentTeams
     {
         // Current league pages are independent of the historical season-type filter.
         return PublicData::remember('current-teams', 30, fn()=>DB::table('team_seasons')
-            ->where('season_id', '2026-27')->orderByRaw('rank IS NULL')->orderBy('rank')->orderBy('original_name')
+            ->where('season_id', '2026-27')->orderByRaw(DB::connection()->getQueryGrammar()->wrap('rank').' IS NULL')->orderBy('rank')->orderBy('original_name')
             ->get()->map(fn($row)=>(array)$row + ['team'=>$row->original_name, 'slug'=>Str::slug($row->original_name)])->all());
     }
 
