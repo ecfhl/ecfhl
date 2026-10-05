@@ -382,6 +382,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   </div>
 </div>
 <script src="/team-image-viewer.js?v=11" defer></script>
+<dialog id="player-stats-dialog" class="player-stats-dialog" aria-label="Player stats"><button type="button" class="player-stats-close" aria-label="Close player stats">×</button><div id="player-stats-content" aria-live="polite"></div></dialog>
+<link rel="stylesheet" href="/player-profile.css?v=1"><script src="/player-profile.js?v=2" defer></script>
+
 @if(request()->is('daily-targets','teams/current/*'))
 <link rel="stylesheet" href="/goalie-watches.css?v=1">
 <script src="/goalie-watches.js?v=2" defer></script>
