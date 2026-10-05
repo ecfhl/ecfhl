@@ -195,11 +195,24 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
     if(viewingLeagueLogo){
       pendingLeagueFile=file;
-      const preview=URL.createObjectURL(file);
-      modalImage.onload=()=>URL.revokeObjectURL(preview);
-      modalImage.src=preview;
-      if(saveButton)saveButton.hidden=false;
-      if(uploadButton)uploadButton.textContent='Choose Different Image';
+      const reader=new FileReader();
+      reader.onload=()=>{
+        modal.classList.remove('loading');
+        modalImage.onload=null;
+        modalImage.onerror=null;
+        modalImage.src=reader.result;
+        if(saveButton){
+          saveButton.hidden=false;
+          saveButton.textContent='Save Logo';
+          saveButton.focus();
+        }
+        if(uploadButton)uploadButton.textContent='Choose Different Image';
+      };
+      reader.onerror=()=>{
+        pendingLeagueFile=null;
+        alert('Could not preview the selected image.');
+      };
+      reader.readAsDataURL(file);
       return;
     }
     uploadSelectedFile(file);
@@ -213,7 +226,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   modal.addEventListener('click',event=>{
     event.stopPropagation();
     if(event.target.closest('button,a,input,label'))return;
-    if(viewingLeagueLogo||event.target===modal||event.target.classList.contains('team-icon-modal-card'))closeModal();
+    if(event.target===modal)closeModal();
   });
   document.addEventListener('keydown',event=>{
     if(!modal.classList.contains('open'))return;
