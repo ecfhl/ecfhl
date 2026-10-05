@@ -48,7 +48,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('ecfhl-theme')||'light';}catch(e){}</script>
 </head>
 <body>
-<header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><div class="brand"><button type="button" class="league-logo-viewer" data-team-icon-viewer data-league-logo data-team-name="East Coast Fantasy Hockey League" aria-label="View East Coast Fantasy Hockey League logo"><img class="brand-logo" src="{{ asset('ecfhl-logo.png') }}" alt="ECFHL league logo"></button><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></div></div><div class="header-actions"><a class="push-notification-toggle" href="/notifications" data-loading-label="Notifications" aria-label="Notification settings" title="Notification settings">🔔</a><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav" id="main-navigation">
+<header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><div class="brand"><button type="button" class="league-logo-viewer" data-team-icon-viewer data-league-logo data-team-name="East Coast Fantasy Hockey League" aria-label="View East Coast Fantasy Hockey League logo"><img class="brand-logo" src="{{ \App\Support\TeamImages::url('league-logo',160) }}" data-full-src="{{ \App\Support\TeamImages::url('league-logo') }}" alt="ECFHL league logo"></button><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></div></div><div class="header-actions"><a class="push-notification-toggle" href="/notifications" data-loading-label="Notifications" aria-label="Notification settings" title="Notification settings">🔔</a><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav" id="main-navigation">
 
 <a href="/" class="{{ request()->is('/')?'active':'' }}"><span class="nav-item-icon">⌂</span>Home</a>
 <a id="my-team-nav-link" class="my-team-link" data-my-team-link href="#"><span class="nav-item-icon">★</span>My Team</a>
@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     <button id="team-icon-modal-close" class="team-icon-modal-close" type="button" aria-label="Close team icon preview">×</button>
   </div>
 </div>
-<script src="/team-image-viewer.js?v=10" defer></script>
+<script src="/team-image-viewer.js?v=11" defer></script>
 @if(request()->is('daily-targets','teams/current/*'))
 <link rel="stylesheet" href="/goalie-watches.css?v=1">
 <script src="/goalie-watches.js?v=2" defer></script>
