@@ -62,9 +62,11 @@ $kernel=$app->make(Illuminate\Contracts\Http\Kernel::class);
 function seasonRequest($url,$json=false){global $app,$kernel;$app->forgetScopedInstances();$r=Request::create($url,'GET',[],[],[],['HTTP_ACCEPT'=>$json?'application/json':'text/html']);$response=$kernel->handle($r);$kernel->terminate($r,$response);verifySeason($response->getStatusCode()===200,'Players response failed: '.$response->getContent());return $response;}
 $html=seasonRequest('/players?availability=all')->getContent();
 $defaultHtml=seasonRequest('/players')->getContent();
+verifySeason(str_contains($html,'player-assignment-tag player-assignment-2">L2</span>')&&str_contains($html,'player-assignment-tag player-assignment-2">PP2</span>')&&!str_contains($html,'Pair2'),'Defensemen and PP assignments must use colored L/PP stickers.');
 verifySeason(substr_count($html,'data-player-id=')===25&&str_contains($html,'Player &lt;unsafe&gt;')&&!str_contains($html,'Player <unsafe>'),'SSR row count / escaped names failed.');
 verifySeason(str_contains($html,'EC Proj')&&str_contains($html,'71:11')&&str_contains($html,'/teams/current/beta')&&str_contains($html,'Free Agent'),'Stats / ownership / custom projection rendering failed.');
 verifySeason(str_contains($html,'aria-pressed="true" href="/players?positions=D')&&str_contains($html,'aria-pressed="true" href="/players?positions=F')&&str_contains($html,'aria-pressed="false" href="/players?positions=F%2CD%2CG'),'Default filter button states failed.');
+verifySeason(str_contains($html,'class="player-filter player-targets-link" href="/ai-tips"'),'Daily Targets shortcut missing.');
 preg_match('/<thead>(.*?)<\/thead>/s',$html,$tableHead);
 preg_match_all('/<th scope="col"[^>]*>(.*?)<\/th>/s',$tableHead[1],$headCells);
 $headerLabels=array_map(fn($v)=>rtrim(trim(strip_tags($v)), ' ↑↓↕'),$headCells[1]);
@@ -112,7 +114,7 @@ verifySeason(str_contains($html,'class="player-position-f"')&&str_contains($html
 verifySeason(str_contains($defaultHtml,'class="player-advanced" >')&&!str_contains($defaultHtml,'class="player-advanced"  open'),'Advanced filters should start collapsed without active settings.');
 // Frozen panes must include both identity columns and the complete sortable header.
 verifySeason(str_contains($html,'<col class="player-col"><col class="team-col">')&&str_contains($html,'scope="row" class="player-frozen-player"')&&str_contains($html,'class="player-owner player-frozen-team"'),'Frozen player/team columns need explicit classes and bounded column widths.');
-verifySeason(str_contains($html,'thead th{position:sticky;top:0;z-index:3')&&str_contains($html,'overflow:auto;max-height:min(72dvh,720px)')&&str_contains($html,'border-collapse:separate')&&str_contains($html,'thead .player-frozen-team{z-index:5}'),'The header and corner cells must stay above vertically/horizontally scrolling rows.');
+verifySeason(str_contains($html,'thead th{position:sticky;top:0;z-index:3')&&str_contains($html,'overflow-x:auto;')&&!str_contains($html,'72dvh')&&str_contains($html,'id="season-player-fixed-header"')&&str_contains($html,'border-collapse:separate')&&str_contains($html,'thead .player-frozen-team{z-index:5}'),'The header and corner cells must stay above page-scrolling rows and horizontally scrolling stats.');
 verifySeason(str_contains($html,'-webkit-line-clamp:2')&&str_contains($betaHtml,'title="Beta"'),'Team names must be limited to two lines with their full name in a tooltip.');
 $availableHtml=seasonRequest('/players?availability=available')->getContent();
 verifySeason(substr_count($availableHtml,'class="player-add-icon"')===21&&str_contains($availableHtml,'searchName=Player%2002;statusOrTeamFilter=ALL_AVAILABLE;positionOrGroup=ALL;pageNumber=1;'),'Every unowned player needs an encoded Fantrax search link that includes free agents and waivers.');
@@ -150,7 +152,7 @@ preg_match_all('/class="player-frozen-rank">(\d+)<\/td>/',$html,$ranks);verifySe
 preg_match_all('/class="player-frozen-rank">(\d+)<\/td>/',$json['html'],$ranks);verifySeason(array_map('intval',$ranks[1])===range(26,50),'Ranks must continue across Show More pages.');
 preg_match_all('/class="player-frozen-rank">(\d+)<\/td>/',$comboMore['html'],$ranks);verifySeason(array_map('intval',$ranks[1])===range(26,33),'Filtered ranks must follow pagination, without gaps.');
 $datasetHtml=seasonRequest('/players?dataset=7d&team=beta&availability=taken&line=1&pp=1&sort=fpts_gp&direction=asc')->getContent();
-verifySeason(str_contains($datasetHtml,'id="season-player-dataset"')&&str_contains($datasetHtml,'name="dataset" value="7d"')&&str_contains($datasetHtml,'dataset=21d')&&str_contains($datasetHtml,'frozen top 1,000')&&str_contains($datasetHtml,'actual FPts'),'Dataset buttons, source scope and form preservation failed.');
+verifySeason(str_contains($datasetHtml,'id="season-player-dataset"')&&str_contains($datasetHtml,'name="dataset" value="7d"')&&str_contains($datasetHtml,'dataset=21d')&&str_contains($datasetHtml,'remaining weights scale to 100%')&&str_contains($datasetHtml,'actual FPts'),'Dataset buttons, source scope and form preservation failed.');
 verifySeason(str_contains($datasetHtml,'<col class="rank-col">')&&str_contains($datasetHtml,'class="player-frozen-rank"')&&str_contains($datasetHtml,'padding:6px 7px')&&str_contains($datasetHtml,'--player-stat-width:72px'),'Rank pane and compact table spacing missing.');
 $invalidDataset=$service->data(Request::create('/players?availability=all&dataset=invalid&sort=rank'));verifySeason($invalidDataset['dataset']==='season'&&$invalidDataset['sort']==='fpts','Unknown dataset and positional rank sort must safely fall back.');
 $categoryFallback=$service->data(Request::create('/players?availability=all&dataset=7d&sort=G'));verifySeason($categoryFallback['sort']==='fpts','A category sort must reset when it is unavailable in the new dataset.');
@@ -195,7 +197,8 @@ foreach(['season','7d','14d','21d','fantrax'] as $source){$window=$service->data
 $dayHtml=seasonRequest('/players?playing=tomorrow&dataset=14d')->getContent();
 verifySeason(str_contains($dayHtml,'id="season-player-playing"')&&substr_count($dayHtml,'name="playing" value="tomorrow"')===2&&str_contains($dayHtml,'playing=tomorrow')&&str_contains($dayHtml,'playing=all')&&str_contains($dayHtml,'availability=available'),'Day buttons, search/team forms and resetting advanced filters must preserve defaults.');
 $reset=$service->data(Request::create('/players?playing=invalid&availability=invalid'));verifySeason($reset['playing']==='all'&&$reset['availability']==='available','Invalid slicers must fall back to All game days and Available.');
-$defaultHtml=seasonRequest('/players')->getContent();preg_match('/id="season-player-playing".*?<\/div>/s',$defaultHtml,$dayButtons);preg_match('/aria-label="Player availability".*?<\/div>/s',$defaultHtml,$availabilityButtons);
+$defaultHtml=seasonRequest('/players')->getContent();
+verifySeason(str_contains($html,'player-assignment-tag player-assignment-2">L2</span>')&&str_contains($html,'player-assignment-tag player-assignment-2">PP2</span>')&&!str_contains($html,'Pair2'),'Defensemen and PP assignments must use colored L/PP stickers.');preg_match('/id="season-player-playing".*?<\/div>/s',$defaultHtml,$dayButtons);preg_match('/aria-label="Player availability".*?<\/div>/s',$defaultHtml,$availabilityButtons);
 verifySeason(preg_match('/aria-pressed="true"[^>]*>All<\/a>/',$dayButtons[0])&&preg_match('/aria-pressed="true"[^>]*>Available<\/a>/',$availabilityButtons[0]),'Default slicer buttons must visibly select All game days and Available.');
 \Carbon\CarbonImmutable::setTestNow();
 echo "Season players checks passed: Available/All defaults, both game-day filters and Pacific rollover, four schedule sources, aliases, combined datasets/sorts/pagination, compact panes and owner highlighting.\n";

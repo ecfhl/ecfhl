@@ -6,11 +6,28 @@ final class ProjectionMath
 {
     public const DEFAULT_WEIGHTS = ['fantrax'=>50.0, 'season'=>0.0, '7d'=>25.0, '14d'=>15.0, '21d'=>10.0];
 
-    public static function weighted(array $rates, array $weights): float
+    public static function weighted(array $rates, array $weights): ?float
     {
         $result = 0.0;
-        foreach (self::DEFAULT_WEIGHTS as $key => $_) $result += (float)($rates[$key] ?? 0) * $weights[$key] / 100;
-        return $result;
+        $total = 0.0;
+        foreach (self::DEFAULT_WEIGHTS as $key => $_) {
+            if (!isset($rates[$key]) || ($weights[$key] ?? 0) <= 0) continue;
+            $result += (float)$rates[$key] * $weights[$key];
+            $total += $weights[$key];
+        }
+        return $total > 0 ? $result / $total : null;
+    }
+
+    // The database update uses the same per-player denominator as the preview and collector.
+    public static function sql(array $columns, array $weights): string
+    {
+        $numerator = $denominator = [];
+        foreach ($columns as $key => $column) {
+            $weight = number_format($weights[$key], 2, '.', '');
+            $numerator[] = "COALESCE(($column), 0) * $weight";
+            $denominator[] = "CASE WHEN ($column) IS NULL THEN 0 ELSE $weight END";
+        }
+        return '('.implode(' + ', $numerator).') / NULLIF(('.implode(' + ', $denominator).'), 0)';
     }
 
     public static function rate(float $points, int $games): float

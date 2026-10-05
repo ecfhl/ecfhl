@@ -14,9 +14,9 @@ final class RefreshPlayerProjections
     public function refresh(CarbonImmutable $today, bool $force = false, ?callable $log = null): int
     {
         $date = $today->setTimezone('America/Halifax')->toDateString();
-        if (!$force && DB::table('player_projections')->where('as_of_date', $date)->count() === 1000) {
-            if ($log) $log('1,000 player projections already current for '.$date.'.');
-            return 1000;
+        if (!$force && ($currentCount = DB::table('player_projections')->where('as_of_date', $date)->count()) >= 1000) {
+            if ($log) $log(number_format($currentCount).' player projections already current for '.$date.'.');
+            return $currentCount;
         }
         $baseline = DB::table('player_projection_baselines')->orderBy('source_rank')->get()->map(fn($r)=>(array)$r)->all();
         $capture = !$baseline;
@@ -31,7 +31,6 @@ final class RefreshPlayerProjections
         // Pull the current Fantrax season totals as part of this daily job.
         $seasonActual = $seasonStart <= $end ? $this->source->seasonActual($seasonStart, $end) : [];
         if ($seasonStart <= $end) $cache[$seasonStart] = $seasonActual;
-        if ($seasonStart <= $end) foreach ($baseline as $player) if (!isset($seasonActual[$player['player_id']])) throw new RuntimeException('Missing season actual stats for baseline player '.$player['player_id'].'.');
         if ($log) $log('Season actual FPts/GP collected through '.$end.'.');
         foreach ([7, 14, 21] as $days) {
             $start = max(CarbonImmutable::parse($end)->subDays($days - 1)->toDateString(), $seasonStart);
@@ -39,30 +38,32 @@ final class RefreshPlayerProjections
             else {
                 if (!isset($cache[$start])) $cache[$start] = $this->source->actual($start, $end);
                 $windows[$days] = $cache[$start];
-                foreach ($baseline as $player) if (!isset($windows[$days][$player['player_id']])) throw new RuntimeException('Missing actual stats for baseline player '.$player['player_id'].'.');
             }
             if ($log) $log($days.'-day actual FPts/GP collected through '.$end.'.');
         }
         $now = now();
         $weights = ProjectionSettings::weights();
         $rows = [];
-        foreach ($baseline as $player) {
+        $baselineById = array_column($baseline, null, 'player_id');
+        $ids = array_unique(array_merge(array_keys($baselineById), array_keys($seasonActual), ...array_map('array_keys', $windows)));
+        foreach ($ids as $id) {
+            $player = $baselineById[$id] ?? ['player_id'=>$id];
             $row = ['player_id'=>$player['player_id'], 'as_of_date'=>$date, 'window_end_date'=>$end, 'refreshed_at'=>$now];
-            $seasonStat = $seasonActual[$player['player_id']] ?? ['fpts'=>0, 'gp'=>0];
-            $row['season_fpts'] = $seasonStat['fpts'];
-            $row['season_gp'] = $seasonStat['gp'];
-            $row['season_fpts_per_game'] = ProjectionMath::rate((float)$seasonStat['fpts'], (int)$seasonStat['gp']);
+            $seasonStat = $seasonActual[$player['player_id']] ?? ($seasonStart > $end ? ['fpts'=>0, 'gp'=>0] : null);
+            $row['season_fpts'] = $seasonStat['fpts'] ?? null;
+            $row['season_gp'] = $seasonStat['gp'] ?? null;
+            $row['season_fpts_per_game'] = $seasonStat === null ? null : ProjectionMath::rate((float)$seasonStat['fpts'], (int)$seasonStat['gp']);
             $rates = [];
             foreach ([7, 14, 21] as $days) {
-                $stat = $windows[$days][$player['player_id']] ?? ['fpts'=>0, 'gp'=>0];
-                $rate = ProjectionMath::rate((float)$stat['fpts'], (int)$stat['gp']);
-                $row['fpts_'.$days.'d'] = $stat['fpts'];
-                $row['gp_'.$days.'d'] = $stat['gp'];
+                $stat = $windows[$days][$player['player_id']] ?? ($seasonStart > $end ? ['fpts'=>0, 'gp'=>0] : null);
+                $rate = $stat === null ? null : ProjectionMath::rate((float)$stat['fpts'], (int)$stat['gp']);
+                $row['fpts_'.$days.'d'] = $stat['fpts'] ?? null;
+                $row['gp_'.$days.'d'] = $stat['gp'] ?? null;
                 $row['fpts_per_game_'.$days.'d'] = $rate;
                 $rates[] = $rate;
             }
             $row['projected_fpts_per_game'] = ProjectionMath::weighted([
-                'fantrax'=>(float)$player['fantrax_fpts_per_game'], 'season'=>$row['season_fpts_per_game'],
+                'fantrax'=>$player['fantrax_fpts_per_game'] ?? null, 'season'=>$row['season_fpts_per_game'],
                 '7d'=>$rates[0], '14d'=>$rates[1], '21d'=>$rates[2],
             ], $weights);
             $rows[] = $row;
@@ -98,7 +99,7 @@ final class RefreshPlayerProjections
         PublicData::forget('player-projections');
         PublicData::forget('season-player-columns');
         if ($log && $storeSeason) $log(count($seasonRows).' complete season player stat lines stored, including Fantrax rookie flags.');
-        if ($log) $log('1000 player projections regenerated for '.$date.'. Fantrax baseline '.($capture ? 'captured' : 'unchanged').'.');
+        if ($log) $log(count($rows).' player projections regenerated for '.$date.'. Fantrax baseline '.($capture ? 'captured' : 'unchanged').'.');
         return count($rows);
     }
 }

@@ -71,7 +71,7 @@ final class SeasonPlayers
             ->select('s.*', 'p.projected_fpts_per_game', 'r.fantasy_team_id', 'r.fantasy_team_name')
             ->selectRaw($datasetFields['fpts'].' as dataset_fpts, '.$datasetFields['gp'].' as dataset_gp, '.$datasetFields['fpts_gp'].' as dataset_fpts_per_game');
         if ($dataset === 'fantrax') $query->whereNotNull('b.player_id');
-        elseif ($dataset !== 'season') $query->whereNotNull('p.player_id');
+        elseif ($dataset !== 'season') $query->whereNotNull($datasetFields['fpts_gp']);
         if ($selectedTeam !== '') $query->where('r.fantasy_team_id', $selectedTeam);
         if ($availability === 'available') $query->whereNull('r.id');
         if ($availability === 'taken') $query->whereNotNull('r.id');

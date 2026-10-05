@@ -18,7 +18,10 @@ su -s /bin/sh www-data -c 'exec php artisan schedule:work' &
 scheduler_pid=$!
 nginx -c /tmp/ecfhl-nginx.conf -g 'daemon off;' &
 web_pid=$!
-cleanup() { kill -TERM "$web_pid" "$php_pid" "$scheduler_pid" 2>/dev/null || true; wait || true; }
+# Fill rolling inputs added by the coverage migration without blocking page requests.
+su -s /bin/sh www-data -c 'php -d memory_limit=256M artisan ecfhl:refresh-player-projections --ensure-projection-coverage' &
+coverage_pid=$!
+cleanup() { kill -TERM "$web_pid" "$php_pid" "$scheduler_pid" "$coverage_pid" 2>/dev/null || true; wait || true; }
 trap cleanup EXIT
 trap 'exit 0' TERM INT
 # Exit if a core process dies so Railway can restart a genuinely failed container.

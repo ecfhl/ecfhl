@@ -44,15 +44,17 @@ final class ProjectionSettings
     public static function preview(array $weights): array
     {
         $weights = self::validate($weights);
-        $rows = DB::table('player_projections as p')->join('player_projection_baselines as b', 'b.player_id', '=', 'p.player_id')
-            ->select('b.player_id', 'b.player_name', 'b.nhl_team', 'b.position', 'b.source_rank', 'b.fantrax_fpts_per_game',
+        $rows = DB::table('player_projections as p')->leftJoin('player_projection_baselines as b', 'b.player_id', '=', 'p.player_id')
+            ->leftJoin('season_player_stats as s', 's.player_id', '=', 'p.player_id')
+            ->selectRaw('COALESCE(b.player_name, s.player_name) as player_name, COALESCE(b.nhl_team, s.nhl_team) as nhl_team, COALESCE(b.position, s.position) as position')
+            ->addSelect('p.player_id', 'b.source_rank', 'b.fantrax_fpts_per_game',
                 'p.season_fpts_per_game', 'p.season_gp', 'p.fpts_per_game_7d', 'p.fpts_per_game_14d', 'p.fpts_per_game_21d', 'p.window_end_date')->get();
         $players = $rows->map(function ($row) use ($weights) {
             return ['player_id'=>$row->player_id, 'name'=>$row->player_name, 'team'=>$row->nhl_team, 'position'=>$row->position,
-                'source_rank'=>(int)$row->source_rank, 'season_gp'=>(int)$row->season_gp, 'season_fpts_per_game'=>(float)$row->season_fpts_per_game,
-                'myproj'=>ProjectionMath::weighted(['fantrax'=>(float)$row->fantrax_fpts_per_game, 'season'=>(float)$row->season_fpts_per_game,
-                    '7d'=>(float)$row->fpts_per_game_7d, '14d'=>(float)$row->fpts_per_game_14d, '21d'=>(float)$row->fpts_per_game_21d], $weights)];
-        })->sort(fn($a, $b)=>($b['myproj'] <=> $a['myproj']) ?: ($a['source_rank'] <=> $b['source_rank']))->take(10)->values()->all();
+                'source_rank'=>$row->source_rank === null ? PHP_INT_MAX : (int)$row->source_rank, 'season_gp'=>(int)$row->season_gp, 'season_fpts_per_game'=>$row->season_fpts_per_game === null ? null : (float)$row->season_fpts_per_game,
+                'myproj'=>ProjectionMath::weighted(['fantrax'=>$row->fantrax_fpts_per_game, 'season'=>$row->season_fpts_per_game,
+                    '7d'=>$row->fpts_per_game_7d, '14d'=>$row->fpts_per_game_14d, '21d'=>$row->fpts_per_game_21d], $weights)];
+        })->filter(fn($player)=>$player['myproj'] !== null && $player['name'] !== null)->sort(fn($a, $b)=>($b['myproj'] <=> $a['myproj']) ?: ($a['source_rank'] <=> $b['source_rank']))->take(10)->values()->all();
         return ['players'=>$players, 'count'=>$rows->count(), 'stats_through'=>$rows->max('window_end_date'), 'weights'=>$weights];
     }
 
@@ -73,12 +75,9 @@ final class ProjectionSettings
                 $values = ['updated_at'=>now()];
                 foreach (ProjectionMath::DEFAULT_WEIGHTS as $key => $_) $values['weight_'.$key] = $weights[$key];
                 DB::table('projection_settings')->where('id', 1)->update($values);
-                $columns = ['fantrax'=>'COALESCE((SELECT fantrax_fpts_per_game FROM player_projection_baselines WHERE player_projection_baselines.player_id = player_projections.player_id), 0)',
+                $columns = ['fantrax'=>'(SELECT fantrax_fpts_per_game FROM player_projection_baselines WHERE player_projection_baselines.player_id = player_projections.player_id)',
                     'season'=>'season_fpts_per_game', '7d'=>'fpts_per_game_7d', '14d'=>'fpts_per_game_14d', '21d'=>'fpts_per_game_21d'];
-                $terms = [];
-                foreach ($columns as $key => $column) $terms[] = $column.' * '.number_format($weights[$key] / 100, 4, '.', '');
-                // One update for all 1,000 rows; raw stats, collection dates and frozen baseline stay intact.
-                DB::table('player_projections')->update(['projected_fpts_per_game'=>DB::raw(implode(' + ', $terms))]);
+                DB::table('player_projections')->update(['projected_fpts_per_game'=>DB::raw(ProjectionMath::sql($columns, $weights))]);
                 return DB::table('player_projections')->count();
             });
             PublicData::forget('player-projections');

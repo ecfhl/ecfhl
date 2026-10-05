@@ -29,12 +29,24 @@ foreach (['2026_09_29_000001_create_active_daily_players_table.php', '2026_09_29
 (require __DIR__.'/../database/migrations/2026_10_03_210000_add_season_actuals_to_player_projections.php')->up();
 (require __DIR__.'/../database/migrations/2026_10_04_210000_create_season_player_stats.php')->up();
 
+
+// The migration must cover every chunk, preserving unknown rates as null.
+for ($i=1; $i<=250; $i++) DB::table('season_player_stats')->insert(['player_id'=>'legacy'.sprintf('%04d', $i), 'season_id'=>'2026-27', 'player_name'=>'Legacy '.$i,
+    'nhl_team'=>'EDM', 'position'=>'F', 'rookie'=>false, 'season_fpts'=>2, 'season_gp'=>3, 'season_fpts_per_game'=>2/3,
+    'stats_json'=>'{}', 'stats_through'=>'2026-11-03', 'refreshed_at'=>now()]);
+(require __DIR__.'/../database/migrations/2026_10_05_010000_expand_player_projection_coverage.php')->up();
+checkProjection(DB::table('player_projections')->count()===250, 'Backfill all existing season players across multiple chunks.');
+checkProjection(DB::table('player_projections')->whereNotNull('fpts_per_game_7d')->count()===0, 'Do not invent rolling inputs during migration.');
+checkProjection(DB::table('player_projections')->whereNotNull('projected_fpts_per_game')->count()===0, 'Disabled season input must not become an invented fallback.');
+DB::table('player_projections')->delete(); DB::table('season_player_stats')->delete();
+
 class TestProjectionSource extends FantraxProjectionSource
 {
     public int $captures = 0;
     public array $calls = [];
     public bool $broken = false;
     public bool $missing = false;
+    public bool $extra = false;
     public function baseline(): array
     {
         $this->captures++;
@@ -54,6 +66,11 @@ class TestProjectionSource extends FantraxProjectionSource
         $rows['p3'] = ['fpts'=>0, 'gp'=>0];
         $rows['p5'] += ['player_name'=>'Player 5', 'position'=>'F', 'nhl_team'=>'MTL', 'rookie'=>true, 'stats'=>['G'=>'3','TOI'=>'71:11'], 'stat_columns'=>['G'=>'Goals','TOI'=>'Time on ice']];
         $rows['p4'] = ['fpts'=>-4, 'gp'=>2];
+        if ($this->extra) {
+            $rows['formenton'] = ['player_name'=>'Alex Formenton', 'position'=>'F', 'nhl_team'=>'EDM', 'fpts'=>2, 'gp'=>3];
+            $rows['partial'] = ['player_name'=>'Partial Inputs', 'position'=>'D', 'nhl_team'=>'EDM', 'fpts'=>20, 'gp'=>2];
+            if ($start !== '2026-09-29') unset($rows['partial']);
+        }
         if ($this->missing) unset($rows['p1000']);
         return $rows;
     }
@@ -84,9 +101,11 @@ rejectsProjection(fn()=>$refresh->refresh($date->addDay()), 'Propagate a source 
 checkProjection(DB::table('player_projections')->orderBy('player_id')->get()->toJson() === $before, 'A failed source must preserve all stored projections.');
 checkProjection(DB::table('season_player_stats')->orderBy('player_id')->get()->toJson()===$seasonBefore, 'Source failures must preserve full season stats.');
 $source->broken = false; $source->missing = true;
-rejectsProjection(fn()=>$refresh->refresh($date->addDay()), 'Reject a missing baseline player instead of silently zeroing it.');
-checkProjection(DB::table('player_projections')->orderBy('player_id')->get()->toJson() === $before, 'An incomplete dataset must preserve all stored projections.');
+$refresh->refresh($date->addDay());
+checkProjection(DB::table('player_projections')->where('player_id','p1000')->value('season_fpts_per_game') === null, 'Absent player stats remain unavailable rather than zero.');
+checkProjection((float)DB::table('player_projections')->where('player_id','p1000')->value('projected_fpts_per_game') === 2.0, 'Use the remaining baseline at 100% when actual sources are absent.');
 $source->missing = false;
+$refresh->refresh($date, true);
 $map = new PlayerProjections;
 $players = $map->decorate(collect([(object)['player_id'=>'p3','player_name'=>'Wrong Name'], (object)['player_id'=>'outside','projected_fpts_per_game'=>9]]));
 checkProjection($players[0]->projected_fpts_per_game === 1.0, 'Use Fantrax ID over names.');
@@ -157,6 +176,28 @@ checkProjection(DB::table('player_projection_baselines')->orderBy('source_rank')
 App\Support\ProjectionSettings::save(['fantrax'=>0,'season'=>100,'7d'=>0,'14d'=>0,'21d'=>0]);
 checkProjection((float)DB::table('player_projections')->where('player_id', 'p5')->value('projected_fpts_per_game') === 4.0, 'Support 100% season with all other sources disabled.');
 App\Support\ProjectionSettings::save(ProjectionMath::DEFAULT_WEIGHTS);
+
+// A missing Fantrax baseline must not exclude players with actual inputs.
+$source->extra = true;
+$weights = ['fantrax'=>60,'season'=>20,'7d'=>20,'14d'=>0,'21d'=>0];
+App\Support\ProjectionSettings::save($weights);
+$refresh->refresh($date, true);
+checkProjection(DB::table('player_projections')->count()===1002, 'Collect projections beyond the frozen top 1,000.');
+checkProjection(abs((new PlayerProjections)->rate((object)['player_id'=>'formenton']) - 2/3)<0.00001, 'Missing Fantrax input rescales season and 7-day weights from 20/20 to 50/50.');
+checkProjection((new PlayerProjections)->find((object)['player_name'=>'Alex Formenton','team'=>'EDM'])?->player_id==='formenton', 'Other pages can resolve players outside the frozen baseline.');
+checkProjection(DB::table('player_projections')->where('player_id','partial')->value('fpts_per_game_7d')===null && (new PlayerProjections)->rate((object)['player_id'=>'partial'])===10.0, 'Missing rolling input rescales the available season input to 100%.');
+$preview = App\Support\ProjectionSettings::preview($weights);
+$partial = collect($preview['players'])->firstWhere('player_id','partial');
+checkProjection($partial && $partial['myproj']===10.0 && $partial['name']==='Partial Inputs', 'Preview includes players beyond the frozen baseline with normalized rates.');
+App\Support\ProjectionSettings::save($weights);
+checkProjection((new PlayerProjections)->rate((object)['player_id'=>'partial'])===$partial['myproj'], 'Preview, SQL save and refresh use the same missing-input calculation.');
+checkProjection(abs(ProjectionMath::weighted(['fantrax'=>null,'season'=>4,'7d'=>0],$weights)-2)<0.000001, 'A true zero remains a valid input in the denominator.');
+App\Support\ProjectionSettings::save(['fantrax'=>100,'season'=>0,'7d'=>0,'14d'=>0,'21d'=>0]);
+checkProjection((new PlayerProjections)->rate((object)['player_id'=>'formenton'])===null, 'All enabled inputs missing leaves EC Proj null across pages.');
+checkProjection((new PlayerProjections)->decorate(collect([(object)['player_id'=>'formenton']]))[0]->projected_fpts_per_game===null, 'Decoration never converts missing projections to zero.');
+App\Support\ProjectionSettings::save($weights);
+$source->calls=[]; $refresh->refresh($date);
+checkProjection($source->calls===[], 'Expanded coverage still skips duplicate daily collections.');
 
 // The source parser must reject changed dates, missing GP and truncated pages.
 class FixtureProjectionSource extends FantraxProjectionSource

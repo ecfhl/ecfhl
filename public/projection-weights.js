@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
       meta.textContent = [player.team, player.position].filter(Boolean).join(' · ');
       name.append(meta);
       cell(row, Number(player.myproj).toFixed(2), 'projection-preview-score');
-      cell(row, Number(player.season_fpts_per_game).toFixed(2), 'projection-preview-score');
+      cell(row, player.season_fpts_per_game === null ? '—' : Number(player.season_fpts_per_game).toFixed(2), 'projection-preview-score');
       body.append(row);
     });
     status.textContent = data.players.length

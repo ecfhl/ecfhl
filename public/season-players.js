@@ -12,6 +12,48 @@
       observer.observe(playerColumn);
     }
     else window.addEventListener('resize', updateOffset);
+    const frozen = document.getElementById('season-player-fixed-header');
+    if (frozen) {
+      const header = table.querySelector('thead');
+      const clone = table.cloneNode(false);
+      clone.append(table.querySelector('colgroup').cloneNode(true), header.cloneNode(true));
+      frozen.append(clone);
+      const siteHeader = document.querySelector('.site-header');
+      const seasonBar = document.querySelector('.season-filter-bar');
+      const updateHeader = () => {
+        const rect = scroll.getBoundingClientRect();
+        const top = Math.max(0, siteHeader?.getBoundingClientRect().bottom || 0, seasonBar?.getBoundingClientRect().bottom || 0);
+        const height = header.getBoundingClientRect().height;
+        frozen.hidden = header.getBoundingClientRect().top >= top || rect.bottom <= top + height;
+        if (frozen.hidden) return;
+        const styles = getComputedStyle(scroll);
+        for (const key of ['--rank-column-width', '--player-column-width', '--team-column-width', '--player-stat-width', '--player-stat-count', '--player-sticky-offset']) {
+          frozen.style.setProperty(key, styles.getPropertyValue(key));
+        }
+        frozen.style.top = `${top}px`;
+        frozen.style.left = `${rect.left}px`;
+        frozen.style.width = `${scroll.clientWidth}px`;
+        clone.style.width = `${table.getBoundingClientRect().width}px`;
+        frozen.scrollLeft = scroll.scrollLeft;
+      };
+      let queued = false;
+      const scheduleHeader = () => {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(() => { queued = false; updateHeader(); });
+      };
+      window.addEventListener('scroll', scheduleHeader, { passive: true });
+      window.addEventListener('resize', scheduleHeader);
+      scroll.addEventListener('scroll', scheduleHeader, { passive: true });
+      frozen.addEventListener('scroll', () => {
+        if (scroll.scrollLeft !== frozen.scrollLeft) scroll.scrollLeft = frozen.scrollLeft;
+      }, { passive: true });
+      if (typeof ResizeObserver !== 'undefined') {
+        const observer = new ResizeObserver(scheduleHeader);
+        for (const node of [table, scroll, siteHeader, seasonBar]) if (node) observer.observe(node);
+      }
+      updateHeader();
+    }
   }
   const button = document.getElementById('season-player-more');
   if (!button) return;

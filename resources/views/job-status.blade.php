@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded',()=>{
      box.hidden=false;box.className='job-live-results error';boxText.textContent='Test notification failed: '+err.message;saveBox();
    }finally{button.disabled=false;button.textContent=original;}
  });
- const headings={projections:'Regenerating projected FPts for the top 1,000 players...',players:'Getting available players in Fantrax...',goalies:'Getting goalie information from Daily Faceoff...',lines:'Getting Lines information from Daily Faceoff...',odds:'Getting NHL moneyline odds...',teams:'Getting current fantasy team rosters from Fantrax...',scores:'Refreshing live daily scores...',standings:'Refreshing current standings from Fantrax...',advisor:'Regenerating lineup advice for all teams...'};
+ const headings={projections:'Regenerating projected FPts for all collected players...',players:'Getting available players in Fantrax...',goalies:'Getting goalie information from Daily Faceoff...',lines:'Getting Lines information from Daily Faceoff...',odds:'Getting NHL moneyline odds...',teams:'Getting current fantasy team rosters from Fantrax...',scores:'Refreshing live daily scores...',standings:'Refreshing current standings from Fantrax...',advisor:'Regenerating lineup advice for all teams...'};
  const colorCard=(job,status)=>{
    const card=document.querySelector('.status-card[data-job-key="'+job+'"]');
    if(!card)return;
