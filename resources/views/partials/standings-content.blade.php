@@ -59,13 +59,13 @@
                 <div class="standings-award-row">
                   <span class="standings-award-rank">{{ $loop->iteration }}</span>
                   <div class="standings-award-player">
-                    <strong>{{ $leader['name'] }}@if($leader['nhl_team']) <small>({{ $leader['nhl_team'] }})</small>@endif</strong>
-                    <span>{{ $leader['fantasy_team'] ?: 'Free Agent' }}</span>
+                    <strong>{{ $leader['name'] }}@if(!empty($leader['nhl_team'])) <small>({{ $leader['nhl_team'] }})</small>@endif</strong>
+                    @if(!empty($award['team_award']))<span>#{{ $leader['rank'] ?? '—' }} · {{ $leader['record'] }}</span>@else<span>{{ $leader['fantasy_team'] ?: 'Free Agent' }}</span>@endif
                   </div>
                   <div class="standings-award-score">
-                    <div class="standings-award-stat"><span>GP</span><strong>{{ $leader['gp'] }}</strong></div>
+                    @unless(!empty($award['team_award']))<div class="standings-award-stat"><span>GP</span><strong>{{ $leader['gp'] }}</strong></div>
                     <div class="standings-award-stat"><span>FPTS/GP</span><strong>{{ rtrim(rtrim(number_format($leader['fpts_g'],2), '0'), '.') }}</strong></div>
-                    <div class="standings-award-stat"><span>FPTS</span><strong>{{ number_format($leader['fpts'],0) }}</strong></div>
+                    @endunless<div class="standings-award-stat"><span>FPTS</span><strong>{{ number_format($leader['fpts'],0) }}</strong></div>
                   </div>
                 </div>
               @endforeach

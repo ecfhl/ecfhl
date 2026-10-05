@@ -1,7 +1,7 @@
 @foreach($players as $player)
 <tr class="player-position-{{ strtolower($player->position) }}{{ $ownedTeamId && (string)$player->fantasy_team_id === (string)$ownedTeamId ? ' player-on-my-team' : '' }}" data-player-id="{{ $player->player_id }}">
   <td class="player-frozen-rank">{{ $players->firstItem() + $loop->index }}</td>
-  <th scope="row" class="player-frozen-player"><a class="player-name-link" href="https://www.fantrax.com/fantasy/league/092zcn40molvao69/players;searchName={{ rawurlencode($player->player_name) }};positionOrGroup=ALL;" target="_blank" rel="noopener">{{ $player->player_name }}@if($player->rookie)<span class="rookie-tag">Rookie</span>@endif</a><small>{{ $player->position }} · {{ $player->nhl_team ?: '—' }}@if($player->line_number)  <span class="player-assignment-tag player-assignment-{{ $player->line_number }}">L{{ $player->line_number }}</span>@endif @if($player->pp_unit)  <span class="player-assignment-tag player-assignment-{{ $player->pp_unit }}">PP{{ $player->pp_unit }}</span>@endif</small></th>
+  <th scope="row" class="player-frozen-player"><a class="player-name-link" data-player-stats href="/players/{{ rawurlencode($player->player_id) }}">{{ $player->player_name }}@if($player->rookie)<span class="rookie-tag">Rookie</span>@endif</a><small>{{ $player->position }} · {{ $player->nhl_team ?: '—' }}@if($player->line_number)  <span class="player-assignment-tag player-assignment-{{ $player->line_number }}">L{{ $player->line_number }}</span>@endif @if($player->pp_unit)  <span class="player-assignment-tag player-assignment-{{ $player->pp_unit }}">PP{{ $player->pp_unit }}</span>@endif</small></th>
   <td class="player-owner player-frozen-team">@if($player->fantasy_team_name)
     @php $teamSlug = \Illuminate\Support\Str::slug($player->fantasy_team_name); @endphp
     <div class="player-team-link" aria-label="{{ $player->fantasy_team_name }}" title="{{ $player->fantasy_team_name }}">
@@ -13,6 +13,7 @@
   <td>{{ number_format($player->dataset_fpts, 0) }}</td>
   <td>{{ number_format($player->dataset_fpts_per_game, 2) }}</td>
   @if(isset($headers['gp']))<td>{{ $player->dataset_gp }}</td>@endif
+  @foreach(['today_game','tomorrow_game'] as $gameField)<td class="player-game-cell">@if($player->{$gameField})<strong>{{ $player->{$gameField}['away'] ? '@' : '' }}{{ $player->{$gameField}['opponent'] }}</strong><small>{{ $player->{$gameField}['time'] ?: 'Time unavailable' }}</small>@else<span class="muted">—</span>@endif</td>@endforeach
   @foreach($columns as $label=>$description)<td>{{ ($player->stats[$label] ?? '') !== '' ? $player->stats[$label] : '—' }}</td>@endforeach
 </tr>
 @endforeach

@@ -204,15 +204,17 @@ Route::delete('/admin/advisors/{advisor}', function(string $advisor) {
     return redirect('/admin/advisors')->with('notice',$profile->first_name.' removed.');
 })->where('advisor','[a-z0-9\-]+');
 
-Route::get('/', function (EcfhlData $data) {
-    $seasons=$data->seasons(); $teams=$data->teams(); $trades=$data->trades();
-    $latest=null; foreach($seasons as $season){if(!empty($season['champion'])){$latest=$season;break;}}
-    $latestLeader=null;if($latest)foreach($data->seasonAwards($latest['season']) as $award)if($award['id']==='president'){$latestLeader=$award['team'];break;}
-    $championships=count(array_filter($seasons,fn($s)=>!empty($s['champion'])));
-    $selectedSeasonIds=array_column($seasons,'season_id');
-    $prizesAwarded=$selectedSeasonIds ? ((int)DB::table('prize_awards')->whereIn('season_id',$selectedSeasonIds)->sum('amount_cents'))/100 : 0;
-    $leaders=$data->overviewLeaders();
-    return view('home',compact('seasons','teams','trades','latest','latestLeader','championships','prizesAwarded','leaders'));
+Route::get('/', function () {
+    $standings=\App\Support\CurrentTeams::standings();
+    $today=app(\App\Support\FantasyDay::class)->today()->toDateString();
+    $snapshot=app(\App\Support\LiveScoring\SnapshotRepository::class)->get($today);
+    $currentPeriod=DB::table('scoring_period_matchups')->where('season_id','2026-27')
+        ->where('start_date','<=',$today)->where('end_date','>=',$today)->orderBy('period_number')->first();
+    $matchups=$currentPeriod ? DB::table('scoring_period_matchups')->where('season_id','2026-27')->where('period_number',$currentPeriod->period_number)->get() : collect();
+    $scoringLeaders=DB::table('season_player_stats')->orderByDesc('season_fpts')->orderBy('player_id')->limit(5)->get();
+    $topScoring=collect($standings)->filter(fn($t)=>$t['fantasy_points_for']!==null)->sortByDesc('fantasy_points_for')->first();
+    $games=app(\App\Support\PlayerGames::class)->forDate($today);
+    return view('home',compact('standings','today','snapshot','currentPeriod','matchups','scoringLeaders','topScoring','games'));
 });
 Route::get('/seasons', function (EcfhlData $data) {
     $seasons=$data->seasons(); foreach($seasons as &$season)$season['regular_top3']=$data->seasonRegularTop3($season['season']); unset($season); $seasonLeaders=$data->seasonLeaders(); $all=$data->teamSeasons(); $worst=[];
@@ -296,6 +298,12 @@ Route::get('/standings', function(EcfhlData $data){
         return $races;
     });
 
+    foreach(['president'=>["President's Trophy",'🏆','Regular-season standings'], 'top_scoring'=>['Top Scoring Team','🔥','Season fantasy points']] as $key=>[$label,$icon,$detail]){
+        $teamLeaders=$key==='president'?collect($standings)->filter(fn($t)=>$t['rank']!==null):collect($standings)->filter(fn($t)=>$t['fantasy_points_for']!==null)->sortByDesc('fantasy_points_for');
+        $awardRaces[$key]=['label'=>$label,'icon'=>$icon,'detail'=>$detail,'team_award'=>true,'leaders'=>$teamLeaders->take(3)->map(fn($t)=>[
+            'name'=>$t['team'],'rank'=>$t['rank'],'record'=>($t['w']??0).'-'.($t['l']??0).'-'.($t['t']??0),'fpts'=>$t['fantasy_points_for'],
+        ])->values()->all()];
+    }
     $viewData=compact('season','standings','standingsLastUpdate','scoringPeriods','currentPeriodNumber','awardRaces');
     return view(request()->ajax()?'partials.standings-content':'standings',$viewData);
 });
@@ -588,6 +596,10 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         report($e);
     }
 
+    if($nextWeekOpponent){
+        $nextWeekOpponent['standings']=collect(\App\Support\CurrentTeams::standings())->first(fn($t)=>\Illuminate\Support\Str::slug($t['team'])===\Illuminate\Support\Str::slug($nextWeekOpponent['opponent']));
+    }
+    $futurePicks=app(\App\Support\FutureDraftPicks::class)->forTeam($teamName,2027);
     $nextWeekLineup=['F'=>collect(),'D'=>collect(),'G'=>collect(),'Minors'=>collect()];
     if(!empty($nextWeekOpponent)){
         try{
@@ -677,7 +689,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     if(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles')){
         $advisorProfiles=DB::table('lineup_advisor_profiles')->orderBy('sort_order')->orderBy('id')->get();
     }
-    return view('teams.current',compact('teamName','slug','date','yesterday','today','tomorrow','positions','targetGroups','lastUpdate','scoreLastUpdate','fantraxTeamUrl','teamChoices','teamTodayFpts','liveMatchup','nextWeekOpponent','nextWeekLineup','lineupAdvice','movesLeftToday','rosterCounts','advisorProfiles'));
+    return view('teams.current',compact('teamName','slug','date','yesterday','today','tomorrow','positions','targetGroups','lastUpdate','scoreLastUpdate','fantraxTeamUrl','teamChoices','teamTodayFpts','liveMatchup','nextWeekOpponent','nextWeekLineup','lineupAdvice','movesLeftToday','rosterCounts','advisorProfiles','futurePicks'));
 });
 
 Route::get('/teams/{slug}', function(string $slug,EcfhlData $data){

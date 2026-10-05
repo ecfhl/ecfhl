@@ -40,23 +40,25 @@ document.addEventListener('DOMContentLoaded',()=>{
     activeAdvisorKey='';
     viewingLeagueLogo=false;
     advisorNameRow?.classList.remove('open');
-    lastTrigger?.focus();
+    const trigger=lastTrigger;
+    lastTrigger=null;
+    trigger?.focus({preventScroll:true});
   };
 
   document.addEventListener('click',event=>{
       const teamButton=event.target.closest('[data-team-icon-viewer]');
-      if(!teamButton)return;
+      if(!teamButton||modal.contains(teamButton))return;
       event.preventDefault();
       const button=teamButton;
       const img=teamButton.querySelector('img');
       if(!img)return;
-      viewingLeagueLogo=false;
+      viewingLeagueLogo=button.hasAttribute('data-league-logo');
       lastTrigger=button;
       activeSlug=button.dataset.teamSlug||'';
       activeAdvisorKey=button.dataset.advisorKey||'';
-      if(modalTitle)modalTitle.textContent=button.dataset.teamName||button.dataset.advisorFirstName||img.alt||'Team logo';
+      if(modalTitle)modalTitle.textContent=(viewingLeagueLogo?'East Coast Fantasy Hockey League':button.dataset.teamName)||button.dataset.advisorFirstName||img.alt||'Team logo';
       if(viewTeamButton){
-        viewTeamButton.hidden=!activeSlug||!!activeAdvisorKey;
+        viewTeamButton.hidden=viewingLeagueLogo||!activeSlug||!!activeAdvisorKey;
         if(viewTeamButton.hidden)viewTeamButton.removeAttribute('href');
         else viewTeamButton.href='/teams/current/'+encodeURIComponent(activeSlug);
       }
@@ -165,8 +167,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
 
-  closeButton.addEventListener('click',closeModal);
-  modal.addEventListener('click',event=>{if(viewingLeagueLogo){closeModal();return;}if(event.target===modal||event.target.classList.contains('team-icon-modal-card'))closeModal();});
+  closeButton.addEventListener('click',event=>{event.stopPropagation();closeModal();});
+  modal.addEventListener('click',event=>{event.stopPropagation();if(viewingLeagueLogo){closeModal();return;}if(event.target===modal||event.target.classList.contains('team-icon-modal-card'))closeModal();});
   document.addEventListener('keydown',event=>{
     if(!modal.classList.contains('open'))return;
     if(event.key==='Escape')closeModal();

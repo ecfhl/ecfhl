@@ -4,6 +4,8 @@
   const loading = document.getElementById('navigation-loading');
   const message = document.getElementById('navigation-loading-message');
   const cancel = document.getElementById('navigation-cancel');
+  const loadingImage = document.getElementById('navigation-loading-image');
+  let teamTimer;
   const invitation = document.getElementById('guest-signup-dialog');
   const closeMenus = () => {
     document.body.classList.remove('nav-open');
@@ -13,6 +15,8 @@
   const reset = () => {
     navigating = false;
     clearTimeout(slowTimer);
+    clearTimeout(teamTimer);
+    if(loadingImage){loadingImage.hidden=true;loadingImage.removeAttribute('src');}
     document.body.classList.remove('navigation-pending');
     document.querySelector('main')?.removeAttribute('aria-busy');
     if (loading) loading.hidden = true;
@@ -23,7 +27,8 @@
     // Clicking an image-viewer trigger inside a link is a local modal action, not page navigation.
     // In particular, the league logo lives inside the header's Overview link.
     if (event.target.closest('.brand-logo, [data-team-icon-viewer]')) return false;
-    if (!link.closest('.site-header, .mobile-primary-nav, #guest-signup-dialog') || link.hasAttribute('download')) return false;
+    if (link.hasAttribute('download')) return false;
+    if (!link.closest('.site-header, .mobile-primary-nav, #guest-signup-dialog') && !new URL(link.href, location.href).pathname.startsWith('/teams/current/')) return false;
     if (link.target && link.target !== '_self') return false;
     const url = new URL(link.href, location.href);
     if (!['http:', 'https:'].includes(url.protocol) || url.origin !== location.origin) return false;
@@ -48,6 +53,13 @@
     document.querySelector('main')?.setAttribute('aria-busy', 'true');
     message.textContent = 'Loading ' + (link.dataset.loadingLabel || link.textContent.trim().replace(/\s+/g, ' ')) + '…';
     loading.hidden = false;
+    const target=new URL(link.href,location.href);
+    if(target.pathname.startsWith('/teams/current/')){
+      event.preventDefault();
+      if(loadingImage){loadingImage.src='/team-icons/'+target.pathname.split('/').pop();loadingImage.alt=link.dataset.loadingLabel||'Team logo';loadingImage.hidden=false;}
+      // Add one second to the normal page transition for the full team logo.
+      teamTimer=setTimeout(()=>location.assign(target.href),1000);
+    }
     slowTimer = setTimeout(() => {
       message.textContent = 'Still loading. Please wait…';
       if (cancel) cancel.hidden = false;
@@ -58,6 +70,10 @@
   window.addEventListener('pageshow', () => { closeMenus(); reset(); });
   window.addEventListener('pagehide', reset);
 
+  window.navigateToTeam=(url,label)=>{
+    const link=document.createElement('a');link.href=url;link.dataset.loadingLabel=label;
+    document.body.appendChild(link);link.click();link.remove();
+  };
   if (!invitation) return;
   document.querySelectorAll('[data-dismiss-signup]').forEach(button => button.addEventListener('click', () => invitation.close()));
   // Browsing stays optional. Do not reopen the invitation on every page change.

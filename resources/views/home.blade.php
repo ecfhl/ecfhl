@@ -1,39 +1,39 @@
 @extends('layouts.app')
-@section('title','East Coast Fantasy Hockey League')
+@section('title','Overview: Home')
 @section('content')
-@php
-$prizeTotals = app(\App\Support\Archive::class)->prizeTotals();
-
-@endphp
-<section class="hero"><div class="shell"><div class="eyebrow">Established in 2007</div><h1>East Coast Fantasy Hockey League</h1><p>A complete record of champions, franchise identities, seasons, trades, and draft history.</p><div class="hero-actions home-hero-actions"><a class="button home-nav-button live-scoring-button" href="/teams/current">Live Scoring</a><a class="button home-nav-button my-team-button" data-my-team-link href="#">My Team</a><a class="button home-nav-button standings-button" href="/standings">Standings</a><a class="button home-nav-button ai-tips-button" href="/daily-targets">Daily Targets</a></div></div></section>
-<div class="stats-strip"><div class="shell stats-grid" style="grid-template-columns:repeat(4,minmax(0,1fr))">
-<div class="stat"><strong>{{ count($seasons) }}</strong><span>Seasons</span></div>
-<div class="stat"><strong>{{ $championships }}</strong><span>Champions</span></div>
-<div class="stat"><strong>${{ number_format($prizesAwarded, 0) }}</strong><span>Prizes</span></div>
-<div class="stat"><strong>{{ count($trades) }}</strong><span>Trades</span></div>
-</div></div>
-<section class="section"><div class="shell"><article class="card latest-season-card"><div class="section-title"><div><div class="eyebrow">Latest season</div><h2>{{ $latest['season'] ?? '—' }}</h2>@if($latest)<span class="season-badge">{{ $latest['format'] ?? '' }}</span>@include('partials.fantrax-standings',['season'=>$latest])@endif</div></div>@if($latest)<div class="podium" style="min-height:170px;margin-top:4px"><div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><strong style="font-size:17px;text-align:center;margin-bottom:8px;line-height:1.2">{{ $latest['runner_up'] ?? '—' }}</strong><div class="podium-place podium-second" style="width:100%;height:112px;justify-content:center;padding:10px 12px"><span class="podium-medal" style="margin-bottom:7px">🥈</span><small>2nd</small></div></div><div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><strong style="font-size:18px;text-align:center;margin-bottom:8px;line-height:1.2">{{ $latest['champion'] ?? '—' }}</strong><div class="podium-place podium-first" style="width:100%;height:145px;justify-content:center;padding:10px 12px"><span class="podium-medal" style="margin-bottom:7px">🏆</span><small>Champion</small></div></div><div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><strong style="font-size:17px;text-align:center;margin-bottom:8px;line-height:1.2">{{ $latest['third_place'] ?? '—' }}</strong><div class="podium-place podium-third" style="width:100%;height:90px;justify-content:center;padding:10px 12px"><span class="podium-medal" style="margin-bottom:7px">🥉</span><small>3rd</small></div></div></div><div class="latest-footer">@if($latestLeader)<span class="subtle">President's Trophy: <strong>{{ $latestLeader }}</strong></span>@endif<a href="/seasons/{{ rawurlencode($latest['season']) }}">View latest season →</a></div>@endif</article></div></section>
-@php
-$leaders['winnings'] = collect($prizeTotals)->map(fn($r) => [
-    'team' => $r['team'],
-    'value' => '$'.number_format((float)$r['awards'], 0),
-    'score' => (float)($r['awards']),
-])->sortByDesc('score')->values()->all();
-@endphp
-<section class="section" style="padding-top:0"><div class="shell"><div class="section-title"><h2>All-time leaders</h2><a href="/teams">Full franchise ledger →</a></div>@include('partials.leaders',['leaderRows'=>$leaders,'limit'=>3,'cards'=>['championships'=>'🏆 Championships','winning_pct'=>'📈 Winning %','trades'=>'🔄 Trades','winnings'=>'💵 Winnings','first_picks'=>'1️⃣ #1 overall picks','awards'=>'🏅 Awards']])</div></section>
-<section class="section" style="padding-top:0"><div class="shell"><div class="section-title"><h2>Recent seasons</h2><a href="/seasons">All seasons →</a></div><div class="grid-3">@foreach(array_slice($seasons,0,6) as $season)<a class="feature-link" href="/seasons/{{ rawurlencode($season['season']) }}"><strong>{{ $season['season'] }}</strong><span>🏆 {{ $season['champion'] ?: 'No champion' }}</span><br><span>{{ $season['format'] ?? '' }}</span></a>@endforeach</div></div></section>
-<section class="section" style="padding-top:0"><div class="shell feature-links"><a class="feature-link" href="/seasons"><strong>Seasons</strong><span>Standings, finishes and playoff results →</span></a><a class="feature-link" href="/teams"><strong>Teams</strong><span>Franchise history, awards and records →</span></a><a class="feature-link" href="/trades"><strong>Trades</strong><span>Search every recorded transaction →</span></a><a class="feature-link" href="/draft"><strong>Draft</strong><span>Browse picks by year and franchise →</span></a></div></section>
-<style>
-.home-hero-actions{position:relative;z-index:3}
-.home-hero-actions .home-nav-button{background:#1769aa;color:#fff;border-color:#2f7fbd;cursor:pointer;touch-action:manipulation;position:relative;z-index:4}
-.home-hero-actions .home-nav-button:hover{background:#1e78bd;color:#fff}
-.home-hero-actions .my-team-button{background:#0f8b8d;color:#fff;border-color:#14a3a6}.home-hero-actions .my-team-button:hover{background:#0d7375;color:#fff}
-.home-hero-actions .live-scoring-button{background:#c62828;color:#fff;border-color:#c62828}
-.home-hero-actions .live-scoring-button:hover{background:#b71c1c;color:#fff}
-.home-hero-actions .standings-button{background:#1769aa;color:#fff;border-color:#2f7fbd}
-.home-hero-actions .standings-button:hover{background:#1e78bd;color:#fff}
-.home-hero-actions .ai-tips-button{background:#f2c94c;color:#1f1a0d;border-color:#f2c94c}
-.home-hero-actions .ai-tips-button:hover{background:#ffd75e;color:#1f1a0d}
-@media(max-width:850px){.home-hero-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:8px}.home-hero-actions .home-nav-button{width:100%;min-height:44px;padding:10px 8px}}
-</style>
+<section class="home-hero"><div class="shell home-hero-inner">
+  <button type="button" class="league-logo-viewer home-league-logo" data-team-icon-viewer data-league-logo data-team-name="East Coast Fantasy Hockey League" aria-label="View East Coast Fantasy Hockey League logo"><img src="/ecfhl-logo.png" alt="East Coast Fantasy Hockey League logo" width="140" height="140"></button>
+  <div><div class="eyebrow">Established in 2007</div><h1>East Coast Fantasy Hockey League</h1><p>Your 2026–27 season hub. Follow the matchups, track the standings, and build your next winning lineup.</p><span class="home-season-chip">2026–27 Season</span></div>
+</div></section>
+<div class="shell season-home">
+  <div class="section-title"><h2>Overview: Home</h2><span class="muted">{{ \Carbon\CarbonImmutable::parse($today)->format('l, M j') }}</span></div>
+  <div class="home-shortcuts"><a href="#" data-my-team-link><span>★</span><strong>My Team</strong><small>Roster & lineup advisor</small></a><a href="/teams/current"><span>●</span><strong>Live Scoring</strong><small>Today's matchup scores</small></a><a href="/players"><span>🏒</span><strong>Players</strong><small>Stats & projections</small></a><a href="/daily-targets"><span>🎯</span><strong>Daily Targets</strong><small>Available players to add</small></a></div>
+  <div class="home-season-metrics"><div class="card"><small>Teams</small><strong>{{ count($standings) }}</strong></div><div class="card"><small>Scoring period</small><strong>{{ $currentPeriod->period_number ?? '—' }}</strong>@if($currentPeriod)<span>{{ \Carbon\CarbonImmutable::parse($currentPeriod->start_date)->format('M j') }} – {{ \Carbon\CarbonImmutable::parse($currentPeriod->end_date)->format('M j') }}</span>@endif</div><div class="card"><small>Standings leader</small><strong class="home-metric-team">{{ $standings[0]['team'] ?? '—' }}</strong><span>President's Trophy race</span></div><div class="card"><small>Top scoring team</small><strong class="home-metric-team">{{ $topScoring['team'] ?? '—' }}</strong><span>{{ isset($topScoring['fantasy_points_for']) ? number_format($topScoring['fantasy_points_for'],0).' FPts' : 'Awaiting season scores' }}</span></div></div>
+  <div class="home-season-grid">
+    <section class="card home-section"><div class="section-title"><div class="eyebrow">This week</div><a href="/teams/current">Live Scoring →</a></div><h2>Current Matchups</h2>
+      @forelse($matchups as $matchup)
+        @php
+          $awaySlug=\Illuminate\Support\Str::slug($matchup->away_team_name);$homeSlug=\Illuminate\Support\Str::slug($matchup->home_team_name);
+          $awayLive=collect($snapshot['teams']??[])->firstWhere('name',$matchup->away_team_name);$homeLive=collect($snapshot['teams']??[])->firstWhere('name',$matchup->home_team_name);
+        @endphp
+        <div class="home-matchup"><a href="/teams/current/{{ $awaySlug }}"><img src="{{ \App\Support\TeamImages::url($awaySlug,64) }}" alt="" width="32" height="32" loading="lazy"><span>{{ $matchup->away_team_name }}</span></a><strong>{{ number_format($awayLive['period_fpts'] ?? $matchup->away_score ?? 0,0) }} <small>–</small> {{ number_format($homeLive['period_fpts'] ?? $matchup->home_score ?? 0,0) }}</strong><a href="/teams/current/{{ $homeSlug }}"><span>{{ $matchup->home_team_name }}</span><img src="{{ \App\Support\TeamImages::url($homeSlug,64) }}" alt="" width="32" height="32" loading="lazy"></a></div>
+      @empty<p class="muted">Current matchups will appear after the schedule collector refreshes.</p>@endforelse
+    </section>
+    <section class="card home-section"><div class="section-title"><div class="eyebrow">Regular season</div><a href="/standings">Full standings →</a></div><h2>League Standings</h2>
+      @forelse(array_slice($standings,0,5) as $team)<a class="home-leader" href="/teams/current/{{ $team['slug'] }}"><span class="home-rank">{{ $team['rank'] ?? '—' }}</span><img src="{{ \App\Support\TeamImages::url($team['slug'],64) }}" width="32" height="32" alt="" loading="lazy"><div><strong>{{ $team['team'] }}</strong><small>{{ $team['w'] ?? 0 }}–{{ $team['l'] ?? 0 }}–{{ $team['t'] ?? 0 }}</small></div><b>{{ isset($team['fantasy_points_for']) ? number_format($team['fantasy_points_for'],0) : '—' }}<small>FPts</small></b></a>@empty<p class="muted">Standings are awaiting the next refresh.</p>@endforelse
+    </section>
+    <section class="card home-section"><div class="section-title"><div class="eyebrow">Player watch</div><a href="/players?availability=all">All players →</a></div><h2>Season Scoring Leaders</h2>
+      @forelse($scoringLeaders as $player)<a class="home-leader" href="/players/{{ rawurlencode($player->player_id) }}"><span class="home-rank">{{ $loop->iteration }}</span><div><strong>{{ $player->player_name }}</strong><small>{{ $player->position }} · {{ $player->nhl_team }}</small></div><b>{{ number_format($player->season_fpts,0) }}<small>FPts</small></b></a>@empty<p class="muted">Player stats will appear after the season refresh.</p>@endforelse
+    </section>
+    <section class="card home-section"><div class="eyebrow">Around the league</div><h2>Today's NHL Games</h2><p class="home-time-note muted">Times in Atlantic · Fantasy day follows Pacific time</p>
+      @php $shownGames=[]; @endphp
+      @forelse($games as $team=>$game)@php $pair=[$team,$game['opponent']];sort($pair);$key=implode('|',$pair); @endphp @if(isset($shownGames[$key])) @continue @endif @php $shownGames[$key]=true; @endphp
+        <div class="home-nhl-game"><strong>{{ $game['away'] ? $team : $game['opponent'] }} <span class="muted">@</span> {{ $game['away'] ? $game['opponent'] : $team }}</strong><span>{{ $game['time'] ?: 'Time unavailable' }}</span></div>
+      @empty<p class="muted">No games listed for today.</p>@endforelse
+      <a class="home-target-link" href="/daily-targets">Find players for today's games →</a>
+    </section>
+  </div>
+  <div class="home-history-link"><span>19 years of league history</span><a href="/seasons">Explore the archive →</a></div>
+</div>
+<link rel="stylesheet" href="/season-home.css?v=1">
 @endsection

@@ -9,7 +9,7 @@ final class SeasonPlayers
 {
     private const SKATER_COLUMNS = ['G'=>'Goals', 'A'=>'Assists', 'Pts'=>'Points', 'PPG'=>'Power-play goals',
         'SHG'=>'Short-handed goals', 'GWG'=>'Game-winning goals', 'SOG'=>'Shots on goal', 'TOI'=>'Time on ice'];
-    private const BASE_HEADERS = ['player'=>'Player', 'team'=>'Team', 'ec_proj'=>'EC Proj', 'fpts'=>'FPts', 'fpts_gp'=>'FPts/gp', 'gp'=>'GP'];
+    private const BASE_HEADERS = ['player'=>'Player', 'team'=>'Team', 'ec_proj'=>'EC Proj', 'fpts'=>'FPts', 'fpts_gp'=>'FPts/gp', 'gp'=>'GP', 'today'=>'Today', 'tomorrow'=>'Tomorrow'];
     public const DATASETS = ['season'=>'Season', '7d'=>'7 days', '14d'=>'14 days', '21d'=>'21 days', 'fantrax'=>'Fantrax proj'];
     private const TEAM_ALIASES = ['LA'=>'LAK', 'NJ'=>'NJD', 'SJ'=>'SJS', 'TB'=>'TBL'];
 
@@ -36,10 +36,12 @@ final class SeasonPlayers
             ->select('fantasy_team_id')->selectRaw('MAX(fantasy_team_name) as fantasy_team_name')->groupBy('fantasy_team_id')->orderBy('fantasy_team_name')->get();
         $selectedTeam = (string)$request->query('team', '');
         if ($selectedTeam !== '' && !$teamOptions->contains('fantasy_team_id', $selectedTeam)) $selectedTeam = '';
-        $selectedLine = (string)$request->query('line', '');
-        if (!in_array($selectedLine, ['', '1', '2', '3', '4', 'none'], true)) $selectedLine = '';
-        $selectedPp = (string)$request->query('pp', '');
-        if (!in_array($selectedPp, ['', '1', '2', 'none'], true)) $selectedPp = '';
+        $lineChoices=['1','2','3','4','none'];
+        $ppChoices=['1','2','none'];
+        $selectedLines=$this->selections($request->query('line'),$lineChoices);
+        $selectedPps=$this->selections($request->query('pp'),$ppChoices);
+        $selectedLine=$selectedLines ? implode(',',$selectedLines) : 'empty';
+        $selectedPp=$selectedPps ? implode(',',$selectedPps) : 'empty';
         $lines = PublicData::remember('badges:active_line_combinations', 30, fn()=>DB::table('active_line_combinations')->orderBy('checked_at')->orderBy('id')->get())
             ->keyBy(fn($r)=>$this->assignmentKey($r->team, $r->player_name).'|'.strtoupper(trim($r->position_group)));
         $pp = PublicData::remember('badges:active_pp_lines', 30, fn()=>DB::table('active_pp_lines')->orderBy('checked_at')->orderBy('id')->get())
@@ -56,7 +58,7 @@ final class SeasonPlayers
         $headers = ['rank'=>'Rank'] + self::BASE_HEADERS + array_combine(array_keys($columns), array_keys($columns));
         if ($dataset === 'fantrax') unset($headers['gp']);
         $sort = (string)$request->query('sort', 'fpts');
-        if ($sort === 'rank' || !isset($headers[$sort])) $sort = 'fpts';
+        if (in_array($sort,['rank','today','tomorrow'],true) || !isset($headers[$sort])) $sort = 'fpts';
         $direction = $request->query('direction', in_array($sort, ['player','team'], true) ? 'asc' : 'desc') === 'asc' ? 'asc' : 'desc';
         // Use only the latest roster snapshot; an old ownership record must not
         // make a released player appear to belong to their former team.
@@ -77,16 +79,15 @@ final class SeasonPlayers
         if ($availability === 'taken') $query->whereNotNull('r.id');
         if ($playingDate) $query->whereIn(DB::raw('UPPER(TRIM(s.nhl_team))'), $this->playingTeams($playingDate));
         if ($rookies) $query->where('s.rookie', true);
-        if ($selectedLine !== '' || $selectedPp !== '') {
-            // Resolve the collector's team/name assignments to Fantrax IDs first,
-            // then filter in SQL before sorting and pagination.
+        if (count($selectedLines)!==count($lineChoices) || count($selectedPps)!==count($ppChoices)) {
+            // Apply the selected union within each group, and intersect Line with PP.
             $ids = DB::table('season_player_stats')->whereIn('position', ['F', 'D'])->get(['player_id', 'player_name', 'nhl_team', 'position'])
-                ->filter(function ($row) use ($lines, $pp, $selectedLine, $selectedPp) {
+                ->filter(function ($row) use ($lines, $pp, $selectedLines, $selectedPps) {
                     $key = $this->assignmentKey($row->nhl_team, $row->player_name);
                     $line = $lines[$key.'|'.$row->position]->line_number ?? null;
                     $unit = $pp[$key]->pp_unit ?? null;
-                    return ($selectedLine === '' || ($selectedLine === 'none' ? $line === null : (int)$line === (int)$selectedLine))
-                        && ($selectedPp === '' || ($selectedPp === 'none' ? $unit === null : (int)$unit === (int)$selectedPp));
+                    return in_array($line===null?'none':(string)$line,$selectedLines,true)
+                        && in_array($unit===null?'none':(string)$unit,$selectedPps,true);
                 })->pluck('player_id')->all();
             $query->whereIn('s.player_id', $ids);
         }
@@ -100,7 +101,13 @@ final class SeasonPlayers
             ->paginate(25, ['*'], 'page', max(1, (int)$request->query('page', 1)))->appends([
                 'positions'=>implode(',', $positions), 'rookies'=>$rookies ? '1' : '0', 'q'=>$search, 'sort'=>$sort, 'direction'=>$direction, 'team'=>$selectedTeam, 'availability'=>$availability, 'line'=>$selectedLine, 'pp'=>$selectedPp, 'dataset'=>$dataset, 'playing'=>$playing,
             ]);
-        $players->getCollection()->transform(function ($row) use ($lines, $pp) {
+        $fantasyToday=app(FantasyDay::class)->today();
+        $games=app(PlayerGames::class);
+        $todayGames=$games->forDate($fantasyToday->toDateString());
+        $tomorrowGames=$games->forDate($fantasyToday->addDay()->toDateString());
+        $players->getCollection()->transform(function ($row) use ($lines, $pp, $todayGames, $tomorrowGames) {
+            $row->today_game=$todayGames[PlayerGames::team($row->nhl_team)]??null;
+            $row->tomorrow_game=$tomorrowGames[PlayerGames::team($row->nhl_team)]??null;
             $row->stats = json_decode($row->stats_json, true) ?: [];
             $row->stats['Pts'] = $row->stats['Pt'] ?? $row->stats['Pts'] ?? '';
             $key = $this->assignmentKey($row->nhl_team, $row->player_name);
@@ -113,7 +120,15 @@ final class SeasonPlayers
             'season'=>DB::table('season_player_stats')->max('stats_through'),
             default=>DB::table('player_projections')->max('window_end_date'),
         };
-        return compact('players', 'positions', 'rookies', 'search', 'columns', 'headers', 'sort', 'direction', 'teamOptions', 'selectedTeam', 'availability', 'selectedLine', 'selectedPp', 'dataset', 'datasetLabel', 'statsThrough', 'ownedTeamId', 'playing', 'playingDate');
+        return compact('players', 'positions', 'rookies', 'search', 'columns', 'headers', 'sort', 'direction', 'teamOptions', 'selectedTeam', 'availability', 'selectedLine', 'selectedPp', 'selectedLines', 'selectedPps', 'dataset', 'datasetLabel', 'statsThrough', 'ownedTeamId', 'playing', 'playingDate');
+    }
+
+    private function selections(mixed $input, array $choices): array
+    {
+        if ($input===null || $input==='') return $choices;
+        if($input==='empty')return [];
+        $selected=array_values(array_intersect($choices,explode(',',(string)$input)));
+        return $selected ?: $choices;
     }
 
     private function playingTeams(string $date): array

@@ -146,7 +146,10 @@
 [data-theme="dark"] .tips-result-row .tips-player-name,[data-theme="dark"] .tips-result-row .tips-proj-value,[data-theme="dark"] .tips-result-row strong{color:var(--text)!important}
 [data-theme="dark"] .tips-result-row td[data-label="Proj. FPts/GP"]::before{color:var(--muted)!important}
 [data-theme="dark"] .tips-result-row td[data-label="Proj. FPts/GP"]{border-left-color:var(--line)!important}
-}</style>
+}/* Compact target controls and rows while retaining touch-sized actions. */
+.ai-tips .page-head{padding-top:12px!important;padding-bottom:10px!important}.ai-tips .page-head h1{font-size:28px!important}.tips-toolbar{margin:6px 0 10px!important}.tips-section{margin:10px 0!important}.tips-section-heading{margin-bottom:6px!important}.tips-section h2{font-size:18px!important}.tips-table th,.tips-table td{padding:6px 8px}.tips-search input,.tips-goalie-search input{min-height:32px!important;padding:5px 8px!important}.tips-line-filter,.tips-pp-filter{gap:4px!important}
+@media(max-width:850px){.tips-table tr{padding:7px!important;margin-bottom:5px!important}.tips-goalie-table tr{min-height:82px!important;padding-bottom:31px!important}.tips-skater-table tr{min-height:78px!important;padding-bottom:31px!important}.tips-player-cell strong{font-size:13px!important}.tips-proj-value{font-size:18px!important}}
+</style>
 
 @endsection
 

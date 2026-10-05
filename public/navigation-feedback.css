@@ -22,3 +22,5 @@
 @keyframes navigation-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.navigation-spinner{animation:none}}
 @media(max-width:900px){.nav-toggle{display:block}.main-nav{display:none;position:absolute;left:0;right:0;top:58px;max-height:calc(100dvh - 58px);overflow-y:auto;background:var(--navy);padding:10px 16px;flex-direction:column;align-items:stretch}.nav-open .main-nav{display:flex}.main-nav a.nav-create-account{margin-bottom:6px;padding:12px!important;text-align:center!important}.guest-signup-dialog{padding:26px 22px}}
+
+.navigation-loading-image{display:block;width:min(280px,65vw);height:min(280px,65vw);object-fit:contain;flex-basis:100%}.navigation-loading-image[hidden]{display:none!important}

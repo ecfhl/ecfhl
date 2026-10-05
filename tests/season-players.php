@@ -67,12 +67,12 @@ verifySeason(str_contains($html,'player-assignment-tag player-assignment-1">L1</
 verifySeason(substr_count($html,'data-player-id=')===25&&str_contains($html,'Player &lt;unsafe&gt;')&&!str_contains($html,'Player <unsafe>'),'SSR row count / escaped names failed.');
 verifySeason(str_contains($html,'EC Proj')&&str_contains($html,'71:11')&&str_contains($html,'/teams/current/beta')&&str_contains($html,'Free Agent'),'Stats / ownership / custom projection rendering failed.');
 verifySeason(str_contains($html,'aria-pressed="true" href="/players?positions=D')&&str_contains($html,'aria-pressed="true" href="/players?positions=F')&&str_contains($html,'aria-pressed="false" href="/players?positions=F%2CD%2CG'),'Default filter button states failed.');
-verifySeason(str_contains($html,'class="player-filter player-targets-link" href="/ai-tips"'),'Daily Targets shortcut missing.');
+verifySeason(str_contains($html,'class="player-filter player-targets-link" href="/daily-targets"'),'Daily Targets shortcut missing.');
 preg_match('/<thead>(.*?)<\/thead>/s',$html,$tableHead);
 preg_match_all('/<th scope="col"[^>]*>(.*?)<\/th>/s',$tableHead[1],$headCells);
 $headerLabels=array_map(fn($v)=>rtrim(trim(strip_tags($v)), ' ↑↓↕'),$headCells[1]);
-verifySeason($headerLabels===['Rank','Player','Team','EC Proj','FPts','FPts/gp','GP','G','A','Pts','PPG','SHG','GWG','SOG','TOI'],'Column order and labels must match the requested stats exactly.');
-verifySeason(preg_match('/<td class="myproj">6\.25<\/td>\s*<td>99<\/td>\s*<td>9\.90<\/td>\s*<td>10<\/td>\s*<td>2<\/td>\s*<td>9<\/td>/', $html), 'Row values must follow EC Proj, FPts, FPts/gp, GP, G and A header order.');
+verifySeason($headerLabels===['Rank','Player','Team','EC Proj','FPts','FPts/gp','GP','TodayAtlantic time','TomorrowAtlantic time','G','A','Pts','PPG','SHG','GWG','SOG','TOI'],'Column order and labels must match the requested stats exactly.');
+verifySeason(preg_match('/<td class="myproj">6\.25<\/td>\s*<td>99<\/td>\s*<td>9\.90<\/td>\s*<td>10<\/td>\s*<td class="player-game-cell">.*?<\/td>\s*<td class="player-game-cell">.*?<\/td>\s*<td>2<\/td>\s*<td>9<\/td>/', $html), 'Row values must follow EC Proj, FPts, FPts/gp, GP, G and A header order.');
 $sortHtml=seasonRequest('/players?availability=all&rookies=1&sort=A&direction=asc')->getContent();
 verifySeason(str_contains($sortHtml,'aria-sort="ascending"')&&str_contains($sortHtml,'sort=A&amp;direction=desc')&&str_contains($sortHtml,'name="sort" value="A"'),'Sort arrows / toggle links / search preservation failed.');
 $json=json_decode(seasonRequest('/players?availability=all&positions=F,D&page=2',true)->getContent(),true);
@@ -107,7 +107,7 @@ $pair=$service->data(Request::create('/players?availability=all&positions=D&line
 verifySeason($pair['players']->total()===1&&$pair['players'][0]->player_id==='p4','Defense pairs must use the D assignments.');
 $none=$service->data(Request::create('/players?availability=all&positions=F,D,G&line=none&pp=none'));
 verifySeason($none['players']->total()===25&&$none['players']->getCollection()->every(fn($p)=>$p->position!=='G'&&$p->line_number===null&&$p->pp_unit===null),'No listed assignment filters must include unassigned skaters and exclude goalies.');
-$bad=$service->data(Request::create('/players?availability=all&line=bad&pp=3'));verifySeason($bad['selectedLine']===''&&$bad['selectedPp']==='','Invalid assignment filters must fall back to All.');
+$bad=$service->data(Request::create('/players?availability=all&line=bad&pp=3'));verifySeason($bad['selectedLine']==='1,2,3,4,none'&&$bad['selectedPp']==='1,2,none','Invalid assignment filters must fall back to All.');
 $advancedHtml=seasonRequest('/players?availability=all&line=1&pp=1&rookies=1')->getContent();
 verifySeason(str_contains($advancedHtml,'class="player-advanced"  open')&&str_contains($advancedHtml,'id="season-player-line"')&&str_contains($advancedHtml,'id="season-player-pp"')&&str_contains($advancedHtml,'name="line" value="1"')&&str_contains($advancedHtml,'line=1&amp;pp=1'),'Active advanced filters must remain visible and survive search, sorting and positions.');
 verifySeason(preg_match('/class="player-name-link"[^>]*>[^<]+<span class="rookie-tag">Rookie<\/span><\/a>/', $advancedHtml),'Rookie sticker must be beside the name, not on the metadata line.');
@@ -122,7 +122,7 @@ verifySeason(substr_count($availableHtml,'class="player-add-icon"')===21&&str_co
 verifySeason(!str_contains($betaHtml,'class="player-add-icon"'),'Owned players must not have an add/claim icon.');
 verifySeason(str_contains($advancedHtml,'id="season-player-line" class="player-buttons" role="group"')&&str_contains($advancedHtml,'id="season-player-pp" class="player-buttons" role="group"')&&!str_contains($advancedHtml,'<select id="season-player-line"')&&!str_contains($advancedHtml,'<select id="season-player-pp"'),'Line and power-play slicers must use accessible buttons.');
 preg_match('/id="season-player-line".*?<\/div>/s',$advancedHtml,$lineButtons);preg_match('/id="season-player-pp".*?<\/div>/s',$advancedHtml,$ppButtons);
-verifySeason(str_contains($lineButtons[0],'aria-pressed="true"')&&str_contains($lineButtons[0],'rookies=1')&&str_contains($lineButtons[0],'line=2&amp;pp=1')&&str_contains($ppButtons[0],'line=1&amp;pp=2'),'Assignment buttons must indicate selection and preserve the other filters.');
+verifySeason(str_contains($lineButtons[0],'aria-pressed="true"')&&str_contains($lineButtons[0],'rookies=1')&&str_contains($lineButtons[0],'line=1%2C2&amp;pp=1')&&str_contains($ppButtons[0],'line=1&amp;pp=1%2C2'),'Assignment buttons must indicate selection and preserve the other filters.');
 verifySeason(str_contains($betaHtml,'aria-label="Beta"')&&str_contains($betaHtml,'class="player-team-name"')&&str_contains($betaHtml,'--team-column-width:44px')&&str_contains($betaHtml,'.player-team-link .player-team-name{display:none}'),'Mobile must keep accessible team logos while hiding team names in a narrow frozen column.');
 DB::table('season_player_stats')->where('player_id','p1')->update(['season_fpts'=>1234.5]);
 $roundedHtml=seasonRequest('/players?availability=all&q=Player%20%3Cunsafe%3E')->getContent();
@@ -136,7 +136,7 @@ for($i=1;$i<=62;$i++) {
 }
 foreach([7,14,21] as $days) {
  $window=$service->data(Request::create('/players?availability=all&dataset='.$days.'d&sort=fpts&direction=desc'));
- verifySeason($window['dataset']===$days.'d'&&$window['players']->total()===60&&$window['columns']===[]&&array_keys($window['headers'])===['rank','player','team','ec_proj','fpts','fpts_gp','gp'],'Recent datasets must use tracked players and their available columns.');
+ verifySeason($window['dataset']===$days.'d'&&$window['players']->total()===60&&$window['columns']===[]&&array_keys($window['headers'])===['rank','player','team','ec_proj','fpts','fpts_gp','gp','today','tomorrow'],'Recent datasets must use tracked players and their available columns.');
  $first=$window['players'][0];verifySeason($first->player_id==='p1'&&(float)$first->dataset_fpts===$days*100.0-1&&(int)$first->dataset_gp===2&&abs((float)$first->dataset_fpts_per_game-($days*100-1)/2)<.00001,'Recent values or SQL sort used season stats: '.$days);
  verifySeason(str_contains($window['players']->nextPageUrl(),'dataset='.$days.'d'),'Show More lost dataset: '.$days);
 }
@@ -171,7 +171,7 @@ verifySeason(!str_contains($otherHtml,' player-on-my-team"'),'Selecting a differ
 verifySeason(str_contains($ownedHtml,'data-team-icon-viewer data-team-slug="beta" data-team-name="Beta"')&&str_contains($ownedHtml,'data-full-src="/team-icons/beta"'),'Player logos must open the full-size team viewer.');
 preg_match('/<nav class="mobile-primary-nav".*?<\/nav>/s',$ownedHtml,$mobileNav);
 verifySeason(str_contains($mobileNav[0],'mobile-nav-players active')&&!str_contains($mobileNav[0],'/daily-targets')&&str_contains($ownedHtml,'href="/daily-targets"'),'Players must replace the bottom Targets shortcut while Targets remains in the menu.');
-verifySeason(str_contains($ownedHtml,'id="team-icon-modal-title"')&&str_contains($ownedHtml,'id="team-icon-modal-view-team"')&&str_contains($ownedHtml,'/team-image-viewer.js?v=1'),'Shared titled viewer and View Team action missing.');
+verifySeason(str_contains($ownedHtml,'id="team-icon-modal-title"')&&str_contains($ownedHtml,'id="team-icon-modal-view-team"')&&str_contains($ownedHtml,'/team-image-viewer.js?v=10'),'Shared titled viewer and View Team action missing.');
 $unclaimed = new \App\Models\User(['name'=>'Unclaimed']);$unclaimed->setRelation('claim',null);
 \Illuminate\Support\Facades\Auth::guard()->setUser($unclaimed);
 verifySeason(!str_contains(seasonRequest('/players?availability=all')->getContent(),' player-on-my-team"'),'Unclaimed accounts must not highlight free agents.');

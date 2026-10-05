@@ -14,3 +14,9 @@ Route::get('/players', function (Request $request, SeasonPlayers $service) {
     ])->header('Cache-Control', 'private, no-store');
     return view('season-players', $data);
 });
+
+Route::get('/players/{playerId}', function (Request $request, string $playerId, \App\Support\PlayerProfile $service) {
+    $data=$service->data($playerId);
+    if ($request->expectsJson()) return response()->json(['html'=>view('partials.player-profile',$data)->render()])->header('Cache-Control','private, no-store');
+    return view('player-profile',$data);
+})->where('playerId','[A-Za-z0-9_-]+');
