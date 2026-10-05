@@ -24,10 +24,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   const isAdmin=modal?.dataset.isAdmin==='1';
   if(!modal||!modalImage||!closeButton||!fileInput)return;
 
-  document.querySelectorAll('.brand-logo').forEach(img=>{
-    img.title='View ECFHL league logo';
-    img.dataset.fullSrc='/ecfhl-logo.png?v=8';
-  });
 
   let lastTrigger=null;
   let activeSlug='';
@@ -49,27 +45,25 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   document.addEventListener('click',event=>{
       const teamButton=event.target.closest('[data-team-icon-viewer]');
-      const leagueLogo=event.target.closest('.brand-logo');
-      if(!teamButton&&!leagueLogo)return;
+      if(!teamButton)return;
       event.preventDefault();
-      if(leagueLogo)event.stopImmediatePropagation();
-      const button=teamButton||leagueLogo;
-      const img=leagueLogo||teamButton?.querySelector('img');
+      const button=teamButton;
+      const img=teamButton.querySelector('img');
       if(!img)return;
-      viewingLeagueLogo=!!leagueLogo;
-      lastTrigger=viewingLeagueLogo?leagueLogo:button;
-      activeSlug=viewingLeagueLogo?'':button.dataset.teamSlug||'';
-      activeAdvisorKey=viewingLeagueLogo?'':button.dataset.advisorKey||'';
-      if(modalTitle)modalTitle.textContent=viewingLeagueLogo?'East Coast Fantasy Hockey League':button.dataset.teamName||button.dataset.advisorFirstName||img.alt||'Team logo';
+      viewingLeagueLogo=false;
+      lastTrigger=button;
+      activeSlug=button.dataset.teamSlug||'';
+      activeAdvisorKey=button.dataset.advisorKey||'';
+      if(modalTitle)modalTitle.textContent=button.dataset.teamName||button.dataset.advisorFirstName||img.alt||'Team logo';
       if(viewTeamButton){
-        viewTeamButton.hidden=viewingLeagueLogo||!activeSlug||!!activeAdvisorKey;
+        viewTeamButton.hidden=!activeSlug||!!activeAdvisorKey;
         if(viewTeamButton.hidden)viewTeamButton.removeAttribute('href');
         else viewTeamButton.href='/teams/current/'+encodeURIComponent(activeSlug);
       }
-      const fullSrc=viewingLeagueLogo?'/ecfhl-logo.png?v=8':img.dataset.fullSrc||img.currentSrc||img.src;
+      const fullSrc=img.dataset.fullSrc||img.currentSrc||img.src;
       modal.classList.add('loading');
       modalImage.removeAttribute('src');
-      modalImage.alt=viewingLeagueLogo?'ECFHL league logo':img.alt||'Team icon';
+      modalImage.alt=img.alt||'Team icon';
       modalImage.onload=()=>modal.classList.remove('loading');
       modalImage.onerror=()=>modal.classList.remove('loading');
       modalImage.src=fullSrc;
