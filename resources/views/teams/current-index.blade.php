@@ -531,8 +531,8 @@ html[data-theme="dark"] .matchup-day-score.score-same{color:#f8fafc!important}
   .matchup-player-name strong{width:100%;overflow:visible!important;text-overflow:clip!important;font-size:10px!important;letter-spacing:-.02em}
   .matchup-player-opponent{width:100%;overflow:visible!important;font-size:8px!important;letter-spacing:-.02em}
   .matchup-player-opponent .team-playing-text,.matchup-player-opponent .team-away,.matchup-player-opponent .team-home{overflow:visible!important;text-overflow:clip!important}
-  .matchup-player-row{padding:7px 8px 42px!important}
-  .matchup-player-metrics>div:first-child{right:8px!important;bottom:7px!important}
+  .matchup-player-row{padding:7px 8px 28px!important;min-height:0!important}
+  .matchup-player-metrics>div:first-child{right:8px!important;bottom:14px!important}
 }
 
 /* Expanded roster game-state colors */
