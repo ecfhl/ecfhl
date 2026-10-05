@@ -63,11 +63,15 @@ html[data-theme="dark"] :is(.tips-line-filter[data-line="4"].active,.tips-injury
 
 /* Game time and live NHL score remain readable on every dark roster row. */
 html[data-theme="dark"] :is(.matchup-player-opponent,.team-player-opponent) > :is(.team-playing-text,.team-home,.team-away){color:#fde68a!important}
-/* Address the daily points by name; it may be the only metrics item. */
+/* Shared player layout: full-width name, then game details beside daily points. */
+.matchup-expanded .matchup-player-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto 1fr;align-items:start!important;gap:7px 8px!important;padding:9px!important;min-height:112px!important}
+.matchup-expanded .matchup-player-row .matchup-player-main{display:contents!important}
+.matchup-expanded .matchup-player-row .matchup-player-name{grid-column:1 / -1;grid-row:1;width:100%!important;padding-right:0!important;white-space:normal!important;overflow:visible!important}
+.matchup-expanded .matchup-player-row .matchup-player-opponent{grid-column:1;grid-row:2;min-width:0;width:auto!important;margin:0!important;padding:0!important;display:block!important;white-space:normal!important;overflow:visible!important}
+.matchup-expanded .matchup-player-row .matchup-player-opponent > :is(.team-playing-text,.team-home,.team-away){white-space:normal!important;overflow:visible!important;overflow-wrap:anywhere!important}
+.matchup-expanded .matchup-player-row .matchup-player-cats{position:static!important;inset:auto!important;display:block!important;white-space:normal!important;margin-top:4px}
+.matchup-expanded .matchup-player-row :is(.matchup-player-cats-primary,.matchup-player-cats-special){white-space:normal!important}
+.matchup-expanded .matchup-player-row .matchup-player-metrics{grid-column:2;grid-row:2;position:static!important;display:block!important;align-self:start!important;min-width:0;margin:0!important;text-align:right}
+.matchup-expanded .matchup-player-row .matchup-player-metrics > .matchup-player-today{position:static!important;inset:auto!important;display:flex!important;align-items:baseline!important;justify-content:flex-end;gap:3px!important;margin:0!important}
 .matchup-expanded .matchup-player-row .matchup-player-metrics > .matchup-player-today strong,
 .current-team-page .team-roster-table .team-today-fpts{font-size:36px!important;font-weight:900!important;line-height:1!important;font-variant-numeric:tabular-nums}
-.team-live-expanded .matchup-player-row .matchup-player-metrics > .matchup-player-today{top:auto!important;bottom:9px!important;right:9px!important}
-.team-live-expanded .matchup-player-row:not(.matchup-player-blank){padding-bottom:48px!important;min-height:112px!important}
-@media(max-width:800px){
- .matchup-expanded .matchup-player-row:not(.matchup-player-blank){padding-bottom:48px!important;min-height:112px!important}
-}
