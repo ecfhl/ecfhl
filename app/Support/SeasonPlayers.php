@@ -58,7 +58,7 @@ final class SeasonPlayers
         if ($dataset !== 'season') $columns = [];
         $headers = ['rank'=>'Rank'] + self::BASE_HEADERS + array_combine(array_keys($columns), array_keys($columns));
         if ($dataset === 'fantrax') unset($headers['gp']);
-        $sort = (string)$request->query('sort', 'fpts');
+        $sort = (string)$request->query('sort', $request->query('dfo_sort') === '1' ? 'ec_proj' : 'fpts');
         if (in_array($sort,['rank','today','tomorrow'],true) || !isset($headers[$sort])) $sort = 'fpts';
         $direction = $request->query('direction', in_array($sort, ['player','team'], true) ? 'asc' : 'desc') === 'asc' ? 'asc' : 'desc';
         $dailyTargetsSort = $request->query('dfo_sort') === '1';
@@ -96,7 +96,7 @@ final class SeasonPlayers
         if ($search !== '') $query->where('s.player_name', 'like', '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search).'%');
         $page = max(1, (int)$request->query('page', 1));
         if ($dailyTargetsSort) {
-            $players = $this->dailyTargetsPage($query, $lines, $pp, $playingDate ?? app(FantasyDay::class)->today()->toDateString(), $page);
+            $players = $this->dailyTargetsPage($query, $lines, $pp, $playingDate ?? app(FantasyDay::class)->today()->toDateString(), $page, $sort, $direction, $datasetFields);
         } else {
             [$expression, $bindings] = $this->sortExpression($sort, $datasetFields);
             // Sort in SQL before pagination, with unavailable values last in either
@@ -131,7 +131,7 @@ final class SeasonPlayers
         return compact('players', 'positions', 'rookies', 'search', 'columns', 'headers', 'sort', 'direction', 'dailyTargetsSort', 'teamOptions', 'selectedTeam', 'availability', 'selectedLine', 'selectedPp', 'selectedLines', 'selectedPps', 'dataset', 'datasetLabel', 'statsThrough', 'ownedTeamId', 'playing', 'playingDate');
     }
 
-    private function dailyTargetsPage($query, $lines, $pp, string $date, int $page): LengthAwarePaginator
+    private function dailyTargetsPage($query, $lines, $pp, string $date, int $page, string $sort, string $direction, array $datasetFields): LengthAwarePaginator
     {
         $sources = [];
         foreach (['active_daily_players', 'active_available_goalies'] as $table) {
@@ -148,7 +148,8 @@ final class SeasonPlayers
         $starters = $starters->keyBy(fn($row)=>$this->assignmentKey($row->team, $row->player_name));
         // Rank only lightweight records across the complete filtered pool. Fetch
         // full stats for the requested page after sorting, so Show More is stable.
-        $ordered = (clone $query)->select('s.player_id', 's.player_name', 's.nhl_team', 's.position', 'p.projected_fpts_per_game')->get()
+        [$expression, $bindings] = $this->sortExpression($sort, $datasetFields);
+        $ordered = (clone $query)->select('s.player_id', 's.player_name', 's.nhl_team', 's.position', 'p.projected_fpts_per_game')->selectRaw($expression.' as season_sort_value', $bindings)->get()
             ->map(function($row) use ($lines, $pp, $sources, $starters, $confirmed) {
                 $key = $this->assignmentKey($row->nhl_team, $row->player_name);
                 $goalie = $row->position === 'G';
@@ -157,15 +158,18 @@ final class SeasonPlayers
                 if ($key === 'VAN|eliaspettersson' && $row->position !== 'F') $unit = null;
                 return [
                     'player_id'=>$row->player_id, 'name'=>$row->player_name, 'goalie'=>$goalie,
-                    'projected_points'=>$row->projected_fpts_per_game,
+                    'projected_points'=>$row->projected_fpts_per_game, 'sort_value'=>$row->season_sort_value,
                     'pp_unit'=>$unit, 'line_number'=>$lines[$key.'|'.$row->position]->line_number ?? null,
                     'source_rank'=>$sources[$goalie ? 'active_available_goalies' : 'active_daily_players'][$key]->source_rank ?? null,
                     'starting_status'=>$starters[$key]->starting_status ?? null,
                     'not_starting'=>$goalie && isset($confirmed[$this->teamCode($row->nhl_team)]) && $confirmed[$this->teamCode($row->nhl_team)] !== $key,
                 ];
-            })->sort(function($a, $b) {
+            })->sort(function($a, $b) use ($sort, $direction) {
                 // Mixed position results keep skaters together, then goalies.
                 return ($a['goalie'] <=> $b['goalie'])
+                    ?: ($a['goalie'] ? DailyTargetsOrder::goaliePriority($a) <=> DailyTargetsOrder::goaliePriority($b) : DailyTargetsOrder::skaterPriority($a) <=> DailyTargetsOrder::skaterPriority($b))
+                    ?: (($a['sort_value'] === null) <=> ($b['sort_value'] === null))
+                    ?: ($direction === 'asc' ? 1 : -1) * (in_array($sort, ['player', 'team'], true) ? strcmp((string)$a['sort_value'], (string)$b['sort_value']) : ($a['sort_value'] <=> $b['sort_value']))
                     ?: ($a['goalie'] ? DailyTargetsOrder::goalies($a, $b) : DailyTargetsOrder::skaters($a, $b))
                     ?: strcmp($a['player_id'], $b['player_id']);
             })->values();

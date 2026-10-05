@@ -205,7 +205,7 @@ verifySeason(str_contains($dayHtml,'id="season-player-playing"')&&substr_count($
 $reset=$service->data(Request::create('/players?playing=invalid&availability=invalid'));verifySeason($reset['playing']==='all'&&$reset['availability']==='available','Invalid slicers must fall back to All game days and Available.');
 $defaultHtml=seasonRequest('/players')->getContent();
 verifySeason(str_contains($html,'player-assignment-tag player-assignment-2">L2</span>')&&str_contains($html,'player-assignment-tag player-assignment-2">PP2</span>')&&!str_contains($html,'Pair2'),'Defensemen and PP assignments must use colored L/PP stickers.');preg_match('/id="season-player-playing".*?<\/div>/s',$defaultHtml,$dayButtons);preg_match('/aria-label="Player availability".*?<\/div>/s',$defaultHtml,$availabilityButtons);
-verifySeason(!str_contains($defaultHtml,'id="season-player-playing"')&&preg_match('/aria-pressed="true"[^>]*>Available<\/a>/',$availabilityButtons[0]),'Day buttons must be hidden until Daily Faceoff is enabled; Available remains the default.');
+verifySeason(str_contains($defaultHtml,'id="season-player-playing"')&&preg_match('/aria-pressed="true"[^>]*>Available<\/a>/',$availabilityButtons[0]),'Day buttons must always be visible; Available remains the default.');
 // Daily Targets mode ranks the entire pool before slicing pages, independent of manual direction.
 foreach (['active_line_combinations','active_pp_lines','active_daily_players','active_available_goalies','active_starting_goalies','player_projections'] as $table) DB::table($table)->delete();
 $date=app(\App\Support\FantasyDay::class)->today()->toDateString();
@@ -218,16 +218,16 @@ foreach (['p1'=>[1,2],'p2'=>[2,1],'p3'=>[1,1],'p4'=>[1,1],'p5'=>[1,1],'p6'=>[1,1
  DB::table('active_pp_lines')->insert(['team'=>$row->nhl_team,'player_name'=>$row->player_name,'pp_unit'=>$unit,'source_url'=>'https://example.com','last_update'=>now()]);
  if (in_array($id,['p4','p7'])) DB::table('active_daily_players')->insert(['game_date'=>$date,'team'=>$row->nhl_team,'player_name'=>$row->player_name,'source_rank'=>$id==='p7'?1:2]);
 }
-$dfoUrl='/players?availability=all&positions=F,D&sort=player&direction=asc&dfo_sort=1';
+$dfoUrl='/players?availability=all&positions=F,D&sort=ec_proj&direction=desc&dfo_sort=1';
 $dfo=$service->data(Request::create($dfoUrl));
 verifySeason($dfo['dailyTargetsSort']&&$dfo['players']->getCollection()->take(8)->pluck('player_id')->all()===['p60','p7','p4','p3','p6','p5','p1','p2'],'Daily Targets skaters must prioritize PP, line, projection (null last), source rank, then name before pagination.');
-$descending=$service->data(Request::create(str_replace('direction=asc','direction=desc',$dfoUrl)));
-verifySeason($descending['players']->getCollection()->pluck('player_id')->all()===$dfo['players']->getCollection()->pluck('player_id')->all(),'Manual direction must not reverse Daily Targets priority.');
+$descending=$service->data(Request::create(str_replace('direction=desc','direction=asc',$dfoUrl)));
+verifySeason($descending['players'][0]->player_id==='p60'&&$descending['players'][1]->player_id==='p6','Ascending score must apply within the same PP/line priority groups.');
 $allIds=[];
 foreach ([1,2,3] as $page) $allIds=array_merge($allIds,$service->data(Request::create($dfoUrl.'&page='.$page))['players']->getCollection()->pluck('player_id')->all());
 verifySeason(count($allIds)===60&&count(array_unique($allIds))===60&&str_contains($dfo['players']->nextPageUrl(),'dfo_sort=1'),'Daily Targets pagination must preserve mode with no missing or duplicated players.');
 $off=$service->data(Request::create(str_replace('dfo_sort=1','dfo_sort=0',$dfoUrl)));
-verifySeason(!$off['dailyTargetsSort']&&$off['sort']==='player'&&$off['direction']==='asc'&&$off['players'][0]->player_id!=='p60','Turning the toggle off must restore the chosen column sort.');
+verifySeason(!$off['dailyTargetsSort']&&$off['sort']==='ec_proj'&&$off['direction']==='desc'&&$off['players'][0]->player_id!=='p60','Turning the toggle off must restore the chosen column sort.');
 $dfoFiltered=$service->data(Request::create($dfoUrl.'&rookies=1&line=1&pp=1'));
 verifySeason($dfoFiltered['players']->total()===3&&$dfoFiltered['players']->getCollection()->pluck('player_id')->all()===['p60','p3','p6'],'Daily Targets mode must preserve and apply existing filters.');
 foreach (['p61'=>['MTL','confirmed'],'p62'=>['TOR','likely'],'p63'=>['BOS','unconfirmed'],'p64'=>['SEA',null],'p65'=>['MTL',null]] as $id=>[$team,$status]) {
@@ -241,12 +241,12 @@ verifySeason($dfoGoalies['players']->getCollection()->pluck('player_id')->all()=
 $dfoHtml=seasonRequest($dfoUrl)->getContent();
 $dfoDoc=new DOMDocument;@$dfoDoc->loadHTML($dfoHtml);$dfoPath=new DOMXPath($dfoDoc);
 $toggle=$dfoPath->query('//a[@aria-label="Sort like Daily Targets"]')->item(0);
-verifySeason($toggle&&$toggle->getAttribute('aria-pressed')==='true'&&str_contains($toggle->getAttribute('href'),'dfo_sort=0')&&$dfoPath->query('.//img[contains(@src,"dailyfaceoff-icon")]',$toggle)->length===1&&str_contains($dfoHtml,'Daily Targets order'),'Logo toggle must show its state, offer off, and summarize the active sort.');
+verifySeason($toggle&&$toggle->getAttribute('aria-pressed')==='true'&&str_contains($toggle->getAttribute('href'),'dfo_sort=0')&&$dfoPath->query('.//img[contains(@src,"dailyfaceoff-icon")]',$toggle)->length===1&&str_contains($dfoHtml,'Daily Targets priority'),'Logo toggle must show its state, offer off, and summarize the active sort.');
 $dayButtons=$dfoPath->query('//div[@id="season-player-playing"]/a');
 verifySeason($dayButtons->length===2&&$dayButtons->item(0)->getAttribute('aria-pressed')==='false'&&$dayButtons->item(1)->getAttribute('aria-pressed')==='false','Enabling Daily Faceoff shows two initially unselected day buttons.');
 verifySeason($dayButtons->item(0)->textContent==='Playing Today'&&$dayButtons->item(1)->textContent==='Playing Tomorrow','Day buttons must have the requested labels.');
 verifySeason(str_contains($dayHtml,'playing=all')&&str_contains($dayHtml,'dfo_sort=1'),'Selected game day can be cleared while keeping Daily Faceoff mode.');
-verifySeason($dfoPath->query('//th[@aria-sort="ascending" or @aria-sort="descending"]')->length===0,'Daily Targets mode must not mark a single column as the active sort.');
+verifySeason($dfoPath->query('//th[@class="myproj" and @aria-sort="descending"]')->length===1,'Daily Targets mode must show the active secondary column sort.');
 verifySeason($dfoPath->query('//form[@class="player-search"]//input[@name="dfo_sort" and @value="1"]')->length===1&&$dfoPath->query('//form[@class="player-slicers"]//input[@name="dfo_sort" and @value="1"]')->length===1&&$dfoPath->query('//form[@aria-label="Player sorting"]//input[@name="dfo_sort"]')->length===0,'Search/team must retain Daily Targets mode; explicit column Sort must clear it.');
 verifySeason(str_contains($dfoHtml,'filter:grayscale(1);opacity:.35')&&str_contains($dfoHtml,'img{filter:none;opacity:1}'),'Logo states must use CSS grayscale/opacity and restore full color.');
 \Carbon\CarbonImmutable::setTestNow();
