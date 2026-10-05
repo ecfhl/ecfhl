@@ -1,0 +1,24 @@
+{
+  "name": "East Coast Fantasy Hockey League",
+  "short_name": "ECFHL",
+  "description": "East Coast Fantasy Hockey League",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#081f36",
+  "theme_color": "#081f36",
+  "icons": [
+    {
+      "src": "/ecfhl-app-icon.svg?v=8",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/ecfhl-logo.png?v=8",
+      "sizes": "160x160",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

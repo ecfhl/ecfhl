@@ -1,4 +1,14 @@
 document.addEventListener('DOMContentLoaded',()=>{
+  const ensureLink=(selector,attrs)=>{
+    let link=document.head.querySelector(selector);
+    if(!link){link=document.createElement('link');document.head.appendChild(link);}
+    Object.entries(attrs).forEach(([key,value])=>link.setAttribute(key,value));
+    return link;
+  };
+  ensureLink('link[rel="manifest"]',{rel:'manifest',href:'/site.webmanifest?v=8'});
+  ensureLink('link[rel="apple-touch-icon"]',{rel:'apple-touch-icon',href:'/ecfhl-logo.png?v=8'});
+  document.head.querySelectorAll('link[rel="icon"],link[rel="shortcut icon"]').forEach(link=>{link.setAttribute('href','/ecfhl-logo.png?v=8');link.setAttribute('type','image/png');});
+
   const modal=document.getElementById('team-icon-modal');
   const modalImage=document.getElementById('team-icon-modal-image');
   const modalTitle=document.getElementById('team-icon-modal-title');
@@ -14,9 +24,15 @@ document.addEventListener('DOMContentLoaded',()=>{
   const isAdmin=modal?.dataset.isAdmin==='1';
   if(!modal||!modalImage||!closeButton||!fileInput)return;
 
+  document.querySelectorAll('.brand-logo').forEach(img=>{
+    img.title='View ECFHL league logo';
+    img.dataset.fullSrc='/ecfhl-logo.png?v=8';
+  });
+
   let lastTrigger=null;
   let activeSlug='';
   let activeAdvisorKey='';
+  let viewingLeagueLogo=false;
 
   const closeModal=()=>{
     modal.classList.remove('open','loading');
@@ -26,29 +42,34 @@ document.addEventListener('DOMContentLoaded',()=>{
     fileInput.disabled=false;
     if(uploadButton)uploadButton.hidden=true;
     activeAdvisorKey='';
+    viewingLeagueLogo=false;
     advisorNameRow?.classList.remove('open');
     lastTrigger?.focus();
   };
 
   document.addEventListener('click',event=>{
-      const button=event.target.closest('[data-team-icon-viewer]');
-      if(!button)return;
+      const teamButton=event.target.closest('[data-team-icon-viewer]');
+      const leagueLogo=event.target.closest('.brand-logo');
+      if(!teamButton&&!leagueLogo)return;
       event.preventDefault();
-      const img=button.querySelector('img');
+      if(leagueLogo)event.stopPropagation();
+      const button=teamButton||leagueLogo;
+      const img=leagueLogo||teamButton?.querySelector('img');
       if(!img)return;
-      lastTrigger=button;
-      activeSlug=button.dataset.teamSlug||'';
-      activeAdvisorKey=button.dataset.advisorKey||'';
-      if(modalTitle)modalTitle.textContent=button.dataset.teamName||button.dataset.advisorFirstName||img.alt||'Team logo';
+      viewingLeagueLogo=!!leagueLogo;
+      lastTrigger=viewingLeagueLogo?leagueLogo.closest('a,button')||leagueLogo:button;
+      activeSlug=viewingLeagueLogo?'':button.dataset.teamSlug||'';
+      activeAdvisorKey=viewingLeagueLogo?'':button.dataset.advisorKey||'';
+      if(modalTitle)modalTitle.textContent=viewingLeagueLogo?'ECFHL League Logo':button.dataset.teamName||button.dataset.advisorFirstName||img.alt||'Team logo';
       if(viewTeamButton){
-        viewTeamButton.hidden=!activeSlug||!!activeAdvisorKey;
+        viewTeamButton.hidden=viewingLeagueLogo||!activeSlug||!!activeAdvisorKey;
         if(viewTeamButton.hidden)viewTeamButton.removeAttribute('href');
         else viewTeamButton.href='/teams/current/'+encodeURIComponent(activeSlug);
       }
-      const fullSrc=img.dataset.fullSrc||img.currentSrc||img.src;
+      const fullSrc=viewingLeagueLogo?'/ecfhl-logo.png?v=8':img.dataset.fullSrc||img.currentSrc||img.src;
       modal.classList.add('loading');
       modalImage.removeAttribute('src');
-      modalImage.alt=img.alt||'Team icon';
+      modalImage.alt=viewingLeagueLogo?'ECFHL league logo':img.alt||'Team icon';
       modalImage.onload=()=>modal.classList.remove('loading');
       modalImage.onerror=()=>modal.classList.remove('loading');
       modalImage.src=fullSrc;
@@ -56,7 +77,7 @@ document.addEventListener('DOMContentLoaded',()=>{
         advisorNameInput.value='';
         advisorNameRow.classList.remove('open');
       }
-      if(activeAdvisorKey){
+      if(viewingLeagueLogo||activeAdvisorKey){
         if(uploadButton)uploadButton.hidden=true;
         fileInput.disabled=true;
       }else{
@@ -114,7 +135,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   uploadButton?.addEventListener('click',()=>fileInput.click());
   fileInput.addEventListener('change',async()=>{
     const file=fileInput.files?.[0];
-    if(!file||!activeSlug)return;
+    if(!file||!activeSlug||viewingLeagueLogo)return;
     if(file.size>2*1024*1024){
       alert('Team icon must be 2 MB or smaller.');
       fileInput.value='';
