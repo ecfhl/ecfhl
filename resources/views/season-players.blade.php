@@ -6,7 +6,7 @@
   @php
     $filterUrl = fn($changes)=>'/players?'.http_build_query(array_merge(['positions'=>implode(',', $positions),'rookies'=>$rookies?'1':'0','q'=>$search,'sort'=>$sort,'direction'=>$direction,'team'=>$selectedTeam,'availability'=>$availability,'line'=>$selectedLine,'pp'=>$selectedPp,'dataset'=>$dataset,'playing'=>$playing,'dfo_sort'=>$dailyTargetsSort?'1':'0'], $changes));
   @endphp
-  @php $advancedCount = (int)($availability!=='all') + (int)$rookies + (int)($selectedTeam!=='') + (int)(count($selectedLines)!==5) + (int)(count($selectedPps)!==3); @endphp
+  @php $advancedCount = (int)$rookies + (int)($selectedTeam!=='') + (int)(count($selectedLines)!==5) + (int)(count($selectedPps)!==3); @endphp
   <div class="card player-controls">
     <a class="player-filter player-dfo-sort player-dfo-top" role="button" aria-pressed="{{ $dailyTargetsSort?'true':'false' }}" aria-label="Daily Faceoff priority sorting" title="Daily Faceoff order: PP1, PP2, then ECFHL Score; goalies: Confirmed, Likely, G1, G2, then ECFHL Score" href="{{ $filterUrl(['dfo_sort'=>$dailyTargetsSort?'0':'1']) }}"><img src="/dailyfaceoff-icon.png?v=6" alt="" width="44" height="44"></a>
     <div class="player-filter-row"><span class="filter-label">Positions</span><div class="player-buttons" role="group" aria-label="Player positions">
