@@ -290,7 +290,7 @@
 .matchup-summary-name a:hover{text-decoration:underline}
 .matchup-card[open] .matchup-summary-name a{text-decoration:underline;text-underline-offset:2px}
 .matchup-summary-name small{font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.05em}.matchup-summary-meta{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}.matchup-summary-meta-home{align-items:flex-end}\n.matchup-summary-home .matchup-summary-name{align-items:flex-end;text-align:right}.matchup-meta-row{display:flex;align-items:center;gap:7px;min-width:0}.matchup-meta-row-home{justify-content:flex-end}.matchup-stat-row{line-height:1.1;padding-top:4px}.matchup-live-games{font-size:8px;font-weight:900;color:#b45309;white-space:nowrap}.matchup-playing-counts{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;flex-wrap:wrap}.position-count-pill{display:inline-flex;align-items:center;padding:2px 6px;border:1px solid #cbd5e1;border-radius:999px;background:#f8fafc;color:#111827;font-size:9px;font-weight:700;line-height:1.1}.position-count-pill.full{border-color:#2563eb;background:#2563eb;color:#fff}.position-count-pill.bench-count-pill{border-color:#dc2626;background:#dc2626;color:#fff}.matchup-projected-score{display:block;font-size:11px!important;font-weight:600!important;color:#b45309!important;line-height:1.15;white-space:nowrap;margin-top:4px;text-align:inherit}.matchup-summary-meta-home{justify-content:flex-end}.matchup-daily-cats{font-size:9px;color:#475569;font-weight:900;display:flex;flex-direction:column;gap:2px;align-items:flex-start}.matchup-summary-meta-home .matchup-daily-cats{align-items:flex-end}.matchup-daily-cats-primary,.matchup-daily-cats-special{display:flex;gap:5px;white-space:nowrap;min-height:10px}.matchup-side-pill{display:inline-flex;align-items:center;justify-content:center;padding:2px 7px;border-radius:999px;font-size:9px;font-weight:900;letter-spacing:.05em;line-height:1.1;border:1px solid transparent;white-space:nowrap}.away-pill{background:#fef3c7;color:#92400e;border-color:#fcd34d}.home-pill{background:#dcfce7;color:#166534;border-color:#86efac}
-.matchup-summary-score{display:grid;grid-template-columns:auto auto;grid-template-rows:auto;align-items:start;column-gap:5px;white-space:nowrap;position:relative;padding-top:0;padding-bottom:0}.matchup-week-score{font-size:24px;line-height:1;font-weight:500;color:#111827;grid-column:1;grid-row:1}.matchup-day-score{font-size:17px;line-height:1;font-weight:500;color:#111827;grid-column:2;grid-row:1;transform:translateY(-2px)}.matchup-week-score.score-up,.matchup-day-score.score-up{color:#16834f!important}.matchup-week-score.score-down,.matchup-day-score.score-down{color:#dc2626!important}.matchup-week-score.score-same,.matchup-day-score.score-same{color:#111827!important}
+.matchup-summary-score{display:grid;grid-template-columns:auto auto;grid-template-rows:auto;align-items:start;column-gap:5px;white-space:nowrap;position:relative;padding-top:0;padding-bottom:0}.matchup-week-score{font-size:28px;line-height:1;font-weight:500;color:#111827;grid-column:1;grid-row:1}.matchup-day-score{font-size:21px;line-height:1;font-weight:500;color:#111827;grid-column:2;grid-row:1;transform:translateY(-2px)}.matchup-week-score.score-up,.matchup-day-score.score-up{color:#16834f!important}.matchup-week-score.score-down,.matchup-day-score.score-down{color:#dc2626!important}.matchup-week-score.score-same,.matchup-day-score.score-same{color:#111827!important}
 .matchup-summary-vs{text-align:center;font-size:10px;font-weight:900;color:var(--muted)}
 .matchup-bye{font-size:11px;font-weight:900;color:var(--muted)}
 .matchup-expanded{border-top:1px solid var(--line);background:#fff}
@@ -425,7 +425,7 @@ html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#3
   .matchup-summary-home .matchup-summary-score{grid-column:2;grid-row:1;align-self:end}
   .matchup-summary-away .matchup-summary-score{transform:translateX(-28px)}
   .matchup-summary-home .matchup-summary-score{transform:translateX(28px)}
-  .matchup-week-score{font-size:29px;line-height:.95;font-weight:600}.matchup-day-score{font-size:16px;line-height:1;font-weight:600;transform:translateY(-3px)}
+  .matchup-week-score{font-size:33px;line-height:.95;font-weight:600}.matchup-day-score{font-size:20px;line-height:1;font-weight:600;transform:translateY(-3px)}
   .matchup-summary-vs{grid-column:2;grid-row:2;align-self:center;font-size:10px;padding-top:3px}
   .matchup-summary-side .matchup-projected-score{position:static!important;display:block;margin-top:4px!important;padding:4px 7px;border-radius:7px;background:#fff1e6;color:#b45309!important;font-size:11px!important;font-weight:800!important;width:max-content}
   .matchup-summary-home .matchup-projected-score{margin-left:auto!important;text-align:right}
@@ -451,7 +451,7 @@ html[data-theme="dark"] .matchup-summary-side .matchup-projected-score{backgroun
   .matchup-daily-cats{font-size:9px;gap:2px}
   .matchup-summary-away .matchup-summary-score,.matchup-summary-home .matchup-summary-score{grid-column:2;grid-row:1;align-self:start;margin-top:8px!important;transform:none}
   .matchup-summary-away .matchup-summary-score{justify-content:flex-start}.matchup-summary-home .matchup-summary-score{justify-content:flex-end}
-  .matchup-week-score{font-size:27px}.matchup-day-score{font-size:15px}
+  .matchup-week-score{font-size:31px}.matchup-day-score{font-size:19px}
   .matchup-summary-vs{grid-column:2;grid-row:1;align-self:start;margin-top:43px;padding:0;font-size:9px}
   .matchup-summary-side .matchup-projected-score{margin-top:3px!important;padding:3px 6px;font-size:10px!important}
 }
@@ -471,7 +471,7 @@ html[data-theme="dark"] .matchup-summary-side .matchup-projected-score{backgroun
   .matchup-summary-score,.matchup-summary-away .matchup-summary-score,.matchup-summary-home .matchup-summary-score{position:absolute!important;top:48px!important;bottom:auto!important;transform:none!important;margin:0!important;display:flex;gap:3px;z-index:2}
   .matchup-summary-away .matchup-summary-score{right:0!important;left:auto!important}
   .matchup-summary-home .matchup-summary-score{left:0!important;right:auto!important}
-  .matchup-week-score{font-size:27px}.matchup-day-score{font-size:15px}
+  .matchup-week-score{font-size:31px}.matchup-day-score{font-size:19px}
   .matchup-summary-vs{grid-column:2;grid-row:1;align-self:start;margin-top:69px;padding:0;font-size:9px}
   .matchup-summary-meta{margin-top:4px}
 }
