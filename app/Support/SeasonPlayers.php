@@ -9,7 +9,7 @@ final class SeasonPlayers
 {
     private const SKATER_COLUMNS = ['G'=>'Goals', 'A'=>'Assists', 'Pts'=>'Points', 'PPG'=>'Power-play goals',
         'SHG'=>'Short-handed goals', 'GWG'=>'Game-winning goals', 'SOG'=>'Shots on goal', 'TOI'=>'Time on ice'];
-    private const BASE_HEADERS = ['player'=>'Player', 'team'=>'Team', 'ec_proj'=>'EC Proj', 'fpts'=>'FPts', 'fpts_gp'=>'FPts/gp', 'gp'=>'GP', 'today'=>'Today', 'tomorrow'=>'Tomorrow'];
+    private const BASE_HEADERS = ['player'=>'Player', 'team'=>'Team', 'ec_proj'=>'ECFHL score', 'fpts'=>'FPts', 'fpts_gp'=>'FPts/gp', 'gp'=>'GP', 'today'=>'Today', 'tomorrow'=>'Tomorrow'];
     public const DATASETS = ['season'=>'Season', '7d'=>'7 days', '14d'=>'14 days', '21d'=>'21 days', 'fantrax'=>'Fantrax proj'];
     private const TEAM_ALIASES = ['LA'=>'LAK', 'NJ'=>'NJD', 'SJ'=>'SJS', 'TB'=>'TBL'];
 
