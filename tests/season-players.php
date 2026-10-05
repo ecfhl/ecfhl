@@ -141,7 +141,7 @@ for($i=1;$i<=62;$i++) {
 }
 foreach([7,14,21] as $days) {
  $window=$service->data(Request::create('/players?availability=all&dataset='.$days.'d&sort=fpts&direction=desc'));
- verifySeason($window['dataset']===$days.'d'&&$window['players']->total()===60&&$window['columns']===[]&&array_keys($window['headers'])===['rank','player','team','ec_proj','fpts','fpts_gp','gp','today','tomorrow'],'Recent datasets must use tracked players and their available columns.');
+ verifySeason($window['dataset']===$days.'d'&&$window['players']->total()===60&&$window['columns']===[]&&array_keys($window['headers'])===['rank','player','team','ec_proj','fpts','fpts_gp','today','tomorrow','gp'],'Recent datasets must use tracked players and their available columns.');
  $first=$window['players'][0];verifySeason($first->player_id==='p1'&&(float)$first->dataset_fpts===$days*100.0-1&&(int)$first->dataset_gp===2&&abs((float)$first->dataset_fpts_per_game-($days*100-1)/2)<.00001,'Recent values or SQL sort used season stats: '.$days);
  verifySeason(str_contains($window['players']->nextPageUrl(),'dataset='.$days.'d'),'Show More lost dataset: '.$days);
 }
