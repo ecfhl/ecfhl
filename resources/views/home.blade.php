@@ -21,6 +21,12 @@
     <h2>Overview: Home</h2>
     <span class="muted">{{ \Carbon\CarbonImmutable::parse($today)->format('l, M j') }}</span>
   </div>
+  @php
+    $myTeamName = request()->user()?->claim?->team_name;
+    if ($myTeamName) {
+      $matchups = $matchups->sortByDesc(fn($m) => $m->away_team_name === $myTeamName || $m->home_team_name === $myTeamName)->values();
+    }
+  @endphp
   {{-- The default DOM is the mobile reading order. Desktop groups these same cards into two stacks. --}}
   <div class="overview-home__cards" data-overview-cards>
     <section class="overview-home__card" data-overview-card="week">
@@ -32,7 +38,7 @@
           $awayLive=collect($snapshot['teams']??[])->firstWhere('name',$matchup->away_team_name);
           $homeLive=collect($snapshot['teams']??[])->firstWhere('name',$matchup->home_team_name);
         @endphp
-        <div class="overview-matchup ecfhl-scoreboard">
+        <div class="overview-matchup ecfhl-scoreboard {{ $myTeamName && ($matchup->away_team_name === $myTeamName || $matchup->home_team_name === $myTeamName) ? 'overview-matchup--mine' : '' }}">
           <div class="team-live-matchup-summary">
             <div class="team-live-side team-live-score-left">
               <div class="team-live-name-row">
