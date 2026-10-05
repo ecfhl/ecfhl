@@ -2,6 +2,7 @@
 @section('title', 'Overview: Home')
 @section('content')
 <link rel="stylesheet" href="/overview-home.css?v={{ hash_file('sha256', base_path('public/overview-home.css')) }}">
+<link rel="stylesheet" href="/matchup-scoreboard.css?v={{ hash_file('sha256', base_path('public/matchup-scoreboard.css')) }}">
 <section class="overview-hero">
   <div class="shell overview-hero__inner">
     <button type="button" class="league-logo-viewer overview-hero__logo" data-team-icon-viewer data-league-logo data-team-name="East Coast Fantasy Hockey League" aria-label="View East Coast Fantasy Hockey League logo">
@@ -31,20 +32,33 @@
           $awayLive=collect($snapshot['teams']??[])->firstWhere('name',$matchup->away_team_name);
           $homeLive=collect($snapshot['teams']??[])->firstWhere('name',$matchup->home_team_name);
         @endphp
-        <div class="overview-matchup">
-          <div class="overview-matchup-team overview-matchup-team--away">
-            <a href="/teams/current/{{ $awaySlug }}"><img src="{{ \App\Support\TeamImages::url($awaySlug,64) }}" alt="" width="32" height="32" loading="lazy"><span>{{ $matchup->away_team_name }}</span></a>
-            <div class="overview-matchup-scores">
-              <div class="overview-matchup-weekly"><strong>{{ number_format($awayLive['period_fpts'] ?? $matchup->away_score ?? 0,0) }}</strong><small>Weekly</small></div>
-              <div class="overview-matchup-daily"><strong>{{ number_format($awayLive['daily_fpts'] ?? 0,0) }}</strong><small>Daily</small></div>
+        <div class="overview-matchup ecfhl-scoreboard">
+          <div class="team-live-matchup-summary">
+            <div class="team-live-side team-live-score-left">
+              <div class="team-live-name-row">
+                <a href="/teams/current/{{ $awaySlug }}">{{ $matchup->away_team_name }}</a>
+                <button type="button" class="team-logo-viewer team-live-logo" data-team-icon-viewer data-team-slug="{{ $awaySlug }}" data-team-name="{{ $matchup->away_team_name }}" aria-label="View {{ $matchup->away_team_name }} logo"><img src="{{ \App\Support\TeamImages::url($awaySlug,160) }}" data-full-src="{{ \App\Support\TeamImages::url($awaySlug) }}" alt="{{ $matchup->away_team_name }} team icon" width="160" height="160" loading="lazy" decoding="async"></button>
+              </div>
+              <div class="team-live-body">
+                <div class="team-live-scores">
+                  <span class="team-live-score team-live-weekly overview-matchup-weekly"><strong>{{ number_format($awayLive['period_fpts'] ?? $matchup->away_score ?? 0,0) }}</strong><small>Weekly</small></span>
+                  <span class="team-live-score team-live-today overview-matchup-daily"><strong>{{ number_format($awayLive['daily_fpts'] ?? 0,0) }}</strong><small>Daily</small></span>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="overview-matchup-team overview-matchup-team--home">
-            <div class="overview-matchup-scores">
-              <div class="overview-matchup-weekly"><strong>{{ number_format($homeLive['period_fpts'] ?? $matchup->home_score ?? 0,0) }}</strong><small>Weekly</small></div>
-              <div class="overview-matchup-daily"><strong>{{ number_format($homeLive['daily_fpts'] ?? 0,0) }}</strong><small>Daily</small></div>
+            <div class="team-live-vs">VS</div>
+            <div class="team-live-side team-live-side-right team-live-score-right">
+              <div class="team-live-name-row">
+                <a href="/teams/current/{{ $homeSlug }}">{{ $matchup->home_team_name }}</a>
+                <button type="button" class="team-logo-viewer team-live-logo" data-team-icon-viewer data-team-slug="{{ $homeSlug }}" data-team-name="{{ $matchup->home_team_name }}" aria-label="View {{ $matchup->home_team_name }} logo"><img src="{{ \App\Support\TeamImages::url($homeSlug,160) }}" data-full-src="{{ \App\Support\TeamImages::url($homeSlug) }}" alt="{{ $matchup->home_team_name }} team icon" width="160" height="160" loading="lazy" decoding="async"></button>
+              </div>
+              <div class="team-live-body">
+                <div class="team-live-scores">
+                  <span class="team-live-score team-live-today overview-matchup-daily"><strong>{{ number_format($homeLive['daily_fpts'] ?? 0,0) }}</strong><small>Daily</small></span>
+                  <span class="team-live-score team-live-weekly overview-matchup-weekly"><strong>{{ number_format($homeLive['period_fpts'] ?? $matchup->home_score ?? 0,0) }}</strong><small>Weekly</small></span>
+                </div>
+              </div>
             </div>
-            <a href="/teams/current/{{ $homeSlug }}"><span>{{ $matchup->home_team_name }}</span><img src="{{ \App\Support\TeamImages::url($homeSlug,64) }}" alt="" width="32" height="32" loading="lazy"></a>
           </div>
         </div>
       @empty

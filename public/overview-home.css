@@ -19,14 +19,7 @@
 .overview-home__empty { margin: 8px 0; color: var(--muted); font-size: 12px; }
 .overview-rank { text-align: center; color: var(--muted); font-size: 11px; }
 
-.overview-matchup { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); font-size: 11px; }
-.overview-matchup-team { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px; min-width: 0; }
-.overview-matchup-team--home { grid-template-columns: auto minmax(0, 1fr); }
-.overview-matchup-team > a { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; color: var(--text); text-decoration: none; min-width: 0; font-weight: 600; }
-.overview-matchup-team > a img { order: 1; flex-shrink: 0; }
-.overview-matchup-team--home > a { align-items: flex-end; text-align: right; }
-.overview-matchup span { min-width: 0; overflow-wrap: anywhere; line-height: 1.3; }
-.overview-matchup img { flex: 0 0 25px; width: 25px; height: 25px; object-fit: contain; }
+.overview-matchup .team-live-name-row a { text-decoration: none; }
 
 .overview-standing { display: grid; grid-template-columns: 20px 30px minmax(0, 1fr) auto; gap: 7px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); text-decoration: none; color: var(--text); font-size: 12px; }
 .overview-standing img { width: 30px; height: 30px; object-fit: contain; }
@@ -62,19 +55,5 @@
   .overview-hero p { font-size: 14px; }
   .overview-home__cards--desktop { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
   .overview-home__card { padding: 18px; }
-  .overview-matchup { gap: 16px; font-size: 12px; }
-  .overview-matchup img { flex-basis: 32px; width: 32px; height: 32px; }
   .overview-home__history { font-size: 12px; }
-}
-
-/* Keep each team's weekly and daily totals together on its own side. */
-.overview-matchup-scores { display: flex; flex-direction: column; gap: 5px; white-space: nowrap; font-variant-numeric: tabular-nums; text-align: center; }
-.overview-matchup-scores > div { display: flex; flex-direction: column; gap: 2px; }
-.overview-matchup-weekly strong { font-size: 16px; line-height: 1.1; color: var(--text); }
-.overview-matchup-daily strong { font-size: 11px; line-height: 1.1; color: var(--text); }
-.overview-matchup-scores small { font-size: 8px; font-weight: 600; line-height: 1; color: var(--muted); }
-@media (max-width: 420px) {
-  .overview-matchup { gap: 10px; }
-  .overview-matchup-weekly strong { font-size: 14px; }
-  .overview-matchup-daily strong { font-size: 10px; }
 }
