@@ -43,9 +43,9 @@
       @else
         <span class="team-playing-text">Playing</span>
       @endif
-      @if(strtoupper((string)$player->position)==='G' && !empty($player->goalie_stats))<span class="matchup-player-cats">@foreach($player->goalie_stats as $label=>$value)@if($value!==null && $value!=='')<span>{{ $label }}: {{ $value }}</span>@endif @endforeach @foreach(['today_w'=>'W','today_so'=>'SO','today_g'=>'G','today_a'=>'A'] as $field=>$label)@if(($player->{$field} ?? 0) != 0)<span>{{ $label }}: {{ $player->{$field} }}</span>@endif @endforeach</span>@endif
-      @if(($player->today_ol ?? 0) != 0)<span class="matchup-player-cats">OL+ShL: {{ $player->today_ol }}</span>@endif
-      <span class="matchup-player-cats"><span class="matchup-player-cats-primary">@foreach(['today_gp'=>'GP','today_g'=>'G','today_a'=>'A'] as $field=>$label)@if(($player->{$field} ?? 0) != 0)<span>{{ $label }}: {{ $player->{$field} }}</span>@endif @endforeach</span><span class="matchup-player-cats-special">@foreach(['today_ppg'=>'PPG','today_shg'=>'SHG','today_gwg'=>'GWG','today_w'=>'W','today_so'=>'SO'] as $field=>$label)@if(($player->{$field} ?? 0) != 0)<span>{{ $label }}: {{ $player->{$field} }}</span>@endif @endforeach</span></span>
+      @if(strtoupper((string)$player->position)==='G')<span class="matchup-player-cats">@foreach(['today_gp'=>'GP','today_w'=>'W','today_ol'=>'OTL','today_so'=>'SO','today_g'=>'G','today_a'=>'A'] as $field=>$label)@if(($player->{$field} ?? 0) != 0)<span>{{ $label }}: {{ $player->{$field} }}</span>@endif @endforeach</span>@endif
+      @if(strtoupper((string)$player->position)!=='G' && ($player->today_ol ?? 0) != 0)<span class="matchup-player-cats">OL+ShL: {{ $player->today_ol }}</span>@endif
+      @if(strtoupper((string)$player->position)!=='G')<span class="matchup-player-cats"><span class="matchup-player-cats-primary">@foreach(['today_gp'=>'GP','today_g'=>'G','today_a'=>'A'] as $field=>$label)@if(($player->{$field} ?? 0) != 0)<span>{{ $label }}: {{ $player->{$field} }}</span>@endif @endforeach</span><span class="matchup-player-cats-special">@foreach(['today_ppg'=>'PPG','today_shg'=>'SHG','today_gwg'=>'GWG','today_w'=>'W','today_so'=>'SO'] as $field=>$label)@if(($player->{$field} ?? 0) != 0)<span>{{ $label }}: {{ $player->{$field} }}</span>@endif @endforeach</span></span>@endif
     </div>
   </div>
   <div class="matchup-player-metrics">
