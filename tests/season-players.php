@@ -222,7 +222,7 @@ $dfoUrl='/players?availability=all&positions=F,D&sort=ec_proj&direction=desc&dfo
 $dfo=$service->data(Request::create($dfoUrl));
 verifySeason($dfo['dailyTargetsSort']&&$dfo['players']->getCollection()->take(8)->pluck('player_id')->all()===['p60','p7','p4','p3','p6','p5','p1','p2'],'Daily Targets skaters must prioritize PP, line, projection (null last), source rank, then name before pagination.');
 $descending=$service->data(Request::create(str_replace('direction=desc','direction=asc',$dfoUrl)));
-verifySeason($descending['players'][0]->player_id==='p60'&&$descending['players'][1]->player_id==='p6','Ascending score must apply within the same PP/line priority groups.');
+verifySeason($descending['players']->getCollection()->take(8)->pluck('player_id')->all()===['p6','p3','p7','p4','p60','p5','p1','p2'],'Ascending score must apply within the same PP/line priority groups.');
 $allIds=[];
 foreach ([1,2,3] as $page) $allIds=array_merge($allIds,$service->data(Request::create($dfoUrl.'&page='.$page))['players']->getCollection()->pluck('player_id')->all());
 verifySeason(count($allIds)===60&&count(array_unique($allIds))===60&&str_contains($dfo['players']->nextPageUrl(),'dfo_sort=1'),'Daily Targets pagination must preserve mode with no missing or duplicated players.');
