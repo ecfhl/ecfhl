@@ -47,3 +47,22 @@ html[data-theme="dark"] .ecfhl-scoreboard .team-live-matchup-summary{background:
  .ecfhl-scoreboard .team-live-scores .team-live-today strong{font-size:20px!important}
  .ecfhl-scoreboard .team-live-score small{font-size:7px!important}
 }
+
+
+/* Mobile expanded player rows: compact vertical spacing and larger names. */
+@media(max-width:700px){
+ .ecfhl-scoreboard .team-live-expanded .matchup-player-row{
+  min-height:72px!important;
+  padding:7px 9px 5px!important;
+ }
+ .ecfhl-scoreboard .team-live-expanded .matchup-player-name{
+  font-size:15px!important;
+  line-height:1.1!important;
+ }
+ .ecfhl-scoreboard .team-live-expanded .matchup-player-opponent{
+  margin-top:3px!important;
+ }
+ .ecfhl-scoreboard .team-live-expanded .matchup-player-today{
+  bottom:5px!important;
+ }
+}
