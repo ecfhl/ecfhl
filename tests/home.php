@@ -37,21 +37,28 @@ $html=seasonRequest('/')->getContent();
 $xpath=homeDocument($html);
 $hasClass=fn($class)=>'contains(concat(" ",normalize-space(@class)," ")," '.$class.' ")';
 foreach (['F','D','G'] as $i=>$position) {
-    $rows=$xpath->query('(//div['.$hasClass('home-player-group').'])['.($i+1).']/a');
+    $rows=$xpath->query('(//div['.$hasClass('overview-player-group').'])['.($i+1).']/a');
     verifySeason($rows->length===3,'Home must keep exactly three available players per position.');
     foreach ($rows as $j=>$row) {
         verifySeason($row->getAttribute('href')==='/players/'.$position.($j+1),'Home must sort by EC Proj, ignore old-season players, and exclude every owned roster slot.');
         verifySeason(str_contains($row->textContent,(string)(101+$j).' FPts'),'Home must display actual season FPts, not the projection used for sorting.');
     }
 }
-verifySeason($xpath->query('//div['.$hasClass('home-season-grid').']/div['.$hasClass('home-column').']/section')->length===4,'All four cards must belong to the two desktop stacks.');
-verifySeason($xpath->query('//div['.$hasClass('season-home').']/div['.$hasClass('home-history-link').']')->length===1,'Malformed closing tags must not push the archive footer outside the Home shell.');
+$cards=$xpath->query('//div[@data-overview-cards]/section');
+verifySeason($cards->length===4,'Home must render exactly four cards in normal document flow.');
+foreach (['week','standings','watch','league'] as $i=>$name) verifySeason($cards->item($i)->getAttribute('data-overview-card')===$name,'Mobile DOM reading order must match the visible card order.');
+verifySeason(!str_contains($html,'home-shortcuts')&&!str_contains($html,'Roster & lineup advisor')&&!str_contains($html,'Stats & projections'),'The four shortcut cards must be removed.');
+verifySeason(!str_contains($html,'season-home.css')&&str_contains($html,'overview-home.css?v=')&&str_contains($html,'overview-home.js?v='),'Home must load only the rebuilt, fingerprinted assets.');
+$menu=$xpath->query('//nav[@id="main-navigation"]//a');
+foreach ($menu as $link) verifySeason((new DOMXPath($link->ownerDocument))->query('.//span['.$hasClass('nav-item-icon').']',$link)->length===1,'Main menu items must have a leading icon.');
+verifySeason($xpath->query('//button[@aria-label="Open Other menu"]/span['.$hasClass('nav-item-icon').']')->length===1,'Other menu must also have a leading icon.');
+verifySeason($xpath->query('//div['.$hasClass('overview-home').']/div['.$hasClass('overview-home__history').']')->length===1,'Malformed closing tags must not push the archive footer outside the Home shell.');
 verifySeason($xpath->query('//nav['.$hasClass('mobile-primary-nav').']/a[1]')->item(0)->getAttribute('href')==='/','Home must be the first mobile navigation item.');
-verifySeason(str_contains($html,'Times in Atlantic · Fantasy day follows Pacific time')&&str_contains($html,'thescore-mark'),'Home must retain the time note and theScore link/icon.');
+verifySeason(str_contains($html,'Times in Atlantic · Fantasy day follows Pacific time')&&str_contains($html,'overview-score-mark'),'Home must retain the time note and theScore link/icon.');
 
 if ($output=getenv('ECFHL_HOME_QA_HTML')) file_put_contents($output,$html);
 DB::table('season_player_stats')->delete();
 $empty=homeDocument(seasonRequest('/')->getContent());
-verifySeason($empty->query('//div['.$hasClass('home-player-group').']/h3')->length===3&&$empty->query('//div['.$hasClass('home-player-group').']/p')->length===3,'Empty Player Watch must still show all three position headings and useful empty states.');
+verifySeason($empty->query('//div['.$hasClass('overview-player-group').']/h3')->length===3&&$empty->query('//div['.$hasClass('overview-player-group').']/p')->length===3,'Empty Player Watch must still show all three position headings and useful empty states.');
 CarbonImmutable::setTestNow();
 echo "Home checks passed: available-only EC Proj ordering, actual FPts, three players per position, released/bench/minors/IR ownership, current season, valid card/footer structure and mobile Home link.\n";

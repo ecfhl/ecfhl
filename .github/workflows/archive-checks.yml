@@ -21,3 +21,4 @@ jobs:
       - run: php tests/starting-goalies.php
       - run: php tests/live-scoring.php
       - run: php tests/home.php
+      - run: node tests/overview-layout.cjs
