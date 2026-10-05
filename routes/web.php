@@ -26,6 +26,31 @@ Route::post('/admin/lineup-advisor/reset-and-refresh', function () {
     ],$exitCode===0?200:500);
 });
 
+Route::post('/league-logo', function() {
+    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('team_icons'),503);
+    $user=request()->user();
+    abort_unless($user && $user->is_admin,403);
+
+    $validated=request()->validate(['image'=>'required|file|mimes:jpg,jpeg,png,webp|max:2048']);
+    $file=$validated['image'];
+    $bytes=file_get_contents($file->getRealPath());
+    abort_if($bytes===false,422,'Could not read image.');
+    $dimensions=@getimagesizefromstring($bytes);
+    abort_if(!$dimensions || $dimensions[0]*$dimensions[1]>16000000,422,'Use an image with at most 16 million pixels.');
+
+    $mime=$file->getMimeType()?:'image/png';
+    DB::table('team_icons')->updateOrInsert(
+        ['team_slug'=>'league-logo'],
+        ['mime_type'=>$mime,'image_data'=>base64_encode($bytes),'updated_at'=>now(),'created_at'=>now()]
+    );
+    \App\Support\TeamImages::generate('league-logo',$bytes,$mime);
+    return response()->json([
+        'ok'=>true,
+        'url'=>\App\Support\TeamImages::url('league-logo'),
+        'thumbnail_url'=>\App\Support\TeamImages::url('league-logo',160),
+    ]);
+})->middleware('auth');
+
 Route::post('/team-icons/{slug}', function(string $slug) {
     abort_unless(\Illuminate\Support\Facades\Schema::hasTable('team_icons'),503);
 
