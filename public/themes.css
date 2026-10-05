@@ -60,3 +60,14 @@ html[data-theme="dark"] .tips-line-filter.active,html[data-theme="dark"] .tips-g
 html[data-theme="dark"] :is(.tips-line-filter[data-line="2"].active,.tips-goalie-filter[data-goalie="2"].active,.tips-pp-filter[data-pp="2"].active){background:var(--badge-yellow-bg);color:var(--badge-yellow-text);border-color:var(--badge-yellow-line)}
 html[data-theme="dark"] .tips-line-filter[data-line="3"].active{background:var(--badge-orange-bg);color:var(--badge-orange-text);border-color:var(--badge-orange-line)}
 html[data-theme="dark"] :is(.tips-line-filter[data-line="4"].active,.tips-injury-filter.active){background:var(--badge-red-bg);color:var(--badge-red-text);border-color:var(--badge-red-line)}
+
+/* Game time and live NHL score remain readable on every dark roster row. */
+html[data-theme="dark"] :is(.matchup-player-opponent,.team-player-opponent) > :is(.team-playing-text,.team-home,.team-away){color:#fde68a!important}
+/* Address the daily points by name; it may be the only metrics item. */
+.matchup-expanded .matchup-player-row .matchup-player-metrics > .matchup-player-today strong,
+.current-team-page .team-roster-table .team-today-fpts{font-size:36px!important;font-weight:900!important;line-height:1!important;font-variant-numeric:tabular-nums}
+.team-live-expanded .matchup-player-row .matchup-player-metrics > .matchup-player-today{top:auto!important;bottom:9px!important;right:9px!important}
+.team-live-expanded .matchup-player-row:not(.matchup-player-blank){padding-bottom:48px!important;min-height:112px!important}
+@media(max-width:800px){
+ .matchup-expanded .matchup-player-row:not(.matchup-player-blank){padding-bottom:48px!important;min-height:112px!important}
+}
