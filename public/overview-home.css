@@ -20,6 +20,8 @@
 .overview-rank { text-align: center; color: var(--muted); font-size: 11px; }
 
 .overview-matchup .team-live-name-row a { text-decoration: none; }
+.overview-matchup--mine { border: 2px solid color-mix(in srgb, var(--accent) 65%, transparent); border-radius: 12px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
+.overview-matchup--mine .team-live-matchup-summary { background: color-mix(in srgb, var(--accent) 12%, var(--panel-2)); }
 
 .overview-standing { display: grid; grid-template-columns: 20px 30px minmax(0, 1fr) auto; gap: 7px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); text-decoration: none; color: var(--text); font-size: 12px; }
 .overview-standing img { width: 30px; height: 30px; object-fit: contain; }
