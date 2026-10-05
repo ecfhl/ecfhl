@@ -40,7 +40,7 @@ function auditPage(string $path, bool $signedIn=false, bool $fragment=false): ar
     checkSpeed($response->getStatusCode()===200,'Site audit failed: '.$path.' '.$response->getStatusCode().' '.substr(strip_tags($response->getContent()),0,300));
     $html=$response->getContent();
     if(!$fragment){
-        checkSpeed(str_contains($html,'themes.css?v='.hash_file('sha256',public_path('themes.css'))),'Shared theme missing: '.$path);
+        checkSpeed(str_contains($html,'themes.css?v='.hash_file('sha256',base_path('public/themes.css'))),'Shared theme missing: '.$path);
         checkSpeed(strpos($html,'localStorage.getItem')<strpos($html,'<body'),'Theme applied after page paint: '.$path);
     }
     return ['path'=>$path,'queries'=>count(DB::getQueryLog()),'ms'=>round((microtime(true)-$start)*1000,1),'bytes'=>strlen($html)];
