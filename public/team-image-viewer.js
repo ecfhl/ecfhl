@@ -73,7 +73,10 @@ document.addEventListener('DOMContentLoaded',()=>{
         advisorNameInput.value='';
         advisorNameRow.classList.remove('open');
       }
-      if(viewingLeagueLogo||activeAdvisorKey){
+      if(viewingLeagueLogo){
+        if(uploadButton)uploadButton.hidden=!isAdmin;
+        fileInput.disabled=!isAdmin;
+      }else if(activeAdvisorKey){
         if(uploadButton)uploadButton.hidden=true;
         fileInput.disabled=true;
       }else{
@@ -131,7 +134,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   uploadButton?.addEventListener('click',()=>fileInput.click());
   fileInput.addEventListener('change',async()=>{
     const file=fileInput.files?.[0];
-    if(!file||!activeSlug||viewingLeagueLogo)return;
+    if(!file||(!viewingLeagueLogo&&!activeSlug))return;
     if(file.size>2*1024*1024){
       alert('Team icon must be 2 MB or smaller.');
       fileInput.value='';
@@ -144,7 +147,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(uploadButton)uploadButton.textContent='Uploading...';
 
     try{
-      const response=await fetch('/team-icons/'+encodeURIComponent(activeSlug),{
+      const uploadUrl=viewingLeagueLogo?'/league-logo':'/team-icons/'+encodeURIComponent(activeSlug);
+      const response=await fetch(uploadUrl,{
         method:'POST',
         headers:{'X-CSRF-TOKEN':csrf,'Accept':'application/json'},
         body:form
@@ -155,9 +159,13 @@ document.addEventListener('DOMContentLoaded',()=>{
         throw new Error(message);
       }
       const data=await response.json();
-      const freshUrl=(data.url||('/team-icons/'+activeSlug))+(String(data.url||'').includes('?')?'&':'?')+'t='+Date.now();
+      const freshUrl=(data.url||(viewingLeagueLogo?'/team-icons/league-logo':'/team-icons/'+activeSlug))+(String(data.url||'').includes('?')?'&':'?')+'t='+Date.now();
       modalImage.src=freshUrl;
-      document.querySelectorAll('[data-team-icon-viewer][data-team-slug="'+CSS.escape(activeSlug)+'"] img').forEach(img=>{img.dataset.fullSrc=freshUrl;img.removeAttribute('srcset');img.src=data.thumbnail_url||('/team-icons/'+encodeURIComponent(activeSlug)+'/thumbnail?size=160&t='+Date.now());});
+      if(viewingLeagueLogo){
+        document.querySelectorAll('[data-league-logo] img').forEach(img=>{img.dataset.fullSrc=freshUrl;img.removeAttribute('srcset');img.src=(data.thumbnail_url||'/team-icons/league-logo/thumbnail?size=160')+(String(data.thumbnail_url||'').includes('?')?'&':'?')+'t='+Date.now();});
+      }else{
+        document.querySelectorAll('[data-team-icon-viewer][data-team-slug="'+CSS.escape(activeSlug)+'"] img').forEach(img=>{img.dataset.fullSrc=freshUrl;img.removeAttribute('srcset');img.src=data.thumbnail_url||('/team-icons/'+encodeURIComponent(activeSlug)+'/thumbnail?size=160&t='+Date.now());});
+      }
     }catch(error){
       alert(error.message||'Could not upload team icon.');
     }finally{
