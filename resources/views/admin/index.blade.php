@@ -8,6 +8,7 @@
     ['/job-status', '🔄', 'Collector Status', 'Check data refreshes and run collectors.'],
     ['/admin/advisors', '💬', 'Advisors', 'Manage lineup advisors and their profiles.'],
     ['/admin/teams', '👥', 'Teams', 'Manage team logos and associated accounts.'],
+    ['/admin/notifications', '🔔', 'Notification Tests', 'Send a test for every scoring and goalie notification type.'],
   ] as [$url, $icon, $title, $description])
     <a class="card admin-menu-card" href="{{ $url }}"><span class="admin-menu-icon" aria-hidden="true">{{ $icon }}</span><div><h2>{{ $title }}</h2><p>{{ $description }}</p></div><span class="admin-menu-arrow" aria-hidden="true">→</span></a>
   @endforeach
