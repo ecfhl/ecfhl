@@ -23,12 +23,12 @@
 .overview-matchup--mine { border: 2px solid color-mix(in srgb, var(--accent) 65%, transparent); border-radius: 12px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
 .overview-matchup--mine .team-live-matchup-summary { background: color-mix(in srgb, var(--accent) 12%, var(--panel-2)); }
 
-.overview-standing { display: grid; grid-template-columns: 20px 30px minmax(0, 1fr) auto; gap: 7px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); text-decoration: none; color: var(--text); font-size: 12px; }
-.overview-standing img { width: 30px; height: 30px; object-fit: contain; }
+.overview-standing { display: grid; grid-template-columns: 20px 64px minmax(0, 1fr) auto; gap: 7px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); text-decoration: none; color: var(--text); font-size: 12px; }
+.overview-standing img { width: 64px; height: 64px; object-fit: contain; }
 .overview-standing > div { min-width: 0; }
-.overview-standing strong { display: block; overflow-wrap: anywhere; line-height: 1.3; }
+.overview-standing strong { font-size: 15px; font-weight: 900; display: block; overflow-wrap: anywhere; line-height: 1.3; }
 .overview-standing small { display: block; font-size: 10px; color: var(--muted); margin-top: 2px; font-weight: 400; }
-.overview-standing > b { text-align: right; font-size: 15px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.overview-standing > b { text-align: right; font-size: 40px; line-height: 1; font-weight: 900; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .overview-standing--cut { border-top: 3px solid var(--accent); }
 
 .overview-player-group + .overview-player-group { margin-top: 7px; }
@@ -58,4 +58,19 @@
   .overview-home__cards--desktop { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
   .overview-home__card { padding: 18px; }
   .overview-home__history { font-size: 12px; }
+}
+
+/* Keep standings sizing aligned with the shared matchup scoreboard. */
+.overview-standing > b small { font-size: 8px; line-height: 1.2; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+@media (max-width: 700px) {
+  .overview-standing { grid-template-columns: 20px 56px minmax(0, 1fr) auto; }
+  .overview-standing img { width: 56px; height: 56px; }
+  .overview-standing strong { font-size: 12px; }
+  .overview-standing > b { font-size: 36px; }
+}
+@media (max-width: 380px) {
+  .overview-standing { grid-template-columns: 20px 48px minmax(0, 1fr) auto; }
+  .overview-standing img { width: 48px; height: 48px; }
+  .overview-standing > b { font-size: 32px; }
+  .overview-standing > b small { font-size: 7px; }
 }
