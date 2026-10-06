@@ -126,6 +126,38 @@ class WebPush
         return ['ok'=>true,'message'=>'Test sent to this device. '.$alert['title']."\n".$alert['body']];
     }
 
+    public function testType(int $userId,string $endpointHash,string $type): array
+    {
+        $subscription=DB::table('push_subscriptions')->where('user_id',$userId)->where('endpoint_hash',$endpointHash)->where('enabled',true)->whereNotNull('feed_token_hash')->first();
+        if(!$subscription)throw \Illuminate\Validation\ValidationException::withMessages(['device'=>'Enable notifications on this device before sending a test.']);
+        $tests=[
+            'team-score'=>['ECFHL · My Team','Test Skater · 5 FPts',"G: 1 · A: 1 · PPG: 1 · SHG: 0 · GWG: 0"],
+            'team-goalie-score'=>['ECFHL · My Team','Test Goalie · 6 FPts',"W: 1 · L: 0 · OL: 0 · SO: 1 · G: 0 · A: 0"],
+            'opponent-score'=>['ECFHL · Opponent','Test Opponent · 3 FPts',"G: 1 · A: 0 · PPG: 0 · SHG: 0 · GWG: 1"],
+            'own-goalie'=>['ECFHL · Goalie Status','My Team Goalie · Confirmed','Rostered goalie status changed to Confirmed.'],
+            'all-goalie'=>['ECFHL · Goalie Status','League Goalie · Likely','Goalie status changed to Likely.'],
+            'available-today'=>['ECFHL · Available Goalie','Available Today · Confirmed','Available goalie playing today is Confirmed.'],
+            'available-tomorrow'=>['ECFHL · Available Goalie','Available Tomorrow · Likely','Available goalie playing tomorrow is Likely.'],
+            'watched-goalie'=>['ECFHL · Watched Goalie','Watched Goalie · Confirmed','A goalie on your watch list is Confirmed.'],
+        ];
+        abort_unless(isset($tests[$type]),422,'Unknown notification test.');
+        [$title,$headline,$detail]=$tests[$type];
+        $alert=['category'=>'test-'.$type,'title'=>$title.' · TEST','body'=>$headline."\n".$detail,'url'=>'/notifications','fantasy_team_id'=>null];
+        $id=DB::transaction(function()use($alert,$subscription){
+            $id=DB::table('push_notifications')->insertGetId(array_merge($alert,['created_at'=>now(),'updated_at'=>now()]));
+            DB::table('push_deliveries')->insert(['subscription_id'=>$subscription->id,'notification_id'=>$id]);
+            return $id;
+        });
+        try{$status=$this->sendEmptyPush($subscription->endpoint);}catch(\Throwable $e){DB::table('push_notifications')->where('id',$id)->delete();throw $e;}
+        if($status<200||$status>=300){
+            DB::table('push_notifications')->where('id',$id)->delete();
+            if(in_array($status,[404,410],true))DB::table('push_subscriptions')->where('id',$subscription->id)->delete();
+            throw \Illuminate\Validation\ValidationException::withMessages(['device'=>'The browser could not receive the test. Re-enable notifications on this device and try again.']);
+        }
+        DB::table('push_subscriptions')->where('id',$subscription->id)->update(['last_push_at'=>now(),'updated_at'=>now()]);
+        return ['ok'=>true,'message'=>$title.' test sent to this device.'];
+    }
+
     private function sendEmptyPush(string $endpoint): int
     {
         [$publicKey,$privatePem]=$this->ensureKeys();
