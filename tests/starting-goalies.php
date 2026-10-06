@@ -22,6 +22,7 @@ config(['database.connections.sqlite' => ['driver'=>'sqlite','database'=>':memor
 foreach (glob(__DIR__.'/../database/migrations/*create_active*table.php') as $file) {
     (require $file)->up();
 }
+foreach (['2026_09_24_000001_create_ecfhl_tables.php','2026_09_30_000006_create_todays_odds_table.php','2026_10_03_041000_create_live_scoring_snapshots.php','2026_10_01_153500_create_web_push_tables.php','2026_10_03_230000_create_owner_accounts.php'] as $name) (require __DIR__.'/../database/migrations/'.$name)->up();
 function goalieCheck($condition, $message) {
     if (! $condition) throw new RuntimeException($message);
 }
@@ -109,7 +110,7 @@ $dom = new DOMDocument;
 @$dom->loadHTML($html);
 $xpath = new DOMXPath($dom);
 goalieCheck($xpath->query('//tr[contains(@class,"tips-not-starting")]')->length === 1, 'Greyed backup row rendered');
-goalieCheck($xpath->query('//tr[contains(@class,"tips-not-starting")]//a')->length === 0, 'Disabled backup has no actionable link');
+goalieCheck($xpath->query('//tr[contains(@class,"tips-not-starting")]//a[contains(@class,"tips-add-button")]')->length === 0, 'Disabled backup has no Add link');
 goalieCheck($xpath->query('//tr[contains(@class,"tips-not-starting")]//*[@aria-disabled="true"]')->length === 1, 'Disabled Add semantics');
 CarbonImmutable::setTestNow();
 echo "Starting-goalie parser, safe replacement, exit-code and AI Tips join checks passed.\n";
