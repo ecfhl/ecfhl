@@ -288,7 +288,9 @@
 .matchup-summary-name{min-width:0}
 .matchup-team-name-row{display:flex;flex-direction:column;gap:6px;align-items:flex-start;min-width:0;max-width:100%}
 .matchup-team-name-row-away a{order:-1}
-.matchup-team-name-row-home{align-items:flex-end}
+.matchup-team-name-row-home{align-items:flex-end;width:100%}
+.matchup-team-name-row-home .team-icon-uploader{align-self:flex-end!important}
+.matchup-team-name-row-home a{text-align:right}
 .matchup-team-name-row a{font-weight:900;color:var(--text);text-decoration:none;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;display:block;max-width:100%}
 .matchup-team-name-row .team-icon-uploader{width:64px}
 .matchup-team-name-row .team-icon-uploader img{display:block;width:64px;height:64px;object-fit:contain}
