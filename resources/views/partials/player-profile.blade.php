@@ -1,6 +1,6 @@
 <article class="player-profile">
   <header><div class="eyebrow">2026–27 Player Profile</div><h1>{{ $player->player_name }}</h1><p>{{ $player->position }} · {{ $player->nhl_team ?: 'No NHL team' }}@if($player->rookie) · <span class="rookie-tag">Rookie</span>@endif</p><p class="player-profile-owner">@if($roster)<a href="/teams/current/{{ $teamSlug }}">{{ $roster->fantasy_team_name }}</a>@else Free Agent @endif</p></header>
-  <div class="player-profile-tiles"><div><small>ECFHL Score / Game</small><strong>{{ $projection?->projected_fpts_per_game!==null ? number_format($projection->projected_fpts_per_game,2) : '—' }}</strong></div>
+  <div class="player-profile-tiles"><div><small>ECFHL Score</small><strong>{{ $projection?->projected_fpts_per_game!==null ? number_format($projection->projected_fpts_per_game,2) : '—' }}</strong></div>
     @foreach(['Today'=>$todayGame,'Tomorrow'=>$tomorrowGame] as $label=>$game)<div><small>{{ $label }}</small><strong class="player-profile-game">{{ $game ? (($game['away']?'@':'vs ').$game['opponent']) : 'Not playing' }}</strong>@if($game)<span>{{ $game['time'] ?: 'Time unavailable' }}</span>@endif</div>@endforeach
   </div>
   <p class="muted player-profile-time">Game times in Atlantic. Today and Tomorrow follow the Pacific fantasy day.</p>
