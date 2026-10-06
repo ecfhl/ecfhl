@@ -74,3 +74,6 @@
   .overview-standing > b { font-size: 32px; }
   .overview-standing > b small { font-size: 7px; }
 }
+
+/* Make regular-season records readable beneath each team name. */
+.overview-standing > div > small { font-size: 14px; line-height: 1.35; font-weight: 600; margin-top: 4px; }
