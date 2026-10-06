@@ -124,7 +124,11 @@ final class SeasonPlayers
         $todayGames=$games->forDate($fantasyToday->toDateString());
         $tomorrowGames=$games->forDate($fantasyToday->addDay()->toDateString());
         $goalieStatuses = [];
+        $goalieOdds = [];
         foreach (['today'=>$fantasyToday->toDateString(), 'tomorrow'=>$fantasyToday->addDay()->toDateString()] as $day=>$date) {
+            $goalieOdds[$day] = DB::table('todays_odds')->where('game_date', $date)
+                ->get(['team', 'american_odds'])
+                ->keyBy(fn($r)=>$this->teamCode($r->team));
             $starters = DB::table('active_starting_goalies')->where('game_date', $date)->orderBy('checked_at')->orderBy('id')->get(['team', 'player_name', 'starting_status']);
             $confirmed = [];
             foreach ($starters as $starter) {
@@ -132,12 +136,15 @@ final class SeasonPlayers
             }
             $goalieStatuses[$day] = ['players'=>$starters->keyBy(fn($r)=>$this->assignmentKey($r->team, $r->player_name)), 'confirmed'=>$confirmed];
         }
-        $players->getCollection()->transform(function ($row) use ($lines, $pp, $todayGames, $tomorrowGames, $goalieStatuses) {
+        $players->getCollection()->transform(function ($row) use ($lines, $pp, $todayGames, $tomorrowGames, $goalieStatuses, $goalieOdds) {
             $row->today_game=$todayGames[PlayerGames::team($row->nhl_team)]??null;
             $row->tomorrow_game=$tomorrowGames[PlayerGames::team($row->nhl_team)]??null;
             foreach (['today','tomorrow'] as $day) {
                 $row->{$day.'_goalie_status'} = null;
+                $row->{$day.'_vegas_odds'} = null;
                 if ($row->position !== 'G' || !$row->{$day.'_game'}) continue;
+                $odds = $goalieOdds[$day][$this->teamCode($row->nhl_team)]->american_odds ?? null;
+                $row->{$day.'_vegas_odds'} = is_numeric($odds) ? (int)$odds : null;
                 $key = $this->assignmentKey($row->nhl_team, $row->player_name);
                 $status = strtolower(trim((string)($goalieStatuses[$day]['players'][$key]->starting_status ?? '')));
                 $confirmed = $goalieStatuses[$day]['confirmed'][$this->teamCode($row->nhl_team)] ?? null;
