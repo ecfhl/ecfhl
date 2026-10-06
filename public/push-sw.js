@@ -110,15 +110,17 @@ self.addEventListener('push',event=>{
 self.addEventListener('notificationclick',event=>{
   const url=event.notification.data?.url||'/';
   event.waitUntil((async()=>{
+    const target=new URL(url,self.location.origin);
+    if(target.origin!==self.location.origin)return clients.openWindow(target.href);
     const all=await clients.matchAll({type:'window',includeUncontrolled:true});
     for(const client of all){
       if('focus' in client){
         try{
-          await client.navigate(url);
+          await client.navigate(target.href);
           return client.focus();
         }catch(e){}
       }
     }
-    return clients.openWindow(url);
+    return clients.openWindow(target.href);
   })());
 });
