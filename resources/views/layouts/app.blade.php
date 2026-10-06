@@ -389,7 +389,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 @if(request()->is('daily-targets','teams/current/*'))
 <link rel="stylesheet" href="/goalie-watches.css?v=1">
-<script src="/goalie-watches.js?v=2" defer></script>
+<script src="/goalie-watches.js?v=3" defer></script>
 @endif
 <link rel="stylesheet" href="/themes.css?v={{ hash_file('sha256', base_path('public/themes.css')) }}">
 @stack('scripts')

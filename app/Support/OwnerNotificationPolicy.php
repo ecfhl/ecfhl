@@ -18,6 +18,7 @@ class OwnerNotificationPolicy {
   if(!in_array($day,[$days['today'],$days['tomorrow']],true))return false;
   if($p['all_goalies'])return true;
   if($p['own_goalies'] && $this->ownsGoalie($user,$day,(string)($context['goalie_key']??'')))return true;
+  if(in_array($context['goalie_key']??'', $p['goalies'],true))return true;
   if(empty($context['available']))return false;
   $enabled=($day===$days['today'] && $p['available_today']) || ($day===$days['tomorrow'] && $p['available_tomorrow']);
   $watched=in_array($context['goalie_key']??'', $p['goalies'],true);

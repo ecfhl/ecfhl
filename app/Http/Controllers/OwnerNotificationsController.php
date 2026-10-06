@@ -9,9 +9,15 @@ class OwnerNotificationsController {
   return view('account.notifications',['owner'=>$r->user(),'preferences'=>array_replace(OwnerNotificationPolicy::DEFAULTS,$r->user()?->notification_preferences??[]),'goalies'=>$goalies->options()]);
  }
  public function watch(Request $r,OwnerGoalies $goalies){
-  $v=$r->validate(['key'=>'required|string|max:255','enabled'=>'required|boolean']);
+  $v=$r->validate(['key'=>'required|string|max:255','enabled'=>'required|boolean','player_id'=>'nullable|string|max:100']);
   $key=$v['key'];$enabled=$r->boolean('enabled');
   $allowed=$goalies->options()->pluck('key')->all();
+  // Players-page watches persist across games, including rostered goalies.
+  if(!empty($v['player_id'])){
+   $player=\Illuminate\Support\Facades\DB::table('season_player_stats')->where('player_id',$v['player_id'])->where('position','G')->first();
+   abort_unless($player && OwnerNotificationPolicy::goalieKey((string)$player->nhl_team,$player->player_name)===$key,422,'This player is not a matching goalie.');
+   $allowed[]=$key;
+  }
   $saved=\Illuminate\Support\Facades\DB::transaction(function()use($r,$allowed,$key,$enabled){
    $owner=\App\Models\User::whereKey($r->user()->id)->lockForUpdate()->firstOrFail();
    $p=array_replace(OwnerNotificationPolicy::DEFAULTS,$owner->notification_preferences??[]);

@@ -48,3 +48,5 @@ jobs:
         run: php tests/standings.php
       - if: ${{ !cancelled() }}
         run: php tests/player-projections.php
+      - if: ${{ !cancelled() }}
+        run: node tests/goalie-watches-ui.cjs

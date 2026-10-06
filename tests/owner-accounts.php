@@ -121,6 +121,7 @@ verifyOwner(!$p->accepts($a,'goalie-status',null,array_replace($context,['game_d
 verifyOwner(!$p->accepts($a,'goalie-status',null,array_replace($context,['available'=>false])),'Unavailable goalie accepted');
 $a->notification_preferences=['team_scores'=>true,'goalies'=>['MTL|samgoalie']];$a->save();
 verifyOwner($p->accepts($a,'goalie-status',null,$context),'Watched goalie alert rejected');
+verifyOwner($p->accepts($a,'goalie-status',null,array_replace($context,['available'=>false])),'Individually watched rostered goalie rejected');
 verifyOwner(!$p->accepts($a,'goalie-status',null,array_replace($context,['goalie_key'=>'TOR|other'])),'Unwatched goalie alert accepted');
 verifyOwner(!$p->accepts($a,'goalie-status',null,array_replace($context,['game_date'=>'2026-10-04'])),'Future/past goalie alert accepted');
 $a->notification_preferences=['all_goalies'=>true];$a->save();verifyOwner($p->accepts($a,'goalie-status',null,array_replace($context,['available'=>false])),'All-goalie filter failed');
@@ -240,6 +241,11 @@ verifyOwner(str_contains(view('layouts.app')->render(),'Already have an account?
 $guestBell=view('account.goalie-bell',['goalie'=>['name'=>'Z Early','team'=>'TOR','starting_status'=>'Probable'],'date'=>$day])->render();
 verifyOwner(str_contains($guestBell,'href="/login"'),'Guest bell lacks sign-in link');
 verifyOwner(str_contains(view('account.goalie-bell',['goalie'=>['name'=>'Sam Goalie','team'=>'MTL'],'date'=>'2026-10-03'])->render(),'goalie-watch-bell'),'Tomorrow unknown status bell missing');
+DB::table('season_player_stats')->insert(['player_id'=>'watch-goalie','season_id'=>'2026-27','player_name'=>'Persistent Goalie','nhl_team'=>'MTL','position'=>'G','season_fpts'=>0,'season_gp'=>0,'season_fpts_per_game'=>0,'stats_json'=>'{}','stats_through'=>$day,'refreshed_at'=>now()]);
+$response=ownerRequest('POST','/notifications/goalie',['key'=>'MTL|persistentgoalie','player_id'=>'watch-goalie','enabled'=>true],$alpha);
+verifyOwner($response->getStatusCode()===200&&in_array('MTL|persistentgoalie',$a->fresh()->notification_preferences['goalies'],true),'Players-page persistent goalie subscription failed');
+verifyOwner(ownerRequest('POST','/notifications/goalie',['key'=>'TOR|other','player_id'=>'watch-goalie','enabled'=>true],$alpha)->getStatusCode()===422,'Mismatched player watch accepted');
+verifyOwner(ownerRequest('POST','/notifications/goalie',['key'=>'MTL|persistentgoalie','player_id'=>'missing-player','enabled'=>true],$alpha)->getStatusCode()===422,'Unknown player watch accepted');
 // Collector test replays the latest real scoring alert only to the requesting admin device.
 Http::fake(['https://fcm.googleapis.com/*'=>Http::response('',201)]);
 $testHeaders=['HTTP_X_REQUESTED_WITH'=>'XMLHttpRequest'];

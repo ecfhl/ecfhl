@@ -35,9 +35,9 @@ verifySeason(array_keys($d['columns'])===['G','A','Pts','PPG','SHG','GWG','SOG',
 $rookies=$service->data(Request::create('/players?availability=all&positions=F,D&rookies=1'));
 verifySeason($rookies['players']->total()===20&&$rookies['players']->getCollection()->every(fn($p)=>(bool)$p->rookie),'Rookie On must exclude veterans.');
 $all=$service->data(Request::create('/players?availability=all&positions=F,D,G&rookies=0'));
-verifySeason($all['players']->total()===65&&isset($all['columns']['SV%']),'All selected groups / rookie Off must include every player.');
+verifySeason($all['players']->total()===65&&isset($all['columns']['W'])&&!isset($all['columns']['SV%']),'All selected groups / rookie Off must include every player.');
 $goalies=$service->data(Request::create('/players?availability=all&positions=G&rookies=1'));
-verifySeason($goalies['players']->total()===1&&array_keys($goalies['columns'])===['W','L','OL','SHO','GAA','G','A','SV%']&&$goalies['headers']['SHO']==='SO'&&!isset($goalies['headers']['Min']),'Goalie-only rookie filtering / columns failed.');
+verifySeason($goalies['players']->total()===1&&array_keys($goalies['columns'])===['W','L','OL','SHO']&&$goalies['headers']['SHO']==='SO'&&!isset($goalies['headers']['Min']),'Goalie-only rookie filtering / columns failed.');
 $empty=$service->data(Request::create('/players?availability=all&positions='));verifySeason($empty['players']->total()===0,'Deselected positions must not reset to defaults.');
 $second=$service->data(Request::create('/players?availability=all&positions=F,D&page=2'));
 verifySeason($second['players']->count()===25&&$second['players']->firstItem()===26&&$second['players']->lastItem()===50,'Second page must append the next 25.');
@@ -122,6 +122,9 @@ verifySeason(str_contains($advancedHtml,'class="player-advanced"  open')&&str_co
 verifySeason(preg_match('/class="player-name-link"[^>]*>[^<]+<span class="rookie-tag">Rookie<\/span><\/a>/', $advancedHtml),'Rookie sticker must be beside the name, not on the metadata line.');
 verifySeason(str_contains($html,'class="player-position-f"')&&str_contains($html,'class="player-position-d"')&&str_contains(seasonRequest('/players?availability=all&positions=G')->getContent(),'class="player-position-g"'),'Every row must have its position shade, including goalie rows.');
 verifySeason(str_contains($defaultHtml,'class="player-advanced" >')&&!str_contains($defaultHtml,'class="player-advanced"  open'),'Advanced filters should start collapsed without active settings.');
+$goalieHtml=seasonRequest('/players?availability=all&positions=G')->getContent();
+verifySeason(str_contains($goalieHtml,'Sign in to watch')&&str_contains($goalieHtml,'goalie-watch-bell'),'Goalie rows need persistent sign-in bells even without an upcoming game.');
+foreach(['GAA','G','A','SV%','GA','SOGA','SV'] as $removed)verifySeason(!isset($goalies['columns'][$removed]),'Removed goalie stat still shown: '.$removed);
 // Frozen panes must include both identity columns and the complete sortable header.
 verifySeason(str_contains($html,'<col class="player-col"><col class="team-col">')&&str_contains($html,'scope="row" class="player-frozen-player"')&&str_contains($html,'class="player-owner player-frozen-team"'),'Frozen player/team columns need explicit classes and bounded column widths.');
 verifySeason(str_contains($html,'thead th{position:sticky;top:0;z-index:3')&&str_contains($html,'overflow-x:auto;')&&!str_contains($html,'72dvh')&&str_contains($html,'id="season-player-fixed-header"')&&str_contains($html,'border-collapse:separate')&&str_contains($html,'thead .player-frozen-team{z-index:5}'),'The header and corner cells must stay above page-scrolling rows and horizontally scrolling stats.');

@@ -51,7 +51,7 @@ final class SeasonPlayers
         $columns = array_intersect(['F', 'D'], $positions) || !$positions ? self::SKATER_COLUMNS : [];
         if (in_array('G', $positions, true)) {
             $goalieColumns = json_decode($groups['goalie'] ?? '{}', true) ?: [];
-            foreach (['W','L','OL','SHO','GAA','G','A','SV%','GA','SOGA','SV'] as $label) if (isset($goalieColumns[$label]) || in_array($label, ['G','A'], true)) $columns[$label] = $goalieColumns[$label] ?? self::SKATER_COLUMNS[$label];
+            foreach (['W','L','OL','SHO'] as $label) if (isset($goalieColumns[$label])) $columns[$label] = $goalieColumns[$label];
         }
         // Extra category stats are stored only for Season. Never mix season
         // goals/assists with a selected recent window or frozen projection.
