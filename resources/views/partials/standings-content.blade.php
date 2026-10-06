@@ -2,7 +2,7 @@
   <div class="page-head">
     <div class="eyebrow">2026-27 season</div>
     <h1>🏆 Standings</h1>
-    <p class="subtle standings-refresh-status" role="status">Fantrax regular-season standings, updated automatically every minute. Records follow finalized Fantrax results.</p>
+    <p class="subtle standings-refresh-status" role="status">Fantrax regular-season standings. Data refreshes every minute during games and hourly when idle. Records follow finalized Fantrax results.</p>
     @if(auth()->user()?->is_admin)<p class="standings-collector-link"><a href="/job-status#collector-standings">Standings collector</a></p>@endif
     @if(!empty($standingsLastUpdate))
       <p class="subtle standings-updated">Updated @include('partials.updated-time',['value'=>$standingsLastUpdate])</p>
@@ -59,7 +59,7 @@
                 <div class="standings-award-row">
                   <span class="standings-award-rank">{{ $loop->iteration }}</span>
                   <div class="standings-award-player">
-                    <strong>{{ $leader['name'] }}@if(!empty($leader['nhl_team'])) <small>({{ $leader['nhl_team'] }})</small>@endif</strong>
+                    <strong>@if(!empty($leader['player_id']))<a class="player-name-link" data-player-stats href="/players/{{ rawurlencode($leader['player_id']) }}">{{ \App\Support\PlayerName::display($leader['name']) }}</a>@else{{ !empty($award['team_award']) ? $leader['name'] : \App\Support\PlayerName::display($leader['name']) }}@endif @if(!empty($leader['nhl_team'])) <small>({{ $leader['nhl_team'] }})</small>@endif</strong>
                     @if(!empty($award['team_award']))<span>#{{ $leader['rank'] ?? '—' }} · {{ $leader['record'] }}</span>@else<span>{{ $leader['fantasy_team'] ?: 'Free Agent' }}</span>@endif
                   </div>
                   <div class="standings-award-score">

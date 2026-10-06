@@ -35,7 +35,7 @@
     </a>
     <a class="card season-action-card" href="/draft?season={{ urlencode($season['season']) }}">
       <span class="subtle">Current season</span><h3>Draft</h3>
-      <div class="top-picks-list">@forelse(array_slice($draftPicks,0,3) as $i=>$pick)<div><b>{{ $i+1 }}.</b> {{ $pick['player'] ?? '—' }} <small>{{ $pick['team'] ?? '' }}</small></div>@empty<div class="subtle">Draft results pending</div>@endforelse</div>
+      <div class="top-picks-list">@forelse(array_slice($draftPicks,0,3) as $i=>$pick)<div><b>{{ $i+1 }}.</b> {{ \App\Support\PlayerName::display($pick['player'] ?? '—') }} <small>{{ $pick['team'] ?? '' }}</small></div>@empty<div class="subtle">Draft results pending</div>@endforelse</div>
       <span>View {{ $season['season'] }} draft →</span>
     </a>
   </div>

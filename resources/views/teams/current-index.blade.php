@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('content')
 <link rel="stylesheet" href="/matchup-scoreboard.css?v={{ hash_file('sha256', base_path('public/matchup-scoreboard.css')) }}">
-<div class="page-head current-teams-head"><div class="shell"><div class="eyebrow">2026-27 rosters</div><h1><span style="color:#c94b52">●</span> Live Scoring</h1><p>Current Matchups for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}.</p>@if($scoreLastUpdate)<p class="team-updated">Updated @include('partials.updated-time',['value'=>$scoreLastUpdate]){{ $autoRefresh ? ' · Refreshes every 2 minutes during games' : '' }}</p>@endif</div></div>
+<div class="page-head current-teams-head"><div class="shell"><div class="eyebrow">2026-27 rosters</div><h1><span style="color:#c94b52">●</span> Live Scoring</h1><p>Current Matchups for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}.</p>@if($scoreLastUpdate)<p class="team-updated">Updated @include('partials.updated-time',['value'=>$scoreLastUpdate]){{ $autoRefresh ? ' · Data refreshes every minute during games and hourly when idle' : ' · Saved results for this fantasy date' }}</p>@endif</div></div>
 
 <div class="shell current-teams-page">
   <div class="team-toolbar">
@@ -334,6 +334,7 @@ html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:va
 }
 </style>
 
+<script src="/live-scoring.js?v={{ hash_file('sha256', base_path('public/live-scoring.js')) }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
   const destination=new URL(location.href);
@@ -343,14 +344,14 @@ document.addEventListener('DOMContentLoaded',()=>{
     history.replaceState(null,'',destination.pathname+destination.search+destination.hash);
   }
   const stateKey='ecfhl-open-matchups:'+location.pathname+location.search;
-  const cards=[...document.querySelectorAll('.matchup-card[data-matchup-key]')];
+  const cards=()=>[...document.querySelectorAll('.matchup-card[data-matchup-key]')];
 
   const accountTeamId=@json((string)(request()->user()?->claim?->fantasy_team_id ?? ''));
   const accountTeamSlug=@json(request()->user()?->claim?->team_name ? \Illuminate\Support\Str::slug(request()->user()->claim->team_name) : '');
   const highlightNotificationTeam=()=>{
     const selected=accountTeamId || localStorage.getItem('ecfhl-notification-team-id') || '';
     let selectedCard=null;
-    cards.forEach(card=>{
+    cards().forEach(card=>{
       const matches=(!!selected && (card.dataset.awayTeamId===selected || card.dataset.homeTeamId===selected)) || (!!accountTeamSlug && (card.dataset.awayTeamSlug===accountTeamSlug || card.dataset.homeTeamSlug===accountTeamSlug));
       card.classList.toggle('notification-team-matchup',matches);
       if(matches)selectedCard=card;
@@ -368,21 +369,21 @@ document.addEventListener('DOMContentLoaded',()=>{
   try{
     const saved=JSON.parse(sessionStorage.getItem(stateKey)||'[]');
     if(Array.isArray(saved)){
-      cards.forEach(card=>card.open=saved.includes(card.dataset.matchupKey));
+      cards().forEach(card=>card.open=saved.includes(card.dataset.matchupKey));
     }
   }catch(e){}
 
   const saveOpenMatchups=()=>{
     try{
-      const open=cards.filter(card=>card.open).map(card=>card.dataset.matchupKey);
+      const open=cards().filter(card=>card.open).map(card=>card.dataset.matchupKey);
       sessionStorage.setItem(stateKey,JSON.stringify(open));
     }catch(e){}
   };
 
   if(requestedMatchup){
-    const selected=cards.find(card=>card.dataset.awayTeamSlug===requestedMatchup || card.dataset.homeTeamSlug===requestedMatchup);
+    const selected=cards().find(card=>card.dataset.awayTeamSlug===requestedMatchup || card.dataset.homeTeamSlug===requestedMatchup);
     if(selected){
-      cards.forEach(card=>card.open=card===selected);
+      cards().forEach(card=>card.open=card===selected);
       saveOpenMatchups();
       requestAnimationFrame(()=>requestAnimationFrame(()=>{
         selected.scrollIntoView({block:'start'});
@@ -390,28 +391,25 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   }
 
-  cards.forEach(card=>card.addEventListener('toggle',saveOpenMatchups));
+  document.addEventListener('toggle',event=>{if(event.target.matches?.('.matchup-card[data-matchup-key]'))saveOpenMatchups();},true);
 
   const autoRefresh={{ $autoRefresh ? 'true' : 'false' }};
   if(autoRefresh){
-    setInterval(()=>{
-      saveOpenMatchups();
-      location.reload();
-    },60000);
+    window.EcfhlLiveScoring.start({saveOpenMatchups,highlightNotificationTeam});
   }
 
-  document.querySelectorAll('.matchup-summary-name a').forEach(link=>{
-    link.addEventListener('click',event=>{
-      const card=link.closest('.matchup-card');
-      if(!card?.open){
-        event.preventDefault();
-        event.stopPropagation();
-        card.open=true;
-        saveOpenMatchups();
-        return;
-      }
+  document.addEventListener('click',event=>{
+    const link=event.target.closest('.matchup-summary-name a,.team-live-name-row a');
+    if(!link)return;
+    const card=link.closest('.matchup-card');
+    if(!card?.open){
+      event.preventDefault();
       event.stopPropagation();
-    });
+      card.open=true;
+      saveOpenMatchups();
+      return;
+    }
+    event.stopPropagation();
   });
 });
 </script>

@@ -11,7 +11,7 @@ class Archive extends EcfhlData
     {
         if (request()->is('players')) return 'all';
         $mode = request()->query('type', request()->cookie('ecfhl-season-type', 'h2h'));
-        return in_array($mode, ['h2h','total','all','none'], true) ? $mode : 'h2h';
+        return in_array($mode, ['h2h','total','all'], true) ? $mode : 'h2h';
     }
     private function rows(string $table): array { return $this->cache[$table] ??= PublicData::remember('archive:'.$table, $table==='team_seasons'?30:300, fn()=>DB::table($table)->get()->map(fn($r)=>(array)$r)->all()); }
     private function matches(?string $format): bool { return $this->mode()==='all' || ($this->mode()!=='none' && ($this->mode()==='h2h') === (stripos($format ?? '', 'head')!==false)); }
@@ -79,7 +79,7 @@ class Archive extends EcfhlData
     }
     public function seasonLeaders(): array
     {
-        $rows=$this->teamSeasons();$top=array_values(array_filter($rows,fn($r)=>(($r['w']??0)+($r['l']??0)+($r['t']??0))>0));$fpts=array_values(array_filter($rows,fn($r)=>$r['fantasy_points_for']!==null));
+        $rows=$this->teamSeasons();$top=array_values(array_filter($rows,fn($r)=>(($r['w']??0)+($r['l']??0)+($r['t']??0))>=10));$fpts=array_values(array_filter($rows,fn($r)=>$r['fantasy_points_for']!==null));
         foreach($top as &$r){$g=($r['w']??0)+($r['l']??0)+($r['t']??0);$r['score']=$g?((2*($r['w']??0)+($r['t']??0))/(2*$g)):-1;$r['value']=$g?number_format($r['score']*100,1).'%':'—';$r['detail']=($r['w']??0).'-'.($r['l']??0).'-'.($r['t']??0);}unset($r);usort($top,fn($a,$b)=>($b['score']<=>$a['score'])?:strcmp($b['season'],$a['season']));
         foreach($fpts as &$r){$r['score']=(float)($r['fantasy_points_for']??-1);$r['value']=$r['fantasy_points_for']!==null?number_format($r['fantasy_points_for'],0):'—';}unset($r);usort($fpts,fn($a,$b)=>($b['score']<=>$a['score'])?:strcmp($b['season'],$a['season']));
         $tradeCounts=[];foreach($this->trades() as $t){if(!empty($t['vetoed']))continue;foreach(array_unique(array_filter([$t['from_id']??null,$t['to_id']??null])) as $id){$k=$t['season'].'|'.$id;$tradeCounts[$k]=($tradeCounts[$k]??0)+1;}}$tradeRows=[];foreach($tradeCounts as $k=>$n){[$season,$id]=explode('|',$k,2);$tradeRows[]=['team'=>$this->historical($id,$this->seasonId($season)??'',$this->franchiseName($id)),'season'=>$season,'value'=>$n,'score'=>$n];}usort($tradeRows,fn($a,$b)=>($b['score']<=>$a['score'])?:strcmp($b['season'],$a['season']));
@@ -221,19 +221,19 @@ class Archive extends EcfhlData
         if ($needle === '') return [];
         $out = [];
         foreach ($this->draftSeason('all') as $p) {
-            if (str_contains(mb_strtolower($p['player'] ?? ''),$needle))
+            if (PlayerName::matches($p['player'] ?? '',$q))
                 $out[] = ['kind'=>'draft','season'=>$p['season'],'sort'=>$p['season'].'|0|'.sprintf('%06d',$p['overall']??0),'data'=>$p];
         }
         foreach ($this->trades() as $t) {
             $matched = false;
             foreach (array_merge($t['from_items'],$t['to_items']) as $item) {
                 if (preg_match('/draft\s+pick|round\s*\d/i',$item)) continue;
-                if (str_contains(mb_strtolower(TradeContracts::playerName($item)),$needle)) $matched = true;
+                if (PlayerName::matches(TradeContracts::playerName($item),$q)) $matched = true;
             }
             if ($matched) $out[] = ['kind'=>'trade','season'=>$t['season'],'sort'=>$t['season'].'|1|'.$t['datetime'].'|'.$t['id'],'data'=>$t];
         }
         foreach ($this->awardEvents() as $a) {
-            if (!str_contains(mb_strtolower($a['player'] ?? ''),$needle)) continue;
+            if (!PlayerName::matches($a['player'] ?? '',$q)) continue;
             $a['label'] = $a['award'];
             $out[] = ['kind'=>'award','season'=>$a['season'],'sort'=>$a['season'].'|2|'.$a['id'],'data'=>$a];
         }

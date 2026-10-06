@@ -92,7 +92,7 @@
           @forelse($scoringLeaders->get($position,collect()) as $player)
             <a class="overview-player player-name-link" data-player-stats href="/players/{{ rawurlencode($player->player_id) }}">
               <span class="overview-rank">{{ $loop->iteration }}</span>
-              <span class="overview-player__name"><strong>{{ $player->player_name }}</strong><small>{{ $player->nhl_team }}</small></span>
+              <span class="overview-player__name"><strong>{{ \App\Support\PlayerName::display($player->player_name) }}</strong><small>{{ $player->nhl_team }}</small></span>
               <b>{{ number_format($player->season_fpts,0) }} <small>FPts</small></b>
             </a>
           @empty

@@ -16,9 +16,23 @@ jobs:
           tools: composer:v2
       - run: composer install --no-interaction --prefer-dist
       - run: find app routes tests -name '*.php' -print0 | xargs -0 -n1 php -l
-      - run: php tests/archive-smoke.php
-      - run: php tests/ai-tips.php
-      - run: php tests/starting-goalies.php
-      - run: php tests/live-scoring.php
-      - run: php tests/home.php
-      - run: node tests/overview-layout.cjs
+      - if: ${{ !cancelled() }}
+        run: php tests/archive-smoke.php
+      - if: ${{ !cancelled() }}
+        run: php tests/ai-tips.php
+      - if: ${{ !cancelled() }}
+        run: php tests/starting-goalies.php
+      - if: ${{ !cancelled() }}
+        run: php tests/live-scoring.php
+      - if: ${{ !cancelled() }}
+        run: php tests/home.php
+      - if: ${{ !cancelled() }}
+        run: node tests/overview-layout.cjs
+      - if: ${{ !cancelled() }}
+        run: php tests/season-players.php
+      - if: ${{ !cancelled() }}
+        run: php tests/standings-collector.php
+      - if: ${{ !cancelled() }}
+        run: node tests/live-scoring-ui.cjs
+      - if: ${{ !cancelled() }}
+        run: node tests/standings-ui.cjs

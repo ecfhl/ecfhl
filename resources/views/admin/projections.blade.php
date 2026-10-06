@@ -26,8 +26,8 @@
       <h2 id="projection-preview-heading">Top 10 Preview</h2>
       <p id="projection-preview-status" class="subtle" role="status"></p>
       <div id="projection-preview-results" hidden>
-        <div class="projection-preview-scroll"><table class="projection-preview-table"><thead><tr><th>#</th><th>Player</th><th>MyProj/GP</th><th>Season/GP</th></tr></thead><tbody id="projection-preview-players"></tbody></table></div>
-        <p class="subtle projection-note">Ranked by MyProj using the sliders above. Season/GP is actual season fantasy points per game. Previewing leaves the saved weights unchanged.</p>
+        <div class="projection-preview-scroll"><table class="projection-preview-table"><thead><tr><th>#</th><th>Player</th><th>ECFHL*</th><th>Season/GP</th></tr></thead><tbody id="projection-preview-players"></tbody></table></div>
+        <p class="subtle projection-note">Ranked by ECFHL* using the sliders above. Season/GP is actual season fantasy points per game. Previewing leaves the saved weights unchanged.</p>
       </div>
     </section>
     <div class="projection-actions"><button type="submit" class="button primary" id="projection-save" data-loading-text="Saving & recalculating…" disabled>Save & Recalculate</button></div>

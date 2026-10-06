@@ -10,7 +10,7 @@ final class SeasonPlayers
 {
     private const SKATER_COLUMNS = ['G'=>'Goals', 'A'=>'Assists', 'Pts'=>'Points', 'PPG'=>'Power-play goals',
         'SHG'=>'Short-handed goals', 'GWG'=>'Game-winning goals', 'SOG'=>'Shots on goal', 'TOI'=>'Time on ice'];
-    private const BASE_HEADERS = ['player'=>'Player', 'team'=>'Team', 'ec_proj'=>'ECFHL', 'fpts'=>'FPts', 'fpts_gp'=>'FPts/gp', 'today'=>'Today', 'tomorrow'=>'Tomorrow', 'gp'=>'GP'];
+    private const BASE_HEADERS = ['player'=>'Player', 'team'=>'Team', 'ec_proj'=>'ECFHL*', 'fpts'=>'FPts', 'fpts_gp'=>'FPts/gp', 'today'=>'Today', 'tomorrow'=>'Tomorrow', 'gp'=>'GP'];
     public const DATASETS = ['season'=>'Season', '7d'=>'7 days', '14d'=>'14 days', '21d'=>'21 days', 'fantrax'=>'Fantrax proj'];
     private const TEAM_ALIASES = ['LA'=>'LAK', 'NJ'=>'NJD', 'SJ'=>'SJS', 'TB'=>'TBL'];
 
@@ -99,7 +99,11 @@ final class SeasonPlayers
                 })->pluck('player_id')->all();
             $query->whereIn('s.player_id', $ids);
         }
-        if ($search !== '') $query->where('s.player_name', 'like', '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search).'%');
+        if ($search !== '') $query->where(function($q) use ($search){
+            foreach(PlayerName::searchVariants($search) as $variant){
+                $q->orWhere('s.player_name','like','%'.str_replace(['\\','%','_'],['\\\\','\\%','\\_'],$variant).'%');
+            }
+        });
         $page = max(1, (int)$request->query('page', 1));
         if ($dailyTargetsSort) {
             $players = $this->dailyTargetsPage($query, $lines, $pp, $playingDate ?? app(FantasyDay::class)->today()->toDateString(), $page, $sort, $direction, $datasetFields);

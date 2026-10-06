@@ -1,5 +1,5 @@
 /* Mobile is plain block flow. Only desktop enhancements create columns. */
-.overview-hero { background: var(--panel); border-bottom: 1px solid var(--line); padding: 20px 0; }
+.overview-hero { background: var(--panel); border-bottom: 1px solid var(--line); padding: 12px 0; }
 .overview-hero__inner { display: flex; align-items: flex-start; gap: 12px; }
 .overview-hero__inner > div { min-width: 0; }
 .overview-hero__logo { flex: 0 0 82px; }
@@ -7,7 +7,7 @@
 .overview-hero h1 { margin: 4px 0 10px; font-size: 24px; line-height: 1.12; letter-spacing: -.5px; overflow-wrap: anywhere; }
 .overview-hero p { margin: 0 0 12px; color: var(--muted); max-width: 650px; font-size: 12px; line-height: 1.55; }
 .overview-hero__season { display: inline-block; padding: 4px 9px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 20px; font-size: 11px; font-weight: 800; }
-.overview-home { padding-top: 22px; padding-bottom: 28px; }
+.overview-home { padding-top: 14px; padding-bottom: 28px; }
 .overview-home__heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
 .overview-home__heading h2 { margin: 0; font-size: 20px; }
 .overview-home__cards, .overview-home__column { min-width: 0; }
@@ -49,11 +49,11 @@
 .overview-home__history { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding-top: 18px; margin-top: 20px; border-top: 1px solid var(--line); font-size: 11px; color: var(--muted); }
 
 @media (min-width: 901px) {
-  .overview-hero { padding: 28px 0; }
+  .overview-hero { padding: 14px 0; }
   .overview-hero__inner { align-items: center; gap: 24px; }
-  .overview-hero__logo { flex-basis: 140px; }
-  .overview-hero__logo img { width: 140px; height: 140px; }
-  .overview-hero h1 { font-size: clamp(25px, 3.8vw, 42px); }
+  .overview-hero__logo { flex-basis: 84px; }
+  .overview-hero__logo img { width: 84px; height: 84px; }
+  .overview-hero h1 { font-size: clamp(24px, 3vw, 34px); }
   .overview-hero p { font-size: 14px; }
   .overview-home__cards--desktop { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
   .overview-home__card { padding: 18px; }

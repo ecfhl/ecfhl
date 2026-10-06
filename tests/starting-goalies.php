@@ -22,6 +22,7 @@ config(['database.connections.sqlite' => ['driver'=>'sqlite','database'=>':memor
 foreach (glob(__DIR__.'/../database/migrations/*create_active*table.php') as $file) {
     (require $file)->up();
 }
+foreach (['2026_09_24_000001_create_ecfhl_tables.php','2026_09_30_000006_create_todays_odds_table.php','2026_10_03_041000_create_live_scoring_snapshots.php','2026_10_01_153500_create_web_push_tables.php','2026_10_03_230000_create_owner_accounts.php'] as $name) (require __DIR__.'/../database/migrations/'.$name)->up();
 function goalieCheck($condition, $message) {
     if (! $condition) throw new RuntimeException($message);
 }
@@ -41,9 +42,13 @@ goalieCheck($byName['Kevin Lankinen']['starting_status'] === 'Unconfirmed' && $b
 goalieCheck($collector->parse(goalieHtml($fixtures['2026-09-28']), '2026-09-28') === [], 'Explicit empty date is valid');
 $probable = $fixtures['2026-09-29'];
 $probable['props']['pageProps']['data'][0]['awayNewsStrengthName'] = 'Probable';
-goalieCheck($collector->parse(goalieHtml($probable), '2026-09-29')[0]['starting_status'] === 'Probable', 'Preserve Probable status');
+goalieCheck($collector->parse(goalieHtml($probable), '2026-09-29')[0]['starting_status'] === 'Unconfirmed', 'Unknown DFO status must fall back to Unconfirmed');
+$partial = $fixtures['2026-09-29'];$partial['props']['pageProps']['data'][0]['awayGoalieName']=null;
+goalieCheck(count($collector->parse(goalieHtml($partial),'2026-09-29'))===9,'Unpublished future goalie must be skipped without losing other teams');
+$badTeam=$fixtures['2026-09-29'];$badTeam['props']['pageProps']['data'][0]['awayTeamName']='Unknown';
+goalieCheck(count($collector->parse(goalieHtml($badTeam),'2026-09-29'))===8,'Malformed team must skip only its matchup');
 $invalid = ['<html>app shell</html>', '<script id="__NEXT_DATA__">{bad json</script>', goalieHtml($fixtures['2026-09-30'])];
-foreach (['missing-data','missing-goalie','missing-status','unknown-status','unknown-team','wrong-game-date'] as $case) {
+foreach (['missing-data','missing-status','wrong-game-date'] as $case) {
     $payload = $fixtures['2026-09-29'];
     switch ($case) {
         case 'missing-data': unset($payload['props']['pageProps']['data']); break;
@@ -83,9 +88,11 @@ Http::swap(new \Illuminate\Http\Client\Factory);
 Http::preventStrayRequests();
 Http::fake(fn ($request) => Http::response(goalieHtml($fixtures[basename($request->url())]), 200));
 DB::statement("CREATE TRIGGER reject_goalie BEFORE INSERT ON active_starting_goalies BEGIN SELECT RAISE(ABORT, 'test rollback'); END");
-goalieCheck(Artisan::call('ecfhl:refresh-starting-goalies') !== 0, 'Insert failure must return nonzero');
+DB::statement("CREATE TRIGGER reject_goalie_update BEFORE UPDATE ON active_starting_goalies BEGIN SELECT RAISE(ABORT, 'test rollback'); END");
+goalieCheck(Artisan::call('ecfhl:refresh-starting-goalies') !== 0, 'Database write failure must return nonzero');
 goalieCheck(DB::table('active_starting_goalies')->orderBy('id')->get()->toJson() === $before, 'Insert failure must roll back deletion');
 DB::statement('DROP TRIGGER reject_goalie');
+DB::statement('DROP TRIGGER reject_goalie_update');
 
 // Synthetic Fantrax availability checks, independent of who is owned in the live league.
 foreach ([['Tristan Jarry','EDM'],['Kevin Lankinen','VAN'],['Test backup','EDM']] as [$name,$team]) {
@@ -103,7 +110,7 @@ $dom = new DOMDocument;
 @$dom->loadHTML($html);
 $xpath = new DOMXPath($dom);
 goalieCheck($xpath->query('//tr[contains(@class,"tips-not-starting")]')->length === 1, 'Greyed backup row rendered');
-goalieCheck($xpath->query('//tr[contains(@class,"tips-not-starting")]//a')->length === 0, 'Disabled backup has no actionable link');
+goalieCheck($xpath->query('//tr[contains(@class,"tips-not-starting")]//a[contains(@class,"tips-add-button")]')->length === 0, 'Disabled backup has no Add link');
 goalieCheck($xpath->query('//tr[contains(@class,"tips-not-starting")]//*[@aria-disabled="true"]')->length === 1, 'Disabled Add semantics');
 CarbonImmutable::setTestNow();
 echo "Starting-goalie parser, safe replacement, exit-code and AI Tips join checks passed.\n";
