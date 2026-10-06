@@ -126,7 +126,7 @@
         $homeProjectedTotal=$home['daily_projected_fpts']??0;
       @endphp
 
-      <details class="matchup-card" data-matchup-key="{{ ($away['id'] ?? $away['slug'] ?? 'away') }}::{{ ($home['id'] ?? $home['slug'] ?? 'home') }}" data-away-team-id="{{ $away['id'] ?? '' }}" data-home-team-id="{{ $home['id'] ?? '' }}">
+      <details class="matchup-card" data-matchup-key="{{ ($away['id'] ?? $away['slug'] ?? 'away') }}::{{ ($home['id'] ?? $home['slug'] ?? 'home') }}" data-away-team-slug="{{ $away['slug'] ?? \Illuminate\Support\Str::slug($away['name'] ?? '') }}" data-home-team-slug="{{ $home['slug'] ?? \Illuminate\Support\Str::slug($home['name'] ?? '') }}" data-away-team-id="{{ $away['id'] ?? '' }}" data-home-team-id="{{ $home['id'] ?? '' }}">
         <summary class="matchup-summary">
           <div class="matchup-summary-side matchup-summary-away">
             @if($away)
@@ -363,6 +363,12 @@ html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:va
 
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
+  const destination=new URL(location.href);
+  const requestedMatchup=destination.searchParams.get('matchup');
+  if(requestedMatchup){
+    destination.searchParams.delete('matchup');
+    history.replaceState(null,'',destination.pathname+destination.search+destination.hash);
+  }
   const stateKey='ecfhl-open-matchups:'+location.pathname+location.search;
   const cards=[...document.querySelectorAll('.matchup-card[data-matchup-key]')];
 
@@ -397,6 +403,15 @@ document.addEventListener('DOMContentLoaded',()=>{
       sessionStorage.setItem(stateKey,JSON.stringify(open));
     }catch(e){}
   };
+
+  if(requestedMatchup){
+    const selected=cards.find(card=>card.dataset.awayTeamSlug===requestedMatchup || card.dataset.homeTeamSlug===requestedMatchup);
+    if(selected){
+      cards.forEach(card=>card.open=card===selected);
+      saveOpenMatchups();
+      selected.scrollIntoView({block:'start'});
+    }
+  }
 
   cards.forEach(card=>card.addEventListener('toggle',saveOpenMatchups));
 

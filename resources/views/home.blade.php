@@ -38,6 +38,7 @@
           $homeLive=collect($liveTeams)->firstWhere('name',$matchup->home_team_name);
         @endphp
         <div class="overview-matchup ecfhl-scoreboard {{ $myTeamName && ($matchup->away_team_name === $myTeamName || $matchup->home_team_name === $myTeamName) ? 'overview-matchup--mine' : '' }}">
+          <a class="overview-matchup-link" href="/teams/current?matchup={{ rawurlencode($awaySlug) }}" aria-label="View {{ $matchup->away_team_name }} versus {{ $matchup->home_team_name }} matchup"></a>
           <div class="team-live-matchup-summary">
             <div class="team-live-side team-live-score-left">
               <div class="team-live-name-row">

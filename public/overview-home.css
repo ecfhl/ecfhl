@@ -15,7 +15,7 @@
 .overview-home__title { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 5px 10px; margin-bottom: 8px; }
 .overview-home__title h2 { margin: 0; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--eyebrow-text, var(--accent)); }
 .overview-home__title a, .overview-target-link { font-size: 11px; font-weight: 700; color: var(--muted); text-decoration: none; }
-.overview-home__card a:hover { text-decoration: underline; }
+.overview-home__card a:hover { text-decoration: none!important; }
 .overview-home__empty { margin: 8px 0; color: var(--muted); font-size: 12px; }
 .overview-rank { text-align: center; color: var(--muted); font-size: 11px; }
 
@@ -77,3 +77,8 @@
 
 /* Make regular-season records readable beneath each team name. */
 .overview-standing > div > small { font-size: 14px; line-height: 1.35; font-weight: 600; margin-top: 4px; }
+
+.overview-matchup { position: relative; }
+.overview-matchup-link { position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+.overview-matchup-link:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.overview-matchup .team-logo-viewer { position: relative; z-index: 2; }
