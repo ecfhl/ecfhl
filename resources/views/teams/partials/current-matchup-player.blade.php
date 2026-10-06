@@ -14,7 +14,7 @@
   <div class="matchup-player-main">
     <div class="matchup-player-name">
       @if($player->is_ir)<span class="pill team-ir">IR</span>@endif
-      <strong><a class="player-name-link" data-player-stats href="/players/{{ rawurlencode($player->player_id) }}">{{ $player->player_name }} @if($player->nhl_team)({{ $player->nhl_team }})@endif</a></strong>
+      <strong><a class="player-name-link" data-player-stats href="/players/{{ rawurlencode($player->player_id) }}">{{ \App\Support\PlayerName::display($player->player_name) }} @if($player->nhl_team)({{ $player->nhl_team }})@endif</a></strong>
       @if($player->is_bench)<span class="pill team-bench">Bench</span>@endif
       @if(!empty($player->contract_label))<span class="pill team-contract-sticker {{ $player->contract_class }}">{{ $player->contract_label }}</span>@endif
       @if($player->line_number)

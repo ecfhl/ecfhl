@@ -184,13 +184,13 @@ foreach ($expected as $date) {
     checkLive(preg_match_all('/<details\\b[^>]*class="[^"]*\\bmatchup-card\\b[^"]*"/', $html)===7, 'Rendered matchups incomplete');
     checkLive(str_contains($html, 'matchup-scoreboard.css') && substr_count($html, 'team-live-matchup-summary')>=7, 'Live Scoring does not use the shared Home scoreboard');
     checkLive(str_contains($html,'date=2026-10-01') && str_contains($html,'date=2026-10-02') && str_contains($html,'date=2026-10-03'), 'Date buttons wrong after Atlantic midnight');
-    if ($date==='2026-10-02') checkLive(str_contains($html,'Leo Carlsson') && str_contains($html,'Roope Hintz'), 'Regression players missing in rendered page');
+    if ($date==='2026-10-02') checkLive(str_contains($html,'Carlsson, Leo') && str_contains($html,'Hintz, Roope'), 'Regression players missing in rendered page');
     $kernel->terminate($request,$response);
     $app->forgetScopedInstances();
     $request=Illuminate\Http\Request::create('/teams/current/'.$loneSlug.'?date='.$date);
     $response=$kernel->handle($request);
     checkLive($response->getStatusCode()===200, 'My Team matchup render failed: '.$date.' '.substr(strip_tags($response->getContent()),0,1500));
-    if ($date==='2026-10-02') checkLive(str_contains($response->getContent(),'Leo Carlsson'), 'My Team still depended on old participation flags');
+    if ($date==='2026-10-02') checkLive(str_contains($response->getContent(),'Carlsson, Leo'), 'My Team still depended on old participation flags');
     $kernel->terminate($request,$response);
 }
 CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-10-03T07:00:00Z'));

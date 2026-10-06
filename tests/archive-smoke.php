@@ -53,6 +53,11 @@ $events=$data->playerHistory('Sidney');$sorted=$events;usort($sorted,fn($a,$b)=>
 $app->forgetScopedInstances();$app->instance('request',Request::create('/','GET',[],['ecfhl-season-type'=>'total']));
 $data=$app->make(App\Support\Archive::class);check($data->mode()==='total','Cookie not restored');
 foreach($data->seasons() as $s)check(stripos($s['format'],'head')===false,'H2H leaked into total points');
+$app->forgetScopedInstances();$app->instance('request',Request::create('/seasons','GET',[],['ecfhl-season-type'=>'none']));
+$data=$app->make(App\Support\Archive::class);check($data->mode()==='h2h' && count($data->seasons())>0,'Legacy empty selection must fall back to Head-to-Head');
+foreach($data->seasonLeaders()['top_seasons'] as $row)check(($row['w']+$row['l']+$row['t'])>=10,'Short ongoing seasons leaked into Top Seasons');
+check(str_contains(DB::table('rules')->where('rule_id','RULE009')->value('rule_text'),'five separate'),'IR rule must specify five slots');
+foreach(['Jack Eichel'=>'Eichel, Jack','Carlsson, Leo'=>'Carlsson, Leo','James van Riemsdyk'=>'van Riemsdyk, James',"Ryan O'Reilly"=>"O'Reilly, Ryan",''=>''] as $input=>$expected)check(App\Support\PlayerName::display($input)===$expected,'Player-name display failed: '.$input);
 Artisan::call('view:cache');
 echo "Archive smoke checks passed: 38 page renders, filtering, names, leaders, chronology, cookie persistence, and Blade compilation.\n";
 

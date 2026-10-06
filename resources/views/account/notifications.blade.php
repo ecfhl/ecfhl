@@ -20,7 +20,7 @@
 @foreach(['Today','Tomorrow'] as $day)
 <details class="owner-goalie-day"><summary>{{ $day }}</summary>
 @if($goalies->where('day',$day)->isEmpty())<p class="subtle">No goalies awaiting a starting decision for upcoming games.</p>@endif
-<div class="owner-goalie-grid">@foreach($goalies->where('day',$day) as $g)<label class="owner-goalie-choice"><input type="checkbox" name="goalies[]" value="{{ $g['key'] }}" @checked(in_array($g['key'],$preferences['goalies'],true))><span><strong>{{ $g['name'] }}</strong><small>{{ $g['team'] }} · {{ $g['start_time'] }}</small><small>My proj: {{ $g['projected_points']!==null ? number_format($g['projected_points'],2) : '—' }} FPts/GP</small></span></label>@endforeach</div>
+<div class="owner-goalie-grid">@foreach($goalies->where('day',$day) as $g)<label class="owner-goalie-choice"><input type="checkbox" name="goalies[]" value="{{ $g['key'] }}" @checked(in_array($g['key'],$preferences['goalies'],true))><span><strong>{{ \App\Support\PlayerName::display($g['name']) }}</strong><small>{{ $g['team'] }} · {{ $g['start_time'] }}</small><small>ECFHL*: {{ $g['projected_points']!==null ? number_format($g['projected_points'],2) : '—' }}</small></span></label>@endforeach</div>
 </details>
 @endforeach
 @foreach(array_diff($preferences['goalies'],$goalies->pluck('key')->all()) as $key)<input type="hidden" name="goalies[]" value="{{ $key }}">@endforeach

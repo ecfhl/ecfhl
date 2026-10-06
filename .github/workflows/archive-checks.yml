@@ -22,3 +22,7 @@ jobs:
       - run: php tests/live-scoring.php
       - run: php tests/home.php
       - run: node tests/overview-layout.cjs
+      - run: php tests/season-players.php
+      - run: php tests/standings-collector.php
+      - run: node tests/live-scoring-ui.cjs
+      - run: node tests/standings-ui.cjs

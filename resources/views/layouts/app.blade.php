@@ -9,7 +9,7 @@
     <script src="/navigation-feedback.js?v=3" defer></script>
     @php
         if (request()->is('/')) {$browserTitle='East Coast Fantasy Hockey League';}
-        elseif(request()->is('players/*')&&isset($player)){$browserTitle='ECFHL - '.$player->player_name;}
+        elseif(request()->is('players/*')&&isset($player)){$browserTitle='ECFHL - '.\App\Support\PlayerName::display($player->player_name);}
         elseif(request()->is('teams/current/*')&&isset($teamName)){$browserTitle='ECFHL - '.$teamName;}
         elseif(request()->is('teams/league')){$browserTitle='ECFHL - Teams';}
         elseif(request()->is('teams/*')&&isset($team)){$browserTitle='ECFHL - '.($team['team']??'Franchise');}
@@ -137,7 +137,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
  if('serviceWorker' in navigator)navigator.serviceWorker.register('/push-sw.js',{scope:'/'}).catch(()=>{});
 })();
 </script>
-<script>document.querySelectorAll('.season-type-choice').forEach(button=>button.addEventListener('click',()=>{const value=button.dataset.value;const buttons=[...document.querySelectorAll('.season-type-choice')];const selected=buttons.filter(x=>x.classList.contains('active')).map(x=>x.dataset.value);const next=selected.includes(value)?selected.filter(x=>x!==value):[...selected,value];const mode=next.length===2?'all':(next[0]||'none');document.cookie='ecfhl-season-type='+mode+'; Path=/; Max-Age=31536000; SameSite=Lax';const url=new URL(location.href);url.searchParams.set('type',mode);if(/^\/seasons\//.test(url.pathname))url.pathname='/seasons';url.searchParams.delete('season');location.assign(url);}));</script>
+<script>document.querySelectorAll('.season-type-choice').forEach(button=>button.addEventListener('click',()=>{const value=button.dataset.value;const buttons=[...document.querySelectorAll('.season-type-choice')];const selected=buttons.filter(x=>x.classList.contains('active')).map(x=>x.dataset.value);const next=selected.includes(value)?selected.filter(x=>x!==value):[...selected,value];const mode=next.length===2?'all':(next[0]||'h2h');document.cookie='ecfhl-season-type='+mode+'; Path=/; Max-Age=31536000; SameSite=Lax';const url=new URL(location.href);url.searchParams.set('type',mode);if(/^\/seasons\//.test(url.pathname))url.pathname='/seasons';url.searchParams.delete('season');location.assign(url);}));</script>
 @if(request()->is('daily-targets'))
 <script>
 document.addEventListener('DOMContentLoaded',()=>{

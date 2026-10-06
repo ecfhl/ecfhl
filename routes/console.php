@@ -225,14 +225,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         Log::warning('Lineup advisor schedule lookup failed',['error'=>$e->getMessage()]);
     }
 
-    $displayPlayerName=function($value){
-        $name=trim((string)$value);
-        if(str_contains($name,',')){
-            [$last,$first]=array_map('trim',explode(',',$name,2));
-            if($first!==''&&$last!=='')$name=$first.' '.$last;
-        }
-        return preg_replace('/\s+/u',' ',$name)??$name;
-    };
+    $displayPlayerName=fn($value)=>\App\Support\PlayerName::display($value);
 
     $normContract=fn($v)=>strtoupper(trim(preg_replace('/\s+/',' ',(string)$v)));
     $contractDropEligible=function($p)use($normContract){
@@ -363,7 +356,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
 
         // IR opportunity: an injured player who is not already in an IR roster slot
         // can be moved to IR to create a roster spot without sacrificing another player.
-        if($hasMoveAvailable){
+        if($hasMoveAvailable && $teamRows->filter(fn($p)=>strtoupper((string)($p->roster_status??''))==='INJURED_RESERVE')->count()<5){
             $irCandidate=$teamRows
                 ->filter(fn($p)=>
                     !empty($p->injury_status)

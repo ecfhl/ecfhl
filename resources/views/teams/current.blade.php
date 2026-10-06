@@ -242,10 +242,10 @@
             }
           @endphp
           <div class="team-next-lineup-group">
-            <div class="team-next-lineup-heading">{{ $nextLabel }} ({{ $nextPlayers->count() }})</div>
+            <div class="team-next-lineup-heading">{{ $nextLabel }} ({{ $nextPlayers->reject(fn($p)=>(bool)$p->is_ir)->count() }})</div>
             @forelse($nextPlayers as $nextPlayer)
               <div class="team-next-lineup-player">
-                <span>{{ $nextPlayer->player_name }}@if($nextPlayer->nhl_team) ({{ $nextPlayer->nhl_team }})@endif</span>
+                <a class="player-name-link" data-player-stats href="/players/{{ rawurlencode($nextPlayer->player_id) }}">{{ \App\Support\PlayerName::display($nextPlayer->player_name) }}@if($nextPlayer->nhl_team) ({{ $nextPlayer->nhl_team }})@endif</a>
                 <span class="team-next-lineup-status">
                   @if($nextCode!=='Minors' && $nextPlayer->is_ir)<span class="pill team-ir">IR</span>@endif
                   @if($nextCode!=='Minors' && $nextPlayer->is_bench)<span class="pill team-bench">Bench</span>@endif
@@ -277,6 +277,17 @@
         if(is_array($decoded))$storedAdvisorAdvice=$decoded;
       }
 
+      $advisorNameReplacements=[];
+      $advisorPlayerNames=collect($positions)->flatMap(fn($g)=>$g['rows'])->pluck('player_name')
+        ->merge(collect($targetGroups)->flatten(1)->pluck('name'));
+      foreach($advisorPlayerNames->filter()->unique() as $rawName){
+        $formatted=\App\Support\PlayerName::display($rawName);
+        $advisorNameReplacements[$rawName]=$formatted;
+        if(str_contains($formatted,',')){
+          [$last,$first]=array_map('trim',explode(',',$formatted,2));
+          $advisorNameReplacements[$first.' '.$last]=$formatted;
+        }
+      }
       $advisorCycleData=[];
       foreach($advisorProfiles as $profile){
         $key=(string)$profile->advisor_key;
@@ -294,7 +305,7 @@
         $advisorCycleData[$key]=[
           'name'=>$name,
           'slug'=>$key==='mike'?'lineup-advisor':'lineup-advisor-'.$key,
-          'advice'=>$advice,
+          'advice'=>strtr($advice,$advisorNameReplacements),
           'thumbnail'=>\App\Support\TeamImages::url($key==='mike'?'lineup-advisor':'lineup-advisor-'.$key,640),
           'fullImage'=>\App\Support\TeamImages::url($key==='mike'?'lineup-advisor':'lineup-advisor-'.$key),
         ];
@@ -326,7 +337,7 @@
           <span class="{{ ($rosterCounts['D'] ?? 0) != 4 ? 'team-lineup-count-alert' : '' }}">Defense: <strong>{{ $rosterCounts['D'] ?? 0 }}</strong></span>
           <span class="{{ ($rosterCounts['G'] ?? 0) != 1 ? 'team-lineup-count-alert' : '' }}">Goalies: <strong>{{ $rosterCounts['G'] ?? 0 }}</strong></span>
           <span class="{{ ($rosterCounts['Bench'] ?? 0) != 3 ? 'team-lineup-count-alert' : '' }}">Bench: <strong>{{ $rosterCounts['Bench'] ?? 0 }}</strong></span>
-          <span>IR: <strong>{{ $rosterCounts['IR'] ?? 0 }}</strong></span>
+          <span class="{{ ($rosterCounts['IR'] ?? 0) > 5 ? 'team-lineup-count-alert' : '' }}">IR: <strong>{{ $rosterCounts['IR'] ?? 0 }}/5</strong></span>
           <span>Minors: <strong>{{ $rosterCounts['Minors'] ?? 0 }}</strong></span>
         </div>
         @if($movesLeftToday!==null)
@@ -373,7 +384,7 @@
               <td colspan="2">
                 <div class="team-playing-header">
                   <span>{{ $group['label'] }} (<span data-position-count data-playing-count="{{ $playingCount }}" data-total-count="{{ $totalCount }}">{{ $totalCount }}</span>)</span>
-                  <span class="team-score-headings"><span>Proj./G</span><span>Today</span></span>
+                  <span class="team-score-headings"><span>ECFHL*</span><span>Today</span></span>
                 </div>
               </td>
             </tr>
@@ -384,7 +395,7 @@
                 <tr class="team-player-data-row {{ !$isPlaying?'team-not-playing':'' }} {{ $player->is_ir?'team-ir-row':'' }} {{ $player->is_bench?'team-bench-row':'' }} {{ strtoupper((string)$player->roster_status)==='MINORS'?'team-minors-row':'' }} {{ !empty($player->game_in_progress)?'team-game-live-row':'' }} {{ !empty($player->game_finished)?'team-game-finished-row':'' }}" data-playing="{{ $isPlaying?'1':'0' }}">
                   <td data-label="Player">
                     <div class="team-player-name-wrap">
-                      <strong>{{ $player->player_name }}@if($player->nhl_team) ({{ $player->nhl_team }})@endif</strong>
+                      <strong><a class="player-name-link" data-player-stats href="/players/{{ rawurlencode($player->player_id) }}">{{ \App\Support\PlayerName::display($player->player_name) }}@if($player->nhl_team) ({{ $player->nhl_team }})@endif</a></strong>
                       @if($player->is_ir)
                         <span class="pill team-ir">IR</span>
                       @endif
@@ -447,7 +458,7 @@
                 <div class="team-target-row" data-target-row @if($loop->iteration>5) hidden @endif>
                   <div class="team-target-main">
                     <div class="team-target-name">
-                      <strong>{{ $target['name'] }} ({{ $target['team'] }})</strong>
+                      <strong>{{ \App\Support\PlayerName::display($target['name']) }} ({{ $target['team'] }})</strong>
                       @if($code==='G')@include('account.goalie-bell',['goalie'=>$target])@endif
                       @if(!empty($target['injury_status']))<span class="pill team-ir">IR</span>@endif
                     </div>
@@ -481,7 +492,7 @@
                       <span><small>SEASON</small>{{ isset($target['season_fpts_per_game'])&&$target['season_fpts_per_game']!==null?number_format($target['season_fpts_per_game'],2):'—' }}</span>
                       <span><small>L21</small>{{ isset($target['fpts_per_game_21d'])&&$target['fpts_per_game_21d']!==null?number_format($target['fpts_per_game_21d'],2):'—' }}</span>
                       <span><small>L7</small>{{ isset($target['fpts_per_game_7d'])&&$target['fpts_per_game_7d']!==null?number_format($target['fpts_per_game_7d'],2):'—' }}</span>
-                      <strong class="team-target-proj"><small>MY PROJ</small>{{ $target['projected_points']!==null?number_format($target['projected_points'],2):'—' }}</strong>
+                      <strong class="team-target-proj"><small>ECFHL*</small>{{ $target['projected_points']!==null?number_format($target['projected_points'],2):'—' }}</strong>
                     </div>
                     @if(!empty($target['add_url']))
                       <a class="team-target-add" href="{{ $target['add_url'] }}" target="_blank" rel="noopener noreferrer">+ Add</a>

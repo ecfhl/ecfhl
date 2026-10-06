@@ -50,7 +50,7 @@ final class ProjectionSettings
             ->addSelect('p.player_id', 'b.source_rank', 'b.fantrax_fpts_per_game',
                 'p.season_fpts_per_game', 'p.season_gp', 'p.fpts_per_game_7d', 'p.fpts_per_game_14d', 'p.fpts_per_game_21d', 'p.window_end_date')->get();
         $players = $rows->map(function ($row) use ($weights) {
-            return ['player_id'=>$row->player_id, 'name'=>$row->player_name, 'team'=>$row->nhl_team, 'position'=>$row->position,
+            return ['player_id'=>$row->player_id, 'name'=>PlayerName::display($row->player_name), 'team'=>$row->nhl_team, 'position'=>$row->position,
                 'source_rank'=>$row->source_rank === null ? PHP_INT_MAX : (int)$row->source_rank, 'season_gp'=>(int)$row->season_gp, 'season_fpts_per_game'=>$row->season_fpts_per_game === null ? null : (float)$row->season_fpts_per_game,
                 'myproj'=>ProjectionMath::weighted(['fantrax'=>$row->fantrax_fpts_per_game, 'season'=>$row->season_fpts_per_game,
                     '7d'=>$row->fpts_per_game_7d, '14d'=>$row->fpts_per_game_14d, '21d'=>$row->fpts_per_game_21d], $weights)];

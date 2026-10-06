@@ -33,9 +33,9 @@
 @endphp
 
 @if($draftPickUrl)
-    <a class="trade-player-link" href="{{ $draftPickUrl }}">{{ $player }}</a>
+    <a class="trade-player-link" href="{{ $draftPickUrl }}">{{ \App\Support\PlayerName::display($player) }}</a>
 @elseif($playerUrl)
-    <a class="trade-player-link{{ $fantraxUrl ? ' trade-missing-contract' : '' }}" href="{{ $playerUrl }}" @if($fantraxUrl) title="Contract missing — click to view this player's ECFHL history" @endif>{{ $player }}</a>
+    <a class="trade-player-link{{ $fantraxUrl ? ' trade-missing-contract' : '' }}" href="{{ $playerUrl }}" @if($fantraxUrl) title="Contract missing — click to view this player's ECFHL history" @endif>{{ \App\Support\PlayerName::display($player) }}</a>
 @else
     {{ $player }}
 @endif

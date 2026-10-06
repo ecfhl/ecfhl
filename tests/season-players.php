@@ -65,7 +65,7 @@ $defaultHtml=seasonRequest('/players')->getContent();
 verifySeason(str_contains($html,'player-assignment-tag player-assignment-2">L2</span>')&&str_contains($html,'player-assignment-tag player-assignment-2">PP2</span>')&&!str_contains($html,'Pair2'),'Defensemen and PP assignments must use colored L/PP stickers.');
 verifySeason(str_contains($html,'player-assignment-tag player-assignment-1">L1</span>')&&str_contains($html,'player-assignment-tag player-assignment-1">PP1</span>'),'Forwards must show the same colored L/PP stickers.');
 verifySeason(substr_count($html,'data-player-id=')===25&&str_contains($html,'Player &lt;unsafe&gt;')&&!str_contains($html,'Player <unsafe>'),'SSR row count / escaped names failed.');
-verifySeason(str_contains($html,'ECFHL Score')&&str_contains($html,'71:11')&&str_contains($html,'/teams/current/beta')&&str_contains($html,'Free Agent'),'Stats / ownership / custom projection rendering failed.');
+verifySeason(str_contains($html,'ECFHL*')&&str_contains($html,'71:11')&&str_contains($html,'/teams/current/beta')&&str_contains($html,'Free Agent'),'Stats / ownership / custom projection rendering failed.');
 verifySeason(str_contains($html,'aria-pressed="true" href="/players?positions=D')&&str_contains($html,'aria-pressed="true" href="/players?positions=F')&&str_contains($html,'aria-pressed="false" href="/players?positions=F%2CD%2CG'),'Default filter button states failed.');
 verifySeason(!str_contains($html,'href="/daily-targets"'),'Retired Daily Targets shortcut must be absent.');
 preg_match('/<thead>(.*?)<\/thead>/s',$html,$tableHead);
