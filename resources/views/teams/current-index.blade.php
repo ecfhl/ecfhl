@@ -127,7 +127,7 @@
         $homeProjectedTotal=$home['daily_projected_fpts']??0;
       @endphp
 
-      <details class="matchup-card ecfhl-scoreboard" data-matchup-key="{{ ($away['id'] ?? $away['slug'] ?? 'away') }}::{{ ($home['id'] ?? $home['slug'] ?? 'home') }}" data-away-team-slug="{{ $away['slug'] ?? \Illuminate\Support\Str::slug($away['name'] ?? '') }}" data-home-team-slug="{{ $home['slug'] ?? \Illuminate\Support\Str::slug($home['name'] ?? '') }}" data-away-team-id="{{ $away['id'] ?? '' }}" data-home-team-id="{{ $home['id'] ?? '' }}">
+      <details class="matchup-card ecfhl-scoreboard {{ request()->user()?->claim?->team_name && in_array(request()->user()->claim->team_name, [$away['name'] ?? '', $home['name'] ?? ''], true) ? 'notification-team-matchup' : '' }}" data-matchup-key="{{ ($away['id'] ?? $away['slug'] ?? 'away') }}::{{ ($home['id'] ?? $home['slug'] ?? 'home') }}" data-away-team-slug="{{ $away['slug'] ?? \Illuminate\Support\Str::slug($away['name'] ?? '') }}" data-home-team-slug="{{ $home['slug'] ?? \Illuminate\Support\Str::slug($home['name'] ?? '') }}" data-away-team-id="{{ $away['id'] ?? '' }}" data-home-team-id="{{ $home['id'] ?? '' }}">
         <summary class="matchup-summary team-live-matchup-summary">
 <div class="team-live-side team-live-score-left">
 @if($away)
@@ -246,7 +246,12 @@
 .matchup-period-label{margin:4px 0 10px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .current-matchup-list{display:flex;flex-direction:column;gap:7px;margin-bottom:20px}
 .matchup-card{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}
-.matchup-card[open]{border:3px solid #2563eb}
+.current-teams-page .matchup-card.notification-team-matchup{border:3px solid #3b82f6!important;background:#eaf5ff!important;box-shadow:0 0 0 1px rgba(59,130,246,.18)!important}
+.current-teams-page .matchup-card.notification-team-matchup>.matchup-summary{background:#eaf5ff!important}
+.current-teams-page .matchup-card[open]{border:3px solid #f97316!important;box-shadow:0 0 0 1px rgba(249,115,22,.18)!important}
+html[data-theme="dark"] .current-teams-page .matchup-card.notification-team-matchup{border-color:#60a5fa!important;background:#123452!important}
+html[data-theme="dark"] .current-teams-page .matchup-card.notification-team-matchup>.matchup-summary{background:#123452!important}
+html[data-theme="dark"] .current-teams-page .matchup-card[open]{border-color:#fb923c!important}
 .matchup-card.notification-team-matchup>.matchup-summary{background:#eaf5ff}
 .matchup-summary{display:grid;grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr);gap:5px;padding:10px 14px;cursor:pointer;list-style:none}
 .matchup-summary::-webkit-details-marker{display:none}
@@ -340,11 +345,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   const stateKey='ecfhl-open-matchups:'+location.pathname+location.search;
   const cards=[...document.querySelectorAll('.matchup-card[data-matchup-key]')];
 
+  const accountTeamId=@json((string)(request()->user()?->claim?->fantasy_team_id ?? ''));
+  const accountTeamSlug=@json(request()->user()?->claim?->team_name ? \Illuminate\Support\Str::slug(request()->user()->claim->team_name) : '');
   const highlightNotificationTeam=()=>{
-    const selected=localStorage.getItem('ecfhl-notification-team-id')||'';
+    const selected=accountTeamId || localStorage.getItem('ecfhl-notification-team-id') || '';
     let selectedCard=null;
     cards.forEach(card=>{
-      const matches=!!selected && (card.dataset.awayTeamId===selected || card.dataset.homeTeamId===selected);
+      const matches=(!!selected && (card.dataset.awayTeamId===selected || card.dataset.homeTeamId===selected)) || (!!accountTeamSlug && (card.dataset.awayTeamSlug===accountTeamSlug || card.dataset.homeTeamSlug===accountTeamSlug));
       card.classList.toggle('notification-team-matchup',matches);
       if(matches)selectedCard=card;
     });
