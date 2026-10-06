@@ -11,8 +11,6 @@
     <div>
       <div class="eyebrow">Established in 2007</div>
       <h1>East Coast Fantasy Hockey League</h1>
-      <p>Your 2026–27 season hub. Follow the matchups, track the standings, and build your next winning lineup.</p>
-      <span class="overview-hero__season">2026–27 Season</span>
     </div>
   </div>
 </section>
