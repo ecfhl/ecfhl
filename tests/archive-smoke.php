@@ -9,6 +9,7 @@ putenv('APP_KEY=base64:'.base64_encode(str_repeat('x',32)));
 require __DIR__.'/../vendor/autoload.php';
 $app=require __DIR__.'/../bootstrap/app.php';
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+set_exception_handler(function(Throwable $e){fwrite(STDERR,$e->getMessage()."\n".$e->getTraceAsString()."\n");exit(1);});
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;

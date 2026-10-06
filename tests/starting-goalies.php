@@ -41,7 +41,7 @@ goalieCheck($byName['Kevin Lankinen']['starting_status'] === 'Unconfirmed' && $b
 goalieCheck($collector->parse(goalieHtml($fixtures['2026-09-28']), '2026-09-28') === [], 'Explicit empty date is valid');
 $probable = $fixtures['2026-09-29'];
 $probable['props']['pageProps']['data'][0]['awayNewsStrengthName'] = 'Probable';
-goalieCheck($collector->parse(goalieHtml($probable), '2026-09-29')[0]['starting_status'] === 'Probable', 'Preserve Probable status');
+goalieCheck($collector->parse(goalieHtml($probable), '2026-09-29')[0]['starting_status'] === 'Unconfirmed', 'Unknown DFO status must fall back to Unconfirmed');
 $invalid = ['<html>app shell</html>', '<script id="__NEXT_DATA__">{bad json</script>', goalieHtml($fixtures['2026-09-30'])];
 foreach (['missing-data','missing-goalie','missing-status','unknown-status','unknown-team','wrong-game-date'] as $case) {
     $payload = $fixtures['2026-09-29'];

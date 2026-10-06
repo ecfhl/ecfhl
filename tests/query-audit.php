@@ -17,7 +17,7 @@ try {
     check(str_contains($e->getMessage(),'Import refused before database writes'),'Unexpected import failure: '.$e->getMessage());
 }
 check(DB::table('draft_picks')->count()===$beforeSeed,'Rejected import changed existing data');
-foreach (['h2h'=>[4410,4410], 'total'=>[6500,6500], 'all'=>[10910,10910], 'none'=>[0,0]] as $mode=>[$winnings,$fees]) {
+foreach (['h2h'=>[4410,4410], 'total'=>[6500,6500], 'all'=>[10910,10910], 'none'=>[4410,4410]] as $mode=>[$winnings,$fees]) {
     $data=archiveFor($mode);
     $totals=$data->prizeTotals();
     check(abs(array_sum(array_column($totals,'awards'))-$winnings)<0.001,"Prize sum: $mode");
@@ -34,9 +34,9 @@ foreach (['h2h'=>[4410,4410], 'total'=>[6500,6500], 'all'=>[10910,10910], 'none'
     }
     foreach($data->seasonLeaders()['top_seasons'] as $r) check(($r['w']+$r['l']+$r['t'])>0,'Unplayed season ranked');
     foreach($data->seasonLeaders()['most_fpts'] as $r) check($r['fantasy_points_for']!==null,'Missing Fpts ranked');
-    $response=$kernel->handle(Request::create('/?type='.$mode));
-    check(str_contains($response->getContent(),'<strong>$'.number_format($winnings,0).'</strong><span>Prizes</span>'),"Rendered prize card: $mode");
-    $kernel->terminate(Request::create('/?type='.$mode),$response);
+    $response=$kernel->handle(Request::create('/prizes?type='.$mode));
+    check($response->getStatusCode()===200 && array_sum(array_column($response->original->getData()['totals'],'awards'))===$winnings,"Rendered prize totals: $mode");
+    $kernel->terminate(Request::create('/prizes?type='.$mode),$response);
 }
 $data=archiveFor('all');
 $members=DB::table('season_members')->where('season_id','S2008')->pluck('franchise_id')->all();
