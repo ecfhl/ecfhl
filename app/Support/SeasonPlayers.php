@@ -51,12 +51,13 @@ final class SeasonPlayers
         $columns = array_intersect(['F', 'D'], $positions) || !$positions ? self::SKATER_COLUMNS : [];
         if (in_array('G', $positions, true)) {
             $goalieColumns = json_decode($groups['goalie'] ?? '{}', true) ?: [];
-            foreach (['Min','W','L','OL','GAA','SV%','SHO','GA','SOGA','SV'] as $label) if (isset($goalieColumns[$label])) $columns[$label] = $goalieColumns[$label];
+            foreach (['W','L','OL','SHO','GAA','G','A','SV%','GA','SOGA','SV'] as $label) if (isset($goalieColumns[$label]) || in_array($label, ['G','A'], true)) $columns[$label] = $goalieColumns[$label] ?? self::SKATER_COLUMNS[$label];
         }
         // Extra category stats are stored only for Season. Never mix season
         // goals/assists with a selected recent window or frozen projection.
         if ($dataset !== 'season') $columns = [];
         $headers = ['rank'=>'Rank'] + self::BASE_HEADERS + array_combine(array_keys($columns), array_keys($columns));
+        if (isset($headers['SHO'])) $headers['SHO'] = 'SO';
         if ($dataset === 'fantrax') unset($headers['gp']);
         $sort = (string)$request->query('sort', $request->query('dfo_sort') === '1' ? 'ec_proj' : 'fpts');
         if (in_array($sort,['rank','today','tomorrow'],true) || !isset($headers[$sort])) $sort = 'fpts';

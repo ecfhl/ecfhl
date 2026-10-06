@@ -12,7 +12,7 @@ function verifySeason($ok,$message){if(!$ok)throw new RuntimeException($message)
 foreach(glob(__DIR__.'/../database/migrations/*create*.php') as $file)(require $file)->up();
 (require __DIR__.'/../database/migrations/2026_10_03_210000_add_season_actuals_to_player_projections.php')->up();
 config(['performance.public_data_cache'=>false]);
-foreach(['skater'=>['GP'=>'Games played','G'=>'Goals','A'=>'Assists','TOI'=>'Time on ice'],'goalie'=>['GP'=>'Games played','W'=>'Wins','SV%'=>'Save percentage']] as $group=>$columns) DB::table('season_player_stat_columns')->insert(['group'=>$group,'columns_json'=>json_encode($columns)]);
+foreach(['skater'=>['GP'=>'Games played','G'=>'Goals','A'=>'Assists','TOI'=>'Time on ice'],'goalie'=>['GP'=>'Games played','Min'=>'Minutes','W'=>'Wins','L'=>'Losses','OL'=>'Overtime losses','SHO'=>'Shutouts','GAA'=>'Goals against average','G'=>'Goals','A'=>'Assists','SV%'=>'Save percentage']] as $group=>$columns) DB::table('season_player_stat_columns')->insert(['group'=>$group,'columns_json'=>json_encode($columns)]);
 for($i=1;$i<=65;$i++) DB::table('season_player_stats')->insert(['player_id'=>'p'.$i,'season_id'=>'2026-27','player_name'=>$i===1?'Player <unsafe>':'Player '.str_pad($i,2,'0',STR_PAD_LEFT),'nhl_team'=>'MTL','position'=>$i>60?'G':($i%2?'F':'D'),'rookie'=>$i%3===0,'season_fpts'=>100-$i,'season_gp'=>10,'season_fpts_per_game'=>(100-$i)/10,'stats_json'=>json_encode(['G'=>'2','A'=>'5','TOI'=>$i===1?'71:11':'10:00','W'=>'3','SV%'=>'.925']),'stats_through'=>'2026-10-04','refreshed_at'=>now()]);
 $projection=['player_id'=>'p1','as_of_date'=>'2026-10-04','window_end_date'=>'2026-10-04','projected_fpts_per_game'=>6.25,'refreshed_at'=>now()];foreach([7,14,21] as $days){$projection['gp_'.$days.'d']=0;$projection['fpts_'.$days.'d']=0;$projection['fpts_per_game_'.$days.'d']=0;}DB::table('player_projections')->insert($projection);
 foreach([['2026-10-03','old','Old owner','p2'],['2026-10-04','alpha','Alpha','p1'],['2026-10-04','beta','Beta','p1']] as [$date,$id,$name,$player]) DB::table('active_fantasy_rosters')->insert(['game_date'=>$date,'fantasy_team_id'=>$id,'fantasy_team_name'=>$name,'player_id'=>$player,'player_name'=>'Player','position'=>'F']);
@@ -37,7 +37,7 @@ verifySeason($rookies['players']->total()===20&&$rookies['players']->getCollecti
 $all=$service->data(Request::create('/players?availability=all&positions=F,D,G&rookies=0'));
 verifySeason($all['players']->total()===65&&isset($all['columns']['SV%']),'All selected groups / rookie Off must include every player.');
 $goalies=$service->data(Request::create('/players?availability=all&positions=G&rookies=1'));
-verifySeason($goalies['players']->total()===1&&array_keys($goalies['columns'])===['W','SV%'],'Goalie-only rookie filtering / columns failed.');
+verifySeason($goalies['players']->total()===1&&array_keys($goalies['columns'])===['W','L','OL','SHO','GAA','G','A','SV%']&&$goalies['headers']['SHO']==='SO'&&!isset($goalies['headers']['Min']),'Goalie-only rookie filtering / columns failed.');
 $empty=$service->data(Request::create('/players?availability=all&positions='));verifySeason($empty['players']->total()===0,'Deselected positions must not reset to defaults.');
 $second=$service->data(Request::create('/players?availability=all&positions=F,D&page=2'));
 verifySeason($second['players']->count()===25&&$second['players']->firstItem()===26&&$second['players']->lastItem()===50,'Second page must append the next 25.');
