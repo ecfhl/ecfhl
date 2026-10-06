@@ -24,7 +24,7 @@ final class PlayerProfile
         $seasonStats=json_decode($player->stats_json,true)?:[];
         $seasonStats['Pts']=$seasonStats['Pt']??$seasonStats['Pts']??null;
         $seasonStats['GP']=$player->season_gp ?? $seasonStats['GP'] ?? null;
-        $seasonStats['FPts']=$player->season_fpts ?? null;
+        $seasonStats['FPts']=$player->season_fpts !== null ? (int) round((float) $player->season_fpts) : null;
         $categoryLabels=$player->position==='G'?['GP'=>'Games played','W'=>'Wins','L'=>'Losses','OL'=>'Overtime losses','GAA'=>'Goals against average','SV%'=>'Save percentage','SHO'=>'Shutouts','GA'=>'Goals against','SV'=>'Saves']:['GP'=>'Games played','G'=>'Goals','A'=>'Assists','Pts'=>'Points','PPG'=>'Power-play goals','SHG'=>'Short-handed goals','GWG'=>'Game-winning goals','FPts'=>'Fantasy points'];
         $categoryLabels=array_filter($categoryLabels,fn($label,$key)=>isset($seasonStats[$key])&&$seasonStats[$key]!=='',ARRAY_FILTER_USE_BOTH);
         $teamSlug=$roster?Str::slug($roster->fantasy_team_name):null;
