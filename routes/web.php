@@ -111,6 +111,19 @@ Route::post('/lineup-advisors/{advisor}/profile', function(string $advisor) {
 
 Route::get('/admin', fn()=>view('admin.index'));
 
+Route::get('/admin/notifications', function () {
+    abort_unless(request()->user()?->is_admin,403);
+    return view('admin.notifications');
+})->middleware('auth');
+
+Route::post('/admin/notifications/test', function () {
+    abort_unless(request()->user()?->is_admin,403);
+    $v=request()->validate(['type'=>'required|string|in:team-score,team-goalie-score,opponent-score,own-goalie,all-goalie,available-today,available-tomorrow,watched-goalie']);
+    $endpointHash=(string)request()->cookie('ecfhl_push_device','');
+    $result=app(\App\Support\WebPush::class)->testType((int)request()->user()->id,$endpointHash,$v['type']);
+    return redirect('/admin/notifications')->with('notice',$result['message']);
+})->middleware(['auth','throttle:20,1,admin-notification-test']);
+
 Route::get('/admin/teams', function () {
     abort_unless(\Illuminate\Support\Facades\Schema::hasTable('team_icons'),503);
     $teams=\App\Support\CurrentTeams::administration();
