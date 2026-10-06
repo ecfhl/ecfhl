@@ -29,7 +29,7 @@ html[data-theme="dark"] .ecfhl-scoreboard .team-live-matchup-summary{background:
  .ecfhl-scoreboard .team-live-side{grid-column:1}
  .ecfhl-scoreboard .team-live-side-right{grid-column:3;grid-template-columns:minmax(0,1fr) 56px}
  .ecfhl-scoreboard .team-live-name-row{display:contents!important}
- .ecfhl-scoreboard .team-live-name-row a{grid-column:1 / -1;grid-row:1;font-size:12px!important}
+ .ecfhl-scoreboard .team-live-name-row a{grid-column:1 / -1;grid-row:1;font-size:12px!important;display:block!important;min-width:0;max-width:100%;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;overflow-wrap:normal!important}
  .ecfhl-scoreboard .team-live-logo{grid-column:1;grid-row:2;width:56px!important;height:56px!important}
  .ecfhl-scoreboard .team-live-side-right .team-live-logo{grid-column:2;justify-self:end}
  .ecfhl-scoreboard .team-live-body{grid-column:2;grid-row:2;justify-content:flex-end!important;margin-top:0!important}
