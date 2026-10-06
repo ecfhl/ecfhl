@@ -340,7 +340,8 @@ html[data-theme="dark"] .matchup-player-row{color:#f8fafc;border-color:#334155}
 html[data-theme="dark"] .matchup-player-row.team-game-live-row{background:#123d30!important}
 html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#263243!important}
 html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:var(--game-upcoming)!important}
-@media(max-width:800px){
+/* Use the working compact scoreboard layout on desktop as well as mobile. */
+@media(min-width:0px){
  .matchup-summary{padding:7px 12px 6px}
  .matchup-summary-side{padding-top:3px}
  .matchup-team-name-row{gap:3px}
