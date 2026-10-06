@@ -3,3 +3,8 @@
 .player-profile-categories>div.player-profile-stat-fpts{border-color:#0891b2;background:rgba(8,145,178,.12)}
 .player-profile-stat-fpts span,.player-profile-stat-fpts strong{color:#22d3ee!important}
 html:not([data-theme="dark"]) .player-profile-stat-fpts span,html:not([data-theme="dark"]) .player-profile-stat-fpts strong{color:#0e7490!important}
+
+.player-profile-categories>div.player-profile-stat-fpts{border:2px solid #0891b2!important;background:rgba(8,145,178,.20)!important;box-shadow:0 0 0 1px rgba(8,145,178,.18)}
+.player-profile-categories>div.player-profile-stat-fpts small,.player-profile-categories>div.player-profile-stat-fpts strong{color:#0e7490!important;font-weight:900}
+html[data-theme="dark"] .player-profile-categories>div.player-profile-stat-fpts{border-color:#22d3ee!important;background:rgba(34,211,238,.16)!important}
+html[data-theme="dark"] .player-profile-categories>div.player-profile-stat-fpts small,html[data-theme="dark"] .player-profile-categories>div.player-profile-stat-fpts strong{color:#67e8f9!important}
