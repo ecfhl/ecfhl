@@ -181,7 +181,8 @@ foreach ($expected as $date) {
     $response=$kernel->handle($request);
     checkLive($response->getStatusCode()===200, 'Live scoring render failed: '.$date.' '.$response->getContent());
     $html=$response->getContent();
-    checkLive(substr_count($html,'class="matchup-card"')===7, 'Rendered matchups incomplete');
+    checkLive(preg_match_all('/<details\\b[^>]*class="[^"]*\\bmatchup-card\\b[^"]*"/', $html)===7, 'Rendered matchups incomplete');
+    checkLive(str_contains($html, 'matchup-scoreboard.css') && substr_count($html, 'team-live-matchup-summary')>=7, 'Live Scoring does not use the shared Home scoreboard');
     checkLive(str_contains($html,'date=2026-10-01') && str_contains($html,'date=2026-10-02') && str_contains($html,'date=2026-10-03'), 'Date buttons wrong after Atlantic midnight');
     if ($date==='2026-10-02') checkLive(str_contains($html,'Leo Carlsson') && str_contains($html,'Roope Hintz'), 'Regression players missing in rendered page');
     $kernel->terminate($request,$response);
