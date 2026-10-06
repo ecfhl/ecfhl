@@ -143,7 +143,7 @@ class WebPush
                 $source=$query->orderByDesc('id')->get()->first(function($notification){
                     $date=preg_match('/[?&]date=(\\d{4}-\\d{2}-\\d{2})/',(string)$notification->url,$match)?$match[1]:null;
                     if(!$date)return false;
-                    $snapshot=app(\\App\\Support\\LiveScoring\\SnapshotRepository::class)->get($date);
+                    $snapshot=app(\App\Support\LiveScoring\SnapshotRepository::class)->get($date);
                     foreach(($snapshot['players']??[]) as $player){
                         if((string)($player['fantasy_team_id']??'')!==(string)$notification->fantasy_team_id)continue;
                         if(!str_starts_with((string)$notification->body,(string)($player['player_name']??'').' · ')&&!str_starts_with((string)$notification->body,(string)($player['player_name']??'').' now has '))continue;
