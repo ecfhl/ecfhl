@@ -1,32 +1,33 @@
 (() => {
-  // Filter navigation must not move the viewport. Browser restoration can race
-  // our script on mobile, so disable native restoration and restore only after
-  // the new page has completed layout.
-  const restoreKey = 'seasonPlayersScrollY';
+  // After a filter/sort reload, place the viewport at the player results table.
+  const restoreKey = 'seasonPlayersGoToTable';
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-  const saveScroll = () => sessionStorage.setItem(restoreKey, String(window.scrollY));
-  const savedScroll = sessionStorage.getItem(restoreKey);
-  if (savedScroll !== null) {
-    const y = Number(savedScroll) || 0;
-    const restore = () => window.scrollTo(0, y);
-    requestAnimationFrame(restore);
+  const markFilterNavigation = () => sessionStorage.setItem(restoreKey, '1');
+  const goToTable = () => {
+    const target = document.querySelector('.player-table-meta') || document.querySelector('.player-table-scroll');
+    if (!target) return;
+    const header = document.querySelector('.site-header');
+    const seasonBar = document.querySelector('.season-filter-bar');
+    const offset = Math.max(header?.getBoundingClientRect().height || 0, seasonBar?.getBoundingClientRect().height || 0) + 8;
+    const y = target.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo(0, Math.max(0, y));
+  };
+  if (sessionStorage.getItem(restoreKey) === '1') {
+    sessionStorage.removeItem(restoreKey);
     window.addEventListener('load', () => {
-      restore();
-      requestAnimationFrame(restore);
-      setTimeout(restore, 100);
-      setTimeout(() => {
-        restore();
-        sessionStorage.removeItem(restoreKey);
-      }, 300);
+      requestAnimationFrame(() => {
+        goToTable();
+        requestAnimationFrame(goToTable);
+      });
     }, { once: true });
   }
   document.addEventListener('click', event => {
     const link = event.target.closest('a.player-filter, a.player-sort-link');
     if (!link || !link.href) return;
-    saveScroll();
+    markFilterNavigation();
   });
   document.querySelectorAll('.player-slicers, .player-search').forEach(form => {
-    form.addEventListener('submit', saveScroll);
+    form.addEventListener('submit', markFilterNavigation);
   });
   const table = document.querySelector('.season-player-table');
   if (table) {
