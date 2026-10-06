@@ -314,7 +314,7 @@
 .matchup-roster-grid{display:grid;grid-template-columns:1fr 1fr}
 .matchup-roster-col{min-width:0;border-right:1px solid var(--line)}
 .matchup-roster-col:last-child{border-right:0}
-.matchup-player-row{position:relative;min-width:0;height:64px;box-sizing:border-box;overflow:hidden;padding:5px 8px 2px;border-bottom:1px solid var(--line)}
+.matchup-player-row{position:relative;min-width:0;height:32px;box-sizing:border-box;overflow:hidden;padding:3px 8px 1px;border-bottom:1px solid var(--line)}
 .matchup-player-main{width:100%;min-width:0;padding-right:48px;box-sizing:border-box}
 .matchup-player-name{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:15px;line-height:1.1}
 .matchup-player-name strong{flex-basis:100%;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -355,7 +355,7 @@ html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:va
  .matchup-projected-score{position:absolute;top:68px;margin:0}
  .matchup-summary-away .matchup-projected-score{right:0}
  .matchup-summary-home .matchup-projected-score{left:0}
- .matchup-player-row{height:64px;padding:5px 8px 2px}
+ .matchup-player-row{height:32px;padding:3px 8px 1px}
  .matchup-player-name{font-size:15px}
  .matchup-player-opponent{font-size:10px;margin-top:3px}
  .matchup-player-metrics{top:5px;bottom:auto}
