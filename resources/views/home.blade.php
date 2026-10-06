@@ -77,7 +77,7 @@
         <a class="overview-standing {{ $loop->iteration===8 ? 'overview-standing--cut' : '' }}" href="/teams/current/{{ $team['slug'] }}">
           <span class="overview-rank">{{ $team['rank'] ?? '—' }}</span>
           <img src="{{ \App\Support\TeamImages::url($team['slug'],64) }}" width="32" height="32" alt="" loading="lazy">
-          <div><strong>{{ $team['team'] }}</strong><small>{{ $team['w'] ?? 0 }}–{{ $team['l'] ?? 0 }}–{{ $team['t'] ?? 0 }}</small></div>
+          <div><strong>{{ $team['team'] }}</strong><small>{{ $team['w'] ?? 0 }}–{{ $team['l'] ?? 0 }}–{{ $team['t'] ?? 0 }} ({{ isset($team['fantasy_points_for']) ? number_format($team['fantasy_points_for'],0) : '—' }} Fpts)</small></div>
           <b>{{ 2 * (int)($team['w'] ?? 0) + (int)($team['t'] ?? 0) }}<small>Points</small></b>
         </a>
       @empty
