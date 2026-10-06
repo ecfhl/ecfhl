@@ -130,19 +130,38 @@ class WebPush
     {
         $subscription=DB::table('push_subscriptions')->where('user_id',$userId)->where('endpoint_hash',$endpointHash)->where('enabled',true)->whereNotNull('feed_token_hash')->first();
         if(!$subscription)throw \Illuminate\Validation\ValidationException::withMessages(['device'=>'Enable notifications on this device before sending a test.']);
-        $tests=[
-            'team-score'=>['ECFHL · My Team','Test Skater · 5 FPts',"G: 1 · A: 1 · PPG: 1 · SHG: 0 · GWG: 0"],
-            'team-goalie-score'=>['ECFHL · My Team','Test Goalie · 6 FPts',"W: 1 · L: 0 · OL: 0 · SO: 1 · G: 0 · A: 0"],
-            'opponent-score'=>['ECFHL · Opponent','Test Opponent · 3 FPts',"G: 1 · A: 0 · PPG: 0 · SHG: 0 · GWG: 1"],
-            'own-goalie'=>['ECFHL · Goalie Status','My Team Goalie · Confirmed','Rostered goalie status changed to Confirmed.'],
-            'all-goalie'=>['ECFHL · Goalie Status','League Goalie · Likely','Goalie status changed to Likely.'],
-            'available-today'=>['ECFHL · Available Goalie','Available Today · Confirmed','Available goalie playing today is Confirmed.'],
-            'available-tomorrow'=>['ECFHL · Available Goalie','Available Tomorrow · Likely','Available goalie playing tomorrow is Likely.'],
-            'watched-goalie'=>['ECFHL · Watched Goalie','Watched Goalie · Confirmed','A goalie on your watch list is Confirmed.'],
+
+        $scoreTypes=['team-score','team-goalie-score','opponent-score'];
+        $goalieTypes=['own-goalie','all-goalie','available-today','available-tomorrow','watched-goalie'];
+        abort_unless(in_array($type,array_merge($scoreTypes,$goalieTypes),true),422,'Unknown notification test.');
+
+        if(in_array($type,$scoreTypes,true)){
+            $query=DB::table('push_notifications')->where('category','live-score');
+            if($type==='team-goalie-score')$query->where(function($q){$q->where('body','like','%W: %')->where('body','like','%SO: %');});
+            else $query->where('body','like','%PPG: %');
+            $source=$query->orderByDesc('id')->first();
+            $missing='No previous '.($type==='team-goalie-score'?'goalie scoring':'player scoring').' notification has been sent yet.';
+        }else{
+            $source=DB::table('push_notifications')->where('category','goalie-status')->orderByDesc('id')->first();
+            $missing='No previous goalie status notification has been sent yet.';
+        }
+
+        if(!$source)throw \Illuminate\Validation\ValidationException::withMessages(['notification'=>$missing]);
+
+        $url=(string)($source->url??'');
+        if(in_array($type,$scoreTypes,true)){
+            // Score notifications always open Live Scoring, preserving the fantasy date when available.
+            $date=preg_match('/[?&]date=(\d{4}-\d{2}-\d{2})/',$url,$match)?$match[1]:null;
+            $url='/teams/current'.($date?'?date='.$date:'');
+        }
+        // Goalie-status notifications retain their production Fantrax goalie-search URL.
+        $alert=[
+            'category'=>'test-'.$type,
+            'title'=>(string)$source->title.' · TEST',
+            'body'=>(string)$source->body,
+            'url'=>$url,
+            'fantasy_team_id'=>$source->fantasy_team_id,
         ];
-        abort_unless(isset($tests[$type]),422,'Unknown notification test.');
-        [$title,$headline,$detail]=$tests[$type];
-        $alert=['category'=>'test-'.$type,'title'=>$title.' · TEST','body'=>$headline."\n".$detail,'url'=>'/notifications','fantasy_team_id'=>null];
         $id=DB::transaction(function()use($alert,$subscription){
             $id=DB::table('push_notifications')->insertGetId(array_merge($alert,['created_at'=>now(),'updated_at'=>now()]));
             DB::table('push_deliveries')->insert(['subscription_id'=>$subscription->id,'notification_id'=>$id]);
@@ -155,7 +174,7 @@ class WebPush
             throw \Illuminate\Validation\ValidationException::withMessages(['device'=>'The browser could not receive the test. Re-enable notifications on this device and try again.']);
         }
         DB::table('push_subscriptions')->where('id',$subscription->id)->update(['last_push_at'=>now(),'updated_at'=>now()]);
-        return ['ok'=>true,'message'=>$title.' test sent to this device.'];
+        return ['ok'=>true,'message'=>'Last matching notification sent to this device.'];
     }
 
     private function sendEmptyPush(string $endpoint): int
