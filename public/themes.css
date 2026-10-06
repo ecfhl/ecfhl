@@ -116,3 +116,13 @@ html[data-theme="dark"] :is(.matchup-player-opponent,.team-player-opponent) > :i
  font-size:10px!important;padding:6px 10px!important;
 }
 .current-team-page .team-roster-table .team-today-fpts{font-size:36px!important;font-weight:900!important;line-height:1!important;font-variant-numeric:tabular-nums}
+
+/* Neutralize roster-only opponent styling inside the shared matchup cards. */
+.ecfhl-scoreboard .matchup-expanded .matchup-player-opponent{align-items:flex-start!important;justify-content:flex-start!important;text-align:left!important}
+.ecfhl-scoreboard .matchup-expanded .matchup-player-opponent > :is(.team-playing-text,.team-home,.team-away){
+ position:static!important;inset:auto!important;transform:none!important;
+ width:auto!important;align-self:flex-start!important;text-align:left!important;
+ font-size:10px!important;line-height:1.2!important;font-weight:400!important;
+ color:var(--text)!important;
+}
+html[data-theme="dark"] .ecfhl-scoreboard .matchup-expanded .matchup-player-opponent > :is(.team-playing-text,.team-home,.team-away){color:#fde68a!important}
