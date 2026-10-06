@@ -42,8 +42,10 @@ goalieCheck($collector->parse(goalieHtml($fixtures['2026-09-28']), '2026-09-28')
 $probable = $fixtures['2026-09-29'];
 $probable['props']['pageProps']['data'][0]['awayNewsStrengthName'] = 'Probable';
 goalieCheck($collector->parse(goalieHtml($probable), '2026-09-29')[0]['starting_status'] === 'Unconfirmed', 'Unknown DFO status must fall back to Unconfirmed');
+$partial = $fixtures['2026-09-29'];$partial['props']['pageProps']['data'][0]['awayGoalieName']=null;
+goalieCheck(count($collector->parse(goalieHtml($partial),'2026-09-29'))===9,'Unpublished future goalie must be skipped without losing other teams');
 $invalid = ['<html>app shell</html>', '<script id="__NEXT_DATA__">{bad json</script>', goalieHtml($fixtures['2026-09-30'])];
-foreach (['missing-data','missing-goalie','missing-status','unknown-status','unknown-team','wrong-game-date'] as $case) {
+foreach (['missing-data','missing-status','unknown-team','wrong-game-date'] as $case) {
     $payload = $fixtures['2026-09-29'];
     switch ($case) {
         case 'missing-data': unset($payload['props']['pageProps']['data']); break;

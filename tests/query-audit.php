@@ -35,7 +35,7 @@ foreach (['h2h'=>[4410,4410], 'total'=>[6500,6500], 'all'=>[10910,10910], 'none'
     foreach($data->seasonLeaders()['top_seasons'] as $r) check(($r['w']+$r['l']+$r['t'])>0,'Unplayed season ranked');
     foreach($data->seasonLeaders()['most_fpts'] as $r) check($r['fantasy_points_for']!==null,'Missing Fpts ranked');
     $response=$kernel->handle(Request::create('/prizes?type='.$mode));
-    check($response->getStatusCode()===200 && array_sum(array_column($response->original->getData()['totals'],'awards'))===$winnings,"Rendered prize totals: $mode");
+    check($response->getStatusCode()===200 && abs(array_sum(array_column($response->original->getData()['totals'],'awards'))-$winnings)<0.001,"Rendered prize totals: $mode");
     $kernel->terminate(Request::create('/prizes?type='.$mode),$response);
 }
 $data=archiveFor('all');

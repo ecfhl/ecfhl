@@ -59,7 +59,7 @@
                 <div class="standings-award-row">
                   <span class="standings-award-rank">{{ $loop->iteration }}</span>
                   <div class="standings-award-player">
-                    <strong>@if(!empty($leader['player_id']))<a class="player-name-link" data-player-stats href="/players/{{ rawurlencode($leader['player_id']) }}">{{ \App\Support\PlayerName::display($leader['name']) }}</a>@else{{ \App\Support\PlayerName::display($leader['name']) }}@endif @if(!empty($leader['nhl_team'])) <small>({{ $leader['nhl_team'] }})</small>@endif</strong>
+                    <strong>@if(!empty($leader['player_id']))<a class="player-name-link" data-player-stats href="/players/{{ rawurlencode($leader['player_id']) }}">{{ \App\Support\PlayerName::display($leader['name']) }}</a>@else{{ !empty($award['team_award']) ? $leader['name'] : \App\Support\PlayerName::display($leader['name']) }}@endif @if(!empty($leader['nhl_team'])) <small>({{ $leader['nhl_team'] }})</small>@endif</strong>
                     @if(!empty($award['team_award']))<span>#{{ $leader['rank'] ?? '—' }} · {{ $leader['record'] }}</span>@else<span>{{ $leader['fantasy_team'] ?: 'Free Agent' }}</span>@endif
                   </div>
                   <div class="standings-award-score">
