@@ -387,8 +387,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 <dialog id="player-stats-dialog" class="player-stats-dialog" aria-label="Player stats"><button type="button" class="player-stats-close" aria-label="Close player stats">×</button><div id="player-stats-content" aria-live="polite"></div></dialog>
 <link rel="stylesheet" href="/player-profile.css?v=1"><script src="/player-profile.js?v=2" defer></script>
 
-@if(request()->is('daily-targets','teams/current/*'))
-<link rel="stylesheet" href="/goalie-watches.css?v=1">
+@if(request()->is('players','daily-targets','teams/current/*'))
+<link rel="stylesheet" href="/goalie-watches.css?v=2">
 <script src="/goalie-watches.js?v=3" defer></script>
 @endif
 <link rel="stylesheet" href="/themes.css?v={{ hash_file('sha256', base_path('public/themes.css')) }}">
