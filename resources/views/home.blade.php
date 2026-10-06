@@ -123,4 +123,8 @@
   <div class="overview-home__history"><span>19 years of league history</span><a href="/seasons">Explore the archive →</a></div>
 </div>
 <script src="/overview-home.js?v={{ hash_file('sha256', base_path('public/overview-home.js')) }}"></script>
+<style>
+.overview-matchup .team-live-name-row{min-width:0}
+.overview-matchup .team-live-name-row>a{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+</style>
 @endsection
