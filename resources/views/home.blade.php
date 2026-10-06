@@ -35,8 +35,9 @@
         @php
           $awaySlug=\Illuminate\Support\Str::slug($matchup->away_team_name);
           $homeSlug=\Illuminate\Support\Str::slug($matchup->home_team_name);
-          $awayLive=collect($snapshot['teams']??[])->firstWhere('name',$matchup->away_team_name);
-          $homeLive=collect($snapshot['teams']??[])->firstWhere('name',$matchup->home_team_name);
+          $liveTeams=$snapshot ? app(\App\Support\LiveScoring\ViewData::class)->teams($snapshot) : [];
+          $awayLive=collect($liveTeams)->firstWhere('name',$matchup->away_team_name);
+          $homeLive=collect($liveTeams)->firstWhere('name',$matchup->home_team_name);
         @endphp
         <div class="overview-matchup ecfhl-scoreboard {{ $myTeamName && ($matchup->away_team_name === $myTeamName || $matchup->home_team_name === $myTeamName) ? 'overview-matchup--mine' : '' }}">
           <div class="team-live-matchup-summary">
@@ -47,8 +48,8 @@
               </div>
               <div class="team-live-body">
                 <div class="team-live-scores">
-                  <span class="team-live-score team-live-weekly overview-matchup-weekly"><strong>{{ number_format($awayLive['period_fpts'] ?? $matchup->away_score ?? 0,0) }}</strong><small>Weekly</small></span>
-                  <span class="team-live-score team-live-today overview-matchup-daily"><strong>{{ number_format($awayLive['daily_fpts'] ?? 0,0) }}</strong><small>Daily</small></span>
+                  <span class="team-live-score team-live-weekly overview-matchup-weekly"><strong>{{ number_format($awayLive['week_fpts'] ?? $matchup->away_score ?? 0,0) }}</strong><small>Weekly</small></span>
+                  <span class="team-live-score team-live-today overview-matchup-daily"><strong>{{ number_format($awayLive['today_fpts'] ?? 0,0) }}</strong><small>Daily</small></span>
                 </div>
               </div>
             </div>
@@ -60,8 +61,8 @@
               </div>
               <div class="team-live-body">
                 <div class="team-live-scores">
-                  <span class="team-live-score team-live-today overview-matchup-daily"><strong>{{ number_format($homeLive['daily_fpts'] ?? 0,0) }}</strong><small>Daily</small></span>
-                  <span class="team-live-score team-live-weekly overview-matchup-weekly"><strong>{{ number_format($homeLive['period_fpts'] ?? $matchup->home_score ?? 0,0) }}</strong><small>Weekly</small></span>
+                  <span class="team-live-score team-live-today overview-matchup-daily"><strong>{{ number_format($homeLive['today_fpts'] ?? 0,0) }}</strong><small>Daily</small></span>
+                  <span class="team-live-score team-live-weekly overview-matchup-weekly"><strong>{{ number_format($homeLive['week_fpts'] ?? $matchup->home_score ?? 0,0) }}</strong><small>Weekly</small></span>
                 </div>
               </div>
             </div>
