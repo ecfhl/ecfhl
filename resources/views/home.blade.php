@@ -125,6 +125,9 @@
 <script src="/overview-home.js?v={{ hash_file('sha256', base_path('public/overview-home.js')) }}"></script>
 <style>
 .overview-matchup .team-live-name-row{min-width:0}
+.overview-matchup--mine{border:3px solid #3b82f6!important;background:#eaf5ff!important;box-shadow:0 0 0 1px rgba(59,130,246,.18)}
+html[data-theme="dark"] .overview-matchup--mine{border-color:#60a5fa!important;background:#123452!important;box-shadow:0 0 0 1px rgba(96,165,250,.22)}
+.overview-matchup--mine .team-live-matchup-summary{background:transparent!important}
 .overview-matchup .team-live-name-row>a{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
 @endsection
