@@ -1,17 +1,32 @@
 (() => {
+  // Filter navigation must not move the viewport. Browser restoration can race
+  // our script on mobile, so disable native restoration and restore only after
+  // the new page has completed layout.
   const restoreKey = 'seasonPlayersScrollY';
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  const saveScroll = () => sessionStorage.setItem(restoreKey, String(window.scrollY));
   const savedScroll = sessionStorage.getItem(restoreKey);
   if (savedScroll !== null) {
-    sessionStorage.removeItem(restoreKey);
-    requestAnimationFrame(() => window.scrollTo({ top: Number(savedScroll) || 0, behavior: 'instant' }));
+    const y = Number(savedScroll) || 0;
+    const restore = () => window.scrollTo(0, y);
+    requestAnimationFrame(restore);
+    window.addEventListener('load', () => {
+      restore();
+      requestAnimationFrame(restore);
+      setTimeout(restore, 100);
+      setTimeout(() => {
+        restore();
+        sessionStorage.removeItem(restoreKey);
+      }, 300);
+    }, { once: true });
   }
   document.addEventListener('click', event => {
     const link = event.target.closest('a.player-filter, a.player-sort-link');
     if (!link || !link.href) return;
-    sessionStorage.setItem(restoreKey, String(window.scrollY));
+    saveScroll();
   });
-  document.querySelectorAll('.player-slicers').forEach(form => {
-    form.addEventListener('submit', () => sessionStorage.setItem(restoreKey, String(window.scrollY)));
+  document.querySelectorAll('.player-slicers, .player-search').forEach(form => {
+    form.addEventListener('submit', saveScroll);
   });
   const table = document.querySelector('.season-player-table');
   if (table) {
