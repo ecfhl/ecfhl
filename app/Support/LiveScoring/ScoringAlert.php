@@ -7,7 +7,7 @@ final class ScoringAlert {
   $statLine=[];
   foreach($isGoalie?['W','L','OL','SO','G','A']:['G','A','PPG','SHG','GWG'] as $stat)$statLine[]=$stat.': '.(int)($stats[$stat]['value']??0);
   return ['title'=>'ECFHL · '.$snapshot['teams'][$player['fantasy_team_id']]['name'],
-   'body'=>$player['player_name'].' · '.$player['daily_fpts']." FPts\n".implode(' · ',$statLine),
+   'body'=>\App\Support\PlayerName::display($player['player_name']).' · '.$player['daily_fpts']." FPts\n".implode(' · ',$statLine),
    'url'=>'/teams/current?date='.$snapshot['fantasy_date'],'fantasy_team_id'=>$player['fantasy_team_id']];
  }
 }

@@ -166,7 +166,7 @@ checkLive(DB::table('push_notifications')->count()===$notificationCount+1,'Bench
 $notification=DB::table('push_notifications')->orderByDesc('id')->first();
 checkLive($notification->title==='ECFHL · '.$snapshots['2026-10-02']['teams'][$scorer['fantasy_team_id']]['name'],'Notification omitted ECFHL team name');
 $expectedStats=[];foreach(['G','A','PPG','SHG','GWG'] as $stat)$expectedStats[]=$stat.': '.(int)($scorer['stats'][$stat]['value']??0);
-checkLive($notification->body===$scorer['player_name'].' · '.$scorer['daily_fpts']." FPts\n".implode(' · ',$expectedStats),'Notification stat line does not match dated Fantrax totals');
+checkLive($notification->body===\App\Support\PlayerName::display($scorer['player_name']).' · '.$scorer['daily_fpts']." FPts\n".implode(' · ',$expectedStats),'Notification stat line does not match dated Fantrax totals');
 checkLive($notification->fantasy_team_id===$scorer['fantasy_team_id']&&$notification->category==='live-score'&&$notification->url==='/teams/current?date=2026-10-02','Scoring alert lost ownership/date/category');
 checkLive($refresh->refresh('2026-10-02',fn($m)=>null)&&DB::table('push_notifications')->count()===$notificationCount+1,'Unchanged score duplicated notification');
 $kernel=$app->make(Illuminate\Contracts\Http\Kernel::class);

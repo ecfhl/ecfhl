@@ -9,6 +9,13 @@ use Illuminate\Support\Facades\Log;
 class WebPush
 {
     private ?array $keys = null;
+    private function scoreBodyMatches(string $body,string $name): bool
+    {
+        foreach(PlayerName::searchVariants($name) as $variant){
+            if(str_starts_with($body,$variant.' · ') || str_starts_with($body,$variant.' now has '))return true;
+        }
+        return false;
+    }
     public function publicKey(): string
     {
         [$publicKey] = $this->ensureKeys();
@@ -105,7 +112,7 @@ class WebPush
         $snapshot=app(\App\Support\LiveScoring\SnapshotRepository::class)->get($date);
         foreach(($snapshot['players']??[]) as $player){
             if((string)($player['fantasy_team_id']??'')!==(string)$score->fantasy_team_id)continue;
-            if(str_starts_with($score->body,$player['player_name'].' · ')||str_starts_with($score->body,$player['player_name'].' now has ')){
+            if($this->scoreBodyMatches($score->body,$player['player_name'])){
                 $alert=\App\Support\LiveScoring\ScoringAlert::payload($snapshot,$player);break;
             }
         }
@@ -146,7 +153,7 @@ class WebPush
                     $snapshot=app(\App\Support\LiveScoring\SnapshotRepository::class)->get($date);
                     foreach(($snapshot['players']??[]) as $player){
                         if((string)($player['fantasy_team_id']??'')!==(string)$notification->fantasy_team_id)continue;
-                        if(!str_starts_with((string)$notification->body,(string)($player['player_name']??'').' · ')&&!str_starts_with((string)$notification->body,(string)($player['player_name']??'').' now has '))continue;
+                        if(!$this->scoreBodyMatches((string)$notification->body,(string)($player['player_name']??'')))continue;
                         return strtoupper((string)($player['position']??''))==='G';
                     }
                     return false;
