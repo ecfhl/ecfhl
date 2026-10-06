@@ -7,7 +7,7 @@
 @else<div><h2>Choose your team</h2><a class="button primary" href="/account/claim-team">Claim an available team</a></div>@endif
 </div>
 <div class="owner-settings-grid"><section class="card"><h2>Sign-in methods</h2><p>Email & password: <strong>{{ $owner->password?'Enabled':'Not set' }}</strong></p><p>Google: <strong>{{ $owner->google_id?'Connected':'Not connected' }}</strong></p>
-@if(!$owner->google_id && $googleReady)<a class="button owner-google" href="/auth/google">Connect Google</a>@elseif(!$googleReady)<p class="subtle">Google sign-in is awaiting league configuration.</p>@endif
+@if(!$owner->google_id && $googleReady)@include('account.google-button',['googleLabel'=>'Connect Google'])@elseif(!$googleReady)<p class="subtle">Google sign-in is awaiting league configuration.</p>@endif
 <form method="post" action="/logout">@csrf<button class="button" type="submit">Sign out</button></form></section>
 <form class="card owner-form" method="post" action="/account/password">@csrf<h2>{{ $owner->password?'Change':'Set' }} password</h2>
 @if($owner->password)<label>Current password<input type="password" name="current_password" required autocomplete="current-password"></label>@endif

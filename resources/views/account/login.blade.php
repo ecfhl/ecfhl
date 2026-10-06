@@ -2,7 +2,7 @@
 @section('content')
 <div class="page-head"><div class="shell"><div class="eyebrow">League owners</div><h1>Sign in</h1><p>Your team, your alerts.</p></div></div>
 <div class="shell owner-page owner-narrow">@include('account.shared')
-@if($googleReady)<a class="button owner-google" href="/auth/google">Continue with Google</a><p class="subtle">Or sign in with your email.</p>@endif
+@if($googleReady)@include('account.google-button')<p class="subtle">Or sign in with your email.</p>@endif
 <form method="post" action="/login" class="card owner-form">@csrf
 <label>Email<input name="email" type="email" value="{{ old('email') }}" required autocomplete="username"></label>
 <label>Password<input name="password" type="password" required autocomplete="current-password"></label>
