@@ -1,4 +1,18 @@
 (() => {
+  const restoreKey = 'seasonPlayersScrollY';
+  const savedScroll = sessionStorage.getItem(restoreKey);
+  if (savedScroll !== null) {
+    sessionStorage.removeItem(restoreKey);
+    requestAnimationFrame(() => window.scrollTo({ top: Number(savedScroll) || 0, behavior: 'instant' }));
+  }
+  document.addEventListener('click', event => {
+    const link = event.target.closest('a.player-filter, a.player-sort-link');
+    if (!link || !link.href) return;
+    sessionStorage.setItem(restoreKey, String(window.scrollY));
+  });
+  document.querySelectorAll('.player-slicers').forEach(form => {
+    form.addEventListener('submit', () => sessionStorage.setItem(restoreKey, String(window.scrollY)));
+  });
   const table = document.querySelector('.season-player-table');
   if (table) {
     const playerColumn = table.querySelector('thead .player-frozen-player');
