@@ -76,6 +76,12 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
   @guest<a href="/login"><span class="nav-item-icon" aria-hidden="true">↪</span>Sign in</a><a href="/register" class="nav-create-account"><span class="nav-item-icon" aria-hidden="true">＋</span>Create account</a>@endguest
  </div>
 </div>
+<a href="/notifications" class="nav-mobile-account-link {{ request()->is('notifications')?'active':'' }}"><span class="nav-item-icon" aria-hidden="true">🔔</span>Notifications</a>
+@auth
+<a href="/account" class="nav-mobile-account-link {{ request()->is('account','account/*')?'active':'' }}"><span class="nav-item-icon" aria-hidden="true">👤</span>Account</a>
+@else
+<a href="/login" class="nav-mobile-account-link {{ request()->is('login')?'active':'' }}"><span class="nav-item-icon" aria-hidden="true">↪</span>Sign in</a>
+@endauth
 @if(auth()->user()?->is_admin)
 <div class="nav-dropdown {{ request()->is('admin','admin/*','job-status')?'active':'' }}">
   <div class="nav-dropdown-row">
