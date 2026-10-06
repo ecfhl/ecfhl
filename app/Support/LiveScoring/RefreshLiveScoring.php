@@ -93,7 +93,7 @@ final class RefreshLiveScoring
             }
         }
         // The scheduler invokes this check every minute. During the live-game
-        // window collect on every invocation; outside games keep the 15-minute cadence.
-        return $live || (int)$now->format('i') % 15 === 0;
+        // window collect on every invocation; outside games refresh once per hour.
+        return $live || (int)$now->format('i') === 0;
     }
 }
