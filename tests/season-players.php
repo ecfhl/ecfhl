@@ -71,7 +71,7 @@ verifySeason(!str_contains($html,'href="/daily-targets"'),'Retired Daily Targets
 preg_match('/<thead>(.*?)<\/thead>/s',$html,$tableHead);
 preg_match_all('/<th scope="col"[^>]*>(.*?)<\/th>/s',$tableHead[1],$headCells);
 $headerLabels=array_map(fn($v)=>rtrim(trim(strip_tags($v)), ' ↑↓↕'),$headCells[1]);
-verifySeason($headerLabels===['Rank','Player','Team','ECFHL','FPts','FPts/gp','TodayAtlantic time','TomorrowAtlantic time','GP','G','A','Pts','PPG','SHG','GWG','SOG','TOI'],'Column order and labels must match the requested stats exactly.');
+verifySeason($headerLabels===['Rank','Player','Team','ECFHL*','FPts','FPts/gp','TodayAtlantic time','TomorrowAtlantic time','GP','G','A','Pts','PPG','SHG','GWG','SOG','TOI'],'Column order and labels must match the requested stats exactly.');
 verifySeason(preg_match('/<td class="myproj">6\.25<\/td>\s*<td>99<\/td>\s*<td>9\.90<\/td>\s*<td class="player-game-cell">.*?<\/td>\s*<td class="player-game-cell">.*?<\/td>\s*<td>10<\/td>\s*<td>2<\/td>\s*<td>9<\/td>/', $html), 'Row values must follow ECFHL Score, FPts, FPts/gp, GP, G and A header order.');
 $sortHtml=seasonRequest('/players?availability=all&rookies=1&sort=A&direction=asc')->getContent();
 verifySeason(str_contains($sortHtml,'aria-sort="ascending"')&&str_contains($sortHtml,'sort=A&amp;direction=desc')&&str_contains($sortHtml,'name="sort" value="A"'),'Sort arrows / toggle links / search preservation failed.');
@@ -79,7 +79,7 @@ verifySeason(str_contains($sortHtml,'aria-sort="ascending"')&&str_contains($sort
 $sortDoc=new DOMDocument(); @$sortDoc->loadHTML($sortHtml); $sortPath=new DOMXPath($sortDoc);
 verifySeason($sortPath->query('//select[@name="sort" or @name="direction"]')->length===0,'Sort and Order dropdowns must be removed.');
 $scoreHtml=seasonRequest('/players?availability=all&sort=ec_proj&direction=desc')->getContent();
-verifySeason(!str_contains($scoreHtml,'Sorted by')&&str_contains($scoreHtml,'aria-label="Sort ECFHL ascending"'),'Score header must use the compact ECFHL label and remain sortable.');
+verifySeason(!str_contains($scoreHtml,'Sorted by')&&str_contains($scoreHtml,'aria-label="Sort ECFHL* ascending"'),'Score header must use the compact ECFHL label and remain sortable.');
 $json=json_decode(seasonRequest('/players?availability=all&positions=F,D&page=2',true)->getContent(),true);
 verifySeason(substr_count($json['html'],'data-player-id=')===25&&$json['shown']===50&&$json['total']===60&&str_contains($json['next_url'],'positions=F%2CD'),'Show More must return next rows with preserved filters.');
 $final=json_decode(seasonRequest('/players?availability=all&positions=G&rookies=1',true)->getContent(),true);verifySeason($final['shown']===1&&$final['total']===1&&$final['next_url']===null,'Filtered Show More termination failed.');

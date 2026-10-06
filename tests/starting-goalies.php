@@ -87,9 +87,11 @@ Http::swap(new \Illuminate\Http\Client\Factory);
 Http::preventStrayRequests();
 Http::fake(fn ($request) => Http::response(goalieHtml($fixtures[basename($request->url())]), 200));
 DB::statement("CREATE TRIGGER reject_goalie BEFORE INSERT ON active_starting_goalies BEGIN SELECT RAISE(ABORT, 'test rollback'); END");
-goalieCheck(Artisan::call('ecfhl:refresh-starting-goalies') !== 0, 'Insert failure must return nonzero');
+DB::statement("CREATE TRIGGER reject_goalie_update BEFORE UPDATE ON active_starting_goalies BEGIN SELECT RAISE(ABORT, 'test rollback'); END");
+goalieCheck(Artisan::call('ecfhl:refresh-starting-goalies') !== 0, 'Database write failure must return nonzero');
 goalieCheck(DB::table('active_starting_goalies')->orderBy('id')->get()->toJson() === $before, 'Insert failure must roll back deletion');
 DB::statement('DROP TRIGGER reject_goalie');
+DB::statement('DROP TRIGGER reject_goalie_update');
 
 // Synthetic Fantrax availability checks, independent of who is owned in the live league.
 foreach ([['Tristan Jarry','EDM'],['Kevin Lankinen','VAN'],['Test backup','EDM']] as [$name,$team]) {
