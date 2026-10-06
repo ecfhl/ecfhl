@@ -92,6 +92,8 @@ final class RefreshLiveScoring
                 }
             }
         }
-        return (int)$now->format('i') % ($live ? 2 : 15) === 0;
+        // The scheduler invokes this check every minute. During the live-game
+        // window collect on every invocation; outside games keep the 15-minute cadence.
+        return $live || (int)$now->format('i') % 15 === 0;
     }
 }
