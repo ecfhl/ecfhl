@@ -51,18 +51,11 @@
     navigating = true;
     document.body.classList.add('navigation-pending');
     document.querySelector('main')?.setAttribute('aria-busy', 'true');
-    message.textContent = 'Loading ' + (link.dataset.loadingLabel || link.textContent.trim().replace(/\s+/g, ' ')) + '…';
+    message.textContent = 'Loading…';
     loading.hidden = false;
     const target=new URL(link.href,location.href);
-    if(target.pathname.startsWith('/teams/current/')){
-      event.preventDefault();
-      if(loadingImage){loadingImage.src='/team-icons/'+target.pathname.split('/').pop();loadingImage.alt=link.dataset.loadingLabel||'Team logo';loadingImage.hidden=false;}
-      // Add one second to the normal page transition for the full team logo.
-      teamTimer=setTimeout(()=>location.assign(target.href),1000);
-    }
     slowTimer = setTimeout(() => {
-      message.textContent = 'Still loading. Please wait…';
-      if (cancel) cancel.hidden = false;
+      message.textContent = 'Loading…';
     }, 10000);
   });
   cancel?.addEventListener('click', () => { window.stop(); reset(); });
