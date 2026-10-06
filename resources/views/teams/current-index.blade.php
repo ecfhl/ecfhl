@@ -286,10 +286,10 @@
 .matchup-summary::-webkit-details-marker{display:none}
 .matchup-summary-side{position:relative;display:flex;flex-direction:column;min-width:0}
 .matchup-summary-name{min-width:0}
-.matchup-team-name-row{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.matchup-team-name-row{display:flex;flex-direction:column;gap:6px;align-items:flex-start;min-width:0;max-width:100%}
 .matchup-team-name-row-away a{order:-1}
 .matchup-team-name-row-home{align-items:flex-end}
-.matchup-team-name-row a{font-weight:900;color:var(--text);text-decoration:none;white-space:normal}
+.matchup-team-name-row a{font-weight:900;color:var(--text);text-decoration:none;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;display:block;max-width:100%}
 .matchup-team-name-row .team-icon-uploader{width:64px}
 .matchup-team-name-row .team-icon-uploader img{display:block;width:64px;height:64px;object-fit:contain}
 .matchup-summary-home{text-align:right}
@@ -344,7 +344,7 @@ html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:va
 @media(min-width:0px){
  .matchup-summary{padding:7px 12px 6px}
  .matchup-summary-side{padding-top:3px}
- .matchup-team-name-row{gap:3px}
+ .matchup-team-name-row{display:flex;flex-direction:column;gap:6px;align-items:flex-start;min-width:0;max-width:100%}
  .matchup-team-name-row .team-icon-uploader,.matchup-team-name-row .team-icon-uploader img{width:56px;height:56px}
  .matchup-summary-score{position:absolute;top:33px}
  .matchup-summary-away .matchup-summary-score{right:0}
