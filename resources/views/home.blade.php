@@ -77,7 +77,7 @@
           <span class="overview-rank">{{ $team['rank'] ?? '—' }}</span>
           <img src="{{ \App\Support\TeamImages::url($team['slug'],64) }}" width="32" height="32" alt="" loading="lazy">
           <div><strong>{{ $team['team'] }}</strong><small>{{ $team['w'] ?? 0 }}–{{ $team['l'] ?? 0 }}–{{ $team['t'] ?? 0 }}</small></div>
-          <b>{{ isset($team['fantasy_points_for']) ? number_format($team['fantasy_points_for'],0) : '—' }}<small>FPts</small></b>
+          <b>{{ 2 * (int)($team['w'] ?? 0) + (int)($team['t'] ?? 0) }}<small>Points</small></b>
         </a>
       @empty
         <p class="overview-home__empty">Standings are awaiting the next refresh.</p>
