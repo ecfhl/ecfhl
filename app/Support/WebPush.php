@@ -137,10 +137,25 @@ class WebPush
 
         if(in_array($type,$scoreTypes,true)){
             $query=DB::table('push_notifications')->where('category','live-score');
-            if($type==='team-goalie-score')$query->where(function($q){$q->where('body','like','%W: %')->where('body','like','%SO: %');});
-            else $query->where('body','like','%PPG: %');
-            $source=$query->orderByDesc('id')->first();
-            $missing='No previous '.($type==='team-goalie-score'?'goalie scoring':'player scoring').' notification has been sent yet.';
+            if($type==='team-goalie-score'){
+                // Older goalie alerts used the skater stat line, so identify the
+                // player from the saved snapshot instead of relying on body text.
+                $source=$query->orderByDesc('id')->get()->first(function($notification){
+                    $date=preg_match('/[?&]date=(\\d{4}-\\d{2}-\\d{2})/',(string)$notification->url,$match)?$match[1]:null;
+                    if(!$date)return false;
+                    $snapshot=app(\\App\\Support\\LiveScoring\\SnapshotRepository::class)->get($date);
+                    foreach(($snapshot['players']??[]) as $player){
+                        if((string)($player['fantasy_team_id']??'')!==(string)$notification->fantasy_team_id)continue;
+                        if(!str_starts_with((string)$notification->body,(string)($player['player_name']??'').' · ')&&!str_starts_with((string)$notification->body,(string)($player['player_name']??'').' now has '))continue;
+                        return strtoupper((string)($player['position']??''))==='G';
+                    }
+                    return false;
+                });
+            }else{
+                // My-team and opponent score tests must use the last skater alert.
+                $source=$query->where('body','like','%PPG: %')->where('body','not like','%W: %')->orderByDesc('id')->first();
+            }
+            $missing='No previous '.($type==='team-goalie-score'?'goalie scoring':'non-goalie scoring').' notification has been sent yet.';
         }else{
             $source=DB::table('push_notifications')->where('category','goalie-status')->orderByDesc('id')->first();
             $missing='No previous goalie status notification has been sent yet.';
