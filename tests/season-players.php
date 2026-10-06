@@ -73,6 +73,10 @@ preg_match_all('/<th scope="col"[^>]*>(.*?)<\/th>/s',$tableHead[1],$headCells);
 $headerLabels=array_map(fn($v)=>rtrim(trim(strip_tags($v)), ' ↑↓↕'),$headCells[1]);
 verifySeason($headerLabels===['Rank','Player','Team','ECFHL*','FPts','FPts/gp','TodayAtlantic time','TomorrowAtlantic time','GP','G','A','Pts','PPG','SHG','GWG','SOG','TOI'],'Column order and labels must match the requested stats exactly.');
 verifySeason(preg_match('/<td class="myproj">6\.25<\/td>\s*<td>99<\/td>\s*<td>9\.90<\/td>\s*<td class="player-game-cell">.*?<\/td>\s*<td class="player-game-cell">.*?<\/td>\s*<td>10<\/td>\s*<td>2<\/td>\s*<td>9<\/td>/', $html), 'Row values must follow ECFHL Score, FPts, FPts/gp, GP, G and A header order.');
+$nameSearch=$service->data(Request::create('/players?availability=all&q=02%2C%20Player'));
+verifySeason($nameSearch['players']->total()===1 && $nameSearch['players'][0]->player_id==='p2','Displayed Lastname, Firstname must work in player search.');
+verifySeason(str_contains($html,'Reset filters'),'Reset filters must be visible above results.');
+$availableChip=seasonRequest('/players')->getContent();verifySeason(str_contains($availableChip,'Available only'),'Default availability must be visible above results.');
 $sortHtml=seasonRequest('/players?availability=all&rookies=1&sort=A&direction=asc')->getContent();
 verifySeason(str_contains($sortHtml,'aria-sort="ascending"')&&str_contains($sortHtml,'sort=A&amp;direction=desc')&&str_contains($sortHtml,'name="sort" value="A"'),'Sort arrows / toggle links / search preservation failed.');
 // Column headers provide sorting; dropdown controls are removed.

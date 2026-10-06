@@ -99,7 +99,11 @@ final class SeasonPlayers
                 })->pluck('player_id')->all();
             $query->whereIn('s.player_id', $ids);
         }
-        if ($search !== '') $query->where('s.player_name', 'like', '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search).'%');
+        if ($search !== '') $query->where(function($q) use ($search){
+            foreach(PlayerName::searchVariants($search) as $variant){
+                $q->orWhere('s.player_name','like','%'.str_replace(['\\','%','_'],['\\\\','\\%','\\_'],$variant).'%');
+            }
+        });
         $page = max(1, (int)$request->query('page', 1));
         if ($dailyTargetsSort) {
             $players = $this->dailyTargetsPage($query, $lines, $pp, $playingDate ?? app(FantasyDay::class)->today()->toDateString(), $page, $sort, $direction, $datasetFields);

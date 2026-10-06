@@ -221,19 +221,19 @@ class Archive extends EcfhlData
         if ($needle === '') return [];
         $out = [];
         foreach ($this->draftSeason('all') as $p) {
-            if (str_contains(mb_strtolower($p['player'] ?? ''),$needle))
+            if (PlayerName::matches($p['player'] ?? '',$q))
                 $out[] = ['kind'=>'draft','season'=>$p['season'],'sort'=>$p['season'].'|0|'.sprintf('%06d',$p['overall']??0),'data'=>$p];
         }
         foreach ($this->trades() as $t) {
             $matched = false;
             foreach (array_merge($t['from_items'],$t['to_items']) as $item) {
                 if (preg_match('/draft\s+pick|round\s*\d/i',$item)) continue;
-                if (str_contains(mb_strtolower(TradeContracts::playerName($item)),$needle)) $matched = true;
+                if (PlayerName::matches(TradeContracts::playerName($item),$q)) $matched = true;
             }
             if ($matched) $out[] = ['kind'=>'trade','season'=>$t['season'],'sort'=>$t['season'].'|1|'.$t['datetime'].'|'.$t['id'],'data'=>$t];
         }
         foreach ($this->awardEvents() as $a) {
-            if (!str_contains(mb_strtolower($a['player'] ?? ''),$needle)) continue;
+            if (!PlayerName::matches($a['player'] ?? '',$q)) continue;
             $a['label'] = $a['award'];
             $out[] = ['kind'=>'award','season'=>$a['season'],'sort'=>$a['season'].'|2|'.$a['id'],'data'=>$a];
         }

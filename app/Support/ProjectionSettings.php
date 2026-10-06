@@ -54,7 +54,7 @@ final class ProjectionSettings
                 'source_rank'=>$row->source_rank === null ? PHP_INT_MAX : (int)$row->source_rank, 'season_gp'=>(int)$row->season_gp, 'season_fpts_per_game'=>$row->season_fpts_per_game === null ? null : (float)$row->season_fpts_per_game,
                 'myproj'=>ProjectionMath::weighted(['fantrax'=>$row->fantrax_fpts_per_game, 'season'=>$row->season_fpts_per_game,
                     '7d'=>$row->fpts_per_game_7d, '14d'=>$row->fpts_per_game_14d, '21d'=>$row->fpts_per_game_21d], $weights)];
-        })->filter(fn($player)=>$player['myproj'] !== null && $player['name'] !== null)->sort(fn($a, $b)=>($b['myproj'] <=> $a['myproj']) ?: ($a['source_rank'] <=> $b['source_rank']))->take(10)->values()->all();
+        })->filter(fn($player)=>$player['myproj'] !== null && $player['name'] !== '')->sort(fn($a, $b)=>($b['myproj'] <=> $a['myproj']) ?: ($a['source_rank'] <=> $b['source_rank']))->take(10)->values()->all();
         return ['players'=>$players, 'count'=>$rows->count(), 'stats_through'=>$rows->max('window_end_date'), 'weights'=>$weights];
     }
 
