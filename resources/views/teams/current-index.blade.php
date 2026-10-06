@@ -1,5 +1,6 @@
 @extends('layouts.app')
 @section('content')
+<link rel="stylesheet" href="/matchup-scoreboard.css?v={{ hash_file('sha256', base_path('public/matchup-scoreboard.css')) }}">
 <div class="page-head current-teams-head"><div class="shell"><div class="eyebrow">2026-27 rosters</div><h1><span style="color:#c94b52">●</span> Live Scoring</h1><p>Current Matchups for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}.</p>@if($scoreLastUpdate)<p class="team-updated">Updated @include('partials.updated-time',['value'=>$scoreLastUpdate]){{ $autoRefresh ? ' · Refreshes every 2 minutes during games' : '' }}</p>@endif</div></div>
 
 <div class="shell current-teams-page">
@@ -126,67 +127,32 @@
         $homeProjectedTotal=$home['daily_projected_fpts']??0;
       @endphp
 
-      <details class="matchup-card" data-matchup-key="{{ ($away['id'] ?? $away['slug'] ?? 'away') }}::{{ ($home['id'] ?? $home['slug'] ?? 'home') }}" data-away-team-slug="{{ $away['slug'] ?? \Illuminate\Support\Str::slug($away['name'] ?? '') }}" data-home-team-slug="{{ $home['slug'] ?? \Illuminate\Support\Str::slug($home['name'] ?? '') }}" data-away-team-id="{{ $away['id'] ?? '' }}" data-home-team-id="{{ $home['id'] ?? '' }}">
-        <summary class="matchup-summary">
-          <div class="matchup-summary-side matchup-summary-away">
-            @if($away)
-              <div class="matchup-summary-name">
-                <div class="matchup-team-name-row matchup-team-name-row-away">
-                  @include('teams.partials.team-icon-uploader',['slug'=>$away['slug'],'name'=>$away['name']])
-                  <a href="/teams/current/{{ $away['slug'] }}?date={{ $date }}">{{ $away['name'] }}</a>
-                </div>
-                <div class="matchup-summary-meta matchup-summary-meta-away">
-                  <div class="matchup-meta-row">
-                    
-                    <span class="matchup-playing-counts">
-                      @if($awayPlayingCounts['F']>0)<span class="position-count-pill {{ $awayPlayingCounts['F']>=8?'full':'' }}">{{ $awayPlayingCounts['F'] }} Forward{{ $awayPlayingCounts['F']==1?'':'s' }}</span>@endif
-                      @if($awayPlayingCounts['D']>0)<span class="position-count-pill {{ $awayPlayingCounts['D']>=4?'full':'' }}">{{ $awayPlayingCounts['D'] }} {{ $awayPlayingCounts['D']==1?'Defenseman':'Defensemen' }}</span>@endif
-                      @if($awayPlayingCounts['G']>0)<span class="position-count-pill {{ $awayPlayingCounts['G']>=1?'full':'' }}">{{ $awayPlayingCounts['G'] }} Goaltender{{ $awayPlayingCounts['G']==1?'':'s' }}</span>@endif
-                      @if($awayPlayingCounts['B']>0)<span class="position-count-pill bench-count-pill">{{ $awayPlayingCounts['B'] }} Bench</span>@endif
-                    </span>
-                    
-                  </div>
-                  <div class="matchup-meta-row matchup-stat-row">
-                    <span class="matchup-daily-cats"><span class="matchup-daily-cats-primary">@foreach(['gp'=>'GP','g'=>'G','a'=>'A'] as $key=>$label)@if(($away['today_stats'][$key] ?? 0) != 0)<span>{{ $label }}: {{ $away['today_stats'][$key] }}</span>@endif @endforeach</span><span class="matchup-daily-cats-special">@foreach(['ppg'=>'PPG','shg'=>'SHG','gwg'=>'GWG','w'=>'W','so'=>'SO'] as $key=>$label)@if(($away['today_stats'][$key] ?? 0) != 0)<span>{{ $label }}: {{ $away['today_stats'][$key] }}</span>@endif @endforeach</span></span>
-                    <small class="matchup-projected-score">Proj: {{ number_format($awayProjectedTotal,2) }}</small>
-                  </div>
-                </div>
-              </div>
-              <span class="matchup-summary-score"><strong class="matchup-week-score {{ $awayWeekClass }}">{{ number_format($away['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $awayDayClass }}">{{ number_format($awayDay,0) }}</small></span>
-            @endif
-          </div>
-
-          <div class="matchup-summary-vs">VS</div>
-
-          <div class="matchup-summary-side matchup-summary-home">
-            @if($home)
-              <span class="matchup-summary-score"><strong class="matchup-week-score {{ $homeWeekClass }}">{{ number_format($home['week_fpts'] ?? 0,0) }}</strong><small class="matchup-day-score {{ $homeDayClass }}">{{ number_format($homeDay,0) }}</small></span>
-              <div class="matchup-summary-name">
-                <div class="matchup-team-name-row matchup-team-name-row-home">
-                  <a href="/teams/current/{{ $home['slug'] }}?date={{ $date }}">{{ $home['name'] }}</a>
-                  @include('teams.partials.team-icon-uploader',['slug'=>$home['slug'],'name'=>$home['name']])
-                </div>
-                <div class="matchup-summary-meta matchup-summary-meta-home">
-                  <div class="matchup-meta-row matchup-meta-row-home">
-                    
-                    <span class="matchup-playing-counts">
-                      @if($homePlayingCounts['F']>0)<span class="position-count-pill {{ $homePlayingCounts['F']>=8?'full':'' }}">{{ $homePlayingCounts['F'] }} Forward{{ $homePlayingCounts['F']==1?'':'s' }}</span>@endif
-                      @if($homePlayingCounts['D']>0)<span class="position-count-pill {{ $homePlayingCounts['D']>=4?'full':'' }}">{{ $homePlayingCounts['D'] }} {{ $homePlayingCounts['D']==1?'Defenseman':'Defensemen' }}</span>@endif
-                      @if($homePlayingCounts['G']>0)<span class="position-count-pill {{ $homePlayingCounts['G']>=1?'full':'' }}">{{ $homePlayingCounts['G'] }} Goaltender{{ $homePlayingCounts['G']==1?'':'s' }}</span>@endif
-                      @if($homePlayingCounts['B']>0)<span class="position-count-pill bench-count-pill">{{ $homePlayingCounts['B'] }} Bench</span>@endif
-                    </span>
-                    
-                  </div>
-                  <div class="matchup-meta-row matchup-meta-row-home matchup-stat-row">
-                    <span class="matchup-daily-cats"><span class="matchup-daily-cats-primary">@foreach(['gp'=>'GP','g'=>'G','a'=>'A'] as $key=>$label)@if(($home['today_stats'][$key] ?? 0) != 0)<span>{{ $label }}: {{ $home['today_stats'][$key] }}</span>@endif @endforeach</span><span class="matchup-daily-cats-special">@foreach(['ppg'=>'PPG','shg'=>'SHG','gwg'=>'GWG','w'=>'W','so'=>'SO'] as $key=>$label)@if(($home['today_stats'][$key] ?? 0) != 0)<span>{{ $label }}: {{ $home['today_stats'][$key] }}</span>@endif @endforeach</span></span><small class="matchup-projected-score">Proj: {{ number_format($homeProjectedTotal,2) }}</small>
-                  </div>
-                </div>
-              </div>
-            @else
-              <span class="matchup-bye">BYE</span>
-            @endif
-          </div>
-        </summary>
+      <details class="matchup-card ecfhl-scoreboard" data-matchup-key="{{ ($away['id'] ?? $away['slug'] ?? 'away') }}::{{ ($home['id'] ?? $home['slug'] ?? 'home') }}" data-away-team-slug="{{ $away['slug'] ?? \Illuminate\Support\Str::slug($away['name'] ?? '') }}" data-home-team-slug="{{ $home['slug'] ?? \Illuminate\Support\Str::slug($home['name'] ?? '') }}" data-away-team-id="{{ $away['id'] ?? '' }}" data-home-team-id="{{ $home['id'] ?? '' }}">
+        <summary class="matchup-summary team-live-matchup-summary">
+<div class="team-live-side team-live-score-left">
+@if($away)
+<div class="team-live-name-row">
+<a href="/teams/current/{{ $away['slug'] }}?date={{ $date }}">{{ $away['name'] }}</a>
+<button type="button" class="team-logo-viewer team-live-logo" data-team-icon-viewer data-team-slug="{{ $away['slug'] }}" data-team-name="{{ $away['name'] }}" aria-label="View {{ $away['name'] }} logo"><img src="{{ \App\Support\TeamImages::url($away['slug'],160) }}" data-full-src="{{ \App\Support\TeamImages::url($away['slug']) }}" alt="{{ $away['name'] }} team icon" width="160" height="160" loading="lazy" decoding="async"></button>
+</div>
+<div class="team-live-body"><div class="team-live-scores">
+<span class="team-live-score team-live-weekly"><strong class="{{ $awayWeekClass }}">{{ number_format($away['week_fpts'] ?? 0,0) }}</strong><small>Weekly</small></span>
+<span class="team-live-score team-live-today"><strong class="{{ $awayDayClass }}">{{ number_format($awayDay,0) }}</strong><small>Daily</small></span>
+</div></div>
+@else<span class="matchup-bye">BYE</span>@endif
+</div><div class="team-live-vs">VS</div><div class="team-live-side team-live-side-right team-live-score-right">
+@if($home)
+<div class="team-live-name-row">
+<a href="/teams/current/{{ $home['slug'] }}?date={{ $date }}">{{ $home['name'] }}</a>
+<button type="button" class="team-logo-viewer team-live-logo" data-team-icon-viewer data-team-slug="{{ $home['slug'] }}" data-team-name="{{ $home['name'] }}" aria-label="View {{ $home['name'] }} logo"><img src="{{ \App\Support\TeamImages::url($home['slug'],160) }}" data-full-src="{{ \App\Support\TeamImages::url($home['slug']) }}" alt="{{ $home['name'] }} team icon" width="160" height="160" loading="lazy" decoding="async"></button>
+</div>
+<div class="team-live-body"><div class="team-live-scores">
+<span class="team-live-score team-live-weekly"><strong class="{{ $homeWeekClass }}">{{ number_format($home['week_fpts'] ?? 0,0) }}</strong><small>Weekly</small></span>
+<span class="team-live-score team-live-today"><strong class="{{ $homeDayClass }}">{{ number_format($homeDay,0) }}</strong><small>Daily</small></span>
+</div></div>
+@else<span class="matchup-bye">BYE</span>@endif
+</div>
+</summary>
 
         <div class="matchup-expanded">
           @foreach(['Forwards','Defensemen','Goalies','Bench','IR','Minors'] as $sectionName)
