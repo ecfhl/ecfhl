@@ -87,6 +87,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
     <a href="/admin/advisors"><span class="nav-item-icon" aria-hidden="true">✦</span>Advisors</a>
     <a href="/admin/teams"><span class="nav-item-icon" aria-hidden="true">👥</span>Teams</a>
     <a href="/admin/projections"><span class="nav-item-icon" aria-hidden="true">⚖</span>Projection Weights</a>
+    <a href="/admin/notifications"><span class="nav-item-icon" aria-hidden="true">🔔</span>Notification Tests</a>
   </div>
 </div>
 @endif
