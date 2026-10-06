@@ -188,7 +188,7 @@ checkProjection((new PlayerProjections)->find((object)['player_name'=>'Alex Form
 checkProjection(DB::table('player_projections')->where('player_id','partial')->value('fpts_per_game_7d')===null && (new PlayerProjections)->rate((object)['player_id'=>'partial'])===10.0, 'Missing rolling input rescales the available season input to 100%.');
 $preview = App\Support\ProjectionSettings::preview($weights);
 $partial = collect($preview['players'])->firstWhere('player_id','partial');
-checkProjection($partial && $partial['myproj']===10.0 && $partial['name']==='Partial Inputs', 'Preview includes players beyond the frozen baseline with normalized rates.');
+checkProjection($partial && $partial['myproj']===10.0 && $partial['name']==='Inputs, Partial', 'Preview includes players beyond the frozen baseline with normalized rates.');
 App\Support\ProjectionSettings::save($weights);
 checkProjection((new PlayerProjections)->rate((object)['player_id'=>'partial'])===$partial['myproj'], 'Preview, SQL save and refresh use the same missing-input calculation.');
 checkProjection(abs(ProjectionMath::weighted(['fantrax'=>null,'season'=>4,'7d'=>0],$weights)-2)<0.000001, 'A true zero remains a valid input in the denominator.');

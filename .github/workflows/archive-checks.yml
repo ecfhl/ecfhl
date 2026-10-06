@@ -36,3 +36,15 @@ jobs:
         run: node tests/live-scoring-ui.cjs
       - if: ${{ !cancelled() }}
         run: node tests/standings-ui.cjs
+      - if: ${{ !cancelled() }}
+        run: php tests/drafts-only.php
+      - if: ${{ !cancelled() }}
+        run: php tests/owner-accounts.php
+      - if: ${{ !cancelled() }}
+        run: php tests/performance.php
+      - if: ${{ !cancelled() }}
+        run: php tests/site-audit.php
+      - if: ${{ !cancelled() }}
+        run: php tests/standings.php
+      - if: ${{ !cancelled() }}
+        run: php tests/player-projections.php
