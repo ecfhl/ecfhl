@@ -411,7 +411,10 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(selected){
       cards.forEach(card=>card.open=card===selected);
       saveOpenMatchups();
-      selected.scrollIntoView({block:'start'});
+      requestAnimationFrame(()=>{
+        const section=document.querySelector('.current-teams-page > .matchup-period-label') || selected.parentElement;
+        section?.scrollIntoView({block:'start'});
+      });
     }
   }
 
