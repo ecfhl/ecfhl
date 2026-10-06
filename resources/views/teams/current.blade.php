@@ -381,7 +381,7 @@
                 @php
                   $isPlaying=(bool)$player->daily_participant;
                 @endphp
-                <tr class="team-player-data-row {{ !$isPlaying?'team-not-playing':'' }} {{ $player->is_ir?'team-ir-row':'' }} {{ $player->is_bench?'team-bench-row':'' }} {{ strtoupper((string)$player->roster_status)==='MINORS'?'team-minors-row':'' }}" data-playing="{{ $isPlaying?'1':'0' }}">
+                <tr class="team-player-data-row {{ !$isPlaying?'team-not-playing':'' }} {{ $player->is_ir?'team-ir-row':'' }} {{ $player->is_bench?'team-bench-row':'' }} {{ strtoupper((string)$player->roster_status)==='MINORS'?'team-minors-row':'' }} {{ !empty($player->game_in_progress)?'team-game-live-row':'' }} {{ !empty($player->game_finished)?'team-game-finished-row':'' }}" data-playing="{{ $isPlaying?'1':'0' }}">
                   <td data-label="Player">
                     <div class="team-player-name-wrap">
                       <strong>{{ $player->player_name }}@if($player->nhl_team) ({{ $player->nhl_team }})@endif</strong>
@@ -413,7 +413,9 @@
                       @endif
                     </div>
                     <div class="team-player-opponent">
-                      @if($player->opponent)
+                      @if(!empty($player->live_opponent_display))
+                        <span class="{{ !empty($player->game_in_progress)?'team-game-live':'' }} {{ !empty($player->game_finished)?'team-game-finished':'' }}">{{ $player->live_opponent_display }}</span>
+                      @elseif($player->opponent)
                         <span class="{{ $player->home_away==='AWAY'?'team-away':'team-home' }}">{{ $player->home_away==='AWAY'?'@':'vs' }} {{ $player->opponent }}@if($player->game_time) · {{ $player->game_time }}@endif</span>
                       @elseif($player->daily_participant)
                         <span class="team-playing-text">Playing</span>
