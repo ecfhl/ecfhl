@@ -262,6 +262,7 @@ $testSnapshot=json_decode(DB::table('live_scoring_snapshots')->where('fantasy_da
 $testSnapshot['fantasy_date']=$day;$testSnapshot['teams']['b']=['name'=>'Beta'];
 $testSnapshot['players'][]=['fantasy_team_id'=>'b','player_name'=>'Latest Skater','daily_fpts'=>7,'stats'=>['G'=>['value'=>2],'A'=>['value'=>3],'PPG'=>['value'=>1],'SHG'=>['value'=>1],'GWG'=>['value'=>1]]];
 DB::table('live_scoring_snapshots')->where('fantasy_date',$day)->update(['payload'=>json_encode($testSnapshot)]);
+App\Support\PublicData::forget('snapshot:'.$day);$app->forgetScopedInstances();
 verifyOwner(ownerRequest('POST','/job-status/test-scoring-notification',[],$guest,$testHeaders)->getStatusCode()===401,'Guest can send a test');
 verifyOwner(ownerRequest('POST','/job-status/test-scoring-notification',[],$alpha,$testHeaders)->getStatusCode()===403,'Regular owner can send admin test');
 verifyOwner(ownerRequest('POST','/job-status/test-scoring-notification',[],$admin)->getStatusCode()===403,'Non-AJAX test bypassed restriction');
@@ -269,14 +270,40 @@ foreach(['/job-status/test-scoring-notification','/job-status/test-goalie-notifi
  $response=ownerRequest('POST',$testUrl,[],$admin,$testHeaders);
  verifyOwner($response->getStatusCode()===200&&json_decode($response->getContent(),true)['ok'],'Scoring test failed: '.$response->getContent());
  $testAlert=DB::table('push_notifications')->orderByDesc('id')->first();
- verifyOwner($testAlert->category==='test-score'&&$testAlert->title==='Beta - 7 Fpts · TEST','Test selected goalie / prior test / older score');
- verifyOwner($testAlert->body==="GWG PPG SHG 2 Goals and 3 Assists by Skater, Latest",'Test omitted current stat totals / legacy team name');
+ verifyOwner($testAlert->category==='test-score'&&$testAlert->title==='Beta - 7pts','Test selected goalie / prior test / older score');
+ verifyOwner($testAlert->body==="Skater, Latest scores 2 goals, including the game winner and a power-play goal and a short-handed goal and adds 3 assists.\nG: 2 · A: 3 · PPG: 1 · SHG: 1 · GWG: 1",'Test omitted current stat totals / legacy team name');
  $delivery=DB::table('push_deliveries')->where('notification_id',$testAlert->id)->get();
  $deviceId=DB::table('push_subscriptions')->where('endpoint_hash',hash('sha256',$testEndpoint))->value('id');
  verifyOwner($delivery->count()===1&&(int)$delivery[0]->subscription_id===(int)$deviceId,'Test broadcast to other owners/devices');
 }
 $feed=ownerRequest('GET','/push/notifications',[],$guest,['HTTP_AUTHORIZATION'=>'Bearer '.$testToken]);
 verifyOwner(count(json_decode($feed->getContent(),true)['notifications'])===2,'Device feed did not contain the scoring tests');
+// Admin notification-type tests reformat stored alerts and still target just this device.
+$endpointHash=hash('sha256',$testEndpoint);
+foreach(['team-score','opponent-score'] as $type){
+ $push->testType($adminOwner->id,$endpointHash,$type);
+ $typed=DB::table('push_notifications')->orderByDesc('id')->first();
+ verifyOwner($typed->category==='test-'.$type && $typed->title==='Beta - 7pts' && str_starts_with($typed->body,'Skater, Latest scores 2 goals'),'Typed test replayed old formatting');
+ verifyOwner($typed->url==='/teams/current?date='.$day && DB::table('push_deliveries')->where('notification_id',$typed->id)->count()===1,'Typed test lost its destination or device isolation');
+}
+$testSnapshot['players'][]=['fantasy_team_id'=>'b','player_name'=>'Latest Goalie','position'=>'G','nhl_team'=>'FLA','daily_fpts'=>12,'stats'=>['GP'=>['value'=>1],'W'=>['value'=>1],'L'=>['value'=>0],'OL+ShL'=>['value'=>0],'SHO'=>['value'=>1]]];
+DB::table('live_scoring_snapshots')->where('fantasy_date',$day)->update(['payload'=>json_encode($testSnapshot)]);
+App\Support\PublicData::forget('snapshot:'.$day);$app->forgetScopedInstances();
+DB::table('push_notifications')->insert(['category'=>'live-score','title'=>'ECFHL · Beta','body'=>"Latest Goalie · 12 FPts\nGP: 1 · W: 1 · L: 0 · OTL: 0 · SO: 1",'fantasy_team_id'=>'b','url'=>'/teams/current?date='.$day]);
+$push->testType($adminOwner->id,$endpointHash,'team-goalie-score');
+$typed=DB::table('push_notifications')->orderByDesc('id')->first();
+verifyOwner($typed->title==='Beta - 12pts' && $typed->body==="Goalie, Latest (FLA) records a win and records a shutout.\nW: 1 · SO: 1",'Goalie test did not apply sentence/nonzero/no-GP format: '.json_encode($typed));
+// New saved event messages must replay unchanged, even if current totals differ.
+$recorded=['title'=>'Beta - 8pts','body'=>"Skater, Latest adds an assist.\nG: 2 · A: 4 · GWG: 1",'fantasy_team_id'=>'b','url'=>'/teams/current?date='.$day];
+DB::table('push_notifications')->insert(['category'=>'live-score']+$recorded);
+$push->testType($adminOwner->id,$endpointHash,'team-score');
+$typed=DB::table('push_notifications')->orderByDesc('id')->first();
+verifyOwner($typed->title===$recorded['title'] && $typed->body===$recorded['body'],'New test must replay original event and totals exactly');
+// Old verbal event messages need to preserve only the recorded change.
+DB::table('push_notifications')->insert(['category'=>'live-score','title'=>'Beta - 7 Fpts','body'=>'Assist by Skater, Latest','fantasy_team_id'=>'b','url'=>'/teams/current?date='.$day]);
+$push->testType($adminOwner->id,$endpointHash,'team-score');
+$typed=DB::table('push_notifications')->orderByDesc('id')->first();
+verifyOwner($typed->body==="Skater, Latest adds an assist.\nG: 2 · A: 3 · PPG: 1 · SHG: 1 · GWG: 1",'Legacy assist test repeated previous goals');
 $testsBefore=DB::table('push_notifications')->where('category','test-score')->count();
 Http::swap(new Illuminate\Http\Client\Factory);Http::preventStrayRequests();
 Http::fake(['https://fcm.googleapis.com/*'=>Http::response('',410)]);

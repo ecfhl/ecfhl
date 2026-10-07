@@ -254,10 +254,24 @@ checkLive(App\Support\LiveScoring\PlayerStatLine::text($statPlayer,true)==='1 wi
 $eventPlayer=['fantasy_team_id'=>'team','player_name'=>'Matthew Tkachuk','nhl_team'=>'FLA','position'=>'F','daily_fpts'=>2,'stats'=>['G'=>['value'=>1],'GWG'=>['value'=>1],'A'=>['value'=>0]]];
 $eventSnapshot=['fantasy_date'=>'2026-10-07','teams'=>['team'=>['name'=>'Morning Sherwood']]];
 $event=App\Support\LiveScoring\ScoringAlert::payload($eventSnapshot,$eventPlayer,['stats'=>[]]);
-checkLive($event['title']==='Morning Sherwood - 2 Fpts' && $event['body']==='GWG Goal by Tkachuk, Matthew (FLA)','Score message must describe the event without zero categories');
+checkLive($event['title']==='Morning Sherwood - 2pts' && $event['body']==="Tkachuk, Matthew (FLA) scores the game winner.\nG: 1 · GWG: 1",'Score message must describe the event without zero categories');
 $eventPlayer['stats']['A']['value']=1;$oldEvent=$eventPlayer;$oldEvent['stats']['A']['value']=0;
-checkLive(App\Support\LiveScoring\ScoringAlert::payload($eventSnapshot,$eventPlayer,$oldEvent)['body']==='Assist by Tkachuk, Matthew (FLA)','Old goals must not be repeated for a new assist');
+checkLive(App\Support\LiveScoring\ScoringAlert::payload($eventSnapshot,$eventPlayer,$oldEvent)['body']==="Tkachuk, Matthew (FLA) adds an assist.\nG: 1 · A: 1 · GWG: 1",'Old goals must not be repeated for a new assist');
 $eventPlayer['position']='G';$eventPlayer['stats']=['W'=>['value'=>1],'SHO'=>['value'=>1]];
-checkLive(App\Support\LiveScoring\ScoringAlert::payload($eventSnapshot,$eventPlayer,['stats'=>[]])['body']==='Win and Shutout by Tkachuk, Matthew (FLA)','Goalie message must describe a win/shutout');
+checkLive(App\Support\LiveScoring\ScoringAlert::payload($eventSnapshot,$eventPlayer,['stats'=>[]])['body']==="Tkachuk, Matthew (FLA) records a win and records a shutout.\nW: 1 · SO: 1",'Goalie message must describe a win/shutout');
+$eventPlayer['position']='F';
+foreach(['G'=>'scores a goal','A'=>'adds an assist','PPG'=>'scores a power-play goal','SHG'=>'scores a short-handed goal','GWG'=>'scores the game winner'] as $key=>$sentence){
+ $eventPlayer['stats']=['GP'=>['value'=>1],$key=>['value'=>1],'W'=>['value'=>1]];
+ $alert=App\Support\LiveScoring\ScoringAlert::payload($eventSnapshot,$eventPlayer);
+ checkLive($alert['body']==="Tkachuk, Matthew (FLA) ".$sentence.".\n".$key.': 1','Skater sentence/stat filtering failed for '.$key);
+}
+$eventPlayer['position']=['G'];
+foreach(['L'=>'takes a loss','OTL'=>'takes an overtime loss','OL+ShL'=>'takes an overtime loss','SO'=>'records a shutout','SHO'=>'records a shutout'] as $key=>$sentence){
+ $eventPlayer['stats']=['GP'=>['value'=>1],$key=>['value'=>1],'G'=>['value'=>1]];
+ $label=in_array($key,['SO','SHO'],true)?'SO':($key==='L'?'L':'OTL');
+ checkLive(App\Support\LiveScoring\ScoringAlert::payload($eventSnapshot,$eventPlayer)['body']==="Tkachuk, Matthew (FLA) ".$sentence.".\n".$label.': 1','Goalie sentence/stat alias failed for '.$key);
+}
+$eventPlayer['stats']=['GP'=>['value'=>1],'W'=>['value'=>0],'L'=>['value'=>0]];
+checkLive(App\Support\LiveScoring\ScoringAlert::payload($eventSnapshot,$eventPlayer)['body']==='Tkachuk, Matthew (FLA) has a score update.','All-zero stats must omit the summary line');
 CarbonImmutable::setTestNow();
 echo "Live scoring checks passed: Pacific midnight/DST, three Fantrax dates, seven matchups, IDs, zero-point players, future projections, optional missing estimates, preserved actual scoring, injury flags, failed-date preservation, independent publication, scoring notification team names/current stat lines/trigger isolation, and page rendering.\n";

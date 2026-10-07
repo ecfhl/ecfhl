@@ -13,8 +13,47 @@ class WebPush
     {
         foreach(PlayerName::searchVariants($name) as $variant){
             if(str_starts_with($body,$variant.' · ') || str_starts_with($body,$variant.' now has ') || str_contains($body,' by '.$variant.' (') || str_ends_with($body,' by '.$variant))return true;
+            if(preg_match('/^'.preg_quote($variant,'/').'(?: \([^)]+\))? (?:scores|adds|records|takes|has)\b/u',$body))return true;
         }
         return false;
+    }
+
+    private function replayScore(object $source): array
+    {
+        $alert=['title'=>(string)$source->title,'body'=>(string)$source->body,'url'=>$source->url,'fantasy_team_id'=>$source->fantasy_team_id];
+        // New alerts already contain the exact event and totals from the time they were sent.
+        if(preg_match('/ - -?\d+(?:\.\d+)?pts$/',$alert['title']) && preg_match('/ (?:scores|adds|records|takes|has)\b/u',$alert['body']))return $alert;
+        $date=preg_match('/[?&]date=(\d{4}-\d{2}-\d{2})/',(string)$source->url,$match)?$match[1]:(new FantasyDay)->today()->toDateString();
+        $snapshot=app(\App\Support\LiveScoring\SnapshotRepository::class)->get($date);
+        $player=null;
+        foreach(($snapshot['players']??[]) as $candidate){
+            if((string)($candidate['fantasy_team_id']??'')===(string)$source->fantasy_team_id && $this->scoreBodyMatches($alert['body'],(string)($candidate['player_name']??''))){$player=$candidate;break;}
+        }
+        if(!$player && preg_match('/^(.+?) · (-?\d+(?:\.\d+)?) FPts\b/u',$alert['body'],$match)){
+            // Old labelled records can still be reformatted after their snapshot expires.
+            $stats=[];
+            preg_match_all('/\b(GP|G|A|PPG|SHG|GWG|W|L|OTL|OL\+ShL|OL|SO|SHO):\s*(-?\d+)/',$alert['body'],$values,PREG_SET_ORDER);
+            foreach($values as $value)$stats[$value[1]]=['value'=>(int)$value[2]];
+            if($stats){
+                $team=preg_replace('/^ECFHL\s*[·:-]\s*|\s*· TEST$/u','',$alert['title']);
+                $snapshot=['fantasy_date'=>$date,'teams'=>[$source->fantasy_team_id=>['name'=>$team]]];
+                $player=['fantasy_team_id'=>$source->fantasy_team_id,'player_name'=>$match[1],'daily_fpts'=>(float)$match[2],
+                    'position'=>array_intersect(['W','L','OTL','OL+ShL','OL','SO','SHO'],array_keys($stats))?'G':'F','stats'=>$stats];
+            }
+        }
+        if(!$player)throw \Illuminate\Validation\ValidationException::withMessages(['score'=>'The last scoring alert has no game stat line available. Try after the next scoring update.']);
+        $previous=null;
+        if(str_contains($alert['body'],' by ')){
+            // Preserve the recorded event, rather than announcing all earlier goals again.
+            $event=explode(' by ',$alert['body'],2)[0];
+            $previous=$player;
+            foreach(['G'=>'Goals?','A'=>'Assists?','GWG'=>'GWG','PPG'=>'PPG|Power-play Goal','SHG'=>'SHG|Short-handed Goal','W'=>'Win','L'=>'Loss','OTL'=>'Overtime Loss','SO'=>'Shutout','SHO'=>'Shutout'] as $key=>$pattern){
+                if(!isset($previous['stats'][$key]))continue;
+                $delta=preg_match('/\b(?:(\d+) )?(?:'.$pattern.')\b/i',$event,$match)?(int)($match[1]??1):0;
+                $previous['stats'][$key]['value']=max(0,(int)$player['stats'][$key]['value']-$delta);
+            }
+        }
+        return \App\Support\LiveScoring\ScoringAlert::payload($snapshot,$player,$previous);
     }
     public function publicKey(): string
     {
@@ -106,19 +145,9 @@ class WebPush
         if(!$subscription)throw \Illuminate\Validation\ValidationException::withMessages(['device'=>'Enable notifications on this device in Notifications before sending a test.']);
         $score=DB::table('push_notifications')->where('category','live-score')->orderByDesc('id')->first();
         if(!$score)throw \Illuminate\Validation\ValidationException::withMessages(['score'=>'No scoring alert has been recorded yet. Try after the next player earns fantasy points.']);
-        $alert=['title'=>$score->title,'body'=>$score->body,'url'=>$score->url,'fantasy_team_id'=>$score->fantasy_team_id];
-        // Rebuild legacy alerts; current event messages replay exactly as originally sent.
-        $date=preg_match('/[?&]date=(\d{4}-\d{2}-\d{2})/',(string)$score->url,$match)?$match[1]:(new FantasyDay)->today()->toDateString();
-        $snapshot=app(\App\Support\LiveScoring\SnapshotRepository::class)->get($date);
-        foreach((str_contains($score->body,' by ')?[]:($snapshot['players']??[])) as $player){
-            if((string)($player['fantasy_team_id']??'')!==(string)$score->fantasy_team_id)continue;
-            if($this->scoreBodyMatches($score->body,$player['player_name'])){
-                $alert=\App\Support\LiveScoring\ScoringAlert::payload($snapshot,$player);break;
-            }
-        }
-        if(!str_contains($alert['body'],' by ') && (!str_contains($alert['body'],'G: ')||!str_contains($alert['body'],'GWG: ')))throw \Illuminate\Validation\ValidationException::withMessages(['score'=>'The last scoring alert has no game stat line available. Try after the next scoring update.']);
+        $alert=$this->replayScore($score);
         $id=DB::transaction(function()use($alert,$subscription){
-            $id=DB::table('push_notifications')->insertGetId(array_merge($alert,['category'=>'test-score','title'=>$alert['title'].' · TEST','created_at'=>now(),'updated_at'=>now()]));
+            $id=DB::table('push_notifications')->insertGetId(array_merge($alert,['category'=>'test-score','created_at'=>now(),'updated_at'=>now()]));
             DB::table('push_deliveries')->insert(['subscription_id'=>$subscription->id,'notification_id'=>$id]);return $id;
         });
         try{$status=$this->sendEmptyPush($subscription->endpoint);}catch(\Throwable $e){
@@ -152,10 +181,14 @@ class WebPush
                 foreach(($snapshot['players']??[]) as $player){
                     if((string)($player['fantasy_team_id']??'')!==(string)$notification->fantasy_team_id)continue;
                     if(!$this->scoreBodyMatches((string)$notification->body,(string)($player['player_name']??'')))continue;
-                    return (strtoupper((string)($player['position']??''))==='G')===$wantGoalie;
+                    $position=$player['position']??'';
+                    if(is_array($position))$position=implode(',',$position);
+                    return (bool)preg_match('/(^|[,\/ ])G($|[,\/ ])/i',(string)$position)===$wantGoalie;
                 }
                 // Preserve replay for legacy records whose dated snapshot is no longer available.
-                return !$wantGoalie && str_contains((string)$notification->body,'PPG: ') && !str_contains((string)$notification->body,'W: ');
+                $body=(string)$notification->body;
+                $goalie=(bool)preg_match('/\b(?:W|L|OTL|SO|SHO): | (?:records (?:a win|a shutout)|takes (?:a loss|an overtime loss))\b/',$body);
+                return $goalie===$wantGoalie && ($goalie || preg_match('/\b(?:G|A|PPG|SHG|GWG): /',$body));
             });
             $missing='No previous '.($type==='team-goalie-score'?'goalie scoring':'non-goalie scoring').' notification has been sent yet.';
         }else{
@@ -179,6 +212,7 @@ class WebPush
             'url'=>$url,
             'fantasy_team_id'=>$source->fantasy_team_id,
         ];
+        if(in_array($type,$scoreTypes,true))$alert=array_merge($alert,$this->replayScore($source),['url'=>$url]);
         $id=DB::transaction(function()use($alert,$subscription){
             $id=DB::table('push_notifications')->insertGetId(array_merge($alert,['created_at'=>now(),'updated_at'=>now()]));
             DB::table('push_deliveries')->insert(['subscription_id'=>$subscription->id,'notification_id'=>$id]);
