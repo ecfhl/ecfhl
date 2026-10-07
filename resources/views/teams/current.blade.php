@@ -69,7 +69,7 @@
           <colgroup><col><col class="team-roster-score-column"></colgroup>
           <tbody>
             <tr class="team-roster-group team-playing-group">
-              <td colspan="2">
+              <td colspan="2" class="roster-table-heading" data-roster-section="{{ $group['label'] }}">
                 <div class="team-playing-header">
                   <span>{{ $group['label'] }} ({{ $totalCount }})</span>
                   <span class="team-score-headings"><span>ECFHL*</span><span>Today</span></span>
@@ -320,7 +320,7 @@
             @if($teamSectionRows->count() || $oppSectionRows->count())
               @if($isCollapsible)
                 <details class="team-live-subsection">
-                  <summary class="team-live-section-title team-live-section-toggle">
+                  <summary class="team-live-section-title team-live-section-toggle roster-table-heading" data-roster-section="{{ $sectionName }}">
                     <span class="team-live-section-side">{{ $sectionName }} ({{ $teamSectionCount }})</span>
                     <span class="team-live-section-chevron">▾</span>
                     <span class="team-live-section-side team-live-section-side-right">{{ $sectionName }} ({{ $oppSectionCount }})</span>
@@ -351,7 +351,7 @@
                   </div>
                 </details>
               @else
-                <div class="team-live-section-title">
+                <div class="team-live-section-title roster-table-heading" data-roster-section="{{ $sectionName }}">
                   <span class="team-live-section-side">{{ $sectionName }} ({{ $teamSectionCount }})</span>
                   <span class="team-live-section-side team-live-section-side-right">{{ $sectionName }} ({{ $oppSectionCount }})</span>
                 </div>
@@ -422,7 +422,7 @@
             }
           @endphp
           <div class="team-next-lineup-group">
-            <div class="team-next-lineup-heading">{{ $nextLabel }} ({{ $nextPlayers->reject(fn($p)=>(bool)$p->is_ir)->count() }})</div>
+            <div class="team-next-lineup-heading roster-table-heading" data-roster-section="{{ $nextLabel }}">{{ $nextLabel }} ({{ $nextPlayers->reject(fn($p)=>(bool)$p->is_ir)->count() }})</div>
             @forelse($nextPlayers as $nextPlayer)
               <div class="team-next-lineup-player">
                 <a class="player-name-link" data-player-stats href="/players/{{ rawurlencode($nextPlayer->player_id) }}">{{ \App\Support\PlayerName::display($nextPlayer->player_name) }}@if($nextPlayer->nhl_team) ({{ $nextPlayer->nhl_team }})@endif</a>

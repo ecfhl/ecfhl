@@ -171,7 +171,7 @@
             @if($awaySectionRows->count() || $homeSectionRows->count())
               @if($isCollapsible)
                 <details class="matchup-subsection">
-                  <summary class="matchup-section-title matchup-section-toggle">
+                  <summary class="matchup-section-title matchup-section-toggle roster-table-heading" data-roster-section="{{ $sectionName }}">
                     <span class="matchup-section-side matchup-section-side-away">{{ $sectionName }} ({{ $awaySectionCount }})</span>
                     <span class="matchup-section-chevron" aria-hidden="true">▾</span>
                     <span class="matchup-section-side matchup-section-side-home">{{ $sectionName }} ({{ $homeSectionCount }})</span>
@@ -202,7 +202,7 @@
                   </div>
                 </details>
               @else
-                <div class="matchup-section-title matchup-section-split">
+                <div class="matchup-section-title matchup-section-split roster-table-heading" data-roster-section="{{ $sectionName }}">
                   <span class="matchup-section-side matchup-section-side-away">{{ $sectionName }} ({{ $awaySectionCount }})</span>
                   <span class="matchup-section-side matchup-section-side-home">{{ $sectionName }} ({{ $homeSectionCount }})</span>
                 </div>

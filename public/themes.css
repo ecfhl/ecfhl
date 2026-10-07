@@ -128,3 +128,24 @@ html[data-theme="dark"] :is(.matchup-player-opponent,.team-player-opponent) > :i
 html[data-theme="dark"] .ecfhl-scoreboard .matchup-expanded .matchup-player-opponent > :is(.team-playing-text,.team-home,.team-away){color:#fde68a!important}
 
 html[data-theme] .matchup-player-row.team-ir-row{background:var(--badge-red-bg)!important}
+
+/* Shared table headers: position blue, with distinct reserve-group colors. */
+:root{--table-heading-bg:#245582;--table-heading-text:#fff}
+html[data-theme="dark"]{--table-heading-bg:#204b74;--table-heading-text:#f8fafc}
+.roster-table-heading{--roster-heading-bg:var(--table-heading-bg);--roster-heading-text:var(--table-heading-text)}
+.roster-table-heading[data-roster-section="IR"]{--roster-heading-bg:#a9323f;--roster-heading-text:#fff}
+.roster-table-heading[data-roster-section="Bench"]{--roster-heading-bg:#596575;--roster-heading-text:#fff}
+.roster-table-heading[data-roster-section="Minors"]{--roster-heading-bg:#d4a62a;--roster-heading-text:#172033}
+html[data-theme] main :is(.ecfhl-scoreboard,.individual-team-page) .roster-table-heading{
+ background:var(--roster-heading-bg)!important;color:var(--roster-heading-text)!important;
+ border-color:color-mix(in srgb,var(--roster-heading-bg) 75%,#000)!important;
+}
+html[data-theme] main table thead th,
+html[data-theme] main :is(.data-table,.season-player-table,.league-teams-table,.tips-table,.player-profile table) thead th,
+html[data-theme] main .season-player-table thead th.myproj,
+html[data-theme] .player-fixed-header thead th{
+ background:var(--table-heading-bg)!important;color:var(--table-heading-text)!important;
+ border-bottom-color:color-mix(in srgb,var(--table-heading-bg) 75%,#000)!important;
+}
+html[data-theme] main table thead th a,html[data-theme] .player-fixed-header thead th a{color:inherit!important}
+html[data-theme] main .team-lineup-advisor-title{background:var(--table-heading-bg)!important;color:var(--table-heading-text)!important}
