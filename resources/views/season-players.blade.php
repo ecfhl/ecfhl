@@ -88,7 +88,7 @@
 .season-player-table .player-game-badges{display:flex;align-items:center;justify-content:flex-end;gap:3px;margin-top:2px;white-space:nowrap}
 .season-player-table .player-game-badges>span{flex-shrink:0;margin:0;padding:1px 3px;font-size:8px;line-height:12px;white-space:nowrap}
 .player-advanced-section{grid-column:1/-1;position:relative;border-top:1px solid var(--line);padding-top:7px;width:100%}.player-advanced-section .player-advanced{border-top:0;padding-top:0}.player-advanced-section summary{padding-right:120px;min-height:30px}.player-reset-filters{position:absolute;right:0;top:7px;z-index:1}.player-active-filters:empty{display:none}.player-table-scroll{margin-top:0}.player-name-line{display:flex;align-items:center;gap:4px;min-width:0}
-.player-name-line .rookie-tag{flex-shrink:0;margin:0}
+.player-rookie-mark{display:inline-block;margin-left:3px;font-size:9px;font-weight:800;line-height:1;text-decoration:none;color:#8a6407}html[data-theme="dark"] .player-rookie-mark{color:#f1cd72}
 .player-name-rank{flex-shrink:0;font-size:10px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}
 .player-name-line .player-name-link{display:block;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .season-player-table .player-frozen-player{box-shadow:3px 0 4px rgba(15,23,42,.08)}
@@ -126,6 +126,8 @@ html[data-theme="dark"] .player-add-orange{--add-bg:#49301e;--add-color:#fed7aa;
 .season-player-table .player-game-header{font-size:10px}
 @media(max-width:600px){.season-player-table .player-game-cell{padding:4px 2px}.season-player-table .player-game-header{padding-left:2px;padding-right:8px}}
 
+.season-player-table tbody td:not([class]),.season-player-table tbody td.myproj{font-size:15px;line-height:18px;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
+.season-player-table tbody td:not([class]){font-weight:600}
 </style>
 <script src="/player-column-resize.js?v={{ hash_file('sha256', base_path('public/player-column-resize.js')) }}" defer></script>
 <script src="/season-players.js?v={{ hash_file('sha256', base_path('public/season-players.js')) }}" defer></script>

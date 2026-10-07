@@ -151,7 +151,10 @@ foreach (['season-player-line','season-player-pp'] as $group) {
 }
 $advancedHtml=seasonRequest('/players?availability=all&line=1&pp=1&rookies=1')->getContent();
 verifySeason(str_contains($advancedHtml,'class="player-advanced"  open')&&str_contains($advancedHtml,'id="season-player-line"')&&str_contains($advancedHtml,'id="season-player-pp"')&&str_contains($advancedHtml,'name="line" value="1"')&&str_contains($advancedHtml,'line=1&amp;pp=1'),'Active advanced filters must remain visible and survive search, sorting and positions.');
-verifySeason(preg_match('/class="player-name-link"[^>]*>[^<]+<\/a><span class="rookie-tag">Rookie<\/span><\/div>/', $advancedHtml),'Rookie sticker must be beside the name, not on the metadata line.');
+$rookieDoc=new DOMDocument; @$rookieDoc->loadHTML($advancedHtml); $rookiePath=new DOMXPath($rookieDoc);
+$rookieMarks=$rookiePath->query('//th[contains(@class,"player-frozen-player")]/small/abbr[@title="Rookie" and @aria-label="Rookie"]');
+verifySeason($rookieMarks->length>0 && $rookiePath->query('//div[@class="player-name-line"]/*[contains(@class,"rookie")]')->length===0, 'Rookies need a discreet, labelled metadata marker without reducing the name space.');
+foreach($rookieMarks as $mark) verifySeason($mark->textContent==='R', 'Rookie marker must remain compact.');
 verifySeason(str_contains($html,'class="player-position-f"')&&str_contains($html,'class="player-position-d"')&&str_contains(seasonRequest('/players?availability=all&positions=G')->getContent(),'class="player-position-g"'),'Every row must have its position shade, including goalie rows.');
 verifySeason(str_contains($defaultHtml,'class="player-advanced" >')&&!str_contains($defaultHtml,'class="player-advanced"  open'),'Advanced filters should start collapsed without active settings.');
 $goalieHtml=seasonRequest('/players?availability=all&positions=G')->getContent();
