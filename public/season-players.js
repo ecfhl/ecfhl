@@ -15,13 +15,13 @@
     dispose = () => cleanups.forEach(cleanup => cleanup());
     const table = document.querySelector('.season-player-table');
     if (table) {
-      const playerColumn = table.querySelector('thead .player-frozen-player');
+      const teamColumn = table.querySelector('thead .player-frozen-team');
       const scroll = table.closest('.player-table-scroll');
-      const updateOffset = () => scroll.style.setProperty('--player-sticky-offset', `${playerColumn.getBoundingClientRect().width}px`);
+      const updateOffset = () => scroll.style.setProperty('--player-sticky-offset', `${teamColumn.getBoundingClientRect().width}px`);
       updateOffset();
       if (typeof ResizeObserver !== 'undefined') {
         const observer = new ResizeObserver(updateOffset);
-        observe(observer, [playerColumn]);
+        observe(observer, [teamColumn]);
       }
       else listen(window, 'resize', updateOffset);
       const frozen = document.getElementById('season-player-fixed-header');

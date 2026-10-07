@@ -1194,22 +1194,9 @@ Artisan::command('ecfhl:refresh-odds', function (NhlOdds $odds) {
     $wanted = [$base->toDateString(), $base->addDay()->toDateString()];
     try {
         $data = $odds->fetch();
-        $rows = array_values(array_filter($data['rows'], fn($r) => in_array($r['game_date'], $wanted, true)));
-        $now = now();
-        $sourceUpdated = $data['source_updated_at'] ? CarbonImmutable::parse($data['source_updated_at']) : null;
-        foreach ($rows as &$row) {
-            $row['source_updated_at'] = $sourceUpdated;
-            $row['checked_at'] = $now;
-            $row['created_at'] = $now;
-            $row['updated_at'] = $now;
-        }
-        unset($row);
-        DB::transaction(function () use ($wanted, $rows) {
-            DB::table('todays_odds')->whereIn('game_date', $wanted)->delete();
-            if ($rows) DB::table('todays_odds')->insert($rows);
-        });
+        $counts = $odds->publish($data, $wanted);
         foreach ($wanted as $day) {
-            $count = count(array_filter($rows, fn($r) => $r['game_date'] === $day));
+            $count = $counts[$day];
             $this->info($day.': '.$count.' NHL team odds refreshed');
         }
         return 0;

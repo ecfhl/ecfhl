@@ -84,7 +84,7 @@ verifySeason(!str_contains($html,'href="/daily-targets"'),'Retired Daily Targets
 preg_match('/<thead>(.*?)<\/thead>/s',$html,$tableHead);
 preg_match_all('/<th scope="col"[^>]*>(.*?)<\/th>/s',$tableHead[1],$headCells);
 $headerLabels=array_map(fn($v)=>rtrim(trim(strip_tags($v)), ' ↑↓↕'),$headCells[1]);
-verifySeason($headerLabels===['Player','Team','Today','Tomorrow','ECFHL*','FPts','FPts/gp','GP','G','A','Pts','PPG','SHG','GWG','SOG','TOI'],'Column order and labels must match the requested stats exactly.');
+verifySeason($headerLabels===['Team','Player','Today','Tomorrow','ECFHL*','FPts','FPts/gp','GP','G','A','Pts','PPG','SHG','GWG','SOG','TOI'],'Column order and labels must match the requested stats exactly.');
 verifySeason(preg_match('/<td class="player-game-cell">.*?<\/td>\s*<td class="player-game-cell">.*?<\/td>\s*<td class="myproj">6\.25<\/td>\s*<td>99<\/td>\s*<td>9\.90<\/td>\s*<td>10<\/td>\s*<td>2<\/td>\s*<td>9<\/td>/', $html), 'Row values must follow ECFHL Score, FPts, FPts/gp, GP, G and A header order.');
 $nameSearch=$service->data(Request::create('/players?availability=all&q=02%2C%20Player'));
 verifySeason($nameSearch['players']->total()===1 && $nameSearch['players'][0]->player_id==='p2','Displayed Lastname, Firstname must work in player search.');
@@ -150,19 +150,19 @@ foreach (['season-player-line','season-player-pp'] as $group) {
 }
 $advancedHtml=seasonRequest('/players?availability=all&line=1&pp=1&rookies=1')->getContent();
 verifySeason(str_contains($advancedHtml,'class="player-advanced"  open')&&str_contains($advancedHtml,'id="season-player-line"')&&str_contains($advancedHtml,'id="season-player-pp"')&&str_contains($advancedHtml,'name="line" value="1"')&&str_contains($advancedHtml,'line=1&amp;pp=1'),'Active advanced filters must remain visible and survive search, sorting and positions.');
-verifySeason(preg_match('/class="player-name-link"[^>]*>[^<]+<span class="rookie-tag">Rookie<\/span><\/a>/', $advancedHtml),'Rookie sticker must be beside the name, not on the metadata line.');
+verifySeason(preg_match('/class="player-name-link"[^>]*>[^<]+<\/a><span class="rookie-tag">Rookie<\/span><\/div>/', $advancedHtml),'Rookie sticker must be beside the name, not on the metadata line.');
 verifySeason(str_contains($html,'class="player-position-f"')&&str_contains($html,'class="player-position-d"')&&str_contains(seasonRequest('/players?availability=all&positions=G')->getContent(),'class="player-position-g"'),'Every row must have its position shade, including goalie rows.');
 verifySeason(str_contains($defaultHtml,'class="player-advanced" >')&&!str_contains($defaultHtml,'class="player-advanced"  open'),'Advanced filters should start collapsed without active settings.');
 $goalieHtml=seasonRequest('/players?availability=all&positions=G')->getContent();
 verifySeason(str_contains($goalieHtml,'Sign in to watch')&&str_contains($goalieHtml,'goalie-watch-bell'),'Goalie rows need persistent sign-in bells even without an upcoming game.');
 foreach(['GAA','G','A','SV%','GA','SOGA','SV'] as $removed)verifySeason(!isset($goalies['columns'][$removed]),'Removed goalie stat still shown: '.$removed);
 // Frozen panes must include both identity columns and the complete sortable header.
-verifySeason(str_contains($html,'<col class="player-col"><col class="team-col">')&&str_contains($html,'scope="row" class="player-frozen-player"')&&str_contains($html,'class="player-owner player-frozen-team"'),'Frozen player/team columns need explicit classes and bounded column widths.');
+verifySeason(str_contains($html,'<col class="team-col"><col class="player-col">')&&str_contains($html,'scope="row" class="player-frozen-player"')&&str_contains($html,'class="player-owner player-frozen-team"'),'Frozen player/team columns need explicit classes and bounded column widths.');
 verifySeason(str_contains($html,'thead th{position:sticky;top:0;z-index:3')&&str_contains($html,'overflow-x:auto;')&&!str_contains($html,'72dvh')&&str_contains($html,'id="season-player-fixed-header"')&&str_contains($html,'border-collapse:separate')&&str_contains($html,'thead .player-frozen-team{z-index:5}'),'The header and corner cells must stay above page-scrolling rows and horizontally scrolling stats.');
 verifySeason(str_contains($html,'-webkit-line-clamp:2')&&str_contains($betaHtml,'title="Beta"'),'Team names must be limited to two lines with their full name in a tooltip.');
 $availableHtml=seasonRequest('/players?availability=available')->getContent();
-verifySeason(substr_count($availableHtml,'class="player-add-icon"')===21&&str_contains($availableHtml,'searchName=Player%2002;statusOrTeamFilter=ALL_AVAILABLE;positionOrGroup=ALL;pageNumber=1;'),'Every unowned player needs an encoded Fantrax search link that includes free agents and waivers.');
-verifySeason(!str_contains($betaHtml,'class="player-add-icon"'),'Owned players must not have an add/claim icon.');
+verifySeason(substr_count($availableHtml,'class="player-add-icon player-add-')===21&&str_contains($availableHtml,'searchName=Player%2002;statusOrTeamFilter=ALL_AVAILABLE;positionOrGroup=ALL;pageNumber=1;'),'Every unowned player needs an encoded Fantrax search link that includes free agents and waivers.');
+verifySeason(!str_contains($betaHtml,'class="player-add-icon player-add-'),'Owned players must not have an add/claim icon.');
 verifySeason(str_contains($advancedHtml,'id="season-player-line" class="player-buttons" role="group"')&&str_contains($advancedHtml,'id="season-player-pp" class="player-buttons" role="group"')&&!str_contains($advancedHtml,'<select id="season-player-line"')&&!str_contains($advancedHtml,'<select id="season-player-pp"'),'Line and power-play slicers must use accessible buttons.');
 preg_match('/id="season-player-line".*?<\/div>/s',$advancedHtml,$lineButtons);preg_match('/id="season-player-pp".*?<\/div>/s',$advancedHtml,$ppButtons);
 verifySeason(str_contains($lineButtons[0],'aria-pressed="true"')&&str_contains($lineButtons[0],'rookies=1')&&str_contains($lineButtons[0],'line=1%2C2&amp;pp=1')&&str_contains($ppButtons[0],'line=1&amp;pp=1%2C2'),'Assignment buttons must indicate selection and preserve the other filters.');
@@ -302,5 +302,30 @@ $profile=app(\App\Support\PlayerProfile::class)->data('p61');
 verifySeason(array_keys($profile['categoryLabels'])===['FPTS','FPTS/GP','GP','W','L','OTL','SO']&&$profile['seasonStats']['OTL']===4&&$profile['seasonStats']['SO']===3,'Goalie table must map Fantrax overtime losses and shutouts.');
 $profileHtml=seasonRequest('/players/p1')->getContent();
 verifySeason(str_contains($profileHtml,'<h2>Stats</h2>')&&str_contains($profileHtml,'2025-26')&&!str_contains($profileHtml,'player-profile-categories'),'Player profile must render season rows without stat boxes.');
+// Plus colors must use ECFHL*, assignments and injury status independently of the selected stats dataset.
+$skater=(object)['position'=>'F','line_number'=>1,'pp_unit'=>null,'projected_fpts_per_game'=>null,'injury_status'=>null];
+foreach ([
+    [[], 'blue'], [['projected_fpts_per_game'=>0.75],'blue'], [['projected_fpts_per_game'=>0.751],'yellow'],
+    [['projected_fpts_per_game'=>1.0],'green'], [['pp_unit'=>1],'green'], [['pp_unit'=>2],'yellow'],
+    [['line_number'=>null,'pp_unit'=>1,'projected_fpts_per_game'=>2],'orange'],
+    [['injury_status'=>'IR','line_number'=>null,'pp_unit'=>1,'projected_fpts_per_game'=>2],'red'],
+] as [$changes,$expected]) verifySeason(\App\Support\PlayerAddState::forPlayer((object)array_replace((array)$skater,$changes))===$expected,'Skater color threshold/priority failed: '.$expected);
+foreach ([
+    [null,null,'blue'], ['Unconfirmed',null,'blue'], ['Not starting',null,'grey'],
+    ['Not starting','Not starting','grey'], ['Not starting','Unconfirmed','blue'],
+    ['Likely','Not starting','yellow'], ['Not starting','Confirmed','green'], ['Confirmed','Likely','green'],
+] as [$todayStatus,$tomorrowStatus,$expected]) verifySeason(\App\Support\PlayerAddState::forPlayer((object)['position'=>'G','today_goalie_status'=>$todayStatus,'tomorrow_goalie_status'=>$tomorrowStatus])===$expected,'Goalie today/tomorrow priority failed: '.$expected);
+$injured=DB::table('season_player_stats')->where('player_id','p2')->first();
+DB::table('active_daily_players')->insert(['game_date'=>$date,'team'=>$injured->nhl_team,'player_name'=>$injured->player_name,'injury_status'=>'IR']);
+$injuryData=$service->data(Request::create('/players?availability=available&q=02%2C%20Player'));
+verifySeason($injuryData['players'][0]->add_state==='red','Daily injury data must reach the available player plus button.');
+$injuryHtml=seasonRequest('/players?availability=available&q=02%2C%20Player')->getContent();
+verifySeason(str_contains($injuryHtml,'player-add-icon player-add-red'),'SSR must render the injury color.');
+DB::table('todays_odds')->where('game_date',$date)->where('team','MTL')->delete();
+DB::table('todays_odds')->insert(['game_date'=>$date,'team'=>'MTL','opponent'=>'TOR','american_odds'=>-150]);
+$oddsHtml=seasonRequest('/players?availability=all&positions=G')->getContent();
+$oddsDoc=new DOMDocument; @$oddsDoc->loadHTML($oddsHtml); $oddsPath=new DOMXPath($oddsDoc);
+verifySeason($oddsPath->query('//div[@class="player-game-main"]/span[contains(@class,"player-vegas-odds")]')->length>0 && $oddsPath->query('//div[@class="player-game-badges"]//span[contains(@class,"player-vegas-odds")]')->length===0,'Odds must sit beside the game, separate from the starting-status line.');
+verifySeason($oddsPath->query('//tbody/tr/td[1][contains(@class,"player-frozen-team")]')->length===5 && $oddsPath->query('//tbody/tr/*[2][self::th and contains(@class,"player-frozen-player")]')->length===5,'Team must be the first frozen column in every row.');
 \Carbon\CarbonImmutable::setTestNow();
 echo "Season players checks passed: Available/All defaults, both game-day filters and Pacific rollover, four schedule sources, aliases, combined datasets/sorts/pagination, compact panes and owner highlighting.\n";

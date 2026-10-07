@@ -140,7 +140,11 @@ final class SeasonPlayers
             }
             $goalieStatuses[$day] = ['players'=>$starters->keyBy(fn($r)=>$this->assignmentKey($r->team, $r->player_name)), 'confirmed'=>$confirmed];
         }
-        $players->getCollection()->transform(function ($row) use ($lines, $pp, $todayGames, $tomorrowGames, $goalieStatuses, $goalieOdds) {
+        $injuries = PublicData::remember('badges:player-injuries', 30, fn()=>DB::table('active_daily_players')
+            ->where('game_date', fn($q)=>$q->from('active_daily_players')->selectRaw('MAX(game_date)'))
+            ->orderBy('id')->get(['team','player_name','injury_status']))
+            ->keyBy(fn($r)=>$this->assignmentKey($r->team, $r->player_name));
+        $players->getCollection()->transform(function ($row) use ($lines, $pp, $todayGames, $tomorrowGames, $goalieStatuses, $goalieOdds, $injuries) {
             $row->today_game=$todayGames[PlayerGames::team($row->nhl_team)]??null;
             $row->tomorrow_game=$tomorrowGames[PlayerGames::team($row->nhl_team)]??null;
             foreach (['today','tomorrow'] as $day) {
@@ -162,6 +166,8 @@ final class SeasonPlayers
             $key = $this->assignmentKey($row->nhl_team, $row->player_name);
             $row->line_number = $row->position === 'G' ? null : ($lines[$key.'|'.$row->position]->line_number ?? null);
             $row->pp_unit = $row->position === 'G' ? null : ($pp[$key]->pp_unit ?? null);
+            $row->injury_status = $injuries[$key]->injury_status ?? null;
+            $row->add_state = PlayerAddState::forPlayer($row);
             return $row;
         });
         $statsThrough = match($dataset) {

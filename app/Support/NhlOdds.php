@@ -4,6 +4,7 @@ namespace App\Support;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class NhlOdds
@@ -48,6 +49,7 @@ class NhlOdds
             'markets'=>'h2h',
             'oddsFormat'=>'american',
             'dateFormat'=>'iso',
+            'commenceTimeFrom'=>CarbonImmutable::now('UTC')->format('Y-m-d\TH:i:s\Z'),
         ]);
         $response->throw();
         $games = $response->json();
@@ -63,7 +65,10 @@ class NhlOdds
             $commence = $game['commence_time'] ?? null;
             if (!$home || !$away || !$commence) continue;
 
-            $gameDate = CarbonImmutable::parse($commence)->setTimezone('America/Halifax')->toDateString();
+            $startsAt = CarbonImmutable::parse($commence)->utc();
+            // Never process live odds, including when the request straddles puck drop.
+            if ($startsAt->lte(CarbonImmutable::now('UTC'))) continue;
+            $gameDate = $startsAt->setTimezone(FantasyDay::TIMEZONE)->toDateString();
             // Key prices by NHL abbreviation instead of the provider's display
             // name. Some bookmakers use a different spelling/label for the same
             // team (for example St Louis vs St. Louis), which previously caused
@@ -80,7 +85,7 @@ class NhlOdds
                         $name = trim((string)($outcome['name'] ?? ''));
                         $price = $outcome['price'] ?? null;
                         $outcomeTeam = $this->teamAbbreviation($name);
-                        if ($outcomeTeam && isset($prices[$outcomeTeam]) && is_numeric($price)) {
+                        if ($outcomeTeam && isset($prices[$outcomeTeam]) && is_numeric($price) && (int)round($price) !== 0) {
                             $prices[$outcomeTeam][] = (int) round($price);
                         }
                     }
@@ -97,6 +102,7 @@ class NhlOdds
                 $decimal = $american > 0 ? 1 + ($american / 100) : 1 + (100 / abs($american));
                 $rows[] = [
                     'game_date'=>$gameDate,
+                    'commence_at'=>$startsAt->format('Y-m-d H:i:s'),
                     'team'=>$team,
                     'opponent'=>$opponent,
                     'home_away'=>$homeAway,
@@ -108,5 +114,31 @@ class NhlOdds
         }
 
         return ['rows'=>$rows, 'source_updated_at'=>$sourceUpdated, 'url'=>$url];
+    }
+
+    public function publish(array $data, array $wanted): array
+    {
+        return DB::transaction(function () use ($data, $wanted) {
+            $now = CarbonImmutable::now('UTC');
+            $counts = array_fill_keys($wanted, 0);
+            $sourceUpdated = $data['source_updated_at'] ? CarbonImmutable::parse($data['source_updated_at'])->utc() : null;
+            foreach ($data['rows'] as $row) {
+                if (!in_array($row['game_date'], $wanted, true)) continue;
+                if (CarbonImmutable::parse($row['commence_at'], 'UTC')->lte($now)) continue;
+                $key = ['game_date'=>$row['game_date'], 'team'=>$row['team']];
+                $existing = DB::table('todays_odds')->where($key)->lockForUpdate()->first();
+                if ($existing?->commence_at && CarbonImmutable::parse($existing->commence_at, 'UTC')->lte($now)) continue;
+                DB::table('todays_odds')->updateOrInsert($key, $row + [
+                    'source_updated_at'=>$sourceUpdated,
+                    'checked_at'=>$now,
+                    'created_at'=>$existing?->created_at ?? $now,
+                    'updated_at'=>$now,
+                ]);
+                $counts[$row['game_date']]++;
+            }
+            // Keep the last pregame prices for started games, even when the
+            // provider removes them. A new fantasy date uses its own records.
+            return $counts;
+        });
     }
 }

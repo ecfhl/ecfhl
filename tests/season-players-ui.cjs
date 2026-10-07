@@ -2,8 +2,8 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
 const run=(source,context)=>vm.runInNewContext(source,{window:{addEventListener(){},removeEventListener(){}},...context});
 const make=()=>{const rows={html:'',insertAdjacentHTML(_,html){this.html+=html}},count={},error={},button={dataset:{nextUrl:'/players?positions=F,D&page=2'},disabled:false,addEventListener(_,fn){this.click=fn}};return {rows,count,error,button,document:{addEventListener(){},removeEventListener(){},querySelector:()=>null,getElementById:id=>({'season-player-more':button,'season-player-rows':rows,'season-player-count':count,'season-player-error':error}[id])}}};
 (async()=>{
- const pinned=make();let width=170,rankWidth=36,offset='',resize;const scroll={style:{setProperty(key,value){assert.equal(key,'--player-sticky-offset');offset=value}}};const player={getBoundingClientRect:()=>({width})},rank={getBoundingClientRect:()=>({width:rankWidth})};pinned.document.querySelector=()=>({querySelector:s=>s.includes('rank')?rank:player,closest:()=>scroll});
- run(fs.readFileSync('public/season-players.js','utf8'),{document:pinned.document,ResizeObserver:class {constructor(fn){resize=fn} observe(node){assert.ok([player,rank].includes(node))}}});assert.equal(offset,'170px');width=115;resize();assert.equal(offset,'115px');rankWidth=40;resize();assert.equal(offset,'115px');
+ const pinned=make();let width=44,rankWidth=36,offset='',resize;const scroll={style:{setProperty(key,value){assert.equal(key,'--player-sticky-offset');offset=value}}};const team={getBoundingClientRect:()=>({width})},rank={getBoundingClientRect:()=>({width:rankWidth})};pinned.document.querySelector=()=>({querySelector:s=>{assert.equal(s,'thead .player-frozen-team');return team},closest:()=>scroll});
+ run(fs.readFileSync('public/season-players.js','utf8'),{document:pinned.document,ResizeObserver:class {constructor(fn){resize=fn} observe(node){assert.ok([team,rank].includes(node))}}});assert.equal(offset,'44px');width=170;resize();assert.equal(offset,'170px');rankWidth=40;resize();assert.equal(offset,'170px');
  // The header follows page scroll below navigation and syncs horizontal scroll both ways.
  const page=make();let tableTop=100,tableBottom=800;const events={},scrollEvents={},frozenEvents={},vars={'--rank-column-width':'36px','--player-column-width':'170px','--team-column-width':'170px','--player-stat-width':'72px','--player-stat-count':'12','--player-sticky-offset':'206px'};
  const style=()=>({setProperty(key,value){this[key]=value}});
@@ -11,7 +11,7 @@ const make=()=>{const rows={html:'',insertAdjacentHTML(_,html){this.html+=html}}
  const frozen={style:style(),scrollLeft:0,append(child){this.child=child},addEventListener:(key,fn)=>frozenEvents[key]=fn};
  const head={cloneNode:()=>({type:'head'}),getBoundingClientRect:()=>({top:tableTop,height:30})},colgroup={cloneNode:()=>({type:'cols'})};
  const clone={style:style(),append(...children){this.children=children}};
- const fullTable={closest:()=>scroller,cloneNode:()=>clone,getBoundingClientRect:()=>({width:1300}),querySelector:key=>key==='thead'?head:key==='colgroup'?colgroup:key.includes('rank')?rank:player};
+ const fullTable={closest:()=>scroller,cloneNode:()=>clone,getBoundingClientRect:()=>({width:1300}),querySelector:key=>key==='thead'?head:key==='colgroup'?colgroup:key.includes('rank')?rank:team};
  const originalGet=page.document.getElementById;page.document.getElementById=id=>id==='season-player-fixed-header'?frozen:originalGet(id);
  page.document.querySelector=key=>key==='.season-player-table'?fullTable:key==='.site-header'?{getBoundingClientRect:()=>({bottom:60})}:null;
  run(fs.readFileSync('public/season-players.js','utf8'),{document:page.document,window:{addEventListener:(key,fn)=>events[key]=fn},ResizeObserver:class {constructor(){} observe(){}},getComputedStyle:()=>({getPropertyValue:key=>vars[key]}),requestAnimationFrame:fn=>fn()});
