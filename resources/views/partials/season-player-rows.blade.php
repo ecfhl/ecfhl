@@ -14,11 +14,11 @@
       @php $status=$player->{str_replace('_game','_goalie_status',$gameField)}; $odds=$player->{str_replace('_game','_vegas_odds',$gameField)} ?? null; @endphp
       <div class="player-game-main">
         <strong>{{ $player->{$gameField}['away'] ? '@' : '' }}{{ $player->{$gameField}['opponent'] }}</strong>
-        <small><span title="{{ $player->{$gameField}['time'] ?: 'Time unavailable' }}">{{ $player->{$gameField}['time'] ? preg_replace('/\\s+[A-Z]{2,4}$/', '', $player->{$gameField}['time']) : 'TBD' }}</span></small>
         @if($player->position==='G' && $odds!==null && $odds!==0)
           @php $oddsClass=$odds<=-130?'good':($odds>=130?'bad':'neutral'); @endphp
           <span class="player-vegas-odds player-vegas-odds-{{ $oddsClass }}" title="Moneyline odds (decimal)">{{ number_format(1 + ($odds < 0 ? 100 / abs($odds) : $odds / 100), 2) }}</span>
         @endif
+        <small><span title="{{ $player->{$gameField}['time'] ?: 'Time unavailable' }}">{{ $player->{$gameField}['time'] ? preg_replace('/\\s+[A-Z]{2,4}$/', '', $player->{$gameField}['time']) : 'TBD' }}</span></small>
       </div>
       @if($status)<div class="player-game-badges"><span class="player-goalie-status player-goalie-{{ match($status){'Confirmed'=>'confirmed','Likely'=>'likely','Not starting'=>'not-starting',default=>'unconfirmed'} }}">{{ $status }}</span></div>@endif
     @else<span class="muted">—</span>@endif</td>

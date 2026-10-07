@@ -18,6 +18,7 @@
       const teamColumn = table.querySelector('thead .player-frozen-team');
       const scroll = table.closest('.player-table-scroll');
       const updateOffset = () => scroll.style.setProperty('--player-sticky-offset', `${teamColumn.getBoundingClientRect().width}px`);
+      let syncColumns = updateOffset;
       updateOffset();
       if (typeof ResizeObserver !== 'undefined') {
         const observer = new ResizeObserver(updateOffset);
@@ -54,6 +55,7 @@
           queued = true;
           requestAnimationFrame(() => { queued = false; updateHeader(); });
         };
+        syncColumns = () => { updateOffset(); scheduleHeader(); };
         listen(window, 'scroll', scheduleHeader, { passive: true });
         listen(window, 'resize', scheduleHeader);
         listen(scroll, 'scroll', scheduleHeader, { passive: true });
@@ -66,6 +68,7 @@
         }
         updateHeader();
       }
+      if (window.EcfhlPlayerColumns) cleanups.push(window.EcfhlPlayerColumns.attach(table, scroll, frozen, syncColumns));
     }
     const button = document.getElementById('season-player-more');
     if (!button) return;

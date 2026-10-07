@@ -84,6 +84,7 @@ verifySeason(!str_contains($html,'href="/daily-targets"'),'Retired Daily Targets
 preg_match('/<thead>(.*?)<\/thead>/s',$html,$tableHead);
 preg_match_all('/<th scope="col"[^>]*>(.*?)<\/th>/s',$tableHead[1],$headCells);
 $headerLabels=array_map(fn($v)=>rtrim(trim(strip_tags($v)), ' ↑↓↕'),$headCells[1]);
+verifySeason(substr_count($tableHead[1], 'role="separator"')===count($headerLabels) && str_contains($html, 'player-reset-widths') && str_contains($html, '/player-column-resize.js?v='), 'Every player column must expose an accessible resize handle and a reset control.');
 verifySeason($headerLabels===['Team','Player','Today','Tomorrow','ECFHL*','FPts','FPts/gp','GP','G','A','Pts','PPG','SHG','GWG','SOG','TOI'],'Column order and labels must match the requested stats exactly.');
 verifySeason(preg_match('/<td class="player-game-cell">.*?<\/td>\s*<td class="player-game-cell">.*?<\/td>\s*<td class="myproj">6\.25<\/td>\s*<td>99<\/td>\s*<td>9\.90<\/td>\s*<td>10<\/td>\s*<td>2<\/td>\s*<td>9<\/td>/', $html), 'Row values must follow ECFHL Score, FPts, FPts/gp, GP, G and A header order.');
 $nameSearch=$service->data(Request::create('/players?availability=all&q=02%2C%20Player'));
@@ -157,7 +158,7 @@ $goalieHtml=seasonRequest('/players?availability=all&positions=G')->getContent()
 verifySeason(str_contains($goalieHtml,'Sign in to watch')&&str_contains($goalieHtml,'goalie-watch-bell'),'Goalie rows need persistent sign-in bells even without an upcoming game.');
 foreach(['GAA','G','A','SV%','GA','SOGA','SV'] as $removed)verifySeason(!isset($goalies['columns'][$removed]),'Removed goalie stat still shown: '.$removed);
 // Frozen panes must include both identity columns and the complete sortable header.
-verifySeason(str_contains($html,'<col class="team-col"><col class="player-col">')&&str_contains($html,'scope="row" class="player-frozen-player"')&&str_contains($html,'class="player-owner player-frozen-team"'),'Frozen player/team columns need explicit classes and bounded column widths.');
+verifySeason(str_contains($html,'<col class="team-col" data-column="team"><col class="player-col" data-column="player">')&&str_contains($html,'scope="row" class="player-frozen-player"')&&str_contains($html,'class="player-owner player-frozen-team"'),'Frozen player/team columns need explicit classes and bounded column widths.');
 verifySeason(str_contains($html,'thead th{position:sticky;top:0;z-index:3')&&str_contains($html,'overflow-x:auto;')&&!str_contains($html,'72dvh')&&str_contains($html,'id="season-player-fixed-header"')&&str_contains($html,'border-collapse:separate')&&str_contains($html,'thead .player-frozen-team{z-index:5}'),'The header and corner cells must stay above page-scrolling rows and horizontally scrolling stats.');
 verifySeason(str_contains($html,'-webkit-line-clamp:2')&&str_contains($betaHtml,'title="Beta"'),'Team names must be limited to two lines with their full name in a tooltip.');
 $availableHtml=seasonRequest('/players?availability=available')->getContent();
