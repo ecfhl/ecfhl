@@ -181,8 +181,10 @@ checkLive($refresh->refresh('2026-10-02',fn($m)=>null)&&DB::table('push_notifica
 $kernel=$app->make(Illuminate\Contracts\Http\Kernel::class);
 $loneSlug=Illuminate\Support\Str::slug($snapshots['2026-10-02']['teams']['65yfc2nwmolvao6q']['name']);
 DB::table('seasons')->insert(['season_id'=>'test-current','season_name'=>'2026-27']);
+$standingRank = 0;
 foreach ($snapshots['2026-10-02']['teams'] as $id=>$team) {
     DB::table('team_seasons')->insert(['team_season_id'=>'test-'.$id,'season_id'=>'test-current','franchise_id'=>$id,'original_name'=>$team['name']]);
+    DB::table('team_seasons')->insert(['team_season_id'=>'standing-'.$id,'season_id'=>'2026-27','franchise_id'=>$id,'original_name'=>$team['name'], 'rank'=>++$standingRank, 'w'=>0, 'l'=>1, 't'=>0]);
 }
 foreach ($expected as $date) {
     $app->forgetScopedInstances();
@@ -193,6 +195,8 @@ foreach ($expected as $date) {
     checkLive(str_contains($html,'data-page-logo="'.App\Support\TeamImages::url('league-logo',160).'"') && str_contains($html,'data-page-name="ECFHL"'), 'Live Scoring must use the league loading logo');
     checkLive(preg_match_all('/<details\\b[^>]*class="[^"]*\\bmatchup-card\\b[^"]*"/', $html)===7, 'Rendered matchups incomplete');
     checkLive(str_contains($html, 'matchup-scoreboard.css') && substr_count($html, 'team-live-matchup-summary')>=7, 'Live Scoring does not use the shared Home scoreboard');
+    checkLive(substr_count($html, 'class="team-live-record"')===14 && substr_count($html, '>0–1–0</span>')===14, 'Live Scoring must show each team record separately, including zero wins/ties');
+    foreach (['1st','2nd','3rd','5th','11th','12th','13th','14th'] as $ordinal) checkLive(str_contains($html, 'class="team-live-rank">('.$ordinal.')</span>'), 'Live Scoring rank suffix missing: '.$ordinal);
     checkLive(str_contains($html,'date=2026-10-01') && str_contains($html,'date=2026-10-02') && str_contains($html,'date=2026-10-03'), 'Date buttons wrong after Atlantic midnight');
     if ($date==='2026-10-02') checkLive(str_contains($html,'Carlsson, Leo') && str_contains($html,'Hintz, Roope'), 'Regression players missing in rendered page');
     $kernel->terminate($request,$response);
