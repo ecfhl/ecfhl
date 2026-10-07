@@ -1,8 +1,8 @@
 @extends('layouts.app')
-@section('title', 'Overview: Home')
+@section('title', 'Home · ECFHL')
 @section('content')
-<link rel="stylesheet" href="/overview-home.css?v={{ hash_file('sha256', base_path('public/overview-home.css')) }}">
 <link rel="stylesheet" href="/matchup-scoreboard.css?v={{ hash_file('sha256', base_path('public/matchup-scoreboard.css')) }}">
+<link rel="stylesheet" href="/overview-home.css?v={{ hash_file('sha256', base_path('public/overview-home.css')) }}">
 <section class="overview-hero">
   <div class="shell overview-hero__inner">
     <button type="button" class="league-logo-viewer overview-hero__logo" data-team-icon-viewer data-league-logo data-team-name="East Coast Fantasy Hockey League" aria-label="View East Coast Fantasy Hockey League logo">
@@ -10,17 +10,19 @@
     </button>
     <div>
       <div class="eyebrow">Established in 2007</div>
-      <h1>East Coast Fantasy Hockey League</h1>
+      <h1>Home</h1>
+      <p>East Coast Fantasy Hockey League</p>
     </div>
   </div>
 </section>
 <div class="shell overview-home">
   <div class="overview-home__heading">
-    <h2>Overview: Home</h2>
-    <span class="muted">{{ \Carbon\CarbonImmutable::parse($today)->format('l, M j') }}</span>
+    <h2>League overview</h2>
+    <span class="overview-home__date">{{ \Carbon\CarbonImmutable::parse($today)->format('l, M j') }}</span>
   </div>
   @php
     $myTeamName = request()->user()?->claim?->team_name;
+    $liveTeams=$snapshot ? app(\App\Support\LiveScoring\ViewData::class)->teams($snapshot) : [];
     if ($myTeamName) {
       $matchups = $matchups->sortByDesc(fn($m) => $m->away_team_name === $myTeamName || $m->home_team_name === $myTeamName)->values();
     }
@@ -33,7 +35,6 @@
         @php
           $awaySlug=\Illuminate\Support\Str::slug($matchup->away_team_name);
           $homeSlug=\Illuminate\Support\Str::slug($matchup->home_team_name);
-          $liveTeams=$snapshot ? app(\App\Support\LiveScoring\ViewData::class)->teams($snapshot) : [];
           $awayLive=collect($liveTeams)->firstWhere('name',$matchup->away_team_name);
           $homeLive=collect($liveTeams)->firstWhere('name',$matchup->home_team_name);
         @endphp
@@ -74,7 +75,7 @@
     <section class="overview-home__card" data-overview-card="standings">
       <div class="overview-home__title"><h2>Regular Season</h2><a href="/standings">Full standings →</a></div>
       @forelse(array_slice($standings,0,14) as $team)
-        <a class="overview-standing {{ $loop->iteration===8 ? 'overview-standing--cut' : '' }}" href="/teams/current/{{ $team['slug'] }}">
+        <a class="overview-standing {{ $loop->iteration===8 ? 'overview-standing--cut' : '' }} {{ $myTeamName === $team['team'] ? 'overview-standing--mine' : '' }}" href="/teams/current/{{ $team['slug'] }}">
           <span class="overview-rank">{{ $team['rank'] ?? '—' }}</span>
           <img src="{{ \App\Support\TeamImages::url($team['slug'],64) }}" width="32" height="32" alt="" loading="lazy">
           <div><strong>{{ $team['team'] }}</strong><small>{{ $team['w'] ?? 0 }}–{{ $team['l'] ?? 0 }}–{{ $team['t'] ?? 0 }} ({{ isset($team['fantasy_points_for']) ? number_format($team['fantasy_points_for'],0) : '—' }} Fpts)</small></div>
@@ -87,7 +88,7 @@
     <section class="overview-home__card" data-overview-card="watch">
       <div class="overview-home__title"><h2>Player Watch</h2><a href="/players?availability=available&amp;positions=F,D,G&amp;dfo_sort=1&amp;sort=ec_proj&amp;direction=desc">Available players →</a></div>
       @foreach(['F'=>'Forwards','D'=>'Defense','G'=>'Goalies'] as $position=>$label)
-        <div class="overview-player-group">
+        <div class="overview-player-group overview-player-group--{{ strtolower($position) }}">
           <h3>{{ $label }}</h3>
           @forelse($scoringLeaders->get($position,collect()) as $player)
             <a class="overview-player player-name-link" data-player-stats href="/players/{{ rawurlencode($player->player_id) }}">
@@ -122,11 +123,5 @@
   <div class="overview-home__history"><span>19 years of league history</span><a href="/seasons">Explore the archive →</a></div>
 </div>
 <script src="/overview-home.js?v={{ hash_file('sha256', base_path('public/overview-home.js')) }}"></script>
-<style>
-.overview-matchup .team-live-name-row{min-width:0}
-.overview-matchup--mine{border:3px solid #3b82f6!important;background:#eaf5ff!important;box-shadow:0 0 0 1px rgba(59,130,246,.18)}
-html[data-theme="dark"] .overview-matchup--mine{border-color:#60a5fa!important;background:#123452!important;box-shadow:0 0 0 1px rgba(96,165,250,.22)}
-.overview-matchup--mine .team-live-matchup-summary{background:transparent!important}
-.overview-matchup .team-live-name-row>a{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-</style>
+
 @endsection

@@ -41,8 +41,10 @@ final class SeasonPlayers
         $ppChoices=['1','2','none'];
         $selectedLines=$this->selections($request->query('line'),$lineChoices);
         $selectedPps=$this->selections($request->query('pp'),$ppChoices);
-        $selectedLine=$selectedLines ? implode(',',$selectedLines) : 'empty';
-        $selectedPp=$selectedPps ? implode(',',$selectedPps) : 'empty';
+        $selectedLine=implode(',',$selectedLines);
+        $selectedPp=implode(',',$selectedPps);
+        $effectiveLines=$selectedLines ?: $lineChoices;
+        $effectivePps=$selectedPps ?: $ppChoices;
         $lines = PublicData::remember('badges:active_line_combinations', 30, fn()=>DB::table('active_line_combinations')->orderBy('checked_at')->orderBy('id')->get())
             ->keyBy(fn($r)=>$this->assignmentKey($r->team, $r->player_name).'|'.strtoupper(trim($r->position_group)));
         $pp = PublicData::remember('badges:active_pp_lines', 30, fn()=>DB::table('active_pp_lines')->orderBy('checked_at')->orderBy('id')->get())
@@ -87,15 +89,15 @@ final class SeasonPlayers
             $query->whereIn(DB::raw('UPPER(TRIM(s.nhl_team))'), array_unique($teams));
         }
         if ($rookies) $query->where('s.rookie', true);
-        if (count($selectedLines)!==count($lineChoices) || count($selectedPps)!==count($ppChoices)) {
+        if (count($effectiveLines)!==count($lineChoices) || count($effectivePps)!==count($ppChoices)) {
             // Apply the selected union within each group, and intersect Line with PP.
             $ids = DB::table('season_player_stats')->whereIn('position', ['F', 'D'])->get(['player_id', 'player_name', 'nhl_team', 'position'])
-                ->filter(function ($row) use ($lines, $pp, $selectedLines, $selectedPps) {
+                ->filter(function ($row) use ($lines, $pp, $effectiveLines, $effectivePps) {
                     $key = $this->assignmentKey($row->nhl_team, $row->player_name);
                     $line = $lines[$key.'|'.$row->position]->line_number ?? null;
                     $unit = $pp[$key]->pp_unit ?? null;
-                    return in_array($line===null?'none':(string)$line,$selectedLines,true)
-                        && in_array($unit===null?'none':(string)$unit,$selectedPps,true);
+                    return in_array($line===null?'none':(string)$line,$effectiveLines,true)
+                        && in_array($unit===null?'none':(string)$unit,$effectivePps,true);
                 })->pluck('player_id')->all();
             $query->where(function ($q) use ($ids) {
                 $q->where('s.position', 'G')->orWhereIn('s.player_id', $ids);
@@ -247,10 +249,10 @@ final class SeasonPlayers
 
     private function selections(mixed $input, array $choices): array
     {
-        if ($input===null || $input==='') return $choices;
+        if ($input===null || $input==='') return [];
         if($input==='empty')return [];
         $selected=array_values(array_intersect($choices,explode(',',(string)$input)));
-        return $selected ?: $choices;
+        return $selected;
     }
 
     private function playingTeams(string $date): array

@@ -19,13 +19,13 @@ verifySeason(str_contains($json['html'],'Last 21 days')&&!str_contains($json['ht
 $missing=app(PlayerProfile::class)->data('p65');
 verifySeason($missing['statRows'][1]['fpts']===null&&$missing['statRows'][4]['rate']===null,'Missing recent/projection data must remain unknown rather than zero.');
 $default=$service->data(\Illuminate\Http\Request::create('/players?availability=all&positions=F,D,G'));
-verifySeason($default['selectedLines']===['1','2','3','4','none']&&$default['selectedPps']===['1','2','none']&&$default['players']->total()===65,'Default assignment filters must include every player.');
+verifySeason($default['selectedLines']===[]&&$default['selectedPps']===[]&&$default['players']->total()===65,'Default assignment filters must be unselected and include every player.');
 $multi=$service->data(\Illuminate\Http\Request::create('/players?availability=all&line=1,2&pp=1,2'));
 $singles=[];
 foreach(['1','2'] as $line)foreach(['1','2'] as $pp){$single=$service->data(\Illuminate\Http\Request::create('/players?availability=all&line='.$line.'&pp='.$pp));$singles[]=$single['players']->total();}
 verifySeason($multi['players']->total()===array_sum($singles),'Line and PP choices must combine within groups before pagination.');
 $empty=$service->data(\Illuminate\Http\Request::create('/players?availability=all&line=empty'));
-verifySeason($empty['players']->total()===0&&$empty['selectedLines']===[],'Deselecting all lines must produce no matches.');
+verifySeason($empty['players']->total()===65&&$empty['selectedLines']===[],'Deselecting all lines must include all players.');
 $games=app(PlayerGames::class)->forDate('2026-10-05');
 verifySeason(isset($games['SJS'],$games['LAK'])&&$games['SJS']['opponent']==='LAK'&&$games['LAK']['opponent']==='SJS','Game columns must normalize aliases and include both sides.');
 verifySeason($games['SJS']['away']!==$games['LAK']['away'],'Home/away flags must reverse for the opponent.');

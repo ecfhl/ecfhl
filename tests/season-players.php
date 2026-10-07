@@ -129,7 +129,25 @@ $pair=$service->data(Request::create('/players?availability=all&positions=D&line
 verifySeason($pair['players']->total()===1&&$pair['players'][0]->player_id==='p4','Defense pairs must use the D assignments.');
 $none=$service->data(Request::create('/players?availability=all&positions=F,D,G&line=none&pp=none'));
 verifySeason($none['players']->total()===30&&$none['players']->getCollection()->every(fn($p)=>$p->position==='G'||($p->line_number===null&&$p->pp_unit===null)),'Unlisted assignment filters must include unassigned skaters and preserve goalies.');
-$bad=$service->data(Request::create('/players?availability=all&line=bad&pp=3'));verifySeason($bad['selectedLine']==='1,2,3,4,none'&&$bad['selectedPp']==='1,2,none','Invalid assignment filters must fall back to All.');
+$bad=$service->data(Request::create('/players?availability=all&line=bad&pp=3'));verifySeason($bad['selectedLine']===''&&$bad['selectedPp']==='','Invalid assignment filters must fall back to All.');
+// Empty selections are visually off and equivalent to all choices, independently per group.
+$assignmentAll=$service->data(Request::create('/players?availability=all&positions=F,D,G&line=1,2,3,4,none&pp=1,2,none'));
+foreach (['','&line=&pp=','&line=empty&pp=empty'] as $params) {
+ $assignmentEmpty=$service->data(Request::create('/players?availability=all&positions=F,D,G'.$params));
+ verifySeason($assignmentEmpty['selectedLines']===[]&&$assignmentEmpty['selectedPps']===[]&&$assignmentEmpty['players']->total()===$assignmentAll['players']->total(),'No selected Line/PP buttons must include all assignments.');
+}
+$lineOnly=$service->data(Request::create('/players?availability=all&line=1'));
+$lineAllPp=$service->data(Request::create('/players?availability=all&line=1&pp=1,2,none'));
+verifySeason($lineOnly['players']->total()===$lineAllPp['players']->total(),'Unselected PP must not restrict a selected line.');
+$ppOnly=$service->data(Request::create('/players?availability=all&pp=2'));
+$ppAllLines=$service->data(Request::create('/players?availability=all&pp=2&line=1,2,3,4,none'));
+verifySeason($ppOnly['players']->total()===$ppAllLines['players']->total(),'Unselected Line must not restrict a selected PP unit.');
+foreach (['season-player-line','season-player-pp'] as $group) {
+ $buttons=$positionPath->query('//div[@id="'.$group.'"]/a');
+ foreach ($buttons as $button) {
+  verifySeason($button->getAttribute('aria-pressed')==='false','Assignment buttons must default to unselected.');
+ }
+}
 $advancedHtml=seasonRequest('/players?availability=all&line=1&pp=1&rookies=1')->getContent();
 verifySeason(str_contains($advancedHtml,'class="player-advanced"  open')&&str_contains($advancedHtml,'id="season-player-line"')&&str_contains($advancedHtml,'id="season-player-pp"')&&str_contains($advancedHtml,'name="line" value="1"')&&str_contains($advancedHtml,'line=1&amp;pp=1'),'Active advanced filters must remain visible and survive search, sorting and positions.');
 verifySeason(preg_match('/class="player-name-link"[^>]*>[^<]+<span class="rookie-tag">Rookie<\/span><\/a>/', $advancedHtml),'Rookie sticker must be beside the name, not on the metadata line.');

@@ -7,7 +7,7 @@
     $filterUrl = fn($changes)=>'/players?'.http_build_query(array_merge(['positions'=>implode(',', $positions),'rookies'=>$rookies?'1':'0','q'=>$search,'sort'=>$sort,'direction'=>$direction,'team'=>$selectedTeam,'availability'=>$availability,'line'=>$selectedLine,'pp'=>$selectedPp,'dataset'=>$dataset,'playing'=>$playing,'dfo_sort'=>$dailyTargetsSort?'1':'0'], $changes));
     $displayHeaders = ['player'=>$headers['player'], 'team'=>$headers['team'], 'today'=>$headers['today'], 'tomorrow'=>$headers['tomorrow']] + array_diff_key($headers, array_flip(['rank','player','team','today','tomorrow']));
   @endphp
-  @php $advancedCount = (int)$rookies + (int)($selectedTeam!=='') + (int)(count($selectedLines)!==5) + (int)(count($selectedPps)!==3); @endphp
+  @php $advancedCount = (int)$rookies + (int)($selectedTeam!=='') + (int)($selectedLines && count($selectedLines)!==5) + (int)($selectedPps && count($selectedPps)!==3); @endphp
   <div class="card player-controls">
     <div class="player-filter-row"><span class="filter-label">Positions</span><div class="player-buttons" role="group" aria-label="Player positions">
       @foreach(['F,D,G'=>'All','F,D'=>'Skaters','F'=>'Forwards','D'=>'Defense','G'=>'Goaltenders'] as $key=>$label)
@@ -33,7 +33,7 @@
         </div>
     </div>
     <div class="player-advanced-section">
-    <a class="player-filter player-reset-filters" href="/players?positions=F%2CD&amp;availability=available&amp;rookies=0&amp;q=&amp;team=&amp;line=1%2C2%2C3%2C4%2Cnone&amp;pp=1%2C2%2Cnone&amp;dataset=season&amp;playing=all&amp;dfo_sort=0&amp;sort=fpts&amp;direction=desc">Reset filters</a>
+    <a class="player-filter player-reset-filters" href="/players?positions=F%2CD&amp;availability=available&amp;rookies=0&amp;q=&amp;team=&amp;line=&amp;pp=&amp;dataset=season&amp;playing=all&amp;dfo_sort=0&amp;sort=fpts&amp;direction=desc">Reset filters</a>
     <details class="player-advanced" @if($advancedCount) open @endif>
       <summary>Advanced Filters @if($advancedCount)<span class="advanced-count">{{ $advancedCount }} active</span>@endif</summary>
       <div class="player-advanced-grid">
@@ -44,9 +44,9 @@
           <label class="player-slicer" for="season-player-team"><span>ECFHL team</span><select id="season-player-team" name="team" onchange="this.form.requestSubmit()"><option value="">All ECFHL teams</option>@foreach($teamOptions as $option)<option value="{{ $option->fantasy_team_id }}" @selected($selectedTeam===$option->fantasy_team_id)>{{ $option->fantasy_team_name }}</option>@endforeach</select></label>
           <input type="hidden" name="line" value="{{ $selectedLine }}"><input type="hidden" name="pp" value="{{ $selectedPp }}">
         </form>
-        <div class="player-filter-row player-assignment-filter"><span class="filter-label">Line</span><div id="season-player-line" class="player-buttons" role="group" aria-label="Line assignment">@foreach(['1'=>'L1','2'=>'L2','3'=>'L3','4'=>'L4','none'=>'Unlisted'] as $key=>$label)@php $key=(string)$key; $selected=in_array($key,$selectedLines,true); $next=$selected?array_values(array_diff($selectedLines,[$key])):array_merge($selectedLines,[$key]); @endphp<a class="player-filter {{ $selected?'selected':'' }}" role="button" aria-pressed="{{ $selected?'true':'false' }}" href="{{ $filterUrl(['line'=>$next?implode(',',$next):'empty']) }}" @if(is_numeric($key)) aria-label="Line {{ $key }}" @endif>{{ $label }}</a>@endforeach</div></div>
-        <div class="player-filter-row player-assignment-filter"><span class="filter-label">Power play</span><div id="season-player-pp" class="player-buttons" role="group" aria-label="Power-play unit">@foreach(['1'=>'PP1','2'=>'PP2','none'=>'Unlisted'] as $key=>$label)@php $key=(string)$key; $selected=in_array($key,$selectedPps,true); $next=$selected?array_values(array_diff($selectedPps,[$key])):array_merge($selectedPps,[$key]); @endphp<a class="player-filter {{ $selected?'selected':'' }}" role="button" aria-pressed="{{ $selected?'true':'false' }}" href="{{ $filterUrl(['pp'=>$next?implode(',',$next):'empty']) }}">{{ $label }}</a>@endforeach</div></div>
-        <div class="player-advanced-footer"><span class="muted">Line and PP filters apply to skaters.</span>@if($advancedCount)<a href="{{ $filterUrl(['availability'=>'all','rookies'=>'0','team'=>'','line'=>'','pp'=>'']) }}">Clear advanced filters</a>@endif</div>
+        <div class="player-filter-row player-assignment-filter"><span class="filter-label">Line</span><div id="season-player-line" class="player-buttons" role="group" aria-label="Line assignment">@foreach(['1'=>'L1','2'=>'L2','3'=>'L3','4'=>'L4','none'=>'Unlisted'] as $key=>$label)@php $key=(string)$key; $selected=in_array($key,$selectedLines,true); $next=$selected?array_values(array_diff($selectedLines,[$key])):array_merge($selectedLines,[$key]); @endphp<a class="player-filter {{ $selected?'selected':'' }}" role="button" aria-pressed="{{ $selected?'true':'false' }}" href="{{ $filterUrl(['line'=>implode(',',$next)]) }}" @if(is_numeric($key)) aria-label="Line {{ $key }}" @endif>{{ $label }}</a>@endforeach</div></div>
+        <div class="player-filter-row player-assignment-filter"><span class="filter-label">Power play</span><div id="season-player-pp" class="player-buttons" role="group" aria-label="Power-play unit">@foreach(['1'=>'PP1','2'=>'PP2','none'=>'Unlisted'] as $key=>$label)@php $key=(string)$key; $selected=in_array($key,$selectedPps,true); $next=$selected?array_values(array_diff($selectedPps,[$key])):array_merge($selectedPps,[$key]); @endphp<a class="player-filter {{ $selected?'selected':'' }}" role="button" aria-pressed="{{ $selected?'true':'false' }}" href="{{ $filterUrl(['pp'=>implode(',',$next)]) }}">{{ $label }}</a>@endforeach</div></div>
+        <div class="player-advanced-footer"><span class="muted">Line and PP filters apply to skaters. None selected includes all.</span>@if($advancedCount)<a href="{{ $filterUrl(['availability'=>'all','rookies'=>'0','team'=>'','line'=>'','pp'=>'']) }}">Clear advanced filters</a>@endif</div>
       </div>
     </details>
     </div>
