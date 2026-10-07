@@ -66,7 +66,20 @@ verifySeason(str_contains($html,'player-assignment-tag player-assignment-2">L2</
 verifySeason(str_contains($html,'player-assignment-tag player-assignment-1">L1</span>')&&str_contains($html,'player-assignment-tag player-assignment-1">PP1</span>'),'Forwards must show the same colored L/PP stickers.');
 verifySeason(substr_count($html,'data-player-id=')===25&&str_contains($html,'&lt;unsafe&gt;, Player')&&!str_contains($html,'Player <unsafe>'),'SSR row count / escaped names failed.');
 verifySeason(str_contains($html,'ECFHL*')&&str_contains($html,'71:11')&&str_contains($html,'/teams/current/beta')&&str_contains($html,'Free Agent'),'Stats / ownership / custom projection rendering failed.');
-verifySeason(str_contains($html,'aria-pressed="true" href="/players?positions=D')&&str_contains($html,'aria-pressed="true" href="/players?positions=F')&&str_contains($html,'aria-pressed="false" href="/players?positions=F%2CD%2CG'),'Default filter button states failed.');
+$positionDoc=new DOMDocument(); @$positionDoc->loadHTML($html); $positionPath=new DOMXPath($positionDoc);
+$positionButtons=$positionPath->query('//div[@aria-label="Player positions"]/a');
+verifySeason($positionButtons->length===5,'Positions must offer All, Skaters, Forwards, Defensemen and Goaltenders.');
+foreach(['F,D,G'=>'All','F,D'=>'Skaters','F'=>'Forwards','D'=>'Defensemen','G'=>'Goaltenders'] as $position=>$label){
+ $link=$positionPath->query('//div[@aria-label="Player positions"]/a[text()="'.$label.'"]')->item(0);
+ parse_str(parse_url($link->getAttribute('href'),PHP_URL_QUERY),$params);
+ verifySeason($params['positions']===$position&&$link->getAttribute('aria-pressed')===($position==='F,D'?'true':'false'),'Position buttons must select exactly one preset: '.$label);
+ $only=$service->data(Request::create('/players?availability=all&positions='.urlencode($position)));
+ verifySeason($only['players']->getCollection()->every(fn($p)=>in_array($p->position,explode(',',$position),true)),'Position preset included another group: '.$label);
+}
+$goaliesWithSkaterFilters=$service->data(Request::create('/players?availability=all&positions=G&line=1&pp=1'));
+verifySeason($goaliesWithSkaterFilters['players']->total()===5,'Skater Line/PP filters must not hide goalies.');
+$mixedWithSkaterFilters=$service->data(Request::create('/players?availability=all&positions=F,D,G&line=1&pp=1'));
+verifySeason($mixedWithSkaterFilters['players']->getCollection()->filter(fn($p)=>$p->position!=='G')->every(fn($p)=>(int)$p->line_number===1&&(int)$p->pp_unit===1),'Skater filters must still apply to skaters in All.');
 verifySeason(!str_contains($html,'href="/daily-targets"'),'Retired Daily Targets shortcut must be absent.');
 preg_match('/<thead>(.*?)<\/thead>/s',$html,$tableHead);
 preg_match_all('/<th scope="col"[^>]*>(.*?)<\/th>/s',$tableHead[1],$headCells);
@@ -115,7 +128,7 @@ verifySeason($lineMore['total']===33&&$lineMore['shown']===33&&substr_count($lin
 $pair=$service->data(Request::create('/players?availability=all&positions=D&line=1&pp=2'));
 verifySeason($pair['players']->total()===1&&$pair['players'][0]->player_id==='p4','Defense pairs must use the D assignments.');
 $none=$service->data(Request::create('/players?availability=all&positions=F,D,G&line=none&pp=none'));
-verifySeason($none['players']->total()===25&&$none['players']->getCollection()->every(fn($p)=>$p->position!=='G'&&$p->line_number===null&&$p->pp_unit===null),'No listed assignment filters must include unassigned skaters and exclude goalies.');
+verifySeason($none['players']->total()===30&&$none['players']->getCollection()->every(fn($p)=>$p->position==='G'||($p->line_number===null&&$p->pp_unit===null)),'Unlisted assignment filters must include unassigned skaters and preserve goalies.');
 $bad=$service->data(Request::create('/players?availability=all&line=bad&pp=3'));verifySeason($bad['selectedLine']==='1,2,3,4,none'&&$bad['selectedPp']==='1,2,none','Invalid assignment filters must fall back to All.');
 $advancedHtml=seasonRequest('/players?availability=all&line=1&pp=1&rookies=1')->getContent();
 verifySeason(str_contains($advancedHtml,'class="player-advanced"  open')&&str_contains($advancedHtml,'id="season-player-line"')&&str_contains($advancedHtml,'id="season-player-pp"')&&str_contains($advancedHtml,'name="line" value="1"')&&str_contains($advancedHtml,'line=1&amp;pp=1'),'Active advanced filters must remain visible and survive search, sorting and positions.');

@@ -97,7 +97,9 @@ final class SeasonPlayers
                     return in_array($line===null?'none':(string)$line,$selectedLines,true)
                         && in_array($unit===null?'none':(string)$unit,$selectedPps,true);
                 })->pluck('player_id')->all();
-            $query->whereIn('s.player_id', $ids);
+            $query->where(function ($q) use ($ids) {
+                $q->where('s.position', 'G')->orWhereIn('s.player_id', $ids);
+            });
         }
         if ($search !== '') $query->where(function($q) use ($search){
             foreach(PlayerName::searchVariants($search) as $variant){
