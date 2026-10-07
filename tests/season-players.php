@@ -292,5 +292,15 @@ verifySeason(str_contains($dayHtml,'playing=all')&&str_contains($dayHtml,'dfo_so
 verifySeason($dfoPath->query('//th[@class="myproj" and @aria-sort="descending"]')->length===1,'Daily Targets mode must show the active secondary column sort.');
 verifySeason($dfoPath->query('//form[@class="player-search"]//input[@name="dfo_sort" and @value="1"]')->length===1&&$dfoPath->query('//form[@class="player-slicers"]//input[@name="dfo_sort" and @value="1"]')->length===1&&$dfoPath->query('//form[@aria-label="Player sorting"]//input[@name="dfo_sort"]')->length===0,'Search/team must retain Daily Targets mode; explicit column Sort must clear it.');
 verifySeason(str_contains($dfoHtml,'filter:grayscale(1);opacity:.35')&&str_contains($dfoHtml,'img{filter:none;opacity:1}'),'Logo states must use CSS grayscale/opacity and restore full color.');
+$profile=app(\App\Support\PlayerProfile::class)->data('p1');
+verifySeason(array_keys($profile['categoryLabels'])===['FPTS','FPTS/GP','GP','G','A','PPG','SHG','GWG'],'Skater season table must show only the requested categories.');
+DB::table('historical_player_stats')->insert(['season_id'=>'2025-26','player_id'=>'p1','fpts'=>156,'gp'=>82,'fpts_per_game'=>156/82,'stats_json'=>json_encode(['G'=>48,'A'=>90,'PPG'=>13,'SHG'=>1,'GWG'=>4])]);
+$profile=app(\App\Support\PlayerProfile::class)->data('p1');
+verifySeason(array_column($profile['seasonRows'],'season')===['2026-27','2025-26']&&$profile['seasonRows'][1]['stats']['G']===48,'Season table must match archived players by ID and keep seasons separate.');
+DB::table('season_player_stats')->where('player_id','p61')->update(['stats_json'=>json_encode(['OL'=>4,'SHO'=>3])]);
+$profile=app(\App\Support\PlayerProfile::class)->data('p61');
+verifySeason(array_keys($profile['categoryLabels'])===['FPTS','FPTS/GP','GP','W','L','OTL','SO']&&$profile['seasonStats']['OTL']===4&&$profile['seasonStats']['SO']===3,'Goalie table must map Fantrax overtime losses and shutouts.');
+$profileHtml=seasonRequest('/players/p1')->getContent();
+verifySeason(str_contains($profileHtml,'<h2>Stats</h2>')&&str_contains($profileHtml,'2025-26')&&!str_contains($profileHtml,'player-profile-categories'),'Player profile must render season rows without stat boxes.');
 \Carbon\CarbonImmutable::setTestNow();
 echo "Season players checks passed: Available/All defaults, both game-day filters and Pacific rollover, four schedule sources, aliases, combined datasets/sorts/pagination, compact panes and owner highlighting.\n";

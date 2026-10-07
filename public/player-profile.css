@@ -51,3 +51,15 @@ html[data-theme="dark"] .player-profile-categories>div.player-profile-stat-fpts 
  .player-stats-dialog .player-profile h2{margin-top:7px}
  .player-stats-dialog .player-profile-categories>div{padding-top:4px;padding-bottom:4px}
 }
+
+/* Season comparisons remain a single compact table on phones. */
+.player-profile-season-table table{table-layout:fixed;font-variant-numeric:tabular-nums}
+.player-profile-season-table th,.player-profile-season-table td{padding:7px 3px;font-size:11px}
+.player-profile-season-table th:first-child{width:62px}
+.player-profile-season-table th:nth-child(3){width:65px}
+.player-stats-dialog .player-profile-season-table th,.player-stats-dialog .player-profile-season-table td{padding:5px 2px;font-size:10px}
+@media(max-width:550px){
+ .player-profile-season-table th:first-child{width:45px}
+ .player-profile-season-table th:nth-child(3){width:49px}
+ .player-profile-season-table th,.player-profile-season-table td,.player-stats-dialog .player-profile-season-table th,.player-stats-dialog .player-profile-season-table td{font-size:9px;padding-left:1px;padding-right:1px}
+}

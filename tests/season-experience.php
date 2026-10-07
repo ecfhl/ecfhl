@@ -13,7 +13,7 @@ verifySeason(array_column($data['statRows'],'label')===['Current Season','Last 7
 verifySeason((float)$data['statRows'][0]['fpts']===1234.5&&(float)$data['statRows'][1]['fpts']===699.0&&(float)$data['statRows'][4]['fpts']===998.0,'Player profile must keep season, recent and Fantrax stats separate.');
 verifySeason($data['roster']->fantasy_team_id==='beta','Player profile ownership must use the latest roster.');
 $html=seasonRequest('/players/p1')->getContent();
-verifySeason(str_contains($html,'Player &lt;unsafe&gt;')&&!str_contains($html,'Player <unsafe>')&&str_contains($html,'Current Season Stats'),'Player profile must escape names and display current season categories.');
+verifySeason(str_contains($html,'Player &lt;unsafe&gt;')&&!str_contains($html,'Player <unsafe>')&&str_contains($html,'<h2>Stats</h2>'),'Player profile must escape names and display current season categories.');
 $fragment=seasonRequest('/players/p1',true);$json=json_decode($fragment->getContent(),true);
 verifySeason(str_contains($json['html'],'Last 21 days')&&!str_contains($json['html'],'<html')&&str_contains($fragment->headers->get('Cache-Control'),'no-store'),'Player popup must provide only its stats section and avoid shared caching.');
 $missing=app(PlayerProfile::class)->data('p65');

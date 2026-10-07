@@ -21,13 +21,17 @@ final class PlayerProfile
         $statRows=[['label'=>'Current Season','fpts'=>$player->season_fpts,'gp'=>$player->season_gp,'rate'=>$player->season_fpts_per_game]];
         foreach([7,14,21] as $days) $statRows[]=['label'=>'Last '.$days.' days','fpts'=>$projection->{'fpts_'.$days.'d'}??null,'gp'=>$projection->{'gp_'.$days.'d'}??null,'rate'=>$projection->{'fpts_per_game_'.$days.'d'}??null];
         $statRows[]=['label'=>'Fantrax Proj','fpts'=>$baseline->fantrax_season_fpts??null,'gp'=>null,'rate'=>$baseline->fantrax_fpts_per_game??null];
-        $seasonStats=json_decode($player->stats_json,true)?:[];
-        $seasonStats['Pts']=$seasonStats['Pt']??$seasonStats['Pts']??null;
-        $seasonStats['GP']=$player->season_gp ?? $seasonStats['GP'] ?? null;
-        $seasonStats['FPts']=$player->season_fpts !== null ? (int) round((float) $player->season_fpts) : null;
-        $categoryLabels=$player->position==='G'?['GP'=>'Games played','W'=>'Wins','L'=>'Losses','OL'=>'Overtime losses','GAA'=>'Goals against average','SV%'=>'Save percentage','SHO'=>'Shutouts','GA'=>'Goals against','SV'=>'Saves']:['GP'=>'Games played','G'=>'Goals','A'=>'Assists','Pts'=>'Points','PPG'=>'Power-play goals','SHG'=>'Short-handed goals','GWG'=>'Game-winning goals','FPts'=>'Fantasy points'];
-        $categoryLabels=array_filter($categoryLabels,fn($label,$key)=>isset($seasonStats[$key])&&$seasonStats[$key]!=='',ARRAY_FILTER_USE_BOTH);
+        $categoryLabels=$player->position==='G'
+            ? ['FPTS'=>'Fantasy points','FPTS/GP'=>'Fantasy points per game','GP'=>'Games played','W'=>'Wins','L'=>'Losses','OTL'=>'Overtime losses','SO'=>'Shutouts']
+            : ['FPTS'=>'Fantasy points','FPTS/GP'=>'Fantasy points per game','GP'=>'Games played','G'=>'Goals','A'=>'Assists','PPG'=>'Power-play goals','SHG'=>'Short-handed goals','GWG'=>'Game-winning goals'];
+        $values=function ($stats,$fpts,$rate,$gp) {
+            return ['FPTS'=>$fpts,'FPTS/GP'=>$rate,'GP'=>$gp,'OTL'=>$stats['OTL']??$stats['OL']??null,'SO'=>$stats['SO']??$stats['SHO']??null]+$stats;
+        };
+        $seasonStats=$values(json_decode($player->stats_json,true)?:[],$player->season_fpts,$player->season_fpts_per_game,$player->season_gp);
+        $seasonRows=[['season'=>$player->season_id,'stats'=>$seasonStats]];
+        $previous=DB::table('historical_player_stats')->where('season_id','2025-26')->where('player_id',$id)->first();
+        if ($previous) $seasonRows[]=['season'=>$previous->season_id,'stats'=>$values(json_decode($previous->stats_json,true)?:[],$previous->fpts,$previous->fpts_per_game,$previous->gp)];
         $teamSlug=$roster?Str::slug($roster->fantasy_team_name):null;
-        return compact('player','projection','baseline','roster','teamSlug','todayGame','tomorrowGame','statRows','seasonStats','categoryLabels');
+        return compact('player','projection','baseline','roster','teamSlug','todayGame','tomorrowGame','statRows','seasonStats','categoryLabels','seasonRows');
     }
 }
