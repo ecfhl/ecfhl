@@ -493,7 +493,7 @@
         ];
       }
     @endphp
-    <div class="team-lineup-advisor-title">
+    <div class="team-lineup-advisor-title roster-table-heading" data-roster-section="Lineup Advisor">
       <button type="button" class="team-lineup-advisor-cycle" data-advisor-prev aria-label="Previous advisor">‹</button>
       <div class="team-lineup-advisor-title-text">Lineup Advisor · <span data-advisor-display-name="{{ $advisorKey }}">{{ $advisorFirstName }}</span></div>
       <button type="button" class="team-lineup-advisor-cycle" data-advisor-next aria-label="Next advisor">›</button>

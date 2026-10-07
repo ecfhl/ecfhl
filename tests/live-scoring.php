@@ -103,6 +103,15 @@ $injured = $builder->build('2026-10-02',$source['day'],$source['period'],$source
 checkLive($injured['teams']['65yfc2nwmolvao6q']['daily_fpts'] === $snapshots['2026-10-02']['teams']['65yfc2nwmolvao6q']['daily_fpts'], 'Injury flag removed ACTIVE scoring');
 foreach ($injured['players'] as $p) if ($p['scoring_status']==='ACTIVE') checkLive($p['roster_status']==='ACTIVE', 'Badge or supplemental roster status overrode Fantrax ACTIVE lineup');
 
+// IR and minors share BENCH scoring membership but are separate roster slots.
+$presenter = new \App\Support\LiveScoring\ViewData;
+foreach (['INJURED_RESERVE'=>false, 'MINORS'=>false, 'BENCH'=>true, 'RESERVE'=>true] as $slot=>$expectedBench) {
+    $display = $presenter->player(array_replace($active, ['scoring_status'=>'BENCH', 'roster_status'=>$slot]));
+    checkLive($display->is_bench===$expectedBench, 'Bench badge incorrectly inferred from non-scoring membership for '.$slot);
+    checkLive($display->is_ir===($slot==='INJURED_RESERVE'), 'Correcting bench badges changed IR status for '.$slot);
+    checkLive($display->today_fpts===$active['daily_fpts'], 'Correcting roster badges changed daily scoring');
+}
+
 Http::preventStrayRequests();
 $badDate = true;
 $missingOriginal = false;

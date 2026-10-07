@@ -88,11 +88,12 @@ body:has(.individual-team-page) .site-footer{margin-top:20px;padding:18px 0}
 .team-next-lineup-status{display:flex;flex-shrink:0;gap:3px}
 .team-next-lineup-empty{padding:8px;color:var(--muted);font-size:11px}
 .team-lineup-advisor{margin-bottom:8px;border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden;box-shadow:0 3px 12px rgba(13,31,55,.04)}
-.team-lineup-advisor-title{display:grid;grid-template-columns:28px minmax(0,1fr) 36px;align-items:center;gap:8px;background:var(--team-heading-bg);color:var(--team-heading-text);border-bottom:1px solid var(--line);padding:4px 8px;font-size:11px;font-weight:750}
+.team-lineup-advisor-title{display:grid;grid-template-columns:24px minmax(0,1fr) 24px;align-items:center;gap:6px;background:var(--roster-heading-bg,var(--table-heading-bg));color:var(--roster-heading-text,var(--table-heading-text));border-bottom:1px solid var(--line);padding:3px 8px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.3px}
 .team-lineup-advisor-title-text{text-align:left;min-width:0}
-.team-lineup-advisor-title-text [data-advisor-display-name]{font-weight:800;color:var(--text)}
-.team-lineup-advisor-cycle{width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;border:0;border-radius:5px;background:transparent;color:var(--team-blue);font-size:24px;cursor:pointer}
-.team-lineup-advisor-cycle:hover{background:var(--panel)}
+.team-lineup-advisor-title-text [data-advisor-display-name]{font-weight:inherit;color:inherit}
+.team-lineup-advisor-cycle{width:24px;height:24px;min-height:24px;display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:inherit;font-size:20px;line-height:1;cursor:pointer}
+.team-lineup-advisor-cycle:hover{background:#ffffff20}
+.team-lineup-advisor-cycle:focus-visible{outline:2px solid currentColor;outline-offset:-2px}
 .team-lineup-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px 0}
 .team-lineup-roster-counts{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;font-size:10px;color:var(--muted)}
 .team-lineup-roster-counts strong{color:var(--text);font-variant-numeric:tabular-nums;font-weight:800}
@@ -186,6 +187,7 @@ body:has(.individual-team-page) .site-footer{margin-top:20px;padding:18px 0}
 .individual-team-page :is(button,summary,a):focus-visible{outline:2px solid #438cca;outline-offset:2px}
 html[data-theme="dark"] .individual-team-page .ecfhl-scoreboard .team-live-matchup-summary{background:#173552!important}
 html[data-theme="dark"] .individual-team-page .team-lineup-advisor-title{background:var(--team-heading-bg)}
+html[data-theme="dark"] .individual-team-page .team-lineup-advisor-body{background:var(--panel)}
 @media(min-width:950px){
  .team-summary-grid{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}
  .team-next-opponent{margin-top:20px}
@@ -220,8 +222,7 @@ html[data-theme="dark"] .individual-team-page .team-lineup-advisor-title{backgro
  .team-lineup-meta{align-items:start;padding:7px 8px 0;gap:6px}
  .team-lineup-roster-counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 8px;flex:1;font-size:9px}
  .team-lineup-roster-counts span{white-space:nowrap}.team-lineup-moves{font-size:9px}
- .team-lineup-advisor-title{grid-template-columns:40px minmax(0,1fr) 40px;padding:2px 6px;gap:4px;font-size:10px}
- .team-lineup-advisor-cycle{width:40px;min-height:40px}
+ .team-lineup-advisor-title{grid-template-columns:24px minmax(0,1fr) 24px;padding:3px 8px;gap:4px}
  .team-lineup-advisor-body{grid-template-columns:52px minmax(0,1fr);gap:7px;padding:8px}
  .team-lineup-advisor-photo{width:52px}.team-lineup-advisor-photo-button{width:52px;height:62px}
  .team-lineup-advisor-text{font-size:12px;line-height:1.35}

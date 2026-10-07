@@ -35,7 +35,8 @@ final class ViewData
 
     public function player(array $p): object
     {
-        $bench = $p['scoring_status'] === 'BENCH';
+        // Non-scoring membership also includes IR and minors; only bench slots get the badge.
+        $bench = in_array(strtoupper((string)$p['roster_status']), ['BENCH', 'RESERVE'], true);
         $contract = trim((string)($p['contract'] ?? ''));
         $row = (object)array_merge($p, [
             'daily_participant'=>true, 'is_bench'=>$bench, 'is_ir'=>$p['roster_status']==='INJURED_RESERVE',
