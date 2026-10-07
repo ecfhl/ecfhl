@@ -163,8 +163,9 @@
                     </span>
                       @endif
                     </div>
+                    <div class="team-target-opponent">
                     @if($code!=='G')
-                    <div class="team-target-lines">
+                    <span class="team-target-lines">
                       <span class="pill team-target-status {{ str_starts_with($target['status'],'FA')?'target-fa':'target-waiver' }}">{{ $target['status'] }}</span>
                       @if(!empty($target['line_number']))
                         @if($code==='G' && $target['line_number']<=2)
@@ -174,9 +175,8 @@
                         @endif
                       @endif
                       @if(($target['pp_unit']??null)===1)<span class="pill pp1">PP1</span>@elseif(($target['pp_unit']??null)===2)<span class="pill pp2">PP2</span>@endif
-                    </div>
+                    </span>
                     @endif
-                    <div class="team-target-opponent">
                       @if(!empty($target['opponent']))<span>{{ $target['opponent'] }}@if(!empty($target['game_time'])) · {{ $target['game_time'] }}@endif</span>@endif
                       @if($code==='G')
                         @if(!empty($target['starting_status']))
