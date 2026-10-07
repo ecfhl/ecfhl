@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="light dark">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="/submit-guard.js?v=1"></script>
-    <script src="/navigation-feedback.js?v=3" defer></script>
+    <script src="/navigation-feedback.js?v={{ hash_file('sha256', base_path('public/navigation-feedback.js')) }}" defer></script>
     @php
         if (request()->is('/')) {$browserTitle='East Coast Fantasy Hockey League';}
         elseif(request()->is('players/*')&&isset($player)){$browserTitle='ECFHL - '.\App\Support\PlayerName::display($player->player_name);}
@@ -18,9 +18,17 @@
         else{$pageTitles=['seasons'=>'Seasons','standings'=>'Standings','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','daily-targets'=>'Daily Targets','job-status'=>'Collector Status','admin'=>'Admin','login'=>'Sign In','register'=>'Create Account','account'=>'Account','notifications'=>'Notifications','rules'=>'Rules'];$browserTitle='ECFHL - '.($pageTitles[request()->segment(1)]??'East Coast Fantasy Hockey League');}
         $showSeasonFilter=!request()->is('login','register','account','account/*','notifications','auth/*','rules','players','players/*','daily-targets','job-status','admin','admin/*','teams/current','teams/current/*','seasons','seasons/*','standings','teams/league');$showSeasonFilter=$showSeasonFilter&&!request()->is('/');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
         $currentTeamMenu=\App\Support\PublicData::teamMenu();
+        $loadingLeagueLogo=\App\Support\TeamImages::url('league-logo',160);
+        $loadingTeamSlug=request()->is('teams/current/*')&&isset($slug)?$slug:(request()->is('teams/*')&&!request()->is('teams/league','teams/current')&&isset($team['team'])?\Illuminate\Support\Str::slug($team['team']):null);
+        $loadingPageName=$loadingTeamSlug?($teamName??$team['team']??'Team'):'ECFHL';
+        $loadingPageLogo=$loadingTeamSlug?\App\Support\TeamImages::url($loadingTeamSlug,160):$loadingLeagueLogo;
+        $loadingTeamLogos=[];
+        foreach($currentTeamMenu as $loadingTeamName){$loadingSlug=\Illuminate\Support\Str::slug($loadingTeamName);$loadingTeamLogos[$loadingSlug]=['src'=>\App\Support\TeamImages::url($loadingSlug,160),'name'=>$loadingTeamName];}
+
     @endphp
     <title>{{ $browserTitle }}</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7"><link rel="shortcut icon" href="/favicon.svg?v=7"><link rel="apple-touch-icon" href="/ecfhl-logo.png?v=7"><link rel="stylesheet" href="/app.css?v=7"><link rel="stylesheet" href="/header-filters.css?v=4"><link rel="stylesheet" href="/navigation-feedback.css?v=2">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7"><link rel="shortcut icon" href="/favicon.svg?v=7"><link rel="apple-touch-icon" href="/ecfhl-logo.png?v=7"><link rel="stylesheet" href="/app.css?v=7"><link rel="stylesheet" href="/header-filters.css?v=4"><link rel="stylesheet" href="/navigation-feedback.css?v={{ hash_file('sha256', base_path('public/navigation-feedback.css')) }}">
+@stack('styles')
 <style>
 .league-logo-viewer{display:flex;border:0;padding:0;background:transparent;cursor:zoom-in;border-radius:8px}.league-logo-viewer:focus-visible{outline:2px solid #60a5fa;outline-offset:3px}.other-menu-heading{padding:5px 10px;color:#afc5d8;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em}.button:disabled{opacity:.6;cursor:not-allowed}.submit-pending{cursor:wait!important}.submit-pending::before{content:'';display:inline-block;width:12px;height:12px;margin-right:7px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-2px;animation:submit-spin .8s linear infinite}@keyframes submit-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.submit-pending::before{animation:none}}
 html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relative;display:flex;align-items:center}.push-team-picker{display:none;position:absolute;right:0;top:calc(100% + 8px);z-index:1200;width:230px;padding:10px;background:#082f4f;border:1px solid #6b88a0;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,.28)}.push-team-picker.open{display:block}.push-team-picker-label{display:block;margin:0 0 6px;color:#dce6f2;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}.push-team-select{width:100%;padding:7px 9px;border:1px solid rgba(255,255,255,.3);border-radius:8px;background:#0d3a5e;color:#fff;font-size:11px;font-weight:700}.push-switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;color:#dce6f2;font-size:10px;font-weight:800}.push-switch{position:relative;display:inline-flex;align-items:center;flex:0 0 auto;width:42px;height:22px;cursor:pointer}.push-switch input{position:absolute;opacity:0;pointer-events:none}.push-switch-track{position:absolute;inset:0;border-radius:999px;background:#64748b;border:1px solid rgba(255,255,255,.25);transition:.18s ease}.push-switch-thumb{position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.18s ease}.push-switch input:checked~.push-switch-track{background:#22c55e;border-color:#4ade80}.push-switch input:checked~.push-switch-thumb{transform:translateX(20px)}.push-switch input:focus-visible~.push-switch-track{outline:2px solid #93c5fd;outline-offset:2px}.push-notification-toggle{border:0;background:transparent;color:inherit;font-size:18px;line-height:1;cursor:pointer;padding:7px;border-radius:8px}.push-notification-toggle:hover{background:rgba(255,255,255,.08)}.push-notification-toggle.push-enabled{background:#dcfce7;color:#166534}.push-notification-toggle.push-blocked{opacity:.5}
@@ -48,6 +56,15 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('ecfhl-theme')||'light';}catch(e){}</script>
 </head>
 <body>
+<div id="navigation-loading" class="navigation-loading" data-league-logo="{{ $loadingLeagueLogo }}" data-page-logo="{{ $loadingPageLogo }}" data-page-name="{{ $loadingPageName }}" hidden>
+  <div class="navigation-loading-card">
+    <img id="navigation-loading-image" class="navigation-loading-image" src="{{ $loadingPageLogo }}" width="96" height="96" alt="{{ $loadingPageName }} logo">
+    <div class="navigation-loading-caption"><span class="navigation-spinner" aria-hidden="true"></span><span id="navigation-loading-message" role="status" aria-live="polite">Loading…</span></div>
+    <button id="navigation-cancel" type="button" hidden>Cancel loading</button>
+  </div>
+</div>
+<script id="navigation-team-logos" type="application/json">{!! json_encode($loadingTeamLogos, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) !!}</script>
+<script>document.getElementById('navigation-loading').hidden=false;</script>
 <header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><div class="brand"><button type="button" class="league-logo-viewer" data-team-icon-viewer data-league-logo data-team-name="East Coast Fantasy Hockey League" aria-label="View East Coast Fantasy Hockey League logo"><img class="brand-logo" src="{{ \App\Support\TeamImages::url('league-logo',160) }}" data-full-src="{{ \App\Support\TeamImages::url('league-logo') }}" alt="ECFHL league logo"></button><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></div></div><div class="header-actions"><a class="push-notification-toggle" href="/notifications" data-loading-label="Notifications" aria-label="Notification settings" title="Notification settings">🔔</a><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav" id="main-navigation">
 
 <a href="/" class="{{ request()->is('/')?'active':'' }}"><span class="nav-item-icon" aria-hidden="true">⌂</span>Home</a>
@@ -111,9 +128,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
   <a class="mobile-nav-players {{ request()->is('players','players/*')?'active':'' }}" href="/players" data-loading-label="Players" @if(request()->is('players')) aria-current="page" @endif><span class="mobile-nav-icon" aria-hidden="true">🏒</span><span class="mobile-nav-label">Players</span></a>
 </nav>
 <footer class="site-footer"><div class="shell footer-inner"><div><strong>ECFHL HISTORY</strong><br><span>2007–08 → present</span></div><div class="footer-right">Database-backed league archive</div></div></footer>
-<div id="navigation-loading" class="navigation-loading" hidden>
-  <div class="navigation-loading-card"><img id="navigation-loading-image" class="navigation-loading-image" alt="" hidden><span class="navigation-spinner" aria-hidden="true"></span><span id="navigation-loading-message" role="status" aria-live="polite">Loading…</span><button id="navigation-cancel" type="button" hidden>Cancel loading</button></div>
-</div>
+
 @guest
 @unless(request()->is('login','register','auth/*'))
 <dialog id="guest-signup-dialog" class="guest-signup-dialog" aria-labelledby="guest-signup-title" aria-describedby="guest-signup-description">
@@ -313,7 +328,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
  setup('goalies','Goaltenders',false,true);
  setup('forwards','Forwards',true,false);
- setup('defensemen','Defensemen',true,false);
+ setup('defensemen','Defense',true,false);
 });
 </script>
 <style>

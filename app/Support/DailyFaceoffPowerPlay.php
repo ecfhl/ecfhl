@@ -61,7 +61,7 @@ class DailyFaceoffPowerPlay
         $defenseSegment = substr($html, $defenseStart, $defenseEnd - $defenseStart);
         $defenseNames = $this->playerNames($defenseSegment);
         if (count($defenseNames) < 6) {
-            throw new RuntimeException("Expected at least 6 defensemen for {$team}, found ".count($defenseNames));
+            throw new RuntimeException("Expected at least 6 defense players for {$team}, found ".count($defenseNames));
         }
         foreach (array_slice($defenseNames, 0, 7) as $position => $name) {
             $lines[] = [

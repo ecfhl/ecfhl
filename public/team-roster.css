@@ -158,6 +158,7 @@ html[data-theme="dark"] .individual-team-page{--team-blue:#8dc9ff;--team-heading
 .team-player-data-row.team-game-live-row{background:var(--game-live)}
 .team-player-data-row.team-game-finished-row{background:var(--game-finished)}
 .individual-team-page .team-player-data-row.team-not-playing{background:var(--team-idle-bg);color:var(--muted)}
+.individual-team-page .team-player-data-row.team-ir-row,.individual-team-page .team-target-row.team-ir-row{background:var(--badge-red-bg);color:var(--text)}
 .team-player-data-row>td{background:transparent}
 .team-game-live,.team-home,.team-playing-text{color:var(--success);font-weight:650}
 .team-game-finished,.team-away{color:var(--muted);font-weight:650}
@@ -267,3 +268,5 @@ html[data-theme="dark"] .individual-team-page .team-lineup-advisor-title{backgro
  .team-target-stats{gap:10px}
 }
 @media(prefers-reduced-motion:reduce){.individual-team-page *{transition:none!important}}
+
+.team-target-empty{margin:0;padding:12px;color:var(--muted);font-size:12px}

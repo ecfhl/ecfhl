@@ -20,7 +20,7 @@
       @if($fantraxTeamUrl)
         <p class="team-fantrax-row">
           <a class="team-fantrax-link" href="{{ $fantraxTeamUrl }}" target="_blank" rel="noopener noreferrer">
-            <img src="/fantrax-icon.png" alt="">Fantrax ↗
+            <img src="/fantrax-icon.png" width="14" height="14" alt="">Fantrax ↗
           </a>
           <span class="team-roster-date" title="{{ \Carbon\CarbonImmutable::parse($date)->format('l, M j, Y') }}">{{ \Carbon\CarbonImmutable::parse($date)->format('D, M j') }}</span>
         </p>
@@ -138,12 +138,12 @@
           </tbody>
         </table></div></div>
 
-        @if(in_array($code,['F','D','G'],true) && count($targetGroups[$code] ?? []))
+        @if(in_array($code,['F','D','G'],true))
           <details class="team-targets" data-target-position="{{ $code }}">
-            <summary>{{ $group['label'] }} Targets <span>{{ count($targetGroups[$code] ?? []) }}</span></summary>
+            <summary>{{ ['F'=>'Forward','D'=>'Defense','G'=>'Goalie'][$code] }} Targets <span>{{ count($targetGroups[$code] ?? []) }}</span></summary>
             <div class="team-target-list">
-              @foreach(($targetGroups[$code] ?? []) as $target)
-                <div class="team-target-row {{ $code==='G'?'team-goalie-target':'' }}" data-target-row @if($loop->iteration>5) hidden @endif>
+              @forelse(($targetGroups[$code] ?? []) as $target)
+                <div class="team-target-row {{ $code==='G'?'team-goalie-target':'' }} {{ !empty($target['injury_status'])?'team-ir-row':'' }}" data-target-row @if($loop->iteration>5) hidden @endif>
                   <div class="team-target-main">
                     <div class="team-target-name">
                       <strong>{{ \App\Support\PlayerName::display($target['name']) }} ({{ $target['team'] }})</strong>
@@ -202,7 +202,9 @@
                     @endif
                   </div>
                 </div>
-              @endforeach
+              @empty
+                <p class="team-target-empty">No available targets for this date.</p>
+              @endforelse
               @if(count($targetGroups[$code] ?? [])>5)
                 <button type="button" class="team-target-more" data-target-more>View more</button>
               @endif
@@ -214,6 +216,10 @@
     </div>
   @endif
   </section>
+
+  <details class="card team-future-picks"><summary>2027 Draft Picks <span>{{ count($futurePicks['picks']) }} available</span></summary>
+    @if($futurePicks['franchise_id'])<div class="team-pick-grid">@forelse($futurePicks['picks'] as $pick)<div class="team-pick"><strong>Round {{ $pick['round'] }}</strong><small>{{ $pick['original_team'] }}</small></div>@empty<p class="muted">No picks remaining.</p>@endforelse</div><p class="muted team-pick-note">Based on recorded completed trades. Picks may be passed or traded once the roster is full; draft order will be set after the season.</p>@else<p class="muted">Draft ownership is unavailable for this team.</p>@endif
+  </details>
 
   <div class="team-summary-grid">
   @if($liveMatchup)
@@ -269,7 +275,7 @@
                 $p->scoring_status==='ACTIVE'
                 && strtoupper((string)$p->position)==='F'
               )->values(),
-              'Defensemen'=>$playing->filter(fn($p)=>
+              'Defense'=>$playing->filter(fn($p)=>
                 $p->scoring_status==='ACTIVE'
                 && strtoupper((string)$p->position)==='D'
               )->values(),
@@ -293,7 +299,7 @@
           $teamSections=$sectionGroups($teamAll);
           $oppSections=$sectionGroups($oppAll);
           $alignedSections=[];
-          foreach(['Forwards','Defensemen','Goalies','Bench','IR','Minors'] as $sectionName){
+          foreach(['Forwards','Defense','Goalies','Bench','IR','Minors'] as $sectionName){
             $left=$teamSections[$sectionName]??collect();
             $right=$oppSections[$sectionName]??collect();
             $max=max($left->count(),$right->count());
@@ -303,7 +309,7 @@
           }
         @endphp
         <div class="matchup-expanded team-live-expanded">
-          @foreach(['Forwards','Defensemen','Goalies','Bench','IR','Minors'] as $sectionName)
+          @foreach(['Forwards','Defense','Goalies','Bench','IR','Minors'] as $sectionName)
             @php
               $teamSectionRows=$alignedSections[$sectionName]['team'];
               $oppSectionRows=$alignedSections[$sectionName]['opp'];
@@ -531,11 +537,6 @@
     @endif
     </div>
   </section>
-
-    <details class="card team-future-picks"><summary>2027 Draft Picks <span>{{ count($futurePicks['picks']) }} available</span></summary>
-    @if($futurePicks['franchise_id'])<div class="team-pick-grid">@forelse($futurePicks['picks'] as $pick)<div class="team-pick"><strong>Round {{ $pick['round'] }}</strong><small>{{ $pick['original_team'] }}</small></div>@empty<p class="muted">No picks remaining.</p>@endforelse</div><p class="muted team-pick-note">Based on recorded completed trades. Picks may be passed or traded once the roster is full; draft order will be set after the season.</p>@else<p class="muted">Draft ownership is unavailable for this team.</p>@endif
-  </details>
-
 </div>
 </div>
 
@@ -550,15 +551,6 @@ document.addEventListener('DOMContentLoaded',()=>{
       liveMatchup.addEventListener('toggle',()=>sessionStorage.setItem(storageKey,liveMatchup.open?'1':'0'));
     }catch(e){}
   }
-  const targetStatePrefix='ecfhl-team-targets:{{ $slug }}:{{ $date }}:';
-  document.querySelectorAll('details.team-targets[data-target-position]').forEach(details=>{
-    const key=targetStatePrefix+details.dataset.targetPosition;
-    details.open=sessionStorage.getItem(key)==='1';
-    details.addEventListener('toggle',()=>{
-      sessionStorage.setItem(key,details.open?'1':'0');
-    });
-  });
-
   const advisorDataElement=document.getElementById('team-lineup-advisor-data');
   const advisorCard=document.querySelector('.team-lineup-advisor');
   if(advisorDataElement&&advisorCard){
@@ -740,6 +732,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 @endsection
-@push('scripts')
+@push('styles')
 <link rel="stylesheet" href="/team-roster.css?v={{ hash_file('sha256', base_path('public/team-roster.css')) }}">
 @endpush

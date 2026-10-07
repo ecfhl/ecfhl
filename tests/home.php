@@ -47,6 +47,7 @@ function homeDocument(string $html): DOMXPath {
     return new DOMXPath($doc);
 }
 $html=seasonRequest('/')->getContent();
+verifySeason(str_contains($html,'data-page-logo="'.App\Support\TeamImages::url('league-logo',160).'"') && str_contains($html,'data-page-name="ECFHL"'),'Home loading screen must use the ECFHL logo.');
 $xpath=homeDocument($html);
 $hasClass=fn($class)=>'contains(concat(" ",normalize-space(@class)," ")," '.$class.' ")';
 $expected=['F'=>[3,1,4],'D'=>[3,1,4],'G'=>[4,3,1]];

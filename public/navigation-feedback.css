@@ -2,7 +2,7 @@
 .main-nav a.nav-create-account:hover{background:#efc75d;color:#1f1a0d}
 .navigation-loading[hidden],.navigation-loading button[hidden]{display:none!important}
 .navigation-loading{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(7,26,51,.3);backdrop-filter:blur(2px);cursor:wait}
-.navigation-loading-card{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px;max-width:360px;padding:22px 26px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);font-weight:700;text-align:center}
+.navigation-loading-card{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;min-width:170px;max-width:360px;padding:22px 26px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);font-weight:700;text-align:center}
 .navigation-spinner{width:22px;height:22px;flex-shrink:0;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:navigation-spin .8s linear infinite}
 .navigation-loading-card button{width:100%;margin-top:4px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font:inherit;padding:8px 12px;border-radius:8px;cursor:pointer}
 .navigation-pending .nav-dropdown-menu{display:none!important}
@@ -23,4 +23,6 @@
 @media(prefers-reduced-motion:reduce){.navigation-spinner{animation:none}}
 @media(max-width:900px){.nav-toggle{display:block}.main-nav{display:none;position:absolute;left:0;right:0;top:58px;max-height:calc(100dvh - 58px);overflow-y:auto;background:var(--navy);padding:10px 16px;flex-direction:column;align-items:stretch}.nav-open .main-nav{display:flex}.main-nav a.nav-create-account{margin-bottom:6px;padding:12px!important;text-align:center!important}.guest-signup-dialog{padding:26px 22px}}
 
-.navigation-loading-image{display:block;width:min(280px,65vw);height:min(280px,65vw);object-fit:contain;flex-basis:100%}.navigation-loading-image[hidden]{display:none!important}
+.navigation-loading-image{display:block;width:96px;height:96px;object-fit:contain}.navigation-loading-image[hidden]{display:none!important}
+
+.navigation-loading-caption{display:flex;align-items:center;justify-content:center;gap:10px}

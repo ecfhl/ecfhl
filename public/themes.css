@@ -19,7 +19,7 @@ html[data-theme="light"]{color-scheme:light}
 .page-head .eyebrow{color:var(--eyebrow-text)}
 main .button.secondary{background:var(--panel-2);color:var(--text);border-color:var(--line)}
 main .hero .button.secondary{background:#ffffff10;color:#fff;border-color:#ffffff50}
-/* Shared assignment stickers apply to forwards and defensemen on every page. */
+/* Shared assignment stickers apply to forwards and defense on every page. */
 :is(.line-1,.pp1,.goalie-1,.tips-line-1,.tips-pp1,.tips-g1,.player-assignment-1,.tips-odds-good,.vegas-odds-good,.contract-green){background:var(--badge-green-bg)!important;color:var(--badge-green-text)!important;border-color:var(--badge-green-line)!important}
 :is(.line-2,.pp2,.goalie-2,.tips-line-2,.tips-pp2,.tips-g2,.player-assignment-2,.tips-odds-even,.vegas-odds-even,.contract-yellow){background:var(--badge-yellow-bg)!important;color:var(--badge-yellow-text)!important;border-color:var(--badge-yellow-line)!important}
 :is(.line-3,.tips-line-3,.player-assignment-3){background:var(--badge-orange-bg)!important;color:var(--badge-orange-text)!important;border-color:var(--badge-orange-line)!important}
@@ -126,3 +126,5 @@ html[data-theme="dark"] :is(.matchup-player-opponent,.team-player-opponent) > :i
  color:var(--text)!important;
 }
 html[data-theme="dark"] .ecfhl-scoreboard .matchup-expanded .matchup-player-opponent > :is(.team-playing-text,.team-home,.team-away){color:#fde68a!important}
+
+html[data-theme] .matchup-player-row.team-ir-row{background:var(--badge-red-bg)!important}

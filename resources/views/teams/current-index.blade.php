@@ -67,7 +67,7 @@
               $p->scoring_status==='ACTIVE'
               && strtoupper((string)$p->position)==='F'
             )->values(),
-            'Defensemen'=>$playing->filter(fn($p)=>
+            'Defense'=>$playing->filter(fn($p)=>
               $p->scoring_status==='ACTIVE'
               && strtoupper((string)$p->position)==='D'
             )->values(),
@@ -94,7 +94,7 @@
         $homeSections=$sectionGroups($homeAll);
 
         $alignedSections=[];
-        foreach(['Forwards','Defensemen','Goalies','Bench','IR','Minors'] as $sectionName){
+        foreach(['Forwards','Defense','Goalies','Bench','IR','Minors'] as $sectionName){
           $left=$awaySections[$sectionName]??collect();
           $right=$homeSections[$sectionName]??collect();
           $max=max($left->count(),$right->count());
@@ -155,7 +155,7 @@
 </summary>
 
         <div class="matchup-expanded">
-          @foreach(['Forwards','Defensemen','Goalies','Bench','IR','Minors'] as $sectionName)
+          @foreach(['Forwards','Defense','Goalies','Bench','IR','Minors'] as $sectionName)
             @php
               $awaySectionRows=$alignedSections[$sectionName]['away'];
               $homeSectionRows=$alignedSections[$sectionName]['home'];

@@ -321,7 +321,7 @@ Route::get('/standings', function(EcfhlData $data){
         $races=[];
         foreach([
             'art_ross'=>['Art Ross','🏒','Forwards','F'],
-            'norris'=>['Norris','🛡️','Defensemen','D'],
+            'norris'=>['Norris','🛡️','Defense','D'],
             'vezina'=>['Vezina','🥅','Goalies','G'],
             'calder'=>['Calder','🌱','Rookies',null],
         ] as $key=>[$label,$icon,$detail,$position]){
@@ -470,7 +470,7 @@ Route::get('/teams/current/{slug}', function(string $slug) {
     $rows=(new \App\Support\PlayerProjections)->decorate($rows);
 
     $positions=[];
-    foreach(['F'=>'Forwards','D'=>'Defensemen','G'=>'Goalies'] as $code=>$label){
+    foreach(['F'=>'Forwards','D'=>'Defense','G'=>'Goalies'] as $code=>$label){
         $positionRows=$rows->where('position',$code)->reject(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){
             $rank=fn($p)=>(!empty($p->daily_participant)?0:2)+((bool)$p->is_ir?1:0);
             $ar=$rank($a);$br=$rank($b);

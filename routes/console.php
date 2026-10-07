@@ -411,8 +411,8 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         }
 
         // Prioritize forward scoring. First look for a weak forward-for-forward
-        // upgrade. A defenseman can be converted into a forward only when the team
-        // carries at least five non-IR/non-minors defensemen.
+        // upgrade. A defense player can be converted into a forward only when the team
+        // carries at least five non-IR/non-minors defense players.
         if($hasMoveAvailable && empty($suggestions) && $eligibleDrops->isNotEmpty() && ($trailing || $lateWeek || $isWeekend)){
             $drop=$eligibleDrops
                 ->filter(fn($p)=>strtoupper((string)$p->position)==='F')

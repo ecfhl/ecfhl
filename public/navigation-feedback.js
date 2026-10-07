@@ -1,11 +1,11 @@
 (() => {
   let navigating = false;
-  let slowTimer;
   const loading = document.getElementById('navigation-loading');
   const message = document.getElementById('navigation-loading-message');
   const cancel = document.getElementById('navigation-cancel');
   const loadingImage = document.getElementById('navigation-loading-image');
-  let teamTimer;
+  let teamLogos = {};
+  try { teamLogos = JSON.parse(document.getElementById('navigation-team-logos')?.textContent || '{}'); } catch (_) {}
   const invitation = document.getElementById('guest-signup-dialog');
   const closeMenus = () => {
     document.body.classList.remove('nav-open');
@@ -14,13 +14,27 @@
   };
   const reset = () => {
     navigating = false;
-    clearTimeout(slowTimer);
-    clearTimeout(teamTimer);
-    if(loadingImage){loadingImage.hidden=true;loadingImage.removeAttribute('src');}
     document.body.classList.remove('navigation-pending');
     document.querySelector('main')?.removeAttribute('aria-busy');
     if (loading) loading.hidden = true;
     if (cancel) cancel.hidden = true;
+  };
+  const showLoading = (logo, name) => {
+    if (!loading) return;
+    if (loadingImage) {
+      loadingImage.src = logo;
+      loadingImage.alt = `${name} logo`;
+    }
+    document.body.classList.add('navigation-pending');
+    document.querySelector('main')?.setAttribute('aria-busy', 'true');
+    message.textContent = 'Loading…';
+    loading.hidden = false;
+  };
+  const destinationLogo = link => {
+    const target = new URL(link.href, location.href);
+    const teamMatch = target.pathname.match(/^\/teams\/(?:current\/)?([A-Za-z0-9-]+)\/?$/);
+    if (teamMatch && !['league', 'current'].includes(teamMatch[1])) return teamLogos[teamMatch[1]] || {src: `/team-icons/${teamMatch[1]}/thumbnail?size=160`, name: link.dataset.loadingLabel || link.textContent.trim() || 'Team'};
+    return {src: loading.dataset.leagueLogo, name: 'ECFHL'};
   };
   const isNavigation = (event, link) => {
     if (!link || event.button !== 0 || event.defaultPrevented || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return false;
@@ -28,7 +42,8 @@
     // In particular, the league logo lives inside the header's Overview link.
     if (event.target.closest('.brand-logo, [data-team-icon-viewer]')) return false;
     if (link.hasAttribute('download')) return false;
-    if (!link.closest('.site-header, .mobile-primary-nav, #guest-signup-dialog') && !new URL(link.href, location.href).pathname.startsWith('/teams/current/')) return false;
+    if (link.getAttribute('href') === '#') return false;
+    if (!link.closest('.site-header, .mobile-primary-nav, #guest-signup-dialog') && !/^\/teams\/(?:current\/)?[A-Za-z0-9-]+\/?$/.test(new URL(link.href, location.href).pathname)) return false;
     if (link.target && link.target !== '_self') return false;
     const url = new URL(link.href, location.href);
     if (!['http:', 'https:'].includes(url.protocol) || url.origin !== location.origin) return false;
@@ -49,19 +64,19 @@
     if (event.defaultPrevented || !loading) return;
     if (invitation?.open) invitation.close();
     navigating = true;
-    document.body.classList.add('navigation-pending');
-    document.querySelector('main')?.setAttribute('aria-busy', 'true');
-    message.textContent = 'Loading…';
-    loading.hidden = false;
-    const target=new URL(link.href,location.href);
-    slowTimer = setTimeout(() => {
-      message.textContent = 'Loading…';
-    }, 10000);
+    const logo = destinationLogo(link);
+    showLoading(logo.src, logo.name);
   });
   cancel?.addEventListener('click', () => { window.stop(); reset(); });
   document.querySelectorAll('.nav-dropdown').forEach(menu => menu.addEventListener('pointerleave', () => menu.classList.remove('menu-dismissed')));
   window.addEventListener('pageshow', () => { closeMenus(); reset(); });
   window.addEventListener('pagehide', reset);
+  window.addEventListener('beforeunload', () => {
+    if (!navigating && loading) showLoading(loading.dataset.pageLogo, loading.dataset.pageName);
+  });
+  // The server-rendered loader covers initial entry and refresh while the page parses.
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', reset, {once: true});
+  else reset();
 
   window.navigateToTeam=(url,label)=>{
     const link=document.createElement('a');link.href=url;link.dataset.loadingLabel=label;

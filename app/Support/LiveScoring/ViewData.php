@@ -13,7 +13,7 @@ final class ViewData
         foreach ($snapshot['teams'] as $id=>$team) {
             $players = $allPlayers->where('fantasy_team_id', (string)$id);
             $positions = [];
-            foreach (['F'=>'Forwards','D'=>'Defensemen','G'=>'Goalies'] as $pos=>$label) {
+            foreach (['F'=>'Forwards','D'=>'Defense','G'=>'Goalies'] as $pos=>$label) {
                 $positions[$pos] = ['label'=>$label,'rows'=>$players->where('position',$pos)->reject(fn($p)=>$p->roster_status==='MINORS')->values()];
             }
             $positions['M'] = ['label'=>'Minors','rows'=>$players->where('roster_status','MINORS')->values()];

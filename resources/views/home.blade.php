@@ -86,7 +86,7 @@
     </section>
     <section class="overview-home__card" data-overview-card="watch">
       <div class="overview-home__title"><h2>Player Watch</h2><a href="/players?availability=available&amp;positions=F,D,G&amp;dfo_sort=1&amp;sort=ec_proj&amp;direction=desc">Available players →</a></div>
-      @foreach(['F'=>'Forwards','D'=>'Defensemen','G'=>'Goalies'] as $position=>$label)
+      @foreach(['F'=>'Forwards','D'=>'Defense','G'=>'Goalies'] as $position=>$label)
         <div class="overview-player-group">
           <h3>{{ $label }}</h3>
           @forelse($scoringLeaders->get($position,collect()) as $player)

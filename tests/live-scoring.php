@@ -181,6 +181,7 @@ foreach ($expected as $date) {
     $response=$kernel->handle($request);
     checkLive($response->getStatusCode()===200, 'Live scoring render failed: '.$date.' '.$response->getContent());
     $html=$response->getContent();
+    checkLive(str_contains($html,'data-page-logo="'.App\Support\TeamImages::url('league-logo',160).'"') && str_contains($html,'data-page-name="ECFHL"'), 'Live Scoring must use the league loading logo');
     checkLive(preg_match_all('/<details\\b[^>]*class="[^"]*\\bmatchup-card\\b[^"]*"/', $html)===7, 'Rendered matchups incomplete');
     checkLive(str_contains($html, 'matchup-scoreboard.css') && substr_count($html, 'team-live-matchup-summary')>=7, 'Live Scoring does not use the shared Home scoreboard');
     checkLive(str_contains($html,'date=2026-10-01') && str_contains($html,'date=2026-10-02') && str_contains($html,'date=2026-10-03'), 'Date buttons wrong after Atlantic midnight');
@@ -198,6 +199,20 @@ foreach ($expected as $date) {
     $rosterSection=$rosterXPath->query('//section[contains(concat(" ",normalize-space(@class)," ")," team-roster-section ")]')->item(0);
     checkLive($rosterSection!==null, 'Roster section missing');
     checkLive(strpos($rosterHtml,'class="team-roster-section"')<strpos($rosterHtml,'class="team-summary-grid"'), 'Roster must precede matchup and advisor');
+    $picksPosition=strpos($rosterHtml,'class="card team-future-picks"');
+    checkLive($picksPosition>strpos($rosterHtml,'class="team-roster-section"') && $picksPosition<strpos($rosterHtml,'class="team-summary-grid"'), 'Draft picks must follow the roster before matchup and advisor');
+    foreach(['F'=>'Forward','D'=>'Defense','G'=>'Goalie'] as $position=>$label){
+        $targets=$rosterXPath->query('//details[@data-target-position="'.$position.'"]')->item(0);
+        checkLive($targets!==null && !$targets->hasAttribute('open'), $label.' targets must render collapsed even when empty');
+        checkLive(str_contains($targets->firstElementChild->textContent,$label.' Targets'), 'Wrong target heading');
+    }
+    checkLive(!str_contains($rosterHtml,'ecfhl-team-targets:'), 'Targets must default collapsed instead of restoring a saved open state');
+    checkLive($rosterXPath->query('//head/link[contains(@href,"/team-roster.css")]')->length===1, 'Roster styles must load in the head before first paint');
+    $fantraxImage=$rosterXPath->query('//img[@src="/fantrax-icon.png"]')->item(0);
+    checkLive($fantraxImage?->getAttribute('width')==='14' && $fantraxImage->getAttribute('height')==='14', 'Fantrax badge must reserve its compact dimensions before styling');
+    $loader=$rosterXPath->query('//*[@id="navigation-loading"]')->item(0);
+    checkLive($loader?->getAttribute('data-page-logo')===App\Support\TeamImages::url($loneSlug,160), 'Team loading screen must use the team logo');
+    checkLive($loader->getAttribute('data-league-logo')===App\Support\TeamImages::url('league-logo',160), 'Other pages must use the league loading logo');
     checkLive($rosterXPath->query('//*[@id="team-hide-non-playing"]')->length===0, 'Removed roster filter still rendered');
     $contractBadges=$rosterXPath->query('.//span[contains(concat(" ",normalize-space(@class)," ")," team-contract-sticker ")]',$rosterSection);
     foreach($contractBadges as $badge){

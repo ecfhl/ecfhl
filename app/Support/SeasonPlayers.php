@@ -213,7 +213,7 @@ final class SeasonPlayers
                 $key = $this->assignmentKey($row->nhl_team, $row->player_name);
                 $goalie = $row->position === 'G';
                 $unit = $goalie ? null : ($pp[$key]->pp_unit ?? null);
-                // The Canucks' forward and defenseman share a name.
+                // The Canucks' forward and defense player share a name.
                 if ($key === 'VAN|eliaspettersson' && $row->position !== 'F') $unit = null;
                 return [
                     'player_id'=>$row->player_id, 'position'=>$row->position, 'name'=>$row->player_name, 'goalie'=>$goalie,

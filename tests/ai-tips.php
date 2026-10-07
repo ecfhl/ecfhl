@@ -79,11 +79,11 @@ DB::table('active_starting_goalies')->insert([
 
 $groups = AiTips::groups([], $date);
 verifyTips(count($groups['F']) === 13, 'All available forwards should be returned for incremental display.');
-verifyTips(count($groups['D']) === 12, 'All available defensemen should be returned for incremental display.');
+verifyTips(count($groups['D']) === 12, 'All available defense players should be returned for incremental display.');
 verifyTips(count($groups['G']) === 12, 'Confirmed goalie teammates must remain visible.');
 verifyTips(count(array_filter($groups['G'], fn($g)=>$g['not_starting'])) === 11, 'Confirmed goalie teammates must be disabled.');
 verifyTips($groups['F'][0]['name'] === 'Waiver player', 'Include waivers and rank by projected points.');
-verifyTips($groups['D'][0]['projected_points'] === 12.0, 'Sort defensemen descending.');
+verifyTips($groups['D'][0]['projected_points'] === 12.0, 'Sort defense players descending.');
 verifyTips(! array_intersect(['Rostered','Wrong day','No game'], array_column($groups['F'], 'name')), 'Exclude unavailable players, other dates and players without games.');
 verifyTips(AiTips::groups([], '2026-09-30')['F'] === [], 'Do not reuse another date.');
 
@@ -96,6 +96,6 @@ $html = view('ai-tips', [
     'snapshot'=>['date'=>$date],
     'groups'=>$groups,
 ])->render();
-verifyTips(str_contains($html, 'Forwards (') && str_contains($html, 'Defensemen (') && str_contains($html, 'Goaltenders ('), 'Render database-backed Daily Targets sections.');
+verifyTips(str_contains($html, 'Forwards (') && str_contains($html, 'Defense (') && str_contains($html, 'Goaltenders ('), 'Render database-backed Daily Targets sections.');
 
 echo "AI Tips checks passed.\n";
