@@ -51,6 +51,169 @@
     </div>
   </div>
 
+  <section class="team-roster-section" aria-label="Roster">
+  @php
+    $hasRows=collect($positions)->sum(fn($g)=>$g['rows']->count())>0;
+  @endphp
+  @if(!$hasRows)
+    <div class="card"><h2>No roster data yet</h2><p class="subtle">Run the Fantasy Team Rosters collector from Collector Status to populate this team.</p>@if(auth()->user()?->is_admin)<a class="button primary" href="/job-status">Collector Status</a>@endif</div>
+  @else
+  <div class="team-roster-heading"><h2>Roster</h2></div>
+    <div class="team-roster-grid">
+    @foreach($positions as $code=>$group)
+      @php
+        $totalCount=$group['rows']->reject(fn($p)=>(bool)$p->is_ir)->count();
+      @endphp
+      <section class="team-position-section" data-roster-position="{{ $code }}">
+        <div class="table-card"><div class="table-scroll"><table class="data-table team-roster-table">
+          <tbody>
+            <tr class="team-roster-group team-playing-group">
+              <td colspan="2">
+                <div class="team-playing-header">
+                  <span>{{ $group['label'] }} ({{ $totalCount }})</span>
+                  <span class="team-score-headings"><span>ECFHL*</span><span>Today</span></span>
+                </div>
+              </td>
+            </tr>
+            @foreach($group['rows'] as $player)
+                @php
+                  $isPlaying=(bool)$player->daily_participant;
+                @endphp
+                <tr class="team-player-data-row {{ !$isPlaying?'team-not-playing':'' }} {{ $player->is_ir?'team-ir-row':'' }} {{ $player->is_bench?'team-bench-row':'' }} {{ strtoupper((string)$player->roster_status)==='MINORS'?'team-minors-row':'' }} {{ !empty($player->game_in_progress)?'team-game-live-row':'' }} {{ !empty($player->game_finished)?'team-game-finished-row':'' }}" data-playing="{{ $isPlaying?'1':'0' }}">
+                  <td data-label="Player">
+                    <div class="team-player-name-wrap">
+                      <strong><a class="player-name-link" data-player-stats href="/players/{{ rawurlencode($player->player_id) }}" title="{{ \App\Support\PlayerName::display($player->player_name) }}@if($player->nhl_team) ({{ $player->nhl_team }})@endif"><span class="team-player-display-name">{{ \App\Support\PlayerName::display($player->player_name) }}</span>@if($player->nhl_team)<span class="team-player-nhl-team"> ({{ $player->nhl_team }})</span>@endif</a></strong>
+                      @if(!empty($player->contract_label))
+                        <span class="pill team-contract-sticker {{ $player->contract_class }}">{{ $player->contract_label }}</span>
+                      @endif
+                      @if($player->is_ir)
+                        <span class="pill team-ir">IR</span>
+                      @endif
+                      @if(strtoupper((string)$player->position)==='G' && !empty($player->starting_status))
+                        <span class="pill goalie-status {{ $player->starting_status_class }}">{{ $player->starting_status }}</span>
+                      @endif
+                    </div>
+                    <div class="team-player-lines">
+                      @if($player->line_number)
+                        @if(strtoupper((string)$player->position)==='G' && $player->line_number<=2)
+                          <span class="pill goalie-{{ $player->line_number }}">G{{ $player->line_number }}</span>
+                        @elseif($player->line_number<=4)
+                          <span class="pill line-{{ $player->line_number }}">L{{ $player->line_number }}</span>
+                        @endif
+                      @endif
+                      @if($player->pp_unit===1)
+                        <span class="pill pp1">PP1</span>
+                      @elseif($player->pp_unit===2)
+                        <span class="pill pp2">PP2</span>
+                      @endif
+                      @if($player->is_bench)
+                        <span class="pill team-bench">Bench</span>
+                      @endif
+                    </div>
+                    <div class="team-player-opponent">
+                      @if(!empty($player->live_opponent_display))
+                        <span class="{{ !empty($player->game_in_progress)?'team-game-live':'' }} {{ !empty($player->game_finished)?'team-game-finished':'' }}">{{ $player->live_opponent_display }}</span>
+                      @elseif($player->opponent)
+                        <span class="{{ $player->home_away==='AWAY'?'team-away':'team-home' }}">{{ $player->home_away==='AWAY'?'@':'vs' }} {{ $player->opponent }}@if($player->game_time) · {{ $player->game_time }}@endif</span>
+                      @elseif($player->daily_participant)
+                        <span class="team-playing-text">Playing</span>
+                      @endif
+                    </div>
+                  </td>
+                  <td data-label="Proj." class="num">
+                    <div class="team-proj-wrap">
+                      @if(strtoupper((string)$player->position)==='G' && $player->vegas_odds!==null)
+                        <span class="pill goalie-vegas-odds goalie-roster-vegas-odds {{ $player->vegas_odds_class }}">{{ $player->vegas_odds>0?'+':'' }}{{ $player->vegas_odds }}</span>
+                      @endif
+                      <div class="team-score-columns">
+                        <span class="team-projected-fpts">{{ $player->projected_fpts_per_game!==null?number_format($player->projected_fpts_per_game,2):'—' }}</span>
+                        <strong class="team-today-fpts">{{ $isPlaying ? number_format($player->today_fpts ?? 0, 0) : '' }}</strong>
+                      </div>
+
+                    </div>
+                  </td>
+                </tr>
+            @endforeach
+          </tbody>
+        </table></div></div>
+
+        @if(in_array($code,['F','D','G'],true) && count($targetGroups[$code] ?? []))
+          <details class="team-targets" data-target-position="{{ $code }}">
+            <summary>{{ $group['label'] }} Targets <span>{{ count($targetGroups[$code] ?? []) }}</span></summary>
+            <div class="team-target-list">
+              @foreach(($targetGroups[$code] ?? []) as $target)
+                <div class="team-target-row {{ $code==='G'?'team-goalie-target':'' }}" data-target-row @if($loop->iteration>5) hidden @endif>
+                  <div class="team-target-main">
+                    <div class="team-target-name">
+                      <strong>{{ \App\Support\PlayerName::display($target['name']) }} ({{ $target['team'] }})</strong>
+                      @if($code==='G')@include('account.goalie-bell',['goalie'=>$target])@endif
+                      @if(!empty($target['injury_status']))<span class="pill team-ir">IR</span>@endif
+                      @if($code==='G')
+                    <span class="team-target-lines">
+                      <span class="pill team-target-status {{ str_starts_with($target['status'],'FA')?'target-fa':'target-waiver' }}">{{ $target['status'] }}</span>
+                      @if(!empty($target['line_number']))
+                        @if($code==='G' && $target['line_number']<=2)
+                          <span class="pill goalie-{{ $target['line_number'] }}">G{{ $target['line_number'] }}</span>
+                        @elseif($target['line_number']<=4)
+                          <span class="pill line-{{ $target['line_number'] }}">L{{ $target['line_number'] }}</span>
+                        @endif
+                      @endif
+                      @if(($target['pp_unit']??null)===1)<span class="pill pp1">PP1</span>@elseif(($target['pp_unit']??null)===2)<span class="pill pp2">PP2</span>@endif
+                    </span>
+                      @endif
+                    </div>
+                    @if($code!=='G')
+                    <div class="team-target-lines">
+                      <span class="pill team-target-status {{ str_starts_with($target['status'],'FA')?'target-fa':'target-waiver' }}">{{ $target['status'] }}</span>
+                      @if(!empty($target['line_number']))
+                        @if($code==='G' && $target['line_number']<=2)
+                          <span class="pill goalie-{{ $target['line_number'] }}">G{{ $target['line_number'] }}</span>
+                        @elseif($target['line_number']<=4)
+                          <span class="pill line-{{ $target['line_number'] }}">L{{ $target['line_number'] }}</span>
+                        @endif
+                      @endif
+                      @if(($target['pp_unit']??null)===1)<span class="pill pp1">PP1</span>@elseif(($target['pp_unit']??null)===2)<span class="pill pp2">PP2</span>@endif
+                    </div>
+                    @endif
+                    <div class="team-target-opponent">
+                      @if(!empty($target['opponent']))<span>{{ $target['opponent'] }}@if(!empty($target['game_time'])) · {{ $target['game_time'] }}@endif</span>@endif
+                      @if($code==='G')
+                        @if(!empty($target['starting_status']))
+                          <span class="pill goalie-status {{ $target['starting_status_class'] ?? 'goalie-status-na' }}">{{ $target['starting_status'] }}</span>
+                        @else
+                          <span class="pill goalie-status goalie-status-na">NA</span>
+                        @endif
+                      @endif
+                    @if(($target['position'] ?? '') === 'G' && array_key_exists('vegas_odds',$target) && $target['vegas_odds']!==null)
+                      <span class="pill goalie-vegas-odds {{ $target['vegas_odds_class'] }}">{{ $target['vegas_odds']>0?'+':'' }}{{ (int)$target['vegas_odds'] }}</span>
+                    @endif
+                    </div>
+                  </div>
+                  <div class="team-target-actions">
+                    <div class="team-target-stats" title="Season / Last 21 / Last 7 / My Projection">
+                      <span><small>SEASON</small>{{ isset($target['season_fpts_per_game'])&&$target['season_fpts_per_game']!==null?number_format($target['season_fpts_per_game'],2):'—' }}</span>
+                      <span><small>L21</small>{{ isset($target['fpts_per_game_21d'])&&$target['fpts_per_game_21d']!==null?number_format($target['fpts_per_game_21d'],2):'—' }}</span>
+                      <span><small>L7</small>{{ isset($target['fpts_per_game_7d'])&&$target['fpts_per_game_7d']!==null?number_format($target['fpts_per_game_7d'],2):'—' }}</span>
+                      <strong class="team-target-proj"><small>ECFHL*</small>{{ $target['projected_points']!==null?number_format($target['projected_points'],2):'—' }}</strong>
+                    </div>
+                    @if(!empty($target['add_url']))
+                      <a class="team-target-add" href="{{ $target['add_url'] }}" target="_blank" rel="noopener noreferrer">+ Add</a>
+                    @endif
+                  </div>
+                </div>
+              @endforeach
+              @if(count($targetGroups[$code] ?? [])>5)
+                <button type="button" class="team-target-more" data-target-more>View more</button>
+              @endif
+            </div>
+          </details>
+        @endif
+      </section>
+    @endforeach
+    </div>
+  @endif
+  </section>
+
   <div class="team-summary-grid">
   @if($liveMatchup)
     @php
@@ -371,158 +534,7 @@
     <details class="card team-future-picks"><summary>2027 Draft Picks <span>{{ count($futurePicks['picks']) }} available</span></summary>
     @if($futurePicks['franchise_id'])<div class="team-pick-grid">@forelse($futurePicks['picks'] as $pick)<div class="team-pick"><strong>Round {{ $pick['round'] }}</strong><small>{{ $pick['original_team'] }}</small></div>@empty<p class="muted">No picks remaining.</p>@endforelse</div><p class="muted team-pick-note">Based on recorded completed trades. Picks may be passed or traded once the roster is full; draft order will be set after the season.</p>@else<p class="muted">Draft ownership is unavailable for this team.</p>@endif
   </details>
-  @php
-    $hasRows=collect($positions)->sum(fn($g)=>$g['rows']->count())>0;
-  @endphp
-  @if(!$hasRows)
-    <div class="card"><h2>No roster data yet</h2><p class="subtle">Run the Fantasy Team Rosters collector from Collector Status to populate this team.</p>@if(auth()->user()?->is_admin)<a class="button primary" href="/job-status">Collector Status</a>@endif</div>
-  @else
-  <div class="team-roster-filter-bar"><h2>Roster</h2>
-      <label class="team-roster-filter-switch">
-        <input type="checkbox" id="team-hide-non-playing">
-        <span class="team-roster-filter-track"><span class="team-roster-filter-thumb"></span></span>
-        <span class="team-roster-filter-label">Hide non-playing</span>
-      </label>
-    </div>
-    <div class="team-roster-grid">
-    @foreach($positions as $code=>$group)
-      @php
-        $playingCount=$group['rows']->filter(fn($p)=>(bool)$p->daily_participant)->reject(fn($p)=>(bool)$p->is_ir)->count();
-        $totalCount=$group['rows']->reject(fn($p)=>(bool)$p->is_ir)->count();
-      @endphp
-      <section class="team-position-section" data-roster-position="{{ $code }}">
-        <div class="table-card"><div class="table-scroll"><table class="data-table team-roster-table">
-          <tbody>
-            <tr class="team-roster-group team-playing-group">
-              <td colspan="2">
-                <div class="team-playing-header">
-                  <span>{{ $group['label'] }} (<span data-position-count data-playing-count="{{ $playingCount }}" data-total-count="{{ $totalCount }}">{{ $totalCount }}</span>)</span>
-                  <span class="team-score-headings"><span>ECFHL*</span><span>Today</span></span>
-                </div>
-              </td>
-            </tr>
-            @foreach($group['rows'] as $player)
-                @php
-                  $isPlaying=(bool)$player->daily_participant;
-                @endphp
-                <tr class="team-player-data-row {{ !$isPlaying?'team-not-playing':'' }} {{ $player->is_ir?'team-ir-row':'' }} {{ $player->is_bench?'team-bench-row':'' }} {{ strtoupper((string)$player->roster_status)==='MINORS'?'team-minors-row':'' }} {{ !empty($player->game_in_progress)?'team-game-live-row':'' }} {{ !empty($player->game_finished)?'team-game-finished-row':'' }}" data-playing="{{ $isPlaying?'1':'0' }}">
-                  <td data-label="Player">
-                    <div class="team-player-name-wrap">
-                      <strong><a class="player-name-link" data-player-stats href="/players/{{ rawurlencode($player->player_id) }}">{{ \App\Support\PlayerName::display($player->player_name) }}@if($player->nhl_team) ({{ $player->nhl_team }})@endif</a></strong>
-                      @if($player->is_ir)
-                        <span class="pill team-ir">IR</span>
-                      @endif
-                      @if(strtoupper((string)$player->position)==='G' && !empty($player->starting_status))
-                        <span class="pill goalie-status {{ $player->starting_status_class }}">{{ $player->starting_status }}</span>
-                      @endif
-                    </div>
-                    <div class="team-player-lines">
-                      @if(!empty($player->contract_label))
-                        <span class="pill team-contract-sticker {{ $player->contract_class }}">{{ $player->contract_label }}</span>
-                      @endif
-                      @if($player->line_number)
-                        @if(strtoupper((string)$player->position)==='G' && $player->line_number<=2)
-                          <span class="pill goalie-{{ $player->line_number }}">G{{ $player->line_number }}</span>
-                        @elseif($player->line_number<=4)
-                          <span class="pill line-{{ $player->line_number }}">L{{ $player->line_number }}</span>
-                        @endif
-                      @endif
-                      @if($player->pp_unit===1)
-                        <span class="pill pp1">PP1</span>
-                      @elseif($player->pp_unit===2)
-                        <span class="pill pp2">PP2</span>
-                      @endif
-                      @if($player->is_bench)
-                        <span class="pill team-bench">Bench</span>
-                      @endif
-                    </div>
-                    <div class="team-player-opponent">
-                      @if(!empty($player->live_opponent_display))
-                        <span class="{{ !empty($player->game_in_progress)?'team-game-live':'' }} {{ !empty($player->game_finished)?'team-game-finished':'' }}">{{ $player->live_opponent_display }}</span>
-                      @elseif($player->opponent)
-                        <span class="{{ $player->home_away==='AWAY'?'team-away':'team-home' }}">{{ $player->home_away==='AWAY'?'@':'vs' }} {{ $player->opponent }}@if($player->game_time) · {{ $player->game_time }}@endif</span>
-                      @elseif($player->daily_participant)
-                        <span class="team-playing-text">Playing</span>
-                      @endif
-                    </div>
-                  </td>
-                  <td data-label="Proj." class="num">
-                    <div class="team-proj-wrap">
-                      @if(strtoupper((string)$player->position)==='G' && $player->vegas_odds!==null)
-                        <span class="pill goalie-vegas-odds goalie-roster-vegas-odds {{ $player->vegas_odds_class }}">{{ $player->vegas_odds>0?'+':'' }}{{ $player->vegas_odds }}</span>
-                      @endif
-                      <div class="team-score-columns">
-                        <span class="team-projected-fpts">{{ $player->projected_fpts_per_game!==null?number_format($player->projected_fpts_per_game,2):'—' }}</span>
-                        <strong class="team-today-fpts">{{ $isPlaying ? number_format($player->today_fpts ?? 0, 0) : '' }}</strong>
-                      </div>
 
-                    </div>
-                  </td>
-                </tr>
-            @endforeach
-          </tbody>
-        </table></div></div>
-
-        @if(in_array($code,['F','D','G'],true) && count($targetGroups[$code] ?? []))
-          <details class="team-targets" data-target-position="{{ $code }}">
-            <summary>{{ $group['label'] }} Targets <span>{{ count($targetGroups[$code] ?? []) }}</span></summary>
-            <div class="team-target-list">
-              @foreach(($targetGroups[$code] ?? []) as $target)
-                <div class="team-target-row" data-target-row @if($loop->iteration>5) hidden @endif>
-                  <div class="team-target-main">
-                    <div class="team-target-name">
-                      <strong>{{ \App\Support\PlayerName::display($target['name']) }} ({{ $target['team'] }})</strong>
-                      @if($code==='G')@include('account.goalie-bell',['goalie'=>$target])@endif
-                      @if(!empty($target['injury_status']))<span class="pill team-ir">IR</span>@endif
-                    </div>
-                    <div class="team-target-lines">
-                      <span class="pill team-target-status {{ str_starts_with($target['status'],'FA')?'target-fa':'target-waiver' }}">{{ $target['status'] }}</span>
-                      @if(!empty($target['line_number']))
-                        @if($code==='G' && $target['line_number']<=2)
-                          <span class="pill goalie-{{ $target['line_number'] }}">G{{ $target['line_number'] }}</span>
-                        @elseif($target['line_number']<=4)
-                          <span class="pill line-{{ $target['line_number'] }}">L{{ $target['line_number'] }}</span>
-                        @endif
-                      @endif
-                      @if(($target['pp_unit']??null)===1)<span class="pill pp1">PP1</span>@elseif(($target['pp_unit']??null)===2)<span class="pill pp2">PP2</span>@endif
-                    </div>
-                    <div class="team-target-opponent">
-                      @if(!empty($target['opponent']))<span>{{ $target['opponent'] }}@if(!empty($target['game_time'])) · {{ $target['game_time'] }}@endif</span>@endif
-                      @if($code==='G')
-                        @if(!empty($target['starting_status']))
-                          <span class="pill goalie-status {{ $target['starting_status_class'] ?? 'goalie-status-na' }}">{{ $target['starting_status'] }}</span>
-                        @else
-                          <span class="pill goalie-status goalie-status-na">NA</span>
-                        @endif
-                      @endif
-                    </div>
-                  </div>
-                  <div class="team-target-actions">
-                    @if(($target['position'] ?? '') === 'G' && array_key_exists('vegas_odds',$target) && $target['vegas_odds']!==null)
-                      <span class="pill goalie-vegas-odds {{ $target['vegas_odds_class'] }}">{{ $target['vegas_odds']>0?'+':'' }}{{ (int)$target['vegas_odds'] }}</span>
-                    @endif
-                    <div class="team-target-stats" title="Season / Last 21 / Last 7 / My Projection">
-                      <span><small>SEASON</small>{{ isset($target['season_fpts_per_game'])&&$target['season_fpts_per_game']!==null?number_format($target['season_fpts_per_game'],2):'—' }}</span>
-                      <span><small>L21</small>{{ isset($target['fpts_per_game_21d'])&&$target['fpts_per_game_21d']!==null?number_format($target['fpts_per_game_21d'],2):'—' }}</span>
-                      <span><small>L7</small>{{ isset($target['fpts_per_game_7d'])&&$target['fpts_per_game_7d']!==null?number_format($target['fpts_per_game_7d'],2):'—' }}</span>
-                      <strong class="team-target-proj"><small>ECFHL*</small>{{ $target['projected_points']!==null?number_format($target['projected_points'],2):'—' }}</strong>
-                    </div>
-                    @if(!empty($target['add_url']))
-                      <a class="team-target-add" href="{{ $target['add_url'] }}" target="_blank" rel="noopener noreferrer">+ Add</a>
-                    @endif
-                  </div>
-                </div>
-              @endforeach
-              @if(count($targetGroups[$code] ?? [])>5)
-                <button type="button" class="team-target-more" data-target-more>View more</button>
-              @endif
-            </div>
-          </details>
-        @endif
-      </section>
-    @endforeach
-    </div>
-  @endif
 </div>
 </div>
 
@@ -723,22 +735,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   });
 
-  const showNonPlaying=document.getElementById('team-hide-non-playing');
-  if(showNonPlaying){
-    showNonPlaying.checked=false;
 
-    const applyNonPlaying=()=>{
-      const show=!showNonPlaying.checked;
-      document.querySelector('.current-team-page')?.classList.toggle('team-hide-non-playing',!show);
-      document.querySelectorAll('[data-position-count]').forEach(el=>{
-        el.textContent=show?(el.dataset.totalCount||'0'):(el.dataset.playingCount||'0');
-      });
-
-    };
-
-    showNonPlaying.addEventListener('change',applyNonPlaying);
-    applyNonPlaying();
-  }
 });
 </script>
 @endsection

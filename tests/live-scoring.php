@@ -191,6 +191,23 @@ foreach ($expected as $date) {
     $response=$kernel->handle($request);
     checkLive($response->getStatusCode()===200, 'My Team matchup render failed: '.$date.' '.substr(strip_tags($response->getContent()),0,1500));
     if ($date==='2026-10-02') checkLive(str_contains($response->getContent(),'Carlsson, Leo'), 'My Team still depended on old participation flags');
+    $rosterHtml=$response->getContent();
+    $rosterDocument=new DOMDocument();
+    @$rosterDocument->loadHTML('<?xml encoding="UTF-8">'.$rosterHtml);
+    $rosterXPath=new DOMXPath($rosterDocument);
+    $rosterSection=$rosterXPath->query('//section[contains(concat(" ",normalize-space(@class)," ")," team-roster-section ")]')->item(0);
+    checkLive($rosterSection!==null, 'Roster section missing');
+    checkLive(strpos($rosterHtml,'class="team-roster-section"')<strpos($rosterHtml,'class="team-summary-grid"'), 'Roster must precede matchup and advisor');
+    checkLive($rosterXPath->query('//*[@id="team-hide-non-playing"]')->length===0, 'Removed roster filter still rendered');
+    $contractBadges=$rosterXPath->query('.//span[contains(concat(" ",normalize-space(@class)," ")," team-contract-sticker ")]',$rosterSection);
+    foreach($contractBadges as $badge){
+        checkLive(str_contains($badge->parentNode->getAttribute('class'),'team-player-name-wrap'), 'Contract separated from the player name');
+        checkLive($badge->previousElementSibling?->nodeName==='strong', 'Contract must follow player/team');
+    }
+    foreach($rosterXPath->query('.//tr[@data-playing="0"]',$rosterSection) as $idlePlayer){
+        checkLive(str_contains($idlePlayer->getAttribute('class'),'team-not-playing'), 'Non-playing player missing its visual state');
+    }
+
     $kernel->terminate($request,$response);
 }
 CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-10-03T07:00:00Z'));

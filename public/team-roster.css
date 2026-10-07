@@ -1,6 +1,6 @@
 /* Individual roster pages share the Teams directory's surfaces and spacing. */
-.individual-team-page{max-width:960px;padding-top:18px;padding-bottom:24px;--team-blue:#2468ab;--team-heading-bg:#eaf0f7;--team-heading-text:#52657e}
-html[data-theme="dark"] .individual-team-page{--team-blue:#8dc9ff;--team-heading-bg:#1b2e46;--team-heading-text:#a9bed8}
+.individual-team-page{max-width:960px;padding-top:18px;padding-bottom:24px;--team-blue:#2468ab;--team-heading-bg:#eaf0f7;--team-heading-text:#52657e;--team-idle-bg:#fff8e7}
+html[data-theme="dark"] .individual-team-page{--team-blue:#8dc9ff;--team-heading-bg:#1b2e46;--team-heading-text:#a9bed8;--team-idle-bg:#342e21}
 .team-roster-breadcrumb{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:11px;color:var(--muted);margin-bottom:12px}
 .team-roster-breadcrumb a{display:inline-flex;align-items:center;min-height:32px;font-size:12px;color:var(--team-blue);font-weight:700;text-decoration:none}
 .team-page-head{padding:0 0 16px}
@@ -115,14 +115,9 @@ html[data-theme="dark"] .individual-team-page{--team-blue:#8dc9ff;--team-heading
 .team-pick{padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--panel-2)}
 .team-pick strong,.team-pick small{display:block}.team-pick strong{font-size:11px}.team-pick small{font-size:10px;color:var(--muted)}
 .team-future-picks>.muted{font-size:10px;color:var(--muted);margin:10px 12px}
-.team-roster-filter-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
-.team-roster-filter-bar h2{font-size:16px;margin:0;font-weight:800}
-.team-roster-filter-switch{display:inline-flex;align-items:center;gap:7px;min-height:36px;font-size:11px;color:var(--muted);font-weight:650;cursor:pointer}
-.team-roster-filter-switch input{position:absolute;opacity:0;pointer-events:none}
-.team-roster-filter-track{position:relative;width:34px;height:20px;background:#a6b3c4;border-radius:20px;transition:background .15s}
-.team-roster-filter-thumb{position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:white;transition:transform .15s}
-.team-roster-filter-switch input:checked+.team-roster-filter-track{background:#2468ab}
-.team-roster-filter-switch input:checked+.team-roster-filter-track .team-roster-filter-thumb{transform:translateX(14px)}
+.team-roster-section{margin-bottom:18px}
+.team-roster-heading{margin-bottom:10px}
+.team-roster-heading h2{font-size:16px;margin:0;font-weight:800}
 .team-roster-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start}
 .team-position-section{min-width:0;margin:0}
 .team-position-section .table-card{border-radius:10px;box-shadow:0 3px 12px rgba(13,31,55,.04);border-color:var(--line)}
@@ -139,9 +134,12 @@ html[data-theme="dark"] .individual-team-page{--team-blue:#8dc9ff;--team-heading
 .team-proj-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
 .team-projected-fpts{font-size:12px;color:var(--muted);font-weight:650;align-self:center}
 .individual-team-page .current-team-page .team-roster-table .team-today-fpts{font-size:24px!important;line-height:1!important;font-weight:800!important;color:var(--text)}
-.team-player-name-wrap{display:flex;align-items:center;flex-wrap:wrap;gap:4px;font-size:13px;line-height:1.3;min-width:0}
+.team-player-name-wrap{display:flex;align-items:center;flex-wrap:nowrap;gap:4px;font-size:13px;line-height:1.3;min-width:0}
 .team-player-name-wrap strong{min-width:0;overflow-wrap:anywhere;font-weight:750}
-.team-player-name-wrap a{text-decoration:none}
+.team-player-name-wrap a{display:flex;align-items:center;gap:3px;white-space:nowrap;overflow:hidden;text-decoration:none}
+.team-player-display-name{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.team-player-nhl-team{flex-shrink:0}
+.team-player-name-wrap>.pill{flex-shrink:0}
 .team-player-lines,.team-target-lines{display:flex;flex-wrap:wrap;align-items:center;gap:3px;margin-top:4px;line-height:1.2}
 .team-player-lines:empty,.team-player-opponent:empty{display:none}
 .team-player-opponent{margin-top:4px;font-size:10px;line-height:1.3;color:var(--muted);overflow-wrap:anywhere}
@@ -158,10 +156,10 @@ html[data-theme="dark"] .individual-team-page{--team-blue:#8dc9ff;--team-heading
 .team-ir-row{background:color-mix(in srgb,var(--badge-red-bg) 50%,var(--panel))}
 .team-player-data-row.team-game-live-row{background:var(--game-live)}
 .team-player-data-row.team-game-finished-row{background:var(--game-finished)}
+.individual-team-page .team-player-data-row.team-not-playing{background:var(--team-idle-bg);color:var(--muted)}
 .team-player-data-row>td{background:transparent}
 .team-game-live,.team-home,.team-playing-text{color:var(--success);font-weight:650}
 .team-game-finished,.team-away{color:var(--muted);font-weight:650}
-.individual-team-page .team-hide-non-playing .team-player-data-row[data-playing="0"]{display:none}
 .team-targets{margin:0;border:1px solid var(--line);border-top:0;border-radius:0 0 10px 10px;background:var(--panel);overflow:hidden}
 .team-targets summary{display:flex;align-items:center;gap:8px;min-height:40px;padding:9px 10px;list-style:none;background:var(--panel-2);color:var(--team-blue);font-size:10px;font-weight:800;text-transform:uppercase;cursor:pointer}
 .team-targets summary::-webkit-details-marker{display:none}
@@ -172,6 +170,8 @@ html[data-theme="dark"] .individual-team-page{--team-blue:#8dc9ff;--team-heading
 .team-target-main{min-width:0;flex:1}
 .team-target-name{display:flex;align-items:center;flex-wrap:wrap;gap:4px;font-size:13px;line-height:1.3;overflow-wrap:anywhere}
 .team-target-name strong{font-weight:750}
+.team-goalie-target .team-target-name .team-target-lines{margin-top:0}
+.team-goalie-target .team-target-opponent{gap:4px 6px}
 .team-target-opponent{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:4px;font-size:10px;color:var(--muted)}
 .team-target-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;max-width:55%;flex-shrink:0}
 .team-target-stats{display:flex;align-items:flex-end;gap:8px;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -181,7 +181,6 @@ html[data-theme="dark"] .individual-team-page{--team-blue:#8dc9ff;--team-heading
 .team-target-add{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:5px 8px;border:1px solid #2468ab;border-radius:5px;background:#2468ab;color:white;text-decoration:none;font-size:10px;font-weight:750;white-space:nowrap}
 .team-target-more{display:block;min-height:36px;margin:8px auto;padding:6px 14px;border:1px solid var(--line);border-radius:5px;background:var(--panel-2);color:var(--team-blue);font:inherit;font-size:11px;font-weight:700;cursor:pointer}
 .individual-team-page :is(button,summary,a):focus-visible{outline:2px solid #438cca;outline-offset:2px}
-.team-roster-filter-switch input:focus-visible+.team-roster-filter-track{outline:2px solid #438cca;outline-offset:2px}
 html[data-theme="dark"] .individual-team-page .ecfhl-scoreboard .team-live-matchup-summary{background:#173552!important}
 html[data-theme="dark"] .individual-team-page .team-lineup-advisor-title{background:var(--team-heading-bg)}
 @media(min-width:950px){
@@ -232,10 +231,18 @@ html[data-theme="dark"] .individual-team-page .team-lineup-advisor-title{backgro
  .team-roster-table .team-roster-group{display:block;padding:0;background:var(--team-heading-bg)}
  .team-roster-table .team-roster-group td{display:block;padding:9px 10px}
  .team-player-name-wrap{font-size:13px}
- .team-roster-filter-bar{margin-bottom:8px}
+ .team-roster-heading{margin-bottom:8px}
  .team-target-row{display:grid;grid-template-columns:minmax(0,1fr);gap:7px;padding:10px}
  .team-target-actions{max-width:none;width:100%;justify-content:space-between;flex-wrap:nowrap}
  .team-target-stats{gap:14px}.team-target-add{min-height:36px}
+ .team-target-row.team-goalie-target{grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;padding:7px 10px}
+ .team-goalie-target .team-target-main{grid-column:1;grid-row:1}
+ .team-goalie-target .team-target-actions{display:contents}
+ .team-goalie-target .team-target-stats{grid-column:1;grid-row:2;justify-content:flex-start;gap:10px}
+ .team-goalie-target .team-target-stats .team-target-proj{font-size:15px}
+ .team-goalie-target .team-target-add{grid-column:2;grid-row:1 / span 2;align-self:center;padding:4px 7px;min-height:36px}
+ .team-goalie-target .team-target-name{gap:3px;font-size:12px}
+ .team-goalie-target .goalie-watch-bell{width:28px;height:28px;font-size:15px}
 }
 @media(max-width:450px){
  .individual-team-page .ecfhl-scoreboard .team-live-side,.individual-team-page .ecfhl-scoreboard .team-live-side-right{grid-template-columns:32px minmax(0,1fr);gap:7px!important;align-items:center!important}
