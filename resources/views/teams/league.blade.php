@@ -1,23 +1,67 @@
 @extends('layouts.app')
 @section('title', 'Teams · ECFHL')
 @section('content')
-<div class="page-head"><div class="shell"><div class="eyebrow">2026–27 season</div><h1>Teams</h1><p>Regular season rank, record and fantasy points for all {{ count($teams) }} teams.</p></div></div>
-<div class="shell league-team-grid">
-  @foreach($teams as $team)
-    <article class="card league-team-card">
-      <h2><a class="league-team-open" href="/teams/current/{{ $team['slug'] }}">{{ $team['team'] }}</a></h2>
-      <button type="button" class="league-team-logo" data-team-icon-viewer data-team-slug="{{ $team['slug'] }}" data-team-name="{{ $team['team'] }}" aria-label="View {{ $team['team'] }} logo">
-        <img src="{{ \App\Support\TeamImages::url($team['slug'],160) }}" srcset="{{ \App\Support\TeamImages::url($team['slug'],160) }} 1x, {{ \App\Support\TeamImages::url($team['slug'],640) }} 2x" data-full-src="{{ \App\Support\TeamImages::url($team['slug']) }}" width="200" height="200" alt="{{ $team['team'] }} logo" loading="lazy" decoding="async">
-      </button>
-      <dl class="league-team-stats">
-        <div><dt>Rank</dt><dd>{{ $team['rank'] === null ? '—' : '#'.$team['rank'] }}</dd></div>
-        <div><dt>W–L–T</dt><dd>{{ $team['w'] === null ? '—' : $team['w'].'–'.$team['l'].'–'.$team['t'] }}</dd></div>
-        <div><dt>FPts</dt><dd>{{ $team['fantasy_points_for'] === null ? '—' : number_format($team['fantasy_points_for'],0) }}</dd></div>
-      </dl>
-    </article>
-  @endforeach
-</div>
-<style>
-.league-team-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;padding-bottom:32px}.league-team-card{position:relative;display:flex;flex-direction:column;align-items:center;padding:18px 12px;text-align:center}.league-team-card h2{font-size:18px;line-height:1.25;margin:0 0 12px;min-height:2.5em;display:flex;align-items:center;justify-content:center;overflow-wrap:anywhere}.league-team-open{text-decoration:none}.league-team-open:after{content:"";position:absolute;inset:0;border-radius:12px}.league-team-open:hover:after{box-shadow:inset 0 0 0 2px var(--accent)}.league-team-open:focus-visible{outline:none}.league-team-open:focus-visible:after{outline:3px solid var(--accent);outline-offset:3px}.league-team-logo{position:relative;z-index:1;appearance:none;border:0;padding:0;background:transparent;cursor:zoom-in;width:min(200px,100%);aspect-ratio:1}.league-team-logo img{display:block;width:100%;height:100%;object-fit:contain}.league-team-logo:focus-visible{outline:3px solid var(--accent);outline-offset:4px;border-radius:8px}.league-team-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:8px;margin:16px 0 0;padding-top:12px;border-top:1px solid var(--line)}.league-team-stats dt{color:var(--muted);font-size:10px;font-weight:700}.league-team-stats dd{margin:3px 0 0;font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}.league-team-stats div:first-child dd{color:var(--text)}@media(max-width:1000px){.league-team-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:700px){.league-team-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.league-team-card{padding:12px 8px}.league-team-card h2{font-size:15px}.league-team-stats{gap:4px}.league-team-stats dd{font-size:13px}}@media(max-width:340px){.league-team-grid{grid-template-columns:1fr}}
-</style>
+@php
+  $myTeamName = auth()->user()?->claim?->team_name;
+  $myTeamSlug = $myTeamName ? \Illuminate\Support\Str::slug($myTeamName) : null;
+  $directoryTeams = collect($teams)->sortBy(fn($team) => $team['slug'] === $myTeamSlug ? -1 : ($team['rank'] ?? PHP_INT_MAX))->values();
+@endphp
+<link rel="stylesheet" href="/league-teams.css?v={{ hash_file('sha256', base_path('public/league-teams.css')) }}">
+<section class="shell league-teams" data-league-teams>
+  <header class="league-teams-heading">
+    <div><h1>Teams <span>{{ count($teams) }}</span></h1><p>Regular season · 2026–27</p></div>
+    @if($myTeamSlug)
+      <a class="league-teams-my-link" href="/teams/current/{{ $myTeamSlug }}"><span aria-hidden="true">★</span> My Team <span aria-hidden="true">↗</span></a>
+    @endif
+  </header>
+  <div class="league-teams-panel">
+    <div class="league-teams-toolbar">
+      <label class="league-teams-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span class="sr-only">Search teams</span>
+        <input type="search" placeholder="Search teams" autocomplete="off" data-teams-search>
+      </label>
+      <label class="league-teams-sort">
+        <span class="sr-only">Sort teams</span>
+        <select data-teams-sort aria-label="Sort teams">
+          @if($myTeamSlug)<option value="mine">My team first</option>@endif
+          <option value="rank">Rank</option><option value="points">FPts</option><option value="name">Team A–Z</option>
+        </select>
+      </label>
+    </div>
+    <table class="league-teams-table">
+      <caption class="sr-only">Current team standings. Select a team to view its roster.</caption>
+      <colgroup><col class="league-teams-rank-col"><col><col class="league-teams-record-col"><col class="league-teams-points-col"></colgroup>
+      <thead><tr><th scope="col">Rank</th><th scope="col">Team</th><th scope="col" class="league-teams-number">W–L–T</th><th scope="col" class="league-teams-number">FPts</th></tr></thead>
+      <tbody data-teams-rows>
+        @foreach($directoryTeams as $team)
+          @php $isMine = $team['slug'] === $myTeamSlug; @endphp
+          <tr class="league-team-row {{ $isMine ? 'league-team-row-mine' : '' }}" data-team-row data-team-name="{{ $team['team'] }}" data-team-rank="{{ $team['rank'] ?? '' }}" data-team-points="{{ $team['fantasy_points_for'] ?? '' }}" data-team-mine="{{ $isMine ? '1' : '0' }}">
+            <td class="league-team-rank">{{ $team['rank'] ?? '—' }}</td>
+            <td><div class="league-team-identity">
+              <button type="button" class="league-team-logo" data-team-icon-viewer data-team-slug="{{ $team['slug'] }}" data-team-name="{{ $team['team'] }}" aria-label="View {{ $team['team'] }} logo">
+                <img src="{{ \App\Support\TeamImages::url($team['slug'],160) }}" data-full-src="{{ \App\Support\TeamImages::url($team['slug']) }}" width="40" height="40" alt="" loading="lazy" decoding="async">
+              </button>
+              <div class="league-team-copy">
+                <a class="league-team-open" href="/teams/current/{{ $team['slug'] }}" title="{{ $team['team'] }}">{{ $team['team'] }}</a>
+                @if($isMine)<span class="league-team-mine-label">★ My Team</span>@else<span class="league-team-roster-label">View roster <span aria-hidden="true">›</span></span>@endif
+              </div>
+            </div></td>
+            <td class="league-teams-number league-team-record">{{ $team['w'] === null ? '—' : $team['w'].'–'.$team['l'].'–'.$team['t'] }}</td>
+            <td class="league-teams-number league-team-points">{{ $team['fantasy_points_for'] === null ? '—' : number_format($team['fantasy_points_for'],0) }}</td>
+          </tr>
+        @endforeach
+      </tbody>
+    </table>
+    <div class="league-teams-empty" data-teams-empty @if(count($teams)) hidden @endif>
+      <strong>{{ count($teams) ? 'No teams found' : 'Teams are not available yet' }}</strong>
+      <p>{{ count($teams) ? 'Try another team name.' : 'Standings will appear after the next update.' }}</p>
+      <button type="button" data-teams-reset hidden>Clear search</button>
+    </div>
+    <footer class="league-teams-footer"><span data-teams-count aria-live="polite">{{ count($teams) }} teams</span><span>Season FPts</span></footer>
+  </div>
+</section>
 @endsection
+@push('scripts')
+<script src="/league-teams.js?v={{ hash_file('sha256', base_path('public/league-teams.js')) }}" defer></script>
+@endpush

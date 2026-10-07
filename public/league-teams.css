@@ -1,0 +1,62 @@
+.league-teams{padding-top:24px;padding-bottom:24px;max-width:960px}
+.league-teams-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.league-teams-heading h1{margin:0;font-size:28px;line-height:1.2;letter-spacing:-.6px;display:flex;align-items:center;gap:9px}
+.league-teams-heading h1 span{font-size:12px;letter-spacing:0;font-weight:700;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:3px 7px}
+.league-teams-heading p{margin:4px 0 0;color:var(--muted);font-size:12px}
+.league-teams-my-link{color:#2468ab;text-decoration:none;font-size:12px;font-weight:700;padding:10px 0;white-space:nowrap}
+.league-teams-panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 3px 12px rgba(13,31,55,.04)}
+.league-teams-toolbar{display:flex;gap:10px;padding:12px;border-bottom:1px solid var(--line)}
+.league-teams-search{display:flex;align-items:center;flex:1;min-width:0;gap:8px;padding:0 10px;background:var(--bg);border:1px solid var(--line);border-radius:6px}
+.league-teams-search svg{width:17px;height:17px;flex-shrink:0;color:var(--muted)}
+.league-teams-search input{width:100%;min-width:0;min-height:42px;border:0;outline:none;padding:8px 0;background:transparent;font:inherit;font-size:14px;color:var(--text)}
+.league-teams-search input::placeholder{color:var(--muted)}
+.league-teams-search:focus-within{outline:2px solid #438cca;outline-offset:1px}
+.league-teams-sort{flex:0 0 140px;min-width:0}
+.league-teams-sort select{width:100%;height:44px;padding:0 28px 0 10px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text);font:inherit;font-size:13px;cursor:pointer}
+.league-teams-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:14px}
+.league-teams-rank-col{width:64px}.league-teams-record-col{width:110px}.league-teams-points-col{width:116px}
+.league-teams-table th{background:#eaf0f7;color:#52657e;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:10px 14px;text-align:left;border-bottom:1px solid var(--line)}
+.league-teams-table th:first-child{text-align:center}
+.league-teams-table td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+.league-teams-table td:nth-child(2),.league-teams-table th:nth-child(2){padding-left:0}
+.league-teams-table .league-teams-number{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.league-team-row{position:relative;background:var(--panel)}
+.league-team-row:hover{background:#f1f6fc}
+.league-team-row:last-child td{border-bottom:0}
+.league-team-row-mine,.league-team-row-mine:hover{background:#e7f2ff}
+.league-team-row-mine td:first-child{box-shadow:inset 3px 0 #438cca}
+.league-team-rank{text-align:center;color:var(--muted);font-weight:700;font-size:13px}
+.league-team-identity{display:flex;align-items:center;gap:12px;min-width:0}
+.league-team-logo{position:relative;z-index:2;display:block;flex:0 0 40px;width:40px;height:40px;border:0;border-radius:4px;background:transparent;padding:0;cursor:zoom-in}
+.league-team-logo img{display:block;width:100%;height:100%;object-fit:contain}
+.league-team-copy{flex:1;min-width:0;line-height:1.3}
+.league-team-open{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:750;font-size:14px;text-decoration:none}
+.league-team-open:after{content:"";position:absolute;inset:0;z-index:1}
+.league-team-open:focus-visible{outline:none}
+.league-team-row:focus-within{outline:2px solid #438cca;outline-offset:-2px}
+.league-team-logo:focus-visible{outline:2px solid #438cca;outline-offset:2px}
+.league-team-roster-label,.league-team-mine-label{display:block;font-size:10px;margin-top:3px;color:var(--muted)}
+.league-team-mine-label{color:#2468ab;font-weight:750}
+.league-team-record{color:var(--muted);font-size:13px}
+.league-team-points{font-weight:800;font-size:15px}
+.league-teams-footer{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);background:var(--panel-2)}
+.league-teams-empty{padding:32px 14px;text-align:center;color:var(--muted);font-size:14px}
+.league-teams-empty p{font-size:12px;margin:5px 0 12px}
+.league-teams-empty button{min-height:44px;background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:8px 14px;font:inherit;cursor:pointer}
+.league-teams [hidden]{display:none!important}
+html[data-theme="dark"] .league-teams-table th{background:#1b2e46;color:#a9bed8}
+html[data-theme="dark"] .league-team-row:hover{background:#182b40}
+html[data-theme="dark"] .league-team-row-mine,html[data-theme="dark"] .league-team-row-mine:hover{background:#173552}
+html[data-theme="dark"] .league-team-mine-label,html[data-theme="dark"] .league-teams-my-link{color:#8dc9ff}
+@media(max-width:600px){
+  .league-teams{padding-top:18px;padding-bottom:16px}
+  .league-teams-heading{margin-bottom:12px}.league-teams-heading h1{font-size:25px}
+  .league-teams-toolbar{padding:10px;gap:8px}.league-teams-sort{flex-basis:126px}
+  .league-teams-rank-col{width:36px}.league-teams-record-col{width:64px}.league-teams-points-col{width:74px}
+  .league-teams-table th{font-size:9px;padding:9px 8px;letter-spacing:.2px}.league-teams-table th:first-child{padding:9px 3px}
+  .league-teams-table td{padding:9px 8px}.league-teams-table td:first-child{padding:9px 3px}
+  .league-team-identity{gap:8px}.league-team-logo{flex-basis:34px;width:34px;height:38px}
+  .league-team-open{font-size:12px}.league-team-rank,.league-team-record{font-size:11px}.league-team-points{font-size:13px}
+  .league-team-roster-label,.league-team-mine-label{font-size:9px}
+}
+@media(max-width:360px){.league-teams-sort{flex-basis:112px}.league-teams-sort select{font-size:12px;padding-left:7px}.league-teams-record-col{width:58px}.league-teams-points-col{width:64px}.league-team-identity{gap:5px}.league-team-logo{flex-basis:28px;width:28px}.league-team-points{font-size:12px}}

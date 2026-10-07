@@ -64,8 +64,17 @@ foreach(['h2h','total','none'] as $type){
  checkCollector($partial->getStatusCode()===200&&str_contains($partial->getContent(),'class="shell standings-page"')&&str_contains($partial->getContent(),'Scoring Period 1')&&!str_contains($partial->getContent(),'<html'),'Standings refresh must be a lightweight fragment independent of historical filters.');
 }
 $app->forgetScopedInstances();$request=Illuminate\Http\Request::create('/teams/league');$directory=$kernel->handle($request);$kernel->terminate($request,$directory);
-checkCollector($directory->getStatusCode()===200&&substr_count($directory->getContent(),'class="card league-team-card"')===14&&substr_count($directory->getContent(),'class="league-team-logo"')===14,'Teams directory needs 14 cards with separate logo viewers.');
-checkCollector(str_contains($directory->getContent(),'href="/teams/current/team-0"')&&str_contains($directory->getContent(),'league-team-open:after')&&str_contains($directory->getContent(),'W–L–T'),'Cards must display records and navigate everywhere outside the logo button.');
+checkCollector($directory->getStatusCode()===200&&substr_count($directory->getContent(),'data-team-row ')===14&&substr_count($directory->getContent(),'class="league-team-logo"')===14,'Teams directory needs 14 compact rows with separate logo viewers.');
+checkCollector(str_contains($directory->getContent(),'href="/teams/current/team-0"')&&str_contains($directory->getContent(),'league-teams.css?v=')&&str_contains($directory->getContent(),'league-teams.js?v=')&&str_contains($directory->getContent(),'W–L–T'),'Rows must display records, link to rosters and load fingerprinted directory assets.');
+if($output=getenv('ECFHL_TEAMS_QA_HTML'))file_put_contents($output,$directory->getContent());
+$owner=new \App\Models\User();$owner->setRelation('claim',new \App\Models\TeamClaim(['team_name'=>'Team 0']));
+\Illuminate\Support\Facades\Auth::setUser($owner);
+$ownedHtml=view('teams.league',['teams'=>\App\Support\CurrentTeams::standings()])->render();
+$doc=new DOMDocument();@$doc->loadHTML($ownedHtml);$xpath=new DOMXPath($doc);
+checkCollector($xpath->query('//tbody[@data-teams-rows]/tr[1]')->item(0)->getAttribute('data-team-mine')==='1','Owned team must be first even when its rank is last.');
+checkCollector($xpath->query('//tr[contains(@class,"league-team-row-mine")]')->length===1&&str_contains($ownedHtml,'My team first'),'Highlight exactly the claimed team and offer owned-team sorting.');
+if($output=getenv('ECFHL_TEAMS_OWNER_QA_HTML'))file_put_contents($output,$ownedHtml);
+\Illuminate\Support\Facades\Auth::forgetGuards();
 checkCollector(!str_contains($response->getContent(),'/job-status#collector-standings'),'Collector link must respect admin access');
 $admin=new \App\Models\User;$admin->forceFill(['is_admin'=>true]);$admin->setRelation('claim',null);\Illuminate\Support\Facades\Auth::guard()->setUser($admin);$app->forgetScopedInstances();
 $request=Illuminate\Http\Request::create('/standings');$response=$kernel->handle($request);$kernel->terminate($request,$response);
