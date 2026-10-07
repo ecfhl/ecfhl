@@ -68,8 +68,8 @@ verifySeason(substr_count($html,'data-player-id=')===25&&str_contains($html,'&lt
 verifySeason(str_contains($html,'ECFHL*')&&str_contains($html,'71:11')&&str_contains($html,'/teams/current/beta')&&str_contains($html,'Free Agent'),'Stats / ownership / custom projection rendering failed.');
 $positionDoc=new DOMDocument(); @$positionDoc->loadHTML($html); $positionPath=new DOMXPath($positionDoc);
 $positionButtons=$positionPath->query('//div[@aria-label="Player positions"]/a');
-verifySeason($positionButtons->length===5,'Positions must offer All, Skaters, Forwards, Defensemen and Goaltenders.');
-foreach(['F,D,G'=>'All','F,D'=>'Skaters','F'=>'Forwards','D'=>'Defensemen','G'=>'Goaltenders'] as $position=>$label){
+verifySeason($positionButtons->length===5,'Positions must offer All, Skaters, Forwards, Defense and Goaltenders.');
+foreach(['F,D,G'=>'All','F,D'=>'Skaters','F'=>'Forwards','D'=>'Defense','G'=>'Goaltenders'] as $position=>$label){
  $link=$positionPath->query('//div[@aria-label="Player positions"]/a[text()="'.$label.'"]')->item(0);
  parse_str(parse_url($link->getAttribute('href'),PHP_URL_QUERY),$params);
  verifySeason($params['positions']===$position&&$link->getAttribute('aria-pressed')===($position==='F,D'?'true':'false'),'Position buttons must select exactly one preset: '.$label);
