@@ -406,7 +406,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 </div>
 <script src="/team-image-viewer.js?v=10&build=14" defer></script>
 <dialog id="player-stats-dialog" class="player-stats-dialog" aria-label="Player stats"><button type="button" class="player-stats-close" aria-label="Close player stats">×</button><div id="player-stats-content" aria-live="polite"></div></dialog>
-<link rel="stylesheet" href="/player-profile.css?v={{ hash_file('sha256', base_path('public/player-profile.css')) }}"><script src="/player-profile.js?v=2" defer></script>
+<link rel="stylesheet" href="/player-profile.css?v={{ hash_file('sha256', base_path('public/player-profile.css')) }}"><script src="/player-profile.js?v={{ hash_file('sha256', base_path('public/player-profile.js')) }}" defer></script>
 
 @if(request()->is('players','daily-targets','teams/current/*'))
 <link rel="stylesheet" href="/goalie-watches.css?v=2">

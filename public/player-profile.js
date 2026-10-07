@@ -7,7 +7,11 @@
   const close=()=>dialog.close();
   dialog.querySelector('.player-stats-close').addEventListener('click',close);
   dialog.addEventListener('click',event=>{if(event.target===dialog){const box=dialog.getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)close();}});
-  dialog.addEventListener('close',()=>{request?.abort();request=null;document.body.style.removeProperty('overflow');trigger?.focus({preventScroll:true});});
+  dialog.addEventListener('close',()=>{
+    // A queued close from the previous popup must not cancel a quick reopen.
+    if(dialog.open)return;
+    request?.abort();request=null;document.body.style.removeProperty('overflow');trigger?.focus({preventScroll:true});
+  });
   document.addEventListener('click',async event=>{
     const link=event.target.closest('[data-player-stats]');
     if(!link||event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey) return;

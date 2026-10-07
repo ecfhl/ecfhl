@@ -6,6 +6,19 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schedule;
 
+Artisan::command('ecfhl:refresh-player-birthdates {--force : Refresh even when already collected today}', function (\App\Support\PlayerBirthdates $birthdates) {
+    try {
+        $this->line($birthdates->refresh((bool)$this->option('force')).' NHL player birth dates available.');
+        return 0;
+    } catch(\Throwable $e) {
+        report($e);
+        $this->error('NHL birth date refresh failed; previous ages preserved.');
+        return 1;
+    }
+})->purpose('Store NHL birth dates for locally calculated player ages');
+
+Schedule::command('ecfhl:refresh-player-birthdates')->dailyAt('03:50')->timezone('America/Halifax')->withoutOverlapping(10)->runInBackground();
+
 Artisan::command('ecfhl:refresh-player-projections {--force : Regenerate even if already refreshed today} {--ensure-season-stats : Collect complete season stats only if missing} {--ensure-projection-coverage : Collect missing rolling inputs for players outside the frozen baseline}', function (RefreshPlayerProjections $refresh) {
     if ($this->option('ensure-projection-coverage') && !DB::table('player_projections as p')->leftJoin('player_projection_baselines as b', 'b.player_id', '=', 'p.player_id')->whereNull('b.player_id')->where(fn($q)=>$q->whereNull('p.fpts_per_game_7d')->orWhereNull('p.fpts_per_game_14d')->orWhereNull('p.fpts_per_game_21d'))->exists()) {
         $this->line('Player projection coverage already available.');

@@ -20,3 +20,7 @@ fi
 if ! php artisan ecfhl:refresh-player-projections --ensure-season-stats; then
     echo 'WARNING: Season player stats refresh failed; previous valid data preserved.'
 fi
+
+if ! php artisan ecfhl:refresh-player-birthdates; then
+    echo 'WARNING: Player birth date refresh failed; previous ages preserved.'
+fi

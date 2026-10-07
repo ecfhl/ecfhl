@@ -10,5 +10,5 @@
 @endsection
 
 @push('scripts')
-<script src="/standings.js?v=1" defer></script>
+<script src="/standings.js?v={{ hash_file('sha256', base_path('public/standings.js')) }}" defer></script>
 @endpush

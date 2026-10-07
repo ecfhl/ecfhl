@@ -329,7 +329,7 @@ Route::get('/standings', function(EcfhlData $data){
                 ->leftJoin('active_fantasy_rosters as r','r.id','=','latest.roster_id');
             if($position)$query->where('s.position',$position);else $query->where('s.rookie',true);
             $leaders=$query->orderByDesc('s.season_fpts')->orderByDesc('s.season_fpts_per_game')->orderBy('s.player_id')->limit(3)
-                ->get(['s.player_name as name','s.nhl_team','r.fantasy_team_name as fantasy_team','s.season_fpts as fpts','s.season_gp as gp','s.season_fpts_per_game as fpts_g'])
+                ->get(['s.player_id','s.player_name as name','s.nhl_team','r.fantasy_team_name as fantasy_team','s.season_fpts as fpts','s.season_gp as gp','s.season_fpts_per_game as fpts_g'])
                 ->map(fn($p)=>(array)$p)->all();
             $races[$key]=compact('label','icon','detail','leaders');
         }

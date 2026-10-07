@@ -15,6 +15,7 @@ final class PlayerProfile
         $roster=DB::table('active_fantasy_rosters')->where('player_id',$id)
             ->where('game_date',fn($q)=>$q->from('active_fantasy_rosters')->selectRaw('MAX(game_date)'))->orderByDesc('id')->first();
         $today=app(FantasyDay::class)->today();
+        $age=app(PlayerBirthdates::class)->age($player->player_name,$today);
         $games=app(PlayerGames::class);$team=PlayerGames::team($player->nhl_team);
         $todayGame=$games->forDate($today->toDateString())[$team]??null;
         $tomorrowGame=$games->forDate($today->addDay()->toDateString())[$team]??null;
@@ -32,6 +33,6 @@ final class PlayerProfile
         $previous=DB::table('historical_player_stats')->where('season_id','2025-26')->where('player_id',$id)->first();
         if ($previous) $seasonRows[]=['season'=>$previous->season_id,'stats'=>$values(json_decode($previous->stats_json,true)?:[],$previous->fpts,$previous->fpts_per_game,$previous->gp)];
         $teamSlug=$roster?Str::slug($roster->fantasy_team_name):null;
-        return compact('player','projection','baseline','roster','teamSlug','todayGame','tomorrowGame','statRows','seasonStats','categoryLabels','seasonRows');
+        return compact('player','age','projection','baseline','roster','teamSlug','todayGame','tomorrowGame','statRows','seasonStats','categoryLabels','seasonRows');
     }
 }

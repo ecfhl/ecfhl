@@ -1,8 +1,17 @@
 <article class="player-profile">
-  <header><div class="eyebrow">2026–27 Player Profile</div><h1>{{ \App\Support\PlayerName::display($player->player_name) }}</h1><p>{{ $player->position }} · {{ $player->nhl_team ?: 'No NHL team' }}@if($player->rookie) · <span class="rookie-tag">Rookie</span>@endif</p><p class="player-profile-owner">@if($roster)<a href="/teams/current/{{ $teamSlug }}">{{ $roster->fantasy_team_name }}</a>@else Free Agent @endif</p></header>
-  <div class="player-profile-tiles"><div><small>ECFHL*</small><strong>{{ $projection?->projected_fpts_per_game!==null ? number_format($projection->projected_fpts_per_game,2) : '—' }}</strong></div>
-    @foreach(['Today'=>$todayGame,'Tomorrow'=>$tomorrowGame] as $label=>$game)<div><small>{{ $label }}</small><strong class="player-profile-game">{{ $game ? (($game['away']?'@':'vs ').$game['opponent']) : 'Not playing' }}</strong>@if($game)<span>{{ $game['time'] ?: 'Time unavailable' }}</span>@endif</div>@endforeach
-  </div>
+  <header>
+    <div class="eyebrow">2026–27 Player Profile</div>
+    <h1 id="player-profile-name">{{ \App\Support\PlayerName::display($player->player_name) }}</h1>
+    <p class="player-profile-age">{{ $age!==null ? 'Age '.$age : 'Age unavailable' }}</p>
+    <p class="player-profile-meta">{{ $player->position }} · {{ $player->nhl_team ?: 'No NHL team' }}@if($player->rookie) · <abbr class="player-profile-rookie" title="Rookie" aria-label="Rookie">R</abbr>@endif</p>
+    <p class="player-profile-owner">@if($roster)<a href="/teams/current/{{ $teamSlug }}">{{ $roster->fantasy_team_name }}</a>@else Free Agent @endif</p>
+  </header>
+  <dl class="player-profile-overview">
+    <div><dt>ECFHL*</dt><dd class="player-profile-projection">{{ $projection?->projected_fpts_per_game!==null ? number_format($projection->projected_fpts_per_game,2) : '—' }}</dd></div>
+    @foreach(['Today'=>$todayGame,'Tomorrow'=>$tomorrowGame] as $label=>$game)
+      <div><dt>{{ $label }}</dt><dd><strong>{{ $game ? (($game['away']?'@':'vs ').$game['opponent']) : 'Not playing' }}</strong>@if($game)<span>{{ $game['time'] ?: 'Time unavailable' }}</span>@endif</dd></div>
+    @endforeach
+  </dl>
   <p class="muted player-profile-time">Game times in Atlantic. Today and Tomorrow follow the Pacific fantasy day.</p>
   <div class="player-profile-table"><table><thead><tr><th>Stats period</th><th>GP</th><th>FPts</th><th>FPts / Game</th></tr></thead><tbody>
     @foreach($statRows as $row)<tr><th scope="row">{{ $row['label'] }}</th><td>{{ $row['gp'] ?? '—' }}</td><td>{{ $row['fpts']!==null ? number_format($row['fpts'],0) : '—' }}</td><td>{{ $row['rate']!==null ? number_format($row['rate'],2) : '—' }}</td></tr>@endforeach

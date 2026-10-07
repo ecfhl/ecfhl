@@ -2,7 +2,7 @@
   let refreshing=false;
   const refresh=async()=>{
     const current=document.querySelector('.standings-page');
-    if(!current||document.hidden||refreshing||document.querySelector('#team-icon-modal.open'))return;
+    if(!current||document.hidden||refreshing||document.querySelector('#team-icon-modal.open, dialog[open]'))return;
     refreshing=true;
     const controller=new AbortController();
     const timeout=setTimeout(()=>controller.abort(),20000);
@@ -14,7 +14,7 @@
       const doc=new DOMParser().parseFromString(await response.text(),'text/html');
       const fresh=doc.querySelector('.standings-page');
       if(!fresh)throw new Error('Missing standings');
-      if(document.hidden||document.querySelector('#team-icon-modal.open'))return;
+      if(document.hidden||document.querySelector('#team-icon-modal.open, dialog[open]'))return;
       // Capture state after fetching so a click during a slow request is preserved.
       const states=new Map([...current.querySelectorAll('.standings-period')].map(el=>[el.dataset.periodNumber,el.open]));
       fresh.querySelectorAll('.standings-period').forEach(el=>{if(states.has(el.dataset.periodNumber))el.open=states.get(el.dataset.periodNumber)});

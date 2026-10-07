@@ -306,6 +306,33 @@ $profile=app(\App\Support\PlayerProfile::class)->data('p61');
 verifySeason(array_keys($profile['categoryLabels'])===['FPTS','FPTS/GP','GP','W','L','OTL','SO']&&$profile['seasonStats']['OTL']===4&&$profile['seasonStats']['SO']===3,'Goalie table must map Fantrax overtime losses and shutouts.');
 $profileHtml=seasonRequest('/players/p1')->getContent();
 verifySeason(str_contains($profileHtml,'<h2>Stats</h2>')&&str_contains($profileHtml,'2025-26')&&!str_contains($profileHtml,'player-profile-categories'),'Player profile must render season rows without stat boxes.');
+// A single birthday source supports live age calculation without requests from player pages.
+DB::table('player_birthdates')->insert(['nhl_player_id'=>1,'name_key'=>\App\Support\PlayerBirthdates::nameKey('Player <unsafe>'),'birth_date'=>'2000-10-05','refreshed_at'=>now()]);
+$birthdates=app(\App\Support\PlayerBirthdates::class);
+verifySeason($birthdates->age('Player <unsafe>',\Carbon\CarbonImmutable::parse('2026-10-04',\App\Support\FantasyDay::TIMEZONE))===25 && $birthdates->age('Player <unsafe>',\Carbon\CarbonImmutable::parse('2026-10-05',\App\Support\FantasyDay::TIMEZONE))===26,'Age must change on the birthday, rather than being a frozen number.');
+verifySeason(\App\Support\PlayerBirthdates::nameKey('Nugent-Hopkins, Ryan')===\App\Support\PlayerBirthdates::nameKey('Ryan Nugent-Hopkins'),'NHL and displayed names must match the same birthday.');
+$popup=json_decode(seasonRequest('/players/p1',true)->getContent(),true)['html'];
+$popupDoc=new DOMDocument;@$popupDoc->loadHTML($popup);$popupPath=new DOMXPath($popupDoc);
+verifySeason($popupPath->query('//h1/following-sibling::*[1][@class="player-profile-age"]')->length===1 && !str_contains($popup,'player-profile-tiles') && $popupPath->query('//dl[@class="player-profile-overview"]/div')->length===3,'Age must appear immediately under the name; overview data must be rows without summary boxes.');
+verifySeason(str_contains(seasonRequest('/players/p61')->getContent(),'Age unavailable'),'Unknown birth dates must not invent an age.');
+DB::table('seasons')->insert(['season_id'=>'2026-27','season_name'=>'2026-27']);
+$awardHtml=seasonRequest('/standings')->getContent();
+$awardDoc=new DOMDocument;@$awardDoc->loadHTML($awardHtml);$awardPath=new DOMXPath($awardDoc);
+verifySeason($awardPath->query('//div[@class="standings-award-player"]//a[@data-player-stats]')->length===12,'All four player award races must link each of their three leaders to the shared popup.');
+\Illuminate\Support\Facades\Http::preventStrayRequests();
+$nhlHealthy=true;
+\Illuminate\Support\Facades\Http::fake(['api-web.nhle.com/v1/roster/*/current'=>function() use(&$nhlHealthy) { return \Illuminate\Support\Facades\Http::response($nhlHealthy ? [
+    'forwards'=>[['id'=>2,'firstName'=>['default'=>'Ryan'],'lastName'=>['default'=>'Nugent-Hopkins'],'birthDate'=>'1993-04-12'],['id'=>3,'firstName'=>['default'=>'Invalid'],'lastName'=>['default'=>'Date'],'birthDate'=>'2000-02-30']],
+    'defensemen'=>[['id'=>4,'firstName'=>['default'=>'Quinn'],'lastName'=>['default'=>'Hughes'],'birthDate'=>'1999-10-14']],
+    'goalies'=>[['id'=>5,'firstName'=>['default'=>'Jake'],'lastName'=>['default'=>'Oettinger'],'birthDate'=>'1998-12-18']],
+] : [],$nhlHealthy?200:503); }]);
+verifySeason($birthdates->refresh(true)===3 && !DB::table('player_birthdates')->where('nhl_player_id',3)->exists(),'NHL roster collection must include all position groups, deduplicate players and reject invalid dates.');
+verifySeason($birthdates->age('Nugent-Hopkins, Ryan',\Carbon\CarbonImmutable::parse('2026-10-07',\App\Support\FantasyDay::TIMEZONE))===33,'NHL birth dates must resolve Fantrax names.');
+$nhlHealthy=false;
+try { $birthdates->refresh(true);throw new LogicException('Failed NHL data accepted'); } catch(RuntimeException $e) { verifySeason(str_contains($e->getMessage(),'preserved'),'Failed NHL collection must explain preservation.'); }
+verifySeason($birthdates->age('Nugent-Hopkins, Ryan',\Carbon\CarbonImmutable::parse('2026-10-07',\App\Support\FantasyDay::TIMEZONE))===33,'Failed collection must preserve saved ages.');
+DB::table('player_birthdates')->insert(['nhl_player_id'=>6,'name_key'=>\App\Support\PlayerBirthdates::nameKey('Ryan Nugent-Hopkins'),'birth_date'=>'2000-04-12','refreshed_at'=>now()]);
+verifySeason($birthdates->age('Ryan Nugent-Hopkins')===null,'Ambiguous name matches must not return the wrong age.');
 // Plus colors must use ECFHL*, assignments and injury status independently of the selected stats dataset.
 $skater=(object)['position'=>'F','line_number'=>1,'pp_unit'=>null,'projected_fpts_per_game'=>null,'injury_status'=>null];
 foreach ([
