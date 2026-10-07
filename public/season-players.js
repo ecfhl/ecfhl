@@ -16,13 +16,12 @@
     const table = document.querySelector('.season-player-table');
     if (table) {
       const playerColumn = table.querySelector('thead .player-frozen-player');
-      const rankColumn = table.querySelector('thead .player-frozen-rank');
       const scroll = table.closest('.player-table-scroll');
-      const updateOffset = () => scroll.style.setProperty('--player-sticky-offset', `${rankColumn.getBoundingClientRect().width + playerColumn.getBoundingClientRect().width}px`);
+      const updateOffset = () => scroll.style.setProperty('--player-sticky-offset', `${playerColumn.getBoundingClientRect().width}px`);
       updateOffset();
       if (typeof ResizeObserver !== 'undefined') {
         const observer = new ResizeObserver(updateOffset);
-        observe(observer, [rankColumn, playerColumn]);
+        observe(observer, [playerColumn]);
       }
       else listen(window, 'resize', updateOffset);
       const frozen = document.getElementById('season-player-fixed-header');
