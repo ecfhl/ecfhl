@@ -314,6 +314,8 @@ verifySeason(\App\Support\PlayerBirthdates::nameKey('Nugent-Hopkins, Ryan')===\A
 $popup=json_decode(seasonRequest('/players/p1',true)->getContent(),true)['html'];
 $popupDoc=new DOMDocument;@$popupDoc->loadHTML($popup);$popupPath=new DOMXPath($popupDoc);
 verifySeason($popupPath->query('//h1/following-sibling::*[1][@class="player-profile-age"]')->length===1 && !str_contains($popup,'player-profile-tiles') && $popupPath->query('//dl[@class="player-profile-overview"]/div')->length===3,'Age must appear immediately under the name; overview data must be rows without summary boxes.');
+verifySeason($popupPath->query('//style[@data-player-profile-styles]')->length===1 && str_contains($popup,file_get_contents(base_path('public/player-profile.css'))),'Fetched profiles must carry current styling for already-open pages with older assets.');
+verifySeason($popupPath->query('//details[@class="player-profile-method" and not(@open)]/summary')->length===1 && str_contains($popup,'a dash means the source is unavailable'),'The compact popup must preserve its explanation in a collapsed disclosure.');
 verifySeason(str_contains(seasonRequest('/players/p61')->getContent(),'Age unavailable'),'Unknown birth dates must not invent an age.');
 DB::table('seasons')->insert(['season_id'=>'2026-27','season_name'=>'2026-27']);
 $awardHtml=seasonRequest('/standings')->getContent();
