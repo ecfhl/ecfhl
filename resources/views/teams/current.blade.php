@@ -66,6 +66,7 @@
       @endphp
       <section class="team-position-section" data-roster-position="{{ $code }}">
         <div class="table-card"><div class="table-scroll"><table class="data-table team-roster-table">
+          <colgroup><col><col class="team-roster-score-column"></colgroup>
           <tbody>
             <tr class="team-roster-group team-playing-group">
               <td colspan="2">

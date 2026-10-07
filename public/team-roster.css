@@ -124,6 +124,7 @@ html[data-theme="dark"] .individual-team-page{--team-blue:#8dc9ff;--team-heading
 .team-position-section:has(.team-targets) .table-card{border-radius:10px 10px 0 0}
 .team-position-section .table-scroll{overflow:visible;min-width:0}
 .team-roster-table{table-layout:fixed;width:100%;border-collapse:collapse;font-size:13px}
+.team-roster-score-column{width:104px}
 .team-roster-table td{padding:9px 10px;vertical-align:middle;min-width:0}
 .team-roster-table td[data-label="Proj."]{width:104px;text-align:right}
 .team-roster-table .team-roster-group td{padding:9px 10px;background:var(--team-heading-bg);color:var(--team-heading-text);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.3px}
@@ -223,6 +224,7 @@ html[data-theme="dark"] .individual-team-page .team-lineup-advisor-title{backgro
  .team-lineup-advisor-photo{width:52px}.team-lineup-advisor-photo-button{width:52px;height:62px}
  .team-lineup-advisor-text{font-size:12px;line-height:1.45}
  .team-roster-grid{gap:12px}
+ .team-roster-table colgroup{display:none}
  .team-roster-table,.team-roster-table tbody{display:block;width:100%;min-width:0}
  .team-roster-table tr{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:8px;padding:9px 10px;border-bottom:1px solid var(--line);align-items:center;min-width:0}
  .team-roster-table td{padding:0;border:0;min-width:0}
