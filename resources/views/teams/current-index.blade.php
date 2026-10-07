@@ -1,7 +1,12 @@
 @extends('layouts.app')
 @section('content')
 <link rel="stylesheet" href="/matchup-scoreboard.css?v={{ hash_file('sha256', base_path('public/matchup-scoreboard.css')) }}">
-<div class="page-head current-teams-head"><div class="shell compact-page-heading"><div><div class="eyebrow">2026-27 season</div><h1><span style="color:#c94b52">●</span> Live Scoring</h1></div><div class="compact-page-links"><span class="page-date-badge">{{ \Carbon\CarbonImmutable::parse($date)->format('l, M j') }}</span><a target="_blank" rel="noopener noreferrer" href="https://www.fantrax.com/fantasy/league/{{ rawurlencode(\App\Support\LiveScoring\FantraxClient::LEAGUE_ID) }}/livescoring"><img src="/fantrax-icon.png" width="18" height="18" alt="">Fantrax</a></div></div></div>
+<div class="page-head current-teams-head">
+  <div class="shell live-scoring-heading">
+    <div class="live-scoring-meta"><div class="eyebrow">2026-27 season</div><span class="page-date-badge">{{ \Carbon\CarbonImmutable::parse($date)->format('l, M j') }}</span></div>
+    <h1><span class="live-scoring-indicator" aria-hidden="true">●</span> Live Scoring</h1>
+  </div>
+</div>
 
 <div class="shell current-teams-page">
   <div class="team-toolbar">
@@ -232,24 +237,42 @@
       </details>
     @endforeach
   </div>
-  <footer class="compact-page-footer">@if($scoreLastUpdate)<span class="team-updated">Updated @include('partials.updated-time',['value'=>$scoreLastUpdate])</span>@endif</footer>
+  <footer class="compact-page-footer live-scoring-footer">
+    @if($scoreLastUpdate)<span class="team-updated">Updated @include('partials.updated-time',['value'=>$scoreLastUpdate])</span>@endif
+    <a class="live-scoring-fantrax" target="_blank" rel="noopener noreferrer" href="https://www.fantrax.com/fantasy/league/{{ rawurlencode(\App\Support\LiveScoring\FantraxClient::LEAGUE_ID) }}/livescoring"><img src="/fantrax-icon.png" width="16" height="16" alt="">Fantrax ↗</a>
+  </footer>
 </div>
 
 <style>
 .current-teams-head{padding:16px 0 8px}
-.current-teams-head .eyebrow{margin-bottom:5px}
+.current-teams-head .live-scoring-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.current-teams-head .eyebrow{margin:0;font-size:11px;letter-spacing:.12em;white-space:nowrap}
+.current-teams-head .page-date-badge{font-size:11px;padding:4px 8px}
+.current-teams-head h1{display:flex;align-items:center;gap:7px;white-space:nowrap;font-size:clamp(28px,7vw,36px);line-height:1.12;margin:6px 0 0}
+.live-scoring-indicator{color:#c94b52;font-size:.55em}
+@media(min-width:901px){.current-teams-head .live-scoring-heading{display:flex;align-items:center;justify-content:space-between;gap:18px}.current-teams-head .live-scoring-meta{order:1;justify-content:flex-end;gap:12px}.current-teams-head h1{font-size:27px;margin:0}}
 .current-teams-head p{margin-top:4px}
 .team-updated{font-size:12px;opacity:.8;margin-top:3px}
+.current-teams-page .live-scoring-footer{gap:8px;padding:7px 0;font-size:11px;flex-wrap:wrap}
+.live-scoring-footer .team-updated{margin:0;font-size:11px;line-height:1.3}
+.live-scoring-fantrax{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;text-decoration:none;margin-left:auto;font-weight:700;line-height:20px}
+.live-scoring-fantrax:hover{text-decoration:underline}
+body:has(.current-teams-page) .site-footer{margin-top:8px;padding:12px 0}
+body:has(.current-teams-page) .footer-inner{flex-direction:row;align-items:center;flex-wrap:wrap;gap:6px 14px;font-size:10px}
+body:has(.current-teams-page) .mobile-nav-live .mobile-nav-label{white-space:nowrap;overflow-wrap:normal;font-size:clamp(8px,2.4vw,11px)}
+.current-teams-page{--matchup-shadow:0 2px 4px rgba(15,45,75,.08),0 6px 14px rgba(15,45,75,.10)}
+html[data-theme="dark"] .current-teams-page{--matchup-shadow:0 2px 5px rgba(0,0,0,.25),0 7px 16px rgba(0,0,0,.30)}
 .team-toolbar{margin:4px 0 10px}
 .team-date-buttons{display:flex;gap:6px;margin:4px 0}
 .team-date-buttons .button{padding:6px 10px;font-size:12px}
 .team-date-inactive{background:#e5e7eb!important;border-color:#d1d5db!important;color:#374151!important}
 .matchup-period-label{margin:4px 0 10px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-.current-matchup-list{display:flex;flex-direction:column;gap:7px;margin-bottom:20px}
+.current-matchup-list{display:flex;flex-direction:column;gap:7px;margin-bottom:6px}
 .matchup-card{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}
-.current-teams-page .matchup-card.notification-team-matchup{border:3px solid #3b82f6!important;background:#eaf5ff!important;box-shadow:0 0 0 1px rgba(59,130,246,.18)!important}
+.current-teams-page .matchup-card.ecfhl-scoreboard{box-shadow:var(--matchup-shadow)!important}
+.current-teams-page .matchup-card.notification-team-matchup{border:3px solid #3b82f6!important;background:#eaf5ff!important;box-shadow:0 0 0 1px rgba(59,130,246,.18),var(--matchup-shadow)!important}
 .current-teams-page .matchup-card.notification-team-matchup>.matchup-summary{background:#eaf5ff!important}
-.current-teams-page .matchup-card[open]{border:3px solid #f97316!important;box-shadow:0 0 0 1px rgba(249,115,22,.18)!important}
+.current-teams-page .matchup-card[open]{border:3px solid #f97316!important;box-shadow:0 0 0 1px rgba(249,115,22,.18),var(--matchup-shadow)!important}
 html[data-theme="dark"] .current-teams-page .matchup-card.notification-team-matchup{border-color:#60a5fa!important;background:#123452!important}
 html[data-theme="dark"] .current-teams-page .matchup-card.notification-team-matchup>.matchup-summary{background:#123452!important}
 html[data-theme="dark"] .current-teams-page .matchup-card[open]{border-color:#fb923c!important}
