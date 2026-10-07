@@ -60,3 +60,29 @@ html[data-theme="dark"] .ecfhl-scoreboard .team-live-matchup-summary{background:
  .ecfhl-scoreboard .team-live-side-right .team-live-logo{grid-column:2;justify-self:end}
  .ecfhl-scoreboard .team-live-side-right .team-live-body{grid-column:1;justify-self:start}
 }
+
+/* Seven collapsed matchups fit a typical desktop viewport; expanded rosters flow normally. */
+.compact-page-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.compact-page-links{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end;font-size:12px}
+.compact-page-links a{display:inline-flex;align-items:center;gap:5px;text-decoration:none}
+.page-date-badge{padding:5px 10px;border:1px solid var(--line);border-radius:20px;font-size:11px;white-space:nowrap}
+.compact-page-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:11px;color:var(--muted);padding:8px 0}
+.compact-page-footer p{margin:0}
+.current-teams-head{padding:6px 0!important}
+@media(min-width:901px){
+ .current-teams-head h1{font-size:27px}
+ .current-teams-head .eyebrow{font-size:10px;margin-bottom:3px}
+ .current-teams-page .team-toolbar{margin:0 0 5px}
+ .current-teams-page .matchup-period-label{margin:3px 0 5px}
+ .current-teams-page .current-matchup-list{gap:5px;margin-bottom:0}
+ .current-teams-page .ecfhl-scoreboard{border-radius:10px;margin-bottom:0}
+ .current-teams-page .ecfhl-scoreboard .team-live-matchup-summary{padding:6px 28px 6px 12px!important;gap:6px!important}
+ .current-teams-page .ecfhl-scoreboard .team-live-side{grid-template-columns:36px minmax(0,1fr);gap:2px 8px!important}
+ .current-teams-page .ecfhl-scoreboard .team-live-side-right{grid-template-columns:minmax(0,1fr) 36px}
+ .current-teams-page .ecfhl-scoreboard .team-live-logo{width:36px!important;height:36px!important;flex-basis:36px!important}
+ .current-teams-page .ecfhl-scoreboard .team-live-name-row a{font-size:13px!important;line-height:16px!important}
+ .current-teams-page .ecfhl-scoreboard .team-live-body{margin-top:0!important}
+ .current-teams-page .ecfhl-scoreboard .team-live-scores .team-live-weekly strong{font-size:30px!important}
+ .current-teams-page .ecfhl-scoreboard .team-live-scores .team-live-today strong{font-size:20px!important}
+ .current-teams-page .ecfhl-scoreboard .team-live-score{gap:1px!important}
+}

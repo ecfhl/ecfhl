@@ -466,13 +466,13 @@ Route::get('/teams/current/{slug}', function(string $slug) {
                     : (preg_match('/^[234]\s*(?:YEAR|YEARS|YR|YRS)/',$contractKey)?'contract-red':'')));
         return $p;
     };
-    $rows=$rows->map($decorate);
+    $rows=$rows->map($decorate)->map(function($p){$p->is_ir=strtoupper((string)$p->roster_status)==='INJURED_RESERVE';return $p;});
     $rows=(new \App\Support\PlayerProjections)->decorate($rows);
 
     $positions=[];
     foreach(['F'=>'Forwards','D'=>'Defense','G'=>'Goalies'] as $code=>$label){
         $positionRows=$rows->where('position',$code)->reject(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){
-            $rank=fn($p)=>(!empty($p->daily_participant)?0:2)+((bool)$p->is_ir?1:0);
+            $rank=fn($p)=>(bool)$p->is_ir?2:(!empty($p->daily_participant)?0:1);
             $ar=$rank($a);$br=$rank($b);
             if($ar!==$br)return $ar<=>$br;
             return strnatcasecmp((string)$a->player_name,(string)$b->player_name);

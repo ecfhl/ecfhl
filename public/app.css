@@ -151,3 +151,10 @@ html[data-theme="dark"] .veto-label{color:#ffb7d1}
 
 /* Season links sit below their format subtitle, separate from card navigation. */
 .fantrax-standings-link{display:block;width:fit-content;margin-top:7px;font-size:13px;font-weight:600;text-decoration:none;position:relative;z-index:1}.fantrax-standings-link:hover{text-decoration:underline}.season-card{position:relative}.season-card-head>div{flex-direction:column;align-items:flex-start;gap:4px}.season-card-view{font-size:12px;white-space:nowrap;text-decoration:none}.season-card-view::after{content:"";position:absolute;inset:0}.season-card .fantrax-standings-link{margin-top:3px}
+
+.standings-compact-head{position:relative;padding:6px 0 10px}
+.standings-compact-head .fantrax-standings-link{position:absolute;right:0;top:8px;display:inline-flex;align-items:center;font-size:12px}
+.standings-compact-head h1{padding-right:90px}
+.standings-compact-head .eyebrow{margin-bottom:5px}
+.compact-page-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:11px;color:var(--muted);padding:8px 0}
+.compact-page-footer p{margin:0}

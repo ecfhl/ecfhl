@@ -14,7 +14,7 @@ final class ViewData
             $players = $allPlayers->where('fantasy_team_id', (string)$id);
             $positions = [];
             foreach (['F'=>'Forwards','D'=>'Defense','G'=>'Goalies'] as $pos=>$label) {
-                $positions[$pos] = ['label'=>$label,'rows'=>$players->where('position',$pos)->reject(fn($p)=>$p->roster_status==='MINORS')->values()];
+                $positions[$pos] = ['label'=>$label,'rows'=>$players->where('position',$pos)->reject(fn($p)=>$p->roster_status==='MINORS')->sortBy(fn($p)=>$p->is_ir?1:0)->values()];
             }
             $positions['M'] = ['label'=>'Minors','rows'=>$players->where('roster_status','MINORS')->values()];
             $active = $players->where('scoring_status','ACTIVE');

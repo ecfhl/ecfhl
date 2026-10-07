@@ -11,3 +11,7 @@
 @media(max-width:360px){.overview-home .overview-matchup .team-live-scores .team-live-weekly strong{font-size:23px!important}.overview-home .overview-matchup .team-live-scores .team-live-today strong{font-size:15px!important}.overview-standing{grid-template-columns:16px 30px minmax(0,1fr) auto;gap:5px}.overview-standing img{width:30px;height:30px}.overview-standing small{font-size:9px}}
 /* Keep four-digit weekly totals clear of logos on the narrowest phones. */
 @media(max-width:360px){.overview-home .overview-matchup .team-live-scores{flex-direction:column!important;gap:3px!important;align-items:flex-end!important}.overview-home .overview-matchup .team-live-side-right .team-live-scores{align-items:flex-start!important}.overview-home .overview-matchup .team-live-weekly{order:-1!important}.overview-home .overview-matchup .team-live-score{flex-direction:row!important;gap:3px!important}.overview-home .overview-matchup .team-live-logo{align-self:center}}
+
+.overview-hero__inner{position:relative}
+.overview-hero__inner>.overview-home__date{position:absolute;right:0;top:0}
+.overview-hero__inner>div{padding-right:115px}

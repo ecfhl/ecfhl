@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="/overview-home.css?v={{ hash_file('sha256', base_path('public/overview-home.css')) }}">
 <section class="overview-hero">
   <div class="shell overview-hero__inner">
+    <span class="overview-home__date">{{ \Carbon\CarbonImmutable::parse($today)->format('l, M j') }}</span>
     <button type="button" class="league-logo-viewer overview-hero__logo" data-team-icon-viewer data-league-logo data-team-name="East Coast Fantasy Hockey League" aria-label="View East Coast Fantasy Hockey League logo">
       <img src="{{ \App\Support\TeamImages::url('league-logo',160) }}" data-full-src="{{ \App\Support\TeamImages::url('league-logo') }}" alt="East Coast Fantasy Hockey League logo" width="140" height="140">
     </button>
@@ -16,10 +17,6 @@
   </div>
 </section>
 <div class="shell overview-home">
-  <div class="overview-home__heading">
-    <h2>League overview</h2>
-    <span class="overview-home__date">{{ \Carbon\CarbonImmutable::parse($today)->format('l, M j') }}</span>
-  </div>
   @php
     $myTeamName = request()->user()?->claim?->team_name;
     $liveTeams=$snapshot ? app(\App\Support\LiveScoring\ViewData::class)->teams($snapshot) : [];

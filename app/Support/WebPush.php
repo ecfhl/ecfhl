@@ -12,7 +12,7 @@ class WebPush
     private function scoreBodyMatches(string $body,string $name): bool
     {
         foreach(PlayerName::searchVariants($name) as $variant){
-            if(str_starts_with($body,$variant.' · ') || str_starts_with($body,$variant.' now has '))return true;
+            if(str_starts_with($body,$variant.' · ') || str_starts_with($body,$variant.' now has ') || str_contains($body,' by '.$variant.' (') || str_ends_with($body,' by '.$variant))return true;
         }
         return false;
     }
@@ -107,16 +107,16 @@ class WebPush
         $score=DB::table('push_notifications')->where('category','live-score')->orderByDesc('id')->first();
         if(!$score)throw \Illuminate\Validation\ValidationException::withMessages(['score'=>'No scoring alert has been recorded yet. Try after the next player earns fantasy points.']);
         $alert=['title'=>$score->title,'body'=>$score->body,'url'=>$score->url,'fantasy_team_id'=>$score->fantasy_team_id];
-        // Rebuild older alerts with the same team/stat-line formatter used by live scoring.
+        // Rebuild legacy alerts; current event messages replay exactly as originally sent.
         $date=preg_match('/[?&]date=(\d{4}-\d{2}-\d{2})/',(string)$score->url,$match)?$match[1]:(new FantasyDay)->today()->toDateString();
         $snapshot=app(\App\Support\LiveScoring\SnapshotRepository::class)->get($date);
-        foreach(($snapshot['players']??[]) as $player){
+        foreach((str_contains($score->body,' by ')?[]:($snapshot['players']??[])) as $player){
             if((string)($player['fantasy_team_id']??'')!==(string)$score->fantasy_team_id)continue;
             if($this->scoreBodyMatches($score->body,$player['player_name'])){
                 $alert=\App\Support\LiveScoring\ScoringAlert::payload($snapshot,$player);break;
             }
         }
-        if(!str_contains($alert['body'],'G: ')||!str_contains($alert['body'],'GWG: '))throw \Illuminate\Validation\ValidationException::withMessages(['score'=>'The last scoring alert has no game stat line available. Try after the next scoring update.']);
+        if(!str_contains($alert['body'],' by ') && (!str_contains($alert['body'],'G: ')||!str_contains($alert['body'],'GWG: ')))throw \Illuminate\Validation\ValidationException::withMessages(['score'=>'The last scoring alert has no game stat line available. Try after the next scoring update.']);
         $id=DB::transaction(function()use($alert,$subscription){
             $id=DB::table('push_notifications')->insertGetId(array_merge($alert,['category'=>'test-score','title'=>$alert['title'].' · TEST','created_at'=>now(),'updated_at'=>now()]));
             DB::table('push_deliveries')->insert(['subscription_id'=>$subscription->id,'notification_id'=>$id]);return $id;
@@ -144,24 +144,19 @@ class WebPush
 
         if(in_array($type,$scoreTypes,true)){
             $query=DB::table('push_notifications')->where('category','live-score');
-            if($type==='team-goalie-score'){
-                // Older goalie alerts used the skater stat line, so identify the
-                // player from the saved snapshot instead of relying on body text.
-                $source=$query->orderByDesc('id')->get()->first(function($notification){
-                    $date=preg_match('/[?&]date=(\\d{4}-\\d{2}-\\d{2})/',(string)$notification->url,$match)?$match[1]:null;
-                    if(!$date)return false;
-                    $snapshot=app(\App\Support\LiveScoring\SnapshotRepository::class)->get($date);
-                    foreach(($snapshot['players']??[]) as $player){
-                        if((string)($player['fantasy_team_id']??'')!==(string)$notification->fantasy_team_id)continue;
-                        if(!$this->scoreBodyMatches((string)$notification->body,(string)($player['player_name']??'')))continue;
-                        return strtoupper((string)($player['position']??''))==='G';
-                    }
-                    return false;
-                });
-            }else{
-                // My-team and opponent score tests must use the last skater alert.
-                $source=$query->where('body','like','%PPG: %')->where('body','not like','%W: %')->orderByDesc('id')->first();
-            }
+            // Identify the player from the dated snapshot; message wording is presentation only.
+            $wantGoalie=$type==='team-goalie-score';
+            $source=$query->orderByDesc('id')->get()->first(function($notification)use($wantGoalie){
+                $date=preg_match('/[?&]date=(\d{4}-\d{2}-\d{2})/',(string)$notification->url,$match)?$match[1]:null;
+                $snapshot=$date?app(\App\Support\LiveScoring\SnapshotRepository::class)->get($date):null;
+                foreach(($snapshot['players']??[]) as $player){
+                    if((string)($player['fantasy_team_id']??'')!==(string)$notification->fantasy_team_id)continue;
+                    if(!$this->scoreBodyMatches((string)$notification->body,(string)($player['player_name']??'')))continue;
+                    return (strtoupper((string)($player['position']??''))==='G')===$wantGoalie;
+                }
+                // Preserve replay for legacy records whose dated snapshot is no longer available.
+                return !$wantGoalie && str_contains((string)$notification->body,'PPG: ') && !str_contains((string)$notification->body,'W: ');
+            });
             $missing='No previous '.($type==='team-goalie-score'?'goalie scoring':'non-goalie scoring').' notification has been sent yet.';
         }else{
             $source=DB::table('push_notifications')->where('category','goalie-status')->orderByDesc('id')->first();

@@ -27,7 +27,7 @@
 
     @endphp
     <title>{{ $browserTitle }}</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7"><link rel="shortcut icon" href="/favicon.svg?v=7"><link rel="apple-touch-icon" href="/ecfhl-logo.png?v=7"><link rel="stylesheet" href="/app.css?v=7"><link rel="stylesheet" href="/header-filters.css?v=4"><link rel="stylesheet" href="/navigation-feedback.css?v={{ hash_file('sha256', base_path('public/navigation-feedback.css')) }}">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7"><link rel="shortcut icon" href="/favicon.svg?v=7"><link rel="apple-touch-icon" href="/ecfhl-logo.png?v=7"><link rel="stylesheet" href="/app.css?v={{ hash_file('sha256', base_path('public/app.css')) }}"><link rel="stylesheet" href="/header-filters.css?v=4"><link rel="stylesheet" href="/navigation-feedback.css?v={{ hash_file('sha256', base_path('public/navigation-feedback.css')) }}">
 @stack('styles')
 <style>
 .league-logo-viewer{display:flex;border:0;padding:0;background:transparent;cursor:zoom-in;border-radius:8px}.league-logo-viewer:focus-visible{outline:2px solid #60a5fa;outline-offset:3px}.other-menu-heading{padding:5px 10px;color:#afc5d8;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em}.button:disabled{opacity:.6;cursor:not-allowed}.submit-pending{cursor:wait!important}.submit-pending::before{content:'';display:inline-block;width:12px;height:12px;margin-right:7px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-2px;animation:submit-spin .8s linear infinite}@keyframes submit-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.submit-pending::before{animation:none}}
@@ -58,7 +58,7 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 <body>
 <div id="navigation-loading" class="navigation-loading" data-league-logo="{{ $loadingLeagueLogo }}" data-page-logo="{{ $loadingPageLogo }}" data-page-name="{{ $loadingPageName }}" hidden>
   <div class="navigation-loading-card">
-    <img id="navigation-loading-image" class="navigation-loading-image" src="{{ $loadingPageLogo }}" width="96" height="96" alt="{{ $loadingPageName }} logo">
+    <img id="navigation-loading-image" class="navigation-loading-image" hidden onload="this.hidden=false" onerror="this.hidden=true" src="{{ $loadingPageLogo }}" width="96" height="96" alt="{{ $loadingPageName }} logo">
     <div class="navigation-loading-caption"><span class="navigation-spinner" aria-hidden="true"></span><span id="navigation-loading-message" role="status" aria-live="polite">Loading…</span></div>
     <button id="navigation-cancel" type="button" hidden>Cancel loading</button>
   </div>

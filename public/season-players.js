@@ -72,27 +72,50 @@
     const rows = document.getElementById('season-player-rows');
     const count = document.getElementById('season-player-count');
     const error = document.getElementById('season-player-error');
-    listen(button, 'click', async () => {
+    let observer;
+    let disposed = false;
+    let request;
+    const watchEnd = () => {
+      observer?.disconnect();
+      if (button.dataset.nextUrl && rows.lastElementChild) observer?.observe(rows.lastElementChild);
+    };
+    cleanups.push(() => { disposed = true; request?.abort(); observer?.disconnect(); });
+    const loadMore = async () => {
       if (button.disabled || !button.dataset.nextUrl) return;
+      if (pending || disposed) return;
+      request = new AbortController();
+      observer?.disconnect();
       button.disabled = true;
       button.textContent = 'Loading…';
       error.textContent = '';
       try {
-        const response = await fetch(button.dataset.nextUrl, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+        const response = await fetch(button.dataset.nextUrl, { headers: { Accept: 'application/json' }, credentials: 'same-origin', signal: request.signal });
         if (!response.ok) throw new Error('Request failed');
         const data = await response.json();
         if (typeof data.html !== 'string' || !Number.isInteger(data.shown) || !Number.isInteger(data.total)) throw new Error('Invalid response');
+        if (disposed) return;
         rows.insertAdjacentHTML('beforeend', data.html);
         count.textContent = `Showing ${data.shown.toLocaleString()} of ${data.total.toLocaleString()} players`;
         button.dataset.nextUrl = data.next_url || '';
         button.hidden = !data.next_url;
+        watchEnd();
       } catch (_) {
+        if (disposed) return;
+        button.classList.remove('player-auto-more');
         error.textContent = 'Could not load more players. Please try again.';
       } finally {
         button.disabled = false;
         button.textContent = 'Show 25 more';
       }
-    });
+    };
+    listen(button, 'click', loadMore);
+    if (typeof IntersectionObserver !== 'undefined') {
+      button.classList.add('player-auto-more');
+      observer = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting)) loadMore();
+      }, {rootMargin: '0px 0px 120px 0px'});
+      watchEnd();
+    }
   };
   initialize();
 

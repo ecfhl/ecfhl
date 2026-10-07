@@ -1,6 +1,6 @@
 /* Individual roster pages share the Teams directory's surfaces and spacing. */
-.individual-team-page{max-width:960px;padding-top:12px;padding-bottom:18px;--team-blue:#2468ab;--team-heading-bg:#eaf0f7;--team-heading-text:#52657e;--team-idle-bg:#fff8e7}
-html[data-theme="dark"] .individual-team-page{--team-blue:#8dc9ff;--team-heading-bg:#1b2e46;--team-heading-text:#a9bed8;--team-idle-bg:#342e21}
+.individual-team-page{max-width:960px;padding-top:12px;padding-bottom:18px;--team-blue:#2468ab;--team-heading-bg:#eaf0f7;--team-heading-text:#52657e;--team-idle-bg:#f0f2f5}
+html[data-theme="dark"] .individual-team-page{--team-blue:#8dc9ff;--team-heading-bg:#1b2e46;--team-heading-text:#a9bed8;--team-idle-bg:#29323d}
 .team-roster-breadcrumb{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:11px;color:var(--muted);margin-bottom:6px}
 .team-roster-breadcrumb a{display:inline-flex;align-items:center;min-height:32px;font-size:12px;color:var(--team-blue);font-weight:700;text-decoration:none}
 .team-page-head{padding:0 0 10px}

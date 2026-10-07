@@ -22,7 +22,11 @@
   const showLoading = (logo, name) => {
     if (!loading) return;
     if (loadingImage) {
+      loadingImage.hidden = true;
+      loadingImage.onload = () => { loadingImage.hidden = false; };
+      loadingImage.onerror = () => { loadingImage.hidden = true; };
       loadingImage.src = logo;
+      if (loadingImage.complete && loadingImage.naturalWidth > 0) loadingImage.hidden = false;
       loadingImage.alt = `${name} logo`;
     }
     document.body.classList.add('navigation-pending');

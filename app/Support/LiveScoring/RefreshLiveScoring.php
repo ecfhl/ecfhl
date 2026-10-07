@@ -71,7 +71,7 @@ final class RefreshLiveScoring
             $old = $previous[$player['fantasy_team_id'].'|'.$player['player_id']] ?? null;
             if ($player['scoring_status'] !== 'ACTIVE' || !$old || $player['daily_fpts'] <= $old['daily_fpts']) continue;
             try {
-                $alert = ScoringAlert::payload($snapshot, $player);
+                $alert = ScoringAlert::payload($snapshot, $player, $old);
                 app(WebPush::class)->notify('live-score',$alert['title'],$alert['body'],$alert['url'],$alert['fantasy_team_id'],['opponent_team_id'=>$opponents[$player['fantasy_team_id']]??null,'game_date'=>$snapshot['fantasy_date']]);
             } catch (\Throwable $e) {
                 Log::warning('Live scoring notification failed', ['error'=>$e->getMessage()]);

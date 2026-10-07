@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('content')
 <link rel="stylesheet" href="/matchup-scoreboard.css?v={{ hash_file('sha256', base_path('public/matchup-scoreboard.css')) }}">
-<div class="page-head current-teams-head"><div class="shell"><div class="eyebrow">2026-27 rosters</div><h1><span style="color:#c94b52">●</span> Live Scoring</h1><p>Current Matchups for {{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}.</p>@if($scoreLastUpdate)<p class="team-updated">Updated @include('partials.updated-time',['value'=>$scoreLastUpdate]){{ $autoRefresh ? ' · Data refreshes every minute during games and hourly when idle' : ' · Saved results for this fantasy date' }}</p>@endif</div></div>
+<div class="page-head current-teams-head"><div class="shell compact-page-heading"><div><div class="eyebrow">2026-27 season</div><h1><span style="color:#c94b52">●</span> Live Scoring</h1></div><div class="compact-page-links"><span class="page-date-badge">{{ \Carbon\CarbonImmutable::parse($date)->format('l, M j') }}</span><a target="_blank" rel="noopener noreferrer" href="https://www.fantrax.com/fantasy/league/{{ rawurlencode(\App\Support\LiveScoring\FantraxClient::LEAGUE_ID) }}/livescoring"><img src="/fantrax-icon.png" width="18" height="18" alt="">Fantrax</a></div></div></div>
 
 <div class="shell current-teams-page">
   <div class="team-toolbar">
@@ -232,6 +232,7 @@
       </details>
     @endforeach
   </div>
+  <footer class="compact-page-footer">@if($scoreLastUpdate)<span class="team-updated">Updated @include('partials.updated-time',['value'=>$scoreLastUpdate])</span>@endif</footer>
 </div>
 
 <style>

@@ -1,12 +1,7 @@
 <div class="shell standings-page">
-  <div class="page-head">
+  <div class="page-head standings-compact-head">
     <div class="eyebrow">2026-27 season</div>
     <h1>🏆 Standings</h1>
-    <p class="subtle standings-refresh-status" role="status">Fantrax regular-season standings. Data refreshes every minute during games and hourly when idle. Records follow finalized Fantrax results.</p>
-    @if(auth()->user()?->is_admin)<p class="standings-collector-link"><a href="/job-status#collector-standings">Standings collector</a></p>@endif
-    @if(!empty($standingsLastUpdate))
-      <p class="subtle standings-updated">Updated @include('partials.updated-time',['value'=>$standingsLastUpdate])</p>
-    @endif
     @include('partials.fantrax-standings',['season'=>$season])
   </div>
 
@@ -139,4 +134,11 @@
       @endforeach
     </div>
   @endif
+  <footer class="compact-page-footer">
+    <span class="standings-refresh-status" role="status"></span>
+    @if(auth()->user()?->is_admin)<p class="standings-collector-link"><a href="/job-status#collector-standings">Standings collector</a></p>@endif
+    @if(!empty($standingsLastUpdate))
+      <p class="subtle standings-updated">Updated @include('partials.updated-time',['value'=>$standingsLastUpdate])</p>
+    @endif
+  </footer>
 </div>

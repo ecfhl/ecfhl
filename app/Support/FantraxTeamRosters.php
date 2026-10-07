@@ -72,7 +72,7 @@ class FantraxTeamRosters
                     'position'=>$position,
                     'roster_status'=>$status,
                     'is_bench'=>in_array($status, ['RESERVE','BENCH'], true),
-                    'is_ir'=>$status === 'INJURED_RESERVE' || !empty($stat['injury_status']),
+                    'is_ir'=>$status === 'INJURED_RESERVE',
                     'injury_status'=>$stat['injury_status'] ?? null,
                     'is_playing'=>(bool)($stat['is_playing'] ?? false),
                     'opponent'=>$opponent !== '' ? $opponent : null,
