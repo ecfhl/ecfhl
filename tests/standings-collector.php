@@ -57,7 +57,7 @@ foreach([['2026-10-04T17:16:00Z',true],['2026-10-04T17:17:00Z',true]] as [$insta
 }
 \Carbon\CarbonImmutable::setTestNow();
 $kernel=$app->make(Illuminate\Contracts\Http\Kernel::class);$request=Illuminate\Http\Request::create('/standings');$response=$kernel->handle($request);$kernel->terminate($request,$response);
-checkCollector($response->getStatusCode()===200&&str_contains($response->getContent(),'/standings.js?v=1')&&str_contains($response->getContent(),'standings-refresh-status')&&!str_contains($response->getContent(),'Fantrax regular-season standings. Data refreshes'),'Standings page must load automatic refresh: '.$response->getStatusCode().' '.($response->headers->get('Location')??substr(strip_tags($response->getContent()),0,160)));
+checkCollector($response->getStatusCode()===200&&str_contains($response->getContent(),'/standings.js?v='.hash_file('sha256',base_path('public/standings.js')))&&str_contains($response->getContent(),'standings-refresh-status')&&!str_contains($response->getContent(),'Fantrax regular-season standings. Data refreshes'),'Standings page must load automatic refresh: '.$response->getStatusCode().' '.($response->headers->get('Location')??substr(strip_tags($response->getContent()),0,160)));
 checkCollector(str_contains($response->getContent(),'Scoring Period 1')&&str_contains($response->getContent(),'data-period-number="1"'),'Standings must read the matchup table written by the collector.');
 foreach(['h2h','total','none'] as $type){
  $app->forgetScopedInstances();$request=Illuminate\Http\Request::create('/standings?type='.$type,'GET',[],[],[],['HTTP_X_REQUESTED_WITH'=>'XMLHttpRequest']);$partial=$kernel->handle($request);$kernel->terminate($request,$partial);
