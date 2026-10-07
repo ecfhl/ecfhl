@@ -17,12 +17,7 @@ final class LiveScoringController
         $teams = $snapshot ? $presenter->teams($snapshot) : [];
         $standings = collect(\App\Support\CurrentTeams::standings())->keyBy('slug');
         foreach ($teams as &$team) {
-            $standing = $standings->get($team['slug']);
-            $rank = (int)($standing['rank'] ?? 0);
-            $suffix = in_array($rank % 100, [11, 12, 13], true) ? 'th' : match ($rank % 10) { 1=>'st', 2=>'nd', 3=>'rd', default=>'th' };
-            $team['rank_label'] = $rank > 0 ? $rank.$suffix : null;
-            $team['record'] = $standing && isset($standing['w'], $standing['l'], $standing['t'])
-                ? $standing['w'].'–'.$standing['l'].'–'.$standing['t'] : null;
+            $team += \App\Support\CurrentTeams::scoreboardStanding($standings->get($team['slug']));
         }
         unset($team);
         $matchups = [];

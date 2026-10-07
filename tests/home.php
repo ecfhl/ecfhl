@@ -50,6 +50,8 @@ $html=seasonRequest('/')->getContent();
 verifySeason(str_contains($html,'data-page-logo="'.App\Support\TeamImages::url('league-logo',160).'"') && str_contains($html,'data-page-name="ECFHL"'),'Home loading screen must use the ECFHL logo.');
 $xpath=homeDocument($html);
 $hasClass=fn($class)=>'contains(concat(" ",normalize-space(@class)," ")," '.$class.' ")';
+verifySeason($xpath->query('//span['.$hasClass('team-live-record').']')->length===14 && substr_count($html,'>7–2–1</span>')===14,'Home must display each current team record separately from its name, even without a live snapshot.');
+foreach (['1st','2nd','3rd','5th','11th','12th','13th','14th'] as $ordinal) verifySeason(str_contains($html,'class="team-live-rank">('.$ordinal.')</span>'),'Home standings rank missing: '.$ordinal);
 $expected=['F'=>[3,1,4],'D'=>[3,1,4],'G'=>[4,3,1]];
 foreach (['F','D','G'] as $i=>$position) {
     $rows=$xpath->query('(//div['.$hasClass('overview-player-group').'])['.($i+1).']/a');

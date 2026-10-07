@@ -47,5 +47,47 @@ checkMaintenance(DB::table('player_projection_baselines')->get()->toJson()===$fr
 checkMaintenance(DB::table('historical_player_stats')->get()->toJson()===$archive && DB::table('seasons')->where('season_id','archive')->exists(),'League and player archives must be preserved');
 $again=$maintenance->run();checkMaintenance(array_sum($again)===0,'Repeat maintenance must be idempotent');
 $indexMigration->down();checkMaintenance(!Schema::hasIndex('season_player_stats','season_players_points'),'Index migration must roll back cleanly');
+checkMaintenance((new App\Support\DatabaseSpace)->reclaim()===[],'MySQL file compaction must not issue ALTER statements against SQLite');
+
+// Exercise compaction orchestration without touching a production database.
+class ReclaimTestConnection extends Illuminate\Database\MySqlConnection {
+ public array $statements=[];
+ public bool $released=false;
+ private int $reads=0;
+ public function __construct(private bool $fail){parent::__construct(fn()=>throw new RuntimeException('No network allowed'),'test','',['driver'=>'mysql']);}
+ public function selectOne($sql,$bindings=[],$useReadPdo=true){
+  if(str_contains($sql,'GET_LOCK'))return (object)['acquired'=>1];
+  if(str_contains($sql,'RELEASE_LOCK')){$this->released=true;return (object)['released'=>1];}
+  if(str_contains($sql,'@@SESSION.lock_wait_timeout'))return (object)['lock_timeout'=>31536000,'stats_expiry'=>86400];
+  throw new RuntimeException('Unexpected query: '.$sql);
+ }
+ public function select($sql,$bindings=[],$useReadPdo=true){
+  checkMaintenance(str_contains($sql,"s.SPACE_TYPE = 'Single'")&&str_contains($sql,'ORDER BY s.FILE_SIZE ASC'),'Only individual tablespaces may be rebuilt, smallest first');
+  $small=(object)['name'=>'small','reusable_bytes'=>2097152,'file_bytes'=>4194304,'allocated_bytes'=>4194304];
+  if($this->reads++){$small->file_bytes=$small->allocated_bytes=2097152;}
+  return [$small,(object)['name'=>'large','reusable_bytes'=>4194304,'file_bytes'=>16777216,'allocated_bytes'=>16777216],
+   (object)['name'=>'oversized','reusable_bytes'=>8388608,'file_bytes'=>100663296,'allocated_bytes'=>100663296],
+   (object)['name'=>'packed','reusable_bytes'=>0,'file_bytes'=>1048576,'allocated_bytes'=>1048576]];
+ }
+ public function statement($sql,$bindings=[]){
+  $this->statements[]=$sql;
+  if($this->fail && str_starts_with($sql,'ALTER TABLE `large`'))throw new RuntimeException('Metadata lock unavailable');
+  return true;
+ }
+}
+$manager=DB::getFacadeRoot();
+foreach([false,true] as $fail){
+ $connection=new ReclaimTestConnection($fail);
+ DB::swap(new class($connection){public function __construct(private $connection){}public function connection(){return $this->connection;}});
+ try{
+  $result=(new App\Support\DatabaseSpace)->reclaim();
+  checkMaintenance(!$fail && $result['tables_rebuilt']===2 && $result['tables_skipped']===1 && $result['allocated_bytes_reclaimed']===2097152,'Compaction must measure physical bytes and skip oversized/packed files');
+ }catch(RuntimeException $e){checkMaintenance($fail && str_contains($e->getMessage(),'retry for: large'),'Partial compaction must report the failed table for retry');}
+ finally{DB::swap($manager);}
+ checkMaintenance($connection->released,'Compaction must release its database lock after success or partial failure');
+ checkMaintenance($connection->statements===['SET SESSION lock_wait_timeout = 5','SET SESSION information_schema_stats_expiry = 0',
+  'ALTER TABLE `small` FORCE, ALGORITHM=INPLACE, LOCK=NONE','ALTER TABLE `large` FORCE, ALGORITHM=INPLACE, LOCK=NONE',
+  'SET SESSION lock_wait_timeout = 31536000','SET SESSION information_schema_stats_expiry = 86400'],'Compaction must preserve concurrent writes, skip packed/oversized tables, and restore session settings');
+}
 CarbonImmutable::setTestNow();
 echo "Database maintenance checks passed: DFO exceptions, team identity, compact sources, canonical/league archives, seven-day working sets, outage fallback, session expiration, last job state, frozen projections, idempotency and reversible indexes.\n";

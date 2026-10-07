@@ -9,6 +9,7 @@ php artisan config:cache
 php artisan view:cache
 # Bound collector working sets and remove duplicate upstream JSON before normal traffic.
 php -d memory_limit=256M artisan ecfhl:database-maintenance || echo 'Database maintenance incomplete; the daily retry remains scheduled.' >&2
+php artisan ecfhl:database-reclaim --once || echo 'Database file compaction deferred; it will retry on the next deploy.' >&2
 php artisan ecfhl:database-maintenance --report || echo 'Database size report unavailable.' >&2
 # Prebuild originals and thumbnails before accepting page requests.
 php -d memory_limit=256M artisan ecfhl:warm-images || echo 'Image warmup incomplete; missing images will be generated on first use.' >&2

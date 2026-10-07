@@ -7,6 +7,17 @@ use Illuminate\Support\Str;
 
 final class CurrentTeams
 {
+    public static function scoreboardStanding(?array $standing): array
+    {
+        $rank = (int)($standing['rank'] ?? 0);
+        $suffix = in_array($rank % 100, [11, 12, 13], true) ? 'th' : match ($rank % 10) { 1=>'st', 2=>'nd', 3=>'rd', default=>'th' };
+        return [
+            'rank_label'=>$rank > 0 ? $rank.$suffix : null,
+            'record'=>$standing && isset($standing['w'], $standing['l'], $standing['t'])
+                ? $standing['w'].'–'.$standing['l'].'–'.$standing['t'] : null,
+        ];
+    }
+
     public static function standings(): array
     {
         // Current league pages are independent of the historical season-type filter.

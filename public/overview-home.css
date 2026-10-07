@@ -15,3 +15,16 @@
 .overview-hero__inner{position:relative}
 .overview-hero__inner>.overview-home__date{position:absolute;right:0;top:0}
 .overview-hero__inner>div{padding-right:115px}
+
+/* Match Live Scoring: rank beside the name and record above the inside scores. */
+.overview-home .overview-matchup .team-live-matchup-summary{grid-template-rows:auto auto auto}
+.overview-home .overview-matchup .team-live-side{grid-template-rows:subgrid;grid-row:1 / span 3}
+.overview-home .overview-matchup .team-live-name-row>a{display:flex!important;align-items:baseline;gap:4px}
+.overview-home .overview-matchup .team-live-side-right .team-live-name-row>a{justify-content:flex-end}
+.overview-home .team-live-team-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.overview-home .team-live-rank{flex-shrink:0;font-size:.85em;font-weight:700}
+.overview-home .team-live-record{grid-column:2;grid-row:2;justify-self:end;font-size:9px;line-height:1.2;font-weight:700;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.overview-home .team-live-side-right .team-live-record{grid-column:1;justify-self:start}
+.overview-home .overview-matchup .team-live-logo{grid-row:2 / span 2}
+.overview-home .overview-matchup .team-live-body{grid-row:3;margin-top:0!important;align-self:start!important}
+.overview-home .overview-matchup .team-live-vs{grid-row:3;align-self:start;margin:4px 0 0!important}

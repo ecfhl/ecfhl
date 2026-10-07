@@ -20,6 +20,7 @@
   @php
     $myTeamName = request()->user()?->claim?->team_name;
     $liveTeams=$snapshot ? app(\App\Support\LiveScoring\ViewData::class)->teams($snapshot) : [];
+    $scoreboardStandings=collect($standings)->keyBy('slug');
     if ($myTeamName) {
       $matchups = $matchups->sortByDesc(fn($m) => $m->away_team_name === $myTeamName || $m->home_team_name === $myTeamName)->values();
     }
@@ -34,15 +35,18 @@
           $homeSlug=\Illuminate\Support\Str::slug($matchup->home_team_name);
           $awayLive=collect($liveTeams)->firstWhere('name',$matchup->away_team_name);
           $homeLive=collect($liveTeams)->firstWhere('name',$matchup->home_team_name);
+          $awayStanding=\App\Support\CurrentTeams::scoreboardStanding($scoreboardStandings->get($awaySlug));
+          $homeStanding=\App\Support\CurrentTeams::scoreboardStanding($scoreboardStandings->get($homeSlug));
         @endphp
         <div class="overview-matchup ecfhl-scoreboard {{ $myTeamName && ($matchup->away_team_name === $myTeamName || $matchup->home_team_name === $myTeamName) ? 'overview-matchup--mine' : '' }}">
           <a class="overview-matchup-link" href="/teams/current?matchup={{ rawurlencode($awaySlug) }}" aria-label="View {{ $matchup->away_team_name }} versus {{ $matchup->home_team_name }} matchup"></a>
           <div class="team-live-matchup-summary">
             <div class="team-live-side team-live-score-left">
               <div class="team-live-name-row">
-                <a href="/teams/current/{{ $awaySlug }}">{{ $matchup->away_team_name }}</a>
+                <a href="/teams/current/{{ $awaySlug }}" title="{{ $matchup->away_team_name }}{{ $awayStanding['rank_label'] ? ' ('.$awayStanding['rank_label'].')' : '' }}"><span class="team-live-team-name">{{ $matchup->away_team_name }}</span>@if($awayStanding['rank_label'])<span class="team-live-rank">({{ $awayStanding['rank_label'] }})</span>@endif</a>
                 <button type="button" class="team-logo-viewer team-live-logo" data-team-icon-viewer data-team-slug="{{ $awaySlug }}" data-team-name="{{ $matchup->away_team_name }}" aria-label="View {{ $matchup->away_team_name }} logo"><img src="{{ \App\Support\TeamImages::url($awaySlug,160) }}" data-full-src="{{ \App\Support\TeamImages::url($awaySlug) }}" alt="{{ $matchup->away_team_name }} team icon" width="160" height="160" loading="lazy" decoding="async"></button>
               </div>
+              @if($awayStanding['record'] !== null)<span class="team-live-record" aria-label="{{ $matchup->away_team_name }} win-loss-tie record">{{ $awayStanding['record'] }}</span>@endif
               <div class="team-live-body">
                 <div class="team-live-scores">
                   <span class="team-live-score team-live-weekly overview-matchup-weekly"><strong>{{ number_format($awayLive['week_fpts'] ?? $matchup->away_score ?? 0,0) }}</strong><small>Weekly</small></span>
@@ -53,9 +57,10 @@
             <div class="team-live-vs">VS</div>
             <div class="team-live-side team-live-side-right team-live-score-right">
               <div class="team-live-name-row">
-                <a href="/teams/current/{{ $homeSlug }}">{{ $matchup->home_team_name }}</a>
+                <a href="/teams/current/{{ $homeSlug }}" title="{{ $matchup->home_team_name }}{{ $homeStanding['rank_label'] ? ' ('.$homeStanding['rank_label'].')' : '' }}"><span class="team-live-team-name">{{ $matchup->home_team_name }}</span>@if($homeStanding['rank_label'])<span class="team-live-rank">({{ $homeStanding['rank_label'] }})</span>@endif</a>
                 <button type="button" class="team-logo-viewer team-live-logo" data-team-icon-viewer data-team-slug="{{ $homeSlug }}" data-team-name="{{ $matchup->home_team_name }}" aria-label="View {{ $matchup->home_team_name }} logo"><img src="{{ \App\Support\TeamImages::url($homeSlug,160) }}" data-full-src="{{ \App\Support\TeamImages::url($homeSlug) }}" alt="{{ $matchup->home_team_name }} team icon" width="160" height="160" loading="lazy" decoding="async"></button>
               </div>
+              @if($homeStanding['record'] !== null)<span class="team-live-record" aria-label="{{ $matchup->home_team_name }} win-loss-tie record">{{ $homeStanding['record'] }}</span>@endif
               <div class="team-live-body">
                 <div class="team-live-scores">
                   <span class="team-live-score team-live-today overview-matchup-daily"><strong>{{ number_format($homeLive['today_fpts'] ?? 0,0) }}</strong><small>Daily</small></span>
