@@ -28,7 +28,7 @@ class OwnerNotificationPolicy {
   $teamId=$user->claim?->fantasy_team_id;if(!$teamId || $key==='')return false;
   if(!array_key_exists($date,$this->rosterGoalies)){
    $snapshot=app(\App\Support\LiveScoring\SnapshotRepository::class)->get($date);
-   $players=$snapshot!==null ? ($snapshot['players']??[]) : \Illuminate\Support\Facades\DB::table('active_fantasy_rosters')->whereDate('game_date',$date)->get()->map(fn($p)=>(array)$p)->all();
+   $players=$snapshot!==null ? ($snapshot['players']??[]) : \Illuminate\Support\Facades\DB::table('active_fantasy_rosters')->where('game_date',$date)->get()->map(fn($p)=>(array)$p)->all();
    $this->rosterGoalies[$date]=[];
    foreach($players as $p){
     $position=$p['position']??'';if(is_array($position))$position=implode(',',$position);

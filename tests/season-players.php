@@ -306,6 +306,11 @@ $profile=app(\App\Support\PlayerProfile::class)->data('p61');
 verifySeason(array_keys($profile['categoryLabels'])===['FPTS','FPTS/GP','GP','W','L','OTL','SO']&&$profile['seasonStats']['OTL']===4&&$profile['seasonStats']['SO']===3,'Goalie table must map Fantrax overtime losses and shutouts.');
 $profileHtml=seasonRequest('/players/p1')->getContent();
 verifySeason(str_contains($profileHtml,'<h2>Stats</h2>')&&str_contains($profileHtml,'2025-26')&&!str_contains($profileHtml,'player-profile-categories'),'Player profile must render season rows without stat boxes.');
+// Zero-game prospects still open profiles using roster metadata after stats pruning.
+DB::table('active_fantasy_rosters')->insert(['game_date'=>'2026-10-04','fantasy_team_id'=>'a','fantasy_team_name'=>'Alpha','player_id'=>'zero-prospect','player_name'=>'Zero Prospect','position'=>'F','nhl_team'=>'MTL','is_bench'=>true]);
+$zeroProfile=seasonRequest('/players/zero-prospect');
+verifySeason($zeroProfile->getStatusCode()===200 && str_contains($zeroProfile->getContent(),'Prospect, Zero'),'Pruned zero-game prospects must keep working player popups');
+verifySeason(!DB::table('season_player_stats')->where('player_id','zero-prospect')->exists(),'Opening a prospect profile must not recreate stored zero-stat rows');
 // A single birthday source supports live age calculation without requests from player pages.
 DB::table('player_birthdates')->insert(['nhl_player_id'=>1,'name_key'=>\App\Support\PlayerBirthdates::nameKey('Player <unsafe>'),'birth_date'=>'2000-10-05','refreshed_at'=>now()]);
 $birthdates=app(\App\Support\PlayerBirthdates::class);

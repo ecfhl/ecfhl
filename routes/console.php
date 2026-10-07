@@ -69,7 +69,7 @@ Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayer
         try{$goalies=$fantrax->fetch($date,'G');}catch(\Throwable $e){Log::warning('Dedicated Fantrax goalie fetch failed',['date'=>$date->format('Y-m-d'),'error'=>$e->getMessage()]);$goalies=['rows'=>[]];}
         $merged=[];foreach(array_merge($all['rows'],$goalies['rows']) as $p){$key=mb_strtolower(trim($p['player_name'])).'|'.strtoupper(trim($p['team'])).'|'.strtoupper(trim((string)($p['position']??'')));$merged[$key]=$p;}
         $now=now();$rows=array_map(function($p)use($date,$now){$opp=trim((string)($p['opponent']??''));$away=str_starts_with($opp,'@');return ['game_date'=>$date->format('Y-m-d'),'player_id'=>$p['player_id'],'player_name'=>$p['player_name'],'team'=>$p['team'],'position'=>$p['position'],'opponent'=>ltrim($opp,'@'),'home_away'=>$opp===''?null:($away?'AWAY':'HOME'),'game_time'=>$p['game_time']??null,'game_started'=>(bool)($p['game_started']??false),'availability'=>$p['availability'],'waiver_day'=>$p['waiver_day'],'injury_status'=>$p['injury_status'],'projected_fpts'=>$p['projected_fpts'],'fantrax_url'=>$p['fantrax_url'],'source_rank'=>$p['source_rank'],'last_update'=>$now,'created_at'=>$now,'updated_at'=>$now];},array_values($merged));
-        DB::transaction(function()use($date,$rows){DB::table('active_daily_players')->whereDate('game_date',$date->format('Y-m-d'))->delete();if($rows)DB::table('active_daily_players')->insert($rows);});$count=count($rows);$gcount=count(array_filter($rows,fn($r)=>$r['position']==='G'));$this->info($date->format('Y-m-d').': '.$count.' Fantrax players refreshed ('.$gcount.' goalies)');Log::info('Fantrax daily players refresh completed',['date'=>$date->format('Y-m-d'),'rows'=>$count,'goalies'=>$gcount]);
+        DB::transaction(function()use($date,$rows){DB::table('active_daily_players')->where('game_date',$date->format('Y-m-d'))->delete();if($rows)DB::table('active_daily_players')->insert($rows);});$count=count($rows);$gcount=count(array_filter($rows,fn($r)=>$r['position']==='G'));$this->info($date->format('Y-m-d').': '.$count.' Fantrax players refreshed ('.$gcount.' goalies)');Log::info('Fantrax daily players refresh completed',['date'=>$date->format('Y-m-d'),'rows'=>$count,'goalies'=>$gcount]);
     }catch(\Throwable $e){$failed=true;Log::error('Fantrax daily players refresh failed',['date'=>$date->format('Y-m-d'),'url'=>$fantrax->url($date),'error'=>$e->getMessage(),'exception'=>get_class($e)]);$this->error($date->format('Y-m-d').': '.$e->getMessage());}}
     if(!$failed){try{Artisan::call('ecfhl:refresh-available-goalies');$this->line(trim(Artisan::output()));}catch(\Throwable $e){$failed=true;$this->error('Available goalies: '.$e->getMessage());}}
     return $failed?1:0;
@@ -77,6 +77,7 @@ Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayer
 
 require __DIR__.'/live-scoring-console.php';
 require __DIR__.'/projections-console.php';
+require __DIR__.'/database-console.php';
 
 Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dailyMoves) {
     $tz='America/Vancouver';
@@ -89,7 +90,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         $moveRows=$dailyMoves->fetch($day);
         $now=now();
         DB::transaction(function()use($date,$moveRows,$now){
-            DB::table('team_daily_moves')->whereDate('move_date',$date)->delete();
+            DB::table('team_daily_moves')->where('move_date',$date)->delete();
             foreach($moveRows as $move){
                 DB::table('team_daily_moves')->insert([
                     'move_date'=>$date,
@@ -108,7 +109,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         Log::warning('Lineup advisor move-limit refresh failed',['error'=>$e->getMessage()]);
     }
 
-    $rosters=DB::table('active_fantasy_rosters')->whereDate('game_date',$date)->get();
+    $rosters=DB::table('active_fantasy_rosters')->where('game_date',$date)->get();
     $rosters=(new \App\Support\PlayerProjections)->decorate($rosters);
     $teams=$rosters->groupBy('fantasy_team_id');
     $availableGroups=\App\Support\AiTips::groups([], $date);
@@ -289,7 +290,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         $trailing=$teamScore!==null&&$opponentScore!==null&&$teamScore<$opponentScore;
         $lateWeek=$dow>=4;
         $movesLeft=DB::table('team_daily_moves')
-            ->whereDate('move_date',$date)
+            ->where('move_date',$date)
             ->where('fantasy_team_id',(string)$teamId)
             ->value('moves_left');
         $movesLeft=$movesLeft!==null?(int)$movesLeft:null;
@@ -321,7 +322,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             'LA'=>'LAK','NJ'=>'NJD','SJ'=>'SJS','TB'=>'TBL',default=>strtoupper(trim((string)$value))
         };
         $dfoGoalies=DB::table('active_starting_goalies')
-            ->whereDate('game_date',$date)
+            ->where('game_date',$date)
             ->get()
             ->keyBy(fn($g)=>$normalizeGoalieTeam($g->team).'|'.$normalizeGoalieName($g->player_name));
 
@@ -777,7 +778,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         $advice=$advisorAdvice[$advisorKey]['advice']??$baseAdvice;
 
         DB::table('lineup_advice')
-            ->whereDate('advice_date',$date)
+            ->where('advice_date',$date)
             ->where('fantasy_team_id',(string)$teamId)
             ->delete();
         DB::table('lineup_advice')->insert([
@@ -1026,7 +1027,7 @@ Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $
                 ]);
             },$data['rows']);
             DB::transaction(function() use ($date,$rows) {
-                DB::table('active_fantasy_rosters')->whereDate('game_date',$date->toDateString())->delete();
+                DB::table('active_fantasy_rosters')->where('game_date',$date->toDateString())->delete();
                 if($rows) DB::table('active_fantasy_rosters')->insert($rows);
             });
             $teams=count(array_unique(array_column($rows,'fantasy_team_id')));
@@ -1042,7 +1043,7 @@ Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $
         $moveRows=$dailyMoves->fetch($base);
         $now=now();
         DB::transaction(function()use($base,$moveRows,$now){
-            DB::table('team_daily_moves')->whereDate('move_date',$base->toDateString())->delete();
+            DB::table('team_daily_moves')->where('move_date',$base->toDateString())->delete();
             foreach($moveRows as $move){
                 DB::table('team_daily_moves')->insert([
                     'move_date'=>$base->toDateString(),
@@ -1081,7 +1082,7 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
         $day = $date->format('Y-m-d');
         try {
             $previousGoalies=DB::table('active_starting_goalies')
-                ->whereDate('game_date',$day)
+                ->where('game_date',$day)
                 ->get()
                 ->keyBy(fn($r)=>strtoupper(trim((string)$r->team)).'|'.mb_strtolower(trim((string)$r->player_name)));
 
@@ -1147,7 +1148,7 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
                     'accepted'=>count($rows),
                 ]);
             }
-            $stored = DB::table('active_starting_goalies')->whereDate('game_date', $day)
+            $stored = DB::table('active_starting_goalies')->where('game_date', $day)
                 ->get(['player_name','team','opponent','home_away','starting_status']);
             foreach($stored as $goalie){
                 $key=strtoupper(trim((string)$goalie->team)).'|'.mb_strtolower(trim((string)$goalie->player_name));

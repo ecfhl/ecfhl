@@ -18,12 +18,12 @@ Artisan::command('ecfhl:refresh-available-goalies', function () {
             // same playing-today/tomorrow data used by AI Tips and avoids a second,
             // position-filtered Fantrax request that can omit valid goalies.
             $daily = DB::table('active_daily_players')
-                ->whereDate('game_date', $day)
+                ->where('game_date', $day)
                 ->whereRaw('UPPER(TRIM(position)) = ?', ['G'])
                 ->orderBy('source_rank')
                 ->get();
 
-            $dfo = DB::table('active_starting_goalies')->whereDate('game_date', $day)->get();
+            $dfo = DB::table('active_starting_goalies')->where('game_date', $day)->get();
             $normalize = static fn ($v) => preg_replace('/[^\pL\pN]+/u', '', mb_strtolower(trim((string) $v))) ?? '';
             $dfoByName = [];
             foreach ($dfo as $g) {
@@ -73,7 +73,7 @@ Artisan::command('ecfhl:refresh-available-goalies', function () {
             }
 
             DB::transaction(function () use ($day, $rows) {
-                DB::table('active_available_goalies')->whereDate('game_date', $day)->delete();
+                DB::table('active_available_goalies')->where('game_date', $day)->delete();
                 if ($rows) DB::table('active_available_goalies')->insert($rows);
             });
 

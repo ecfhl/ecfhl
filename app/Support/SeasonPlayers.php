@@ -115,10 +115,13 @@ final class SeasonPlayers
             [$expression, $bindings] = $this->sortExpression($sort, $datasetFields);
             // Sort in SQL before pagination, with unavailable values last in either
             // direction. Player ID resolves ties so Show More has a stable order.
-            $players = $query->selectRaw($expression.' as season_sort_value', $bindings)
-                ->orderByRaw('season_sort_value IS NULL')->orderBy('season_sort_value', $direction)
-                ->orderBy('s.player_name')->orderBy('s.player_id')
-                ->paginate(25, ['*'], 'page', $page);
+            $query->selectRaw($expression.' as season_sort_value', $bindings);
+            if($dataset==='season' && in_array($sort,['fpts','fpts_gp','gp','player'],true)){
+                $query->orderBy('season_sort_value',$direction);
+            }else{
+                $query->orderByRaw('season_sort_value IS NULL')->orderBy('season_sort_value',$direction);
+            }
+            $players=$query->orderBy('s.player_name')->orderBy('s.player_id')->paginate(25,['*'],'page',$page);
         }
         $players->appends([
             'positions'=>implode(',', $positions), 'rookies'=>$rookies ? '1' : '0', 'q'=>$search, 'sort'=>$sort, 'direction'=>$direction, 'team'=>$selectedTeam, 'availability'=>$availability, 'line'=>$selectedLine, 'pp'=>$selectedPp, 'dataset'=>$dataset, 'playing'=>$playing, 'dfo_sort'=>$dailyTargetsSort ? '1' : '0',

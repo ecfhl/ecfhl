@@ -14,7 +14,8 @@ final class RefreshPlayerProjections
     public function refresh(CarbonImmutable $today, bool $force = false, ?callable $log = null): int
     {
         $date = $today->setTimezone('America/Halifax')->toDateString();
-        if (!$force && ($currentCount = DB::table('player_projections')->where('as_of_date', $date)->count()) >= 1000) {
+        if (!$force && DB::table('player_projections')->where('as_of_date',$date)->exists()) {
+            $currentCount=DB::table('player_projections')->where('as_of_date',$date)->count();
             if ($log) $log(number_format($currentCount).' player projections already current for '.$date.'.');
             return $currentCount;
         }
@@ -29,7 +30,29 @@ final class RefreshPlayerProjections
         $windows = [];
         $cache = [];
         // Pull the current Fantrax season totals as part of this daily job.
+        $scope=new StatsPlayerScope;
+        $known=array_column($baseline,null,'player_id');
+        if(Schema::hasTable('season_player_stats'))foreach(DB::table('season_player_stats')->get(['player_id','player_name','nhl_team','position','rookie']) as $player){
+            if($scope->listed((array)$player))$known[$player->player_id]=(array)$player;
+        }
+        foreach(['active_daily_players','active_available_goalies','active_fantasy_rosters'] as $table){
+            if(!Schema::hasTable($table))continue;
+            $team=$table==='active_fantasy_rosters'?'nhl_team':'team';
+            $query=DB::table($table)->whereNotNull('player_id')->where('game_date','>=',app(FantasyDay::class)->today()->subDay()->toDateString());
+            $columns=['player_id','player_name',$team.' as nhl_team'];
+            if($table!=='active_available_goalies')$columns[]='position';
+            foreach($query->get($columns) as $player){
+                $metadata=(array)$player;
+                if($table==='active_available_goalies')$metadata['position']='G';
+                if($scope->listed($metadata))$known[$player->player_id]=$metadata;
+            }
+        }
+        $this->source->scopeToActiveStats(array_values($known),$scope);
         $seasonActual = $seasonStart <= $end ? $this->source->seasonActual($seasonStart, $end) : [];
+        // Every season participant remains eligible for zero-GP rolling windows.
+        $tracked=$known;
+        foreach($seasonActual as $id=>$stat)if($scope->keeps($stat,$known[$id]??[]))$tracked[$id]=['player_id'=>(string)$id]+$stat;
+        $this->source->scopeToActiveStats(array_values($tracked),$scope);
         if ($seasonStart <= $end) $cache[$seasonStart] = $seasonActual;
         if ($log) $log('Season actual FPts/GP collected through '.$end.'.');
         foreach ([7, 14, 21] as $days) {
@@ -73,6 +96,7 @@ final class RefreshPlayerProjections
         $baselineById = array_column($baseline, null, 'player_id');
         foreach ($seasonActual as $id => $stat) {
             $metadata = $baselineById[$id] ?? [];
+            if(!$scope->keeps($stat,$metadata))continue;
             $name = $stat['player_name'] ?? $metadata['player_name'] ?? '';
             if ($name === '') continue;
             $position = strtoupper($stat['position'] ?? $metadata['position'] ?? '');
@@ -84,22 +108,21 @@ final class RefreshPlayerProjections
                 'season_fpts'=>$stat['fpts'], 'season_gp'=>$stat['gp'], 'season_fpts_per_game'=>ProjectionMath::rate((float)$stat['fpts'], (int)$stat['gp']),
                 'stats_json'=>json_encode($stat['stats'] ?? [], JSON_THROW_ON_ERROR), 'stats_through'=>$end, 'refreshed_at'=>$now];
         }
-        $storeSeason = Schema::hasTable('season_player_stats') && $seasonRows;
+        $storeSeason = Schema::hasTable('season_player_stats') && $seasonStart <= $end;
         DB::transaction(function () use ($capture, $baseline, $rows, $now, $storeSeason, $seasonRows, $columns) {
             if ($capture) foreach (array_chunk($baseline, 100) as $batch) DB::table('player_projection_baselines')->insert(array_map(fn($r)=>$r + ['captured_at'=>$now], $batch));
-            DB::table('player_projections')->delete();
-            foreach (array_chunk($rows, 100) as $batch) DB::table('player_projections')->insert($batch);
+            foreach(array_chunk($rows,100) as $batch)DB::table('player_projections')->upsert($batch,['player_id'],array_diff(array_keys($batch[0]),['player_id']));
+            DB::table('player_projections')->whereNotIn('player_id',array_column($rows,'player_id'))->delete();
             if ($storeSeason) {
-                DB::table('season_player_stats')->delete();
-                foreach (array_chunk($seasonRows, 100) as $batch) DB::table('season_player_stats')->insert($batch);
-                DB::table('season_player_stat_columns')->delete();
-                foreach ($columns as $group => $labels) DB::table('season_player_stat_columns')->insert(['group'=>$group, 'columns_json'=>json_encode($labels, JSON_THROW_ON_ERROR)]);
+                foreach(array_chunk($seasonRows,100) as $batch)DB::table('season_player_stats')->upsert($batch,['player_id'],array_diff(array_keys($batch[0]),['player_id']));
+                DB::table('season_player_stats')->whereNotIn('player_id',array_column($seasonRows,'player_id'))->delete();
+                foreach ($columns as $group => $labels) DB::table('season_player_stat_columns')->updateOrInsert(['group'=>$group],['columns_json'=>json_encode($labels, JSON_THROW_ON_ERROR)]);
             }
         });
         PublicData::forget('player-projections');
         PublicData::forget('season-player-columns');
         PublicData::forget('standings-awards');
-        if ($log && $storeSeason) $log(count($seasonRows).' complete season player stat lines stored, including Fantrax rookie flags.');
+        if ($log && $storeSeason) $log(count($seasonRows).' season player stat lines stored: played this season or listed on Daily Faceoff.');
         if ($log) $log(count($rows).' player projections regenerated for '.$date.'. Fantrax baseline '.($capture ? 'captured' : 'unchanged').'.');
         return count($rows);
     }

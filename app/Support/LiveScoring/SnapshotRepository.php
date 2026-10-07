@@ -34,7 +34,7 @@ final class SnapshotRepository
             DB::table('live_scoring_snapshots')->updateOrInsert(
                 ['league_id'=>FantraxClient::LEAGUE_ID, 'fantasy_date'=>$snapshot['fantasy_date']],
                 ['source_date'=>$snapshot['source_date'], 'source'=>'fantrax',
-                    'payload'=>json_encode($snapshot, JSON_THROW_ON_ERROR), 'source_payload'=>json_encode($source, JSON_THROW_ON_ERROR),
+                    'payload'=>json_encode($snapshot, JSON_THROW_ON_ERROR), 'source_payload'=>json_encode(['compact_version'=>1,'source_date'=>$snapshot['source_date'],'player_count'=>count($snapshot['players'])], JSON_THROW_ON_ERROR),
                     'player_count'=>count($snapshot['players']), 'collected_at'=>$collected->utc()->format('Y-m-d H:i:s'),
                     'created_at'=>$collected->utc()->format('Y-m-d H:i:s'), 'updated_at'=>$collected->utc()->format('Y-m-d H:i:s')]
             );

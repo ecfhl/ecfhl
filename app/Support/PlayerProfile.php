@@ -9,12 +9,23 @@ final class PlayerProfile
     public function data(string $id): array
     {
         $player=DB::table('season_player_stats')->where('player_id',$id)->first();
-        abort_unless($player,404);
         $projection=DB::table('player_projections')->where('player_id',$id)->first();
         $baseline=DB::table('player_projection_baselines')->where('player_id',$id)->first();
         $roster=DB::table('active_fantasy_rosters')->where('player_id',$id)
             ->where('game_date',fn($q)=>$q->from('active_fantasy_rosters')->selectRaw('MAX(game_date)'))->orderByDesc('id')->first();
         $today=app(FantasyDay::class)->today();
+        if(!$player && ($roster || $baseline)){
+            // Rostered prospects still open a profile without persisting unused zero-stat rows.
+            $metadata=$roster??$baseline;
+            $position=strtoupper((string)($metadata->position??''));
+            $player=(object)['player_id'=>$id,'season_id'=>FantraxProjectionSource::SEASON_ID,
+                'player_name'=>$metadata->player_name,'nhl_team'=>$metadata->nhl_team??null,
+                'position'=>preg_match('/\bG\b/',$position)?'G':(preg_match('/\bD\b/',$position)?'D':'F'),
+                'rookie'=>null,'season_fpts'=>$projection->season_fpts??0,'season_gp'=>$projection->season_gp??0,
+                'season_fpts_per_game'=>$projection->season_fpts_per_game??0,'stats_json'=>'{}',
+                'stats_through'=>$projection->window_end_date??$today->toDateString()];
+        }
+        abort_unless($player,404);
         $age=app(PlayerBirthdates::class)->age($player->player_name,$today);
         $games=app(PlayerGames::class);$team=PlayerGames::team($player->nhl_team);
         $todayGame=$games->forDate($today->toDateString())[$team]??null;

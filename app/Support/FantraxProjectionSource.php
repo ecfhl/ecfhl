@@ -14,6 +14,14 @@ class FantraxProjectionSource
     public const PROJECTION = 'PROJECTION_0_31n_SEASON';
     public const ACTUAL = 'SEASON_31n_BY_DATE';
     private bool $seasonDetails = false;
+    private ?StatsPlayerScope $statsScope=null;
+    private array $trackedPlayers=[];
+
+    public function scopeToActiveStats(array $players,StatsPlayerScope $scope): void
+    {
+        $this->statsScope=$scope;
+        $this->trackedPlayers=array_column($players,null,'player_id');
+    }
 
     public function seasonActual(string $start, string $end): array
     {
@@ -65,6 +73,8 @@ class FantraxProjectionSource
         foreach ($datasets as [$group, $categoryType]) {
             $args = ['statusOrTeamFilter'=>'ALL', 'positionOrGroup'=>$group, 'seasonOrProjection'=>self::ACTUAL,
                 'timeframeTypeCode'=>'BY_DATE', 'scoringCategoryType'=>$categoryType, 'startDate'=>$start, 'endDate'=>$end, 'maxResultsPerPage'=>500];
+            $gpCategory=($group==='POS_201'?'2020':'2010').'#2100#-1';
+            if($this->statsScope)$args+=['sortType'=>'SCORING_CATEGORY','scipId'=>$gpCategory,'sortReversed'=>false];
             $first = $this->pages($args, [1])[1];
             $this->validate($first, self::ACTUAL, $start, $end);
             if ($categoryType === '5' && !collect($first['tableHeader']['cells'])->contains('shortName', 'SHG')) throw new RuntimeException('Missing Fantrax short-handed goals column.');
@@ -74,17 +84,32 @@ class FantraxProjectionSource
             if ($pages < 1 || $pages > 50 || $total < 1) throw new RuntimeException('Invalid Fantrax actual-stat pagination.');
             $count = 0;
             $groupSeen = [];
+            $zeroReached=false;
+            $lastGp=PHP_INT_MAX;
             // Parse each small batch immediately instead of retaining all 8,000+
             // rich Fantrax rows in a PHP web request with a 128 MB memory limit.
-            $consume = function (array $batch) use ($group, $categoryType, $start, $end, $total, &$rows, &$count, &$groupSeen) {
+            $consume = function (array $batch) use ($group, $categoryType, $start, $end, $total, $gpCategory, &$rows, &$count, &$groupSeen, &$zeroReached, &$lastGp) {
                 foreach ($batch as $page => $data) {
                     $this->validate($data, self::ACTUAL, $start, $end);
                     if (isset($data['displayedScoringCategoryType']) && (string)$data['displayedScoringCategoryType'] !== $categoryType) throw new RuntimeException('Fantrax returned a different actual-stat view.');
                     if (($data['displayedPosOrGroup'] ?? '') !== $group) throw new RuntimeException('Fantrax returned a different actual-stat position group.');
                     if ((int)$data['paginatedResultSet']['pageNumber'] !== $page || (int)$data['paginatedResultSet']['totalNumResults'] !== $total) throw new RuntimeException('Fantrax actual-stat pagination changed during collection.');
-                    foreach ($this->parse($data, true) as $row) {
+                    if($this->statsScope && (($data['displayedSortType']??null)!=='SCORING_CATEGORY' || ($data['displayedScipId']??null)!==$gpCategory || ($data['displayedSortReversed']??null)!==false))throw new RuntimeException('Fantrax did not preserve descending games-played sorting.');
+                    $parsed=$this->parse($data,true);
+                    if($this->statsScope){
+                        $pageSize=(int)($data['paginatedResultSet']['maxResultsPerPage']??500);
+                        if($pageSize<1 || count($parsed)!==min($pageSize,$total-($page-1)*$pageSize))throw new RuntimeException('Fantrax sorted actual-stat page was truncated.');
+                    }
+                    foreach ($parsed as $row) {
                         if (isset($groupSeen[$row['player_id']])) throw new RuntimeException('Duplicate player in Fantrax actual-stat pagination.');
                         $groupSeen[$row['player_id']] = true;
+                        $count++;
+                        if($this->statsScope){
+                            if($row['gp']>$lastGp)throw new RuntimeException('Fantrax games-played order changed during collection.');
+                            $lastGp=$row['gp'];
+                            if($row['gp']===0)$zeroReached=true;
+                            if($row['gp']===0 && !isset($this->trackedPlayers[$row['player_id']]) && !$this->statsScope->listed($row))continue;
+                        }
                         // Merge standard/tracked views and dual-position players by ID.
                         if (isset($rows[$row['player_id']])) {
                             $prior = $rows[$row['player_id']];
@@ -95,14 +120,27 @@ class FantraxProjectionSource
                             }
                         }
                         $rows[$row['player_id']] = $row;
-                        $count++;
                     }
                 }
             };
             $consume([1=>$first]);
             unset($first);
-            foreach (array_chunk($pages > 1 ? range(2, $pages) : [], 3) as $batch) $consume($this->pages($args, $batch));
-            if ($count !== $total) throw new RuntimeException('Fantrax actual-stat pages were incomplete.');
+            if($this->statsScope){
+                // Sequential sorted pages avoid requesting the unplayed prospect tail at all.
+                for($page=2;$page<=$pages && !$zeroReached;$page++)$consume($this->pages($args,[$page]));
+            }else{
+                foreach (array_chunk($pages > 1 ? range(2, $pages) : [], 3) as $batch) $consume($this->pages($args, $batch));
+            }
+            if ($count !== $total && !$zeroReached) throw new RuntimeException('Fantrax actual-stat pages were incomplete.');
+        }
+        if($this->statsScope){
+            // Once every positive-GP row has been read, omitted known players have true zeroes.
+            // This preserves idle rolling windows and Daily Faceoff rookies without more API calls.
+            foreach($this->trackedPlayers as $id=>$metadata)if(!isset($rows[$id])){
+                $row=['player_id'=>(string)$id,'fpts'=>0.0,'gp'=>0];
+                if($this->seasonDetails)$row+=$metadata+['stats'=>[],'stat_columns'=>[]];
+                $rows[$id]=$row;
+            }
         }
         return $rows;
     }
@@ -165,10 +203,12 @@ class FantraxProjectionSource
                 $games = $this->number($cell('GP'));
                 if ($games < 0 || floor($games) !== $games) throw new RuntimeException('Invalid Fantrax games played.');
                 $row = ['player_id'=>$id, 'fpts'=>$points, 'gp'=>(int)$games];
-                if ($this->seasonDetails) {
+                if ($this->seasonDetails || $this->statsScope) {
                     $row += ['player_name'=>(string)($scorer['name'] ?? ''), 'nhl_team'=>$scorer['teamShortName'] ?? null,
-                        'position'=>(string)($scorer['posShortNames'] ?? ''), 'rookie'=>isset($scorer['rookie']) ? (bool)$scorer['rookie'] : null,
-                        'stats'=>[], 'stat_columns'=>[]];
+                        'position'=>(string)($scorer['posShortNames'] ?? ''), 'rookie'=>isset($scorer['rookie']) ? (bool)$scorer['rookie'] : null];
+                }
+                if ($this->seasonDetails) {
+                    $row+=['stats'=>[], 'stat_columns'=>[]];
                     foreach ($statColumns as $label => $column) {
                         $row['stats'][$label] = trim(html_entity_decode(strip_tags((string)($entry['cells'][$column['index']]['content'] ?? ''))));
                         $row['stat_columns'][$label] = $column['name'];

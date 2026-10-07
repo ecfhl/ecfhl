@@ -85,7 +85,7 @@ checkProjection($source->calls === [['2026-09-29','2026-11-03'], ['2026-10-28','
 checkProjection((float)DB::table('player_projections')->where('player_id','p5')->value('projected_fpts_per_game') === 3.0, 'Apply the 50/25/15/10 weights.');
 checkProjection((float)DB::table('player_projections')->where('player_id','p3')->value('projected_fpts_per_game') === 1.0, 'Zero-game windows contribute zero while the baseline keeps its 50% weight.');
 checkProjection((float)DB::table('player_projections')->where('player_id','p4')->value('projected_fpts_per_game') === 0.0, 'Preserve negative points.');
-checkProjection(DB::table('season_player_stats')->count()===1000 && (bool)DB::table('season_player_stats')->where('player_id','p5')->value('rookie'), 'Store full season stat rows and rookie flags atomically.');
+checkProjection(DB::table('season_player_stats')->count()===999 && (bool)DB::table('season_player_stats')->where('player_id','p5')->value('rookie'), 'Store full season stat rows and rookie flags atomically.');
 checkProjection(json_decode(DB::table('season_player_stats')->where('player_id','p5')->value('stats_json'),true)['TOI']==='71:11', 'Preserve source stat formatting.');
 $frozen = DB::table('player_projection_baselines')->orderBy('source_rank')->get()->toJson();
 $before = DB::table('player_projections')->orderBy('player_id')->get()->toJson();
@@ -243,4 +243,38 @@ foreach (['date','gp','partial'] as $mode) {
 $parser->mode = ''; $parser->pageCount = 10; $parser->batches = [];
 checkProjection(count($parser->actual('2026-10-27','2026-11-03')) === 20, 'Parse every page across both groups.');
 checkProjection(max(array_map('count', $parser->batches)) <= 3, 'Keep actual-stat collection batches within production memory limits.');
+// Zero-game players survive only when they appear on Daily Faceoff.
+checkProjection(!DB::table('season_player_stats')->where('player_id','p3')->exists(),'Do not persist an unlisted zero-game player');
+(require __DIR__.'/../database/migrations/2026_09_29_000005_create_active_line_combinations_table.php')->up();
+DB::table('active_line_combinations')->insert(['team'=>'MTL','player_name'=>'3, Player','position_group'=>'F','line_number'=>1,'source_url'=>'https://www.dailyfaceoff.com','last_update'=>now()]);
+$refresh->refresh($date,true);
+checkProjection(DB::table('season_player_stats')->where('player_id','p3')->value('season_gp')===0,'Daily Faceoff zero-game rookie must retain a stat line');
+class ScopedProjectionSource extends FixtureProjectionSource
+{
+ public bool $sortBroken=false;
+ public bool $truncated=false;
+ protected function pages(array $args,array $pages): array {
+  $data=parent::pages($args,$pages);
+  foreach($data as $page=>&$row){
+   $row['displayedSortType']=$this->sortBroken?'SCORE':'SCORING_CATEGORY';
+   $row['displayedScipId']=$args['scipId'];$row['displayedSortReversed']=false;
+   $row['paginatedResultSet']['maxResultsPerPage']=1;
+   $row['statsTable'][0]['cells'][1]['content']=$page===1?'2':'0';
+   $row['statsTable'][0]['cells'][0]['content']=$page===1?'-1':'0';
+   if($this->truncated)$row['statsTable']=[];
+  }
+  return $data;
+ }
+}
+$scoped=new ScopedProjectionSource;$scoped->pageCount=10;
+$scope=new App\Support\StatsPlayerScope;
+$scoped->scopeToActiveStats([['player_id'=>'listed','player_name'=>'Player 3','nhl_team'=>'MTL','position'=>'F']],$scope);
+$actual=$scoped->seasonActual('2026-10-27','2026-11-03');
+checkProjection(count($scoped->batches)===6,'Stop each of three sorted datasets after the first zero-game page, skipping 24 prospect pages');
+checkProjection($actual['skater-1']['gp']===2 && $actual['skater-1']['fpts']===-1.0 && $actual['listed']['gp']===0,'Keep negative scoring participants and synthesize known zero-game exceptions');
+checkProjection(!isset($actual['skater-2']) && !isset($actual['goalie-2']),'Exclude untracked zero-game rows');
+$scoped->sortBroken=true;
+rejectsProjection(fn()=>$scoped->actual('2026-10-27','2026-11-03'),'Reject lost GP sorting instead of skipping real players');
+$scoped->sortBroken=false;$scoped->truncated=true;
+rejectsProjection(fn()=>$scoped->actual('2026-10-27','2026-11-03'),'Reject a truncated sorted page');
 echo "Player projection checks passed.\n";

@@ -23,6 +23,7 @@ RUN php tests/live-scoring.php
 RUN php tests/standings.php
 RUN php tests/standings-collector.php
 RUN php tests/player-projections.php
+RUN php tests/database-maintenance.php
 RUN php tests/season-players.php
 RUN php tests/odds.php
 RUN php tests/home.php
