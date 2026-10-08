@@ -303,7 +303,7 @@ verifyOwner($typed->title===$recorded['title'] && $typed->body===$recorded['body
 DB::table('push_notifications')->insert(['category'=>'live-score','title'=>'Beta - 7 Fpts','body'=>'Assist by Skater, Latest','fantasy_team_id'=>'b','url'=>'/teams/current?date='.$day]);
 $push->testType($adminOwner->id,$endpointHash,'team-score');
 $typed=DB::table('push_notifications')->orderByDesc('id')->first();
-verifyOwner($typed->body==="Skater, Latest adds an assist.\nG: 2 · A: 3 · PPG: 1 · SHG: 1 · GWG: 1",'Legacy assist test repeated previous goals');
+verifyOwner($typed->body==="Skater, Latest gets an assist.\nG: 2 · A: 3 · PPG: 1 · SHG: 1 · GWG: 1",'Legacy assist test repeated previous goals');
 $testsBefore=DB::table('push_notifications')->where('category','test-score')->count();
 Http::swap(new Illuminate\Http\Client\Factory);Http::preventStrayRequests();
 Http::fake(['https://fcm.googleapis.com/*'=>Http::response('',410)]);
