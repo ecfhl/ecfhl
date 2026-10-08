@@ -143,7 +143,7 @@
 <button type="button" class="team-logo-viewer team-live-logo" data-team-icon-viewer data-team-slug="{{ $away['slug'] }}" data-team-name="{{ $away['name'] }}" aria-label="View {{ $away['name'] }} logo"><img src="{{ \App\Support\TeamImages::url($away['slug'],160) }}" data-full-src="{{ \App\Support\TeamImages::url($away['slug']) }}" alt="{{ $away['name'] }} team icon" width="160" height="160" loading="lazy" decoding="async"></button>
 </div>
 <div class="team-live-meta">
-<span class="team-live-games" aria-label="{{ $away['name'] }}: {{ $away['games_in_progress'] ?? 0 }} NHL games in progress, {{ $away['games_not_started'] ?? 0 }} not started" title="Distinct NHL games for today's roster"><span class="team-live-games-live">{{ $away['games_in_progress'] ?? 0 }} Live</span><span>{{ $away['games_not_started'] ?? 0 }} Upcoming</span></span>
+<span class="team-live-games" aria-label="{{ $away['name'] }}: {{ $away['games_in_progress'] ?? 0 }} active players in live games, {{ $away['games_not_started'] ?? 0 }} active players in games not started" title="Active lineup players; bench, IR and minors excluded"><span class="team-live-games-live">{{ $away['games_in_progress'] ?? 0 }} Live</span><span>{{ $away['games_not_started'] ?? 0 }} Upcoming</span></span>
 @if($away['record'] !== null)<span class="team-live-record" aria-label="{{ $away['name'] }} win-loss-tie record">{{ $away['record'] }}</span>@endif
 </div>
 <div class="team-live-body"><div class="team-live-scores">
@@ -158,7 +158,7 @@
 <button type="button" class="team-logo-viewer team-live-logo" data-team-icon-viewer data-team-slug="{{ $home['slug'] }}" data-team-name="{{ $home['name'] }}" aria-label="View {{ $home['name'] }} logo"><img src="{{ \App\Support\TeamImages::url($home['slug'],160) }}" data-full-src="{{ \App\Support\TeamImages::url($home['slug']) }}" alt="{{ $home['name'] }} team icon" width="160" height="160" loading="lazy" decoding="async"></button>
 </div>
 <div class="team-live-meta">
-<span class="team-live-games" aria-label="{{ $home['name'] }}: {{ $home['games_in_progress'] ?? 0 }} NHL games in progress, {{ $home['games_not_started'] ?? 0 }} not started" title="Distinct NHL games for today's roster"><span class="team-live-games-live">{{ $home['games_in_progress'] ?? 0 }} Live</span><span>{{ $home['games_not_started'] ?? 0 }} Upcoming</span></span>
+<span class="team-live-games" aria-label="{{ $home['name'] }}: {{ $home['games_in_progress'] ?? 0 }} active players in live games, {{ $home['games_not_started'] ?? 0 }} active players in games not started" title="Active lineup players; bench, IR and minors excluded"><span class="team-live-games-live">{{ $home['games_in_progress'] ?? 0 }} Live</span><span>{{ $home['games_not_started'] ?? 0 }} Upcoming</span></span>
 @if($home['record'] !== null)<span class="team-live-record" aria-label="{{ $home['name'] }} win-loss-tie record">{{ $home['record'] }}</span>@endif
 </div>
 <div class="team-live-body"><div class="team-live-scores">
@@ -334,7 +334,7 @@ html[data-theme="dark"] .current-teams-page .matchup-card[open]{border-color:#fb
 .matchup-player-today strong{font-size:28px;line-height:1;font-weight:900}
 .matchup-player-blank{min-height:44px}
 .matchup-empty{padding:12px;color:var(--muted);font-size:12px}
-.matchup-player-row.team-game-live-row{background:#e8f7ee!important}
+.matchup-player-row.team-game-live-row{background:var(--game-live)!important}
 .matchup-player-row.team-game-finished-row{background:var(--game-finished)!important}
 .matchup-player-row.team-game-upcoming-row{background:var(--game-upcoming)!important}
 html[data-theme="dark"] .matchup-card{background:var(--panel);border-color:var(--line)}
@@ -345,8 +345,8 @@ html[data-theme="dark"] .matchup-projected-score{background:#3b291d;color:var(--
 html[data-theme="dark"] .matchup-section-title{background:#1f2937;color:var(--panel-2)}
 html[data-theme="dark"] .matchup-roster-col{border-color:var(--line)}
 html[data-theme="dark"] .matchup-player-row{color:var(--text);border-color:var(--line)}
-html[data-theme="dark"] .matchup-player-row.team-game-live-row{background:#123d30!important}
-html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#263243!important}
+html[data-theme="dark"] .matchup-player-row.team-game-live-row{background:var(--game-live)!important}
+html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:var(--game-finished)!important}
 html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:var(--game-upcoming)!important}
 /* Use the working compact scoreboard layout on desktop as well as mobile. */
 @media(min-width:0px){

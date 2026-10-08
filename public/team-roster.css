@@ -1,6 +1,6 @@
 /* Individual roster pages share the Teams directory's surfaces and spacing. */
-.individual-team-page{max-width:960px;padding-top:12px;padding-bottom:18px;--team-blue:var(--accent);--team-heading-bg:var(--panel-2);--team-heading-text:var(--muted);--team-idle-bg:#f0f2f5}
-html[data-theme="dark"] .individual-team-page{--team-blue:var(--accent);--team-heading-bg:var(--panel-2);--team-heading-text:var(--muted);--team-idle-bg:#29323d}
+.individual-team-page{max-width:960px;padding-top:12px;padding-bottom:18px;--team-blue:var(--accent);--team-heading-bg:var(--panel-2);--team-heading-text:var(--muted);--team-idle-bg:var(--game-upcoming)}
+html[data-theme="dark"] .individual-team-page{--team-blue:var(--accent);--team-heading-bg:var(--panel-2);--team-heading-text:var(--muted);--team-idle-bg:var(--game-upcoming)}
 .team-roster-breadcrumb{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:11px;color:var(--muted);margin-bottom:6px}
 .team-roster-breadcrumb a{display:inline-flex;align-items:center;min-height:32px;font-size:12px;color:var(--team-blue);font-weight:700;text-decoration:none}
 .team-page-head{padding:0 0 10px}
@@ -155,14 +155,15 @@ body:has(.individual-team-page) .site-footer{margin-top:20px;padding:18px 0}
 .goalie-status-unconfirmed,.goalie-status-na{background:var(--panel-2);color:var(--muted);border-color:var(--line)}
 .goalie-status-not-starting{background:var(--badge-red-bg);color:var(--badge-red-text);border-color:var(--badge-red-line)}
 .team-not-playing,.team-bench-row{background:var(--panel-2);color:var(--muted)}
-.team-minors-row{background:var(--game-upcoming)}
+.team-minors-row{background:var(--badge-yellow-bg)}
 .team-ir-row{background:color-mix(in srgb,var(--badge-red-bg) 50%,var(--panel))}
 .team-player-data-row.team-game-live-row{background:var(--game-live)}
 .team-player-data-row.team-game-finished-row{background:var(--game-finished)}
 .individual-team-page .team-player-data-row.team-not-playing{background:var(--team-idle-bg);color:var(--muted)}
 .individual-team-page .team-player-data-row.team-ir-row,.individual-team-page .team-target-row.team-ir-row{background:var(--badge-red-bg);color:var(--text)}
 .team-player-data-row>td{background:transparent}
-.team-game-live,.team-home,.team-playing-text{color:var(--success);font-weight:650}
+.team-game-live{color:var(--accent);font-weight:650}
+.team-home,.team-playing-text{color:var(--success);font-weight:650}
 .team-game-finished,.team-away{color:var(--muted);font-weight:650}
 .team-targets{margin:0;border:1px solid var(--line);border-top:0;border-radius:0 0 10px 10px;background:var(--panel);overflow:hidden}
 .team-targets summary{display:flex;align-items:center;gap:8px;min-height:36px;padding:7px 8px;list-style:none;background:var(--panel-2);color:var(--team-blue);font-size:10px;font-weight:800;text-transform:uppercase;cursor:pointer}

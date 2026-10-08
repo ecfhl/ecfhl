@@ -80,7 +80,7 @@
                 @php
                   $isPlaying=(bool)$player->daily_participant;
                 @endphp
-                <tr class="team-player-data-row {{ !$isPlaying?'team-not-playing':'' }} {{ $player->is_ir?'team-ir-row':'' }} {{ $player->is_bench?'team-bench-row':'' }} {{ strtoupper((string)$player->roster_status)==='MINORS'?'team-minors-row':'' }} {{ !empty($player->game_in_progress)?'team-game-live-row':'' }} {{ !empty($player->game_finished)?'team-game-finished-row':'' }}" data-playing="{{ $isPlaying?'1':'0' }}">
+                <tr class="team-player-data-row {{ !$isPlaying?'team-not-playing':'' }} {{ $player->is_ir?'team-ir-row':'' }} {{ $player->is_bench?'team-bench-row':'' }} {{ strtoupper((string)$player->roster_status)==='MINORS'?'team-minors-row':'' }} {{ !empty($player->game_in_progress)?'team-game-live-row':'' }} {{ !empty($player->game_finished)?'team-game-finished-row':'' }} {{ ($player->game_status??'')==='1'?'team-game-upcoming-row':'' }}" data-playing="{{ $isPlaying?'1':'0' }}">
                   <td data-label="Player">
                     <div class="team-player-name-wrap">
                       <strong><a class="player-name-link" data-player-stats href="/players/{{ rawurlencode($player->player_id) }}" title="{{ \App\Support\PlayerName::display($player->player_name) }}@if($player->nhl_team) ({{ $player->nhl_team }})@endif"><span class="team-player-display-name">{{ \App\Support\PlayerName::display($player->player_name) }}</span>@if($player->nhl_team)<span class="team-player-nhl-team"> ({{ $player->nhl_team }})</span>@endif</a></strong>

@@ -27,8 +27,9 @@ final class ViewData
                     ? $active->sum(fn($p)=>$p->projected_fpts_per_game ?? 0) : $team['daily_projected_fpts'],
                 'today_fpts_change'=>$team['daily_fpts_change'] ?? 'same','week_fpts_change'=>$team['period_fpts_change'] ?? 'same',
                 'today_fpts_changed'=>$team['daily_fpts_changed'] ?? false,'week_fpts_changed'=>$team['period_fpts_changed'] ?? false,
-                'games_in_progress'=>$players->where('game_status','2')->pluck('game_id')->filter()->unique()->count(),
-                'games_not_started'=>$players->where('game_status','1')->pluck('game_id')->filter()->unique()->count(),
+                // Each active lineup player counts, including teammates in the same NHL game.
+                'games_in_progress'=>$active->where('game_status','2')->count(),
+                'games_not_started'=>$active->where('game_status','1')->count(),
             ];
         }
         return $teams;
