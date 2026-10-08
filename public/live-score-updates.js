@@ -135,7 +135,7 @@
         render();
       };
       handle.addEventListener('pointerdown',event=>{
-        if(event.button!==0 || event.target.closest('button,select,input,label'))return;
+        if(event.button!==0 || event.target.closest('button,a,select,input,label'))return;
         const rect=tray.getBoundingClientRect();drag={id:event.pointerId,x:event.clientX,y:event.clientY,left:rect.left,top:rect.top};handle.setPointerCapture(event.pointerId);tray.dataset.dragging='true';
       });
       handle.addEventListener('pointermove',event=>{if(!drag||drag.id!==event.pointerId)return;position={x:drag.left+event.clientX-drag.x,y:drag.top+event.clientY-drag.y};constrain();});
@@ -146,6 +146,7 @@
         event.preventDefault();const rect=tray.getBoundingClientRect(),step=event.shiftKey?30:10;
         position={x:rect.left+(event.key==='ArrowLeft'?-step:event.key==='ArrowRight'?step:0),y:rect.top+(event.key==='ArrowUp'?-step:event.key==='ArrowDown'?step:0)};constrain();persist();
       });window.addEventListener('resize',constrain);
+      tray.addEventListener('ecfhl-panel-resize',event=>{if(event.detail?.position)position=event.detail.position;constrain();persist();});
       render();
       return window.ecfhlScoringPopup={scope:()=>scope.value,update};
     }

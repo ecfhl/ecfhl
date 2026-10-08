@@ -430,5 +430,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script src="/live-score-updates.js?v={{ hash_file('sha256', base_path('public/live-score-updates.js')) }}"></script>
 <script src="/app-communication.js?v={{ hash_file('sha256', base_path('public/app-communication.js')) }}" defer></script>
 @auth<script src="/chat-panel.js?v={{ hash_file('sha256', base_path('public/chat-panel.js')) }}" defer></script>@endauth
+<script src="/popup-resize.js?v={{ hash_file('sha256', base_path('public/popup-resize.js')) }}" defer></script>
 @stack('scripts')
 </body></html>

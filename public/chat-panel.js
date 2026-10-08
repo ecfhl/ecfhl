@@ -89,6 +89,7 @@
  const end=event=>{if(!drag||event.pointerId!==drag.id)return;if(handle.hasPointerCapture(event.pointerId))handle.releasePointerCapture(event.pointerId);drag=null;panel.dataset.dragging='false';persist();};
  ['pointerup','pointercancel','lostpointercapture'].forEach(type=>handle.addEventListener(type,end));
  handle.addEventListener('keydown',event=>{if(event.target!==handle||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;event.preventDefault();const rect=panel.getBoundingClientRect(),step=event.shiftKey?30:10;position={x:rect.left+(event.key==='ArrowLeft'?-step:event.key==='ArrowRight'?step:0),y:rect.top+(event.key==='ArrowUp'?-step:event.key==='ArrowDown'?step:0)};constrain();persist();});
+ panel.addEventListener('ecfhl-panel-resize',event=>{if(event.detail?.position)position=event.detail.position;constrain();persist();});
  window.addEventListener('resize',()=>{constrain();persist();});document.addEventListener('visibilitychange',()=>{if(!document.hidden){refresh();read();}});
  window.EcfhlChatPanel={open,isReading};render();request('/api/messages/state').then(updateDirectory).catch(e=>status.textContent=e.message);setInterval(()=>refresh(),15000);
 })();

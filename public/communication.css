@@ -35,8 +35,6 @@ html[data-theme] .live-score-updates-filters select,.score-team-picker summary{b
 .chat-message-identity img,.message-popup-heading img{object-fit:contain;flex:none}
 .message-settings-link,.message-back{display:inline-block;font-size:13px;margin:8px 0}
 html[data-theme] .live-score-updates-filters[hidden]{display:none}
-.scoring-settings-link{padding:10px 14px;font-size:12px;color:var(--text);border-bottom:1px solid var(--line)}
-.live-score-updates[data-minimized="true"] .scoring-settings-link{display:none}
 .settings-tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px}
 .settings-tabs button{border:1px solid var(--line);border-radius:8px;background:var(--panel-2);color:var(--text);font:inherit;font-weight:700;padding:9px 16px;cursor:pointer}
 .settings-tabs button[aria-selected="true"]{background:#f4a340;color:#172033;border-color:#f4a340}
@@ -83,3 +81,27 @@ html[data-theme] .header-actions .header-count[hidden],
 html[data-theme] .header-actions .live-score-updates-toggle #live-score-updates-count[data-active="false"]{display:none!important}
 .chat-message-identity{justify-content:flex-end;text-align:right}
 .chat-message time{text-align:right}
+
+.live-score-updates-heading .scoring-settings-icon{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;flex:none;padding:0;border:0;border-radius:6px;background:transparent;color:inherit;text-decoration:none}
+.live-score-updates-heading .scoring-settings-icon:hover{background:#17203315}
+.live-score-updates-heading .scoring-settings-icon:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+/* Minimized scoring retains the same header and count row as the other panels. */
+html[data-theme] .live-score-updates[data-minimized="true"]{width:min(390px,calc(100vw - 24px));min-width:0}
+html[data-theme] .live-score-updates[data-minimized="true"] .live-score-updates-heading{display:flex}
+html[data-theme] .live-score-updates-restore{text-align:left;padding:10px 14px;font-size:12px}
+[data-resizable-panel]{box-sizing:border-box;display:flex;flex-direction:column}
+[data-resizable-panel][hidden]{display:none}
+[data-resizable-panel][data-custom-size="true"]{max-height:calc(100dvh - 16px)}
+[data-resizable-panel]>.communication-panel-heading{flex-shrink:0}
+[data-resizable-panel]>.notification-panel-body{min-height:0;overflow:auto;flex:1;max-height:none}
+[data-resizable-panel]>.chat-panel-body{min-height:0;display:flex;flex-direction:column;flex:1;overflow:auto}
+[data-resizable-panel][data-minimized="true"]>.chat-panel-body{display:none}
+[data-resizable-panel] .chat-log{min-height:60px;flex:1}
+[data-resizable-panel] .chat-form,[data-resizable-panel] .chat-status{flex-shrink:0}
+[data-resizable-panel] .live-score-updates-list{flex:1}
+.panel-resize-handle{position:absolute;bottom:1px;right:1px;width:20px;height:20px;padding:0;border:0;background:transparent;color:var(--muted);cursor:nwse-resize;touch-action:none;z-index:2;border-radius:3px}
+.panel-resize-handle::after{content:'';position:absolute;right:4px;bottom:4px;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor}
+[data-minimized="true"]>.panel-resize-handle{cursor:ew-resize}
+.panel-resize-handle:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+[data-resizing="true"]{user-select:none}

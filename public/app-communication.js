@@ -56,6 +56,7 @@
   event.preventDefault();const rect=notificationPanel.getBoundingClientRect(),step=event.shiftKey?30:10;
   notificationPosition={x:rect.left+(event.key==='ArrowLeft'?-step:event.key==='ArrowRight'?step:0),y:rect.top+(event.key==='ArrowUp'?-step:event.key==='ArrowDown'?step:0)};constrainNotifications();persistNotifications();
  });
+ notificationPanel.addEventListener('ecfhl-panel-resize',event=>{if(event.detail?.position)notificationPosition=event.detail.position;constrainNotifications();persistNotifications();});
  window.addEventListener('resize',()=>{constrainNotifications();persistNotifications();});renderNotifications();
  if(!userId){document.getElementById('header-notification-status').dataset.enabled='false';document.getElementById('header-notification-status').setAttribute('aria-label','Sign in for notifications');document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshScoring();});return;}
  let owners={},inbox=[],stateBusy=false,notificationStateReady=false;
