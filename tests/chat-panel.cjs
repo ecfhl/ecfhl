@@ -8,7 +8,7 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
  const teams=[{user_id:2,team_name:'Bob Team'},{user_id:3,team_name:'Carol Team'}];
  const message=(id,sender_id,recipient_id,body)=>({id,sender_id,recipient_id,body,created_at:'2026-10-08T17:00:00-03:00',team_name:sender_id===3?'Carol Team':sender_id===1?'Alice Team':'Bob Team'});
  const chats={'':[message(1,2,null,'League only')],'2':[message(2,2,1,'Bob private')],'3':[message(3,3,1,'Carol private')]};
- let receiptRead=false;
+ let receiptRead=false,failSend=false;
  let delayBob=false,releaseBob,delaySend=false,releaseSend,latest=3,incoming=[];
  await page.route('https://ecfhl.test/**',async route=>{
   const req=route.request(),url=new URL(req.url()),body=req.method()==='POST'?req.postDataJSON():{};let json;
@@ -17,7 +17,7 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
    const value=url.searchParams.get('user_id')||'';if(value==='2'&&delayBob){delayBob=false;await new Promise(resolve=>releaseBob=resolve);}
    json={receipts:receiptRead?chats[value].filter(m=>m.sender_id===1).map(m=>({id:m.id,read:true,read_at:'2026-10-08T18:45:00Z',viewers:[{team_name:'Bob Team'}]})):[],messages:chats[value].filter(m=>!url.searchParams.has('after')||m.id>Number(url.searchParams.get('after'))),has_more:false};
   }else if(url.pathname==='/api/messages/read'){reads.push(body);json={unread:{total:0}};}
-  else if(url.pathname==='/api/messages/send'){sends.push(body);if(delaySend){delaySend=false;await new Promise(resolve=>releaseSend=resolve);}const m=message(++latest,1,body.user_id,body.body);chats[body.user_id||''].push(m);json={message:m};}
+  else if(url.pathname==='/api/messages/send'){sends.push(body);if(failSend){failSend=false;return route.fulfill({status:500,json:{message:'Please retry your reply.'}});}if(delaySend){delaySend=false;await new Promise(resolve=>releaseSend=resolve);}const m=message(++latest,1,body.user_id,body.body);chats[body.user_id||''].push(m);json={message:m};}
   else if(url.pathname==='/api/scoring-updates')json={date:'2026-10-08',players:[],teams:[],matchups:[]};
   else if(url.pathname.startsWith('/api/'))json={};
   if(json)return route.fulfill({json});
@@ -57,10 +57,17 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
  await page.setViewportSize({width:360,height:780});assert.equal(await page.locator('.site-credit').evaluate(el=>getComputedStyle(el).whiteSpace),'nowrap');assert(await page.locator('.site-credit').evaluate(el=>el.scrollWidth<=el.clientWidth),'Footer fits on one line on mobile');await page.waitForFunction(()=>{const r=document.getElementById('chat-panel').getBoundingClientRect();return r.left>=8&&r.right<=352&&r.top>=8;});const mobile=await page.locator('#chat-panel').boundingBox();assert(mobile.x>=8&&mobile.x+mobile.width<=352&&mobile.y>=8,'Chat stays within mobile viewport');
  await handle.focus();await page.keyboard.press('ArrowLeft');await page.keyboard.press('Escape');assert(!(await page.locator('#chat-panel').isVisible()));
  const popupMessage=message(++latest,3,1,'Incoming private popup');incoming.push(popupMessage);chats['3'].push(popupMessage);
- await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await page.waitForSelector('.message-popup');await page.locator('.message-popup a').click();
+ await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await page.waitForSelector('.message-popup');
+ const notification=page.locator('.message-popup').last();await notification.locator('.message-popup-reply').click();await notification.locator('textarea').fill('Direct private reply');failSend=true;const beforeReply=sends.length;
+ await notification.locator('button[type="submit"]').click();await page.waitForFunction(()=>document.querySelector('.message-popup-reply-status').textContent==='Please retry your reply.');assert.equal(await notification.locator('textarea').inputValue(),'Direct private reply');
+ await notification.locator('button[type="submit"]').click();await page.waitForFunction(()=>document.querySelector('.message-popup-reply-status').textContent==='Reply sent.');
+ assert.equal(sends[beforeReply].user_id,3);assert.equal(sends[beforeReply+1].user_id,3);assert.equal(sends[beforeReply].client_id,sends[beforeReply+1].client_id,'Reply retry keeps its idempotency key');assert.equal(page.url(),'https://ecfhl.test/account','Direct reply does not navigate');
+ await notification.locator('a').click();
  await page.waitForFunction(()=>document.getElementById('chat-panel-conversation').value==='3'&&document.getElementById('chat-panel-log').textContent.includes('Incoming private popup'));
  assert.equal(page.url(),'https://ecfhl.test/account','Popup opens the shared chat panel');
- await page.goto('https://ecfhl.test/messages?user_id=2');await page.waitForFunction(()=>document.getElementById('chat-panel-conversation').value==='2'&&document.getElementById('chat-panel-log').textContent.includes('Bob private'));
+ await page.locator('#chat-panel-close').click();const leagueNotification=message(++latest,2,null,'League reply notification');incoming.push(leagueNotification);chats[''].push(leagueNotification);await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
+ const leaguePopup=page.locator('.message-popup').filter({hasText:'League reply notification'});await leaguePopup.waitFor();await leaguePopup.locator('.message-popup-reply').click();await leaguePopup.locator('textarea').fill('Direct League reply');await leaguePopup.locator('button[type="submit"]').click();await page.waitForFunction(()=>[...document.querySelectorAll('.message-popup-reply-status')].filter(n=>n.textContent==='Reply sent.').length===2);assert.equal(sends.at(-1).user_id,null,'League reply is public');
+ await page.goto('https://ecfhl.test/messages?user_id=2&reply=1');await page.waitForFunction(()=>document.activeElement?.id==='chat-panel-text');await page.waitForFunction(()=>document.getElementById('chat-panel-conversation').value==='2'&&document.getElementById('chat-panel-log').textContent.includes('Bob private'));
  const longName=await page.locator('#chat-panel-log .chat-message-identity strong').first().evaluate(el=>{el.textContent='A very long fantasy hockey team name that must stay on one line';const style=getComputedStyle(el);return {nowrap:style.whiteSpace,overflow:style.overflow,ellipsis:style.textOverflow,truncated:el.scrollWidth>el.clientWidth};});
  assert.deepEqual(longName,{nowrap:'nowrap',overflow:'hidden',ellipsis:'ellipsis',truncated:true});
  receiptRead=true;await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await page.waitForFunction(()=>[...document.querySelectorAll('.chat-read-status')].some(node=>node.textContent.includes('Read at')));

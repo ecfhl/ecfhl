@@ -156,8 +156,24 @@
   const logo=node('img');logo.src=message.team_logo||'/team-icons/league-logo/thumbnail?size=64';logo.alt='';logo.width=32;logo.height=32;heading.append(logo,node('strong',(league?'League chat · ':'')+(message.team_name||'League member')));
   const close=node('button','×','message-popup-close');close.type='button';close.setAttribute('aria-label','Dismiss message popup');close.addEventListener('click',()=>box.remove());heading.append(close);
   const link=node('a','Open conversation');link.href=test?'/notifications#alerts':league?'/messages':'/messages?user_id='+message.sender_id;
-  box.append(heading,node('p',message.body.slice(0,240)),link);
-  const host=document.getElementById('message-popups');host.append(box);while(host.children.length>3)host.firstElementChild.remove();
+  const replyToggle=node('button','Reply','button message-popup-reply');replyToggle.type='button';replyToggle.setAttribute('aria-expanded','false');
+  const reply=node('form',undefined,'message-popup-reply-form');reply.hidden=true;
+  const input=node('textarea');input.rows=2;input.maxLength=4000;input.required=true;input.placeholder=league?'Reply to League chat…':'Reply privately…';input.setAttribute('aria-label',league?'Reply to League chat':'Reply privately to '+(message.team_name||'League member'));
+  const send=node('button','Send reply','button primary');send.type='submit';
+  const feedback=node('p','', 'message-popup-reply-status');feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');reply.append(input,send);
+  let sending=false,pending=null;
+  replyToggle.addEventListener('click',()=>{reply.hidden=!reply.hidden;box.dataset.replying=String(!reply.hidden);replyToggle.setAttribute('aria-expanded',String(!reply.hidden));if(!reply.hidden)input.focus();});
+  reply.addEventListener('submit',async event=>{
+   event.preventDefault();const body=input.value.trim();if(sending||!body)return;
+   if(test){feedback.textContent='Reply preview only. No message was sent.';return;}
+   if(!pending||pending.body!==body)pending={body,client_id:crypto.randomUUID()};
+   sending=true;send.disabled=true;input.disabled=true;feedback.textContent='Sending reply…';
+   try{await request('/api/messages/send',{...pending,user_id:league?null:Number(message.sender_id)});pending=null;input.value='';reply.hidden=true;box.dataset.replying='false';replyToggle.setAttribute('aria-expanded','false');feedback.textContent='Reply sent.';refreshState();}
+   catch(error){feedback.textContent=error.message;}
+   finally{sending=false;send.disabled=false;input.disabled=false;}
+  });
+  box.append(heading,node('p',message.body.slice(0,240)),link,replyToggle,reply,feedback);
+  const host=document.getElementById('message-popups');host.append(box);while(host.children.length>3){const old=[...host.children].find(item=>item.dataset.replying!=='true'&&item!==box);if(!old)break;old.remove();}
  };
  window.addEventListener('ecfhl-test-message',event=>showPopup(event.detail,true));
  const refreshState=async()=>{

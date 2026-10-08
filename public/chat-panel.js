@@ -64,9 +64,10 @@
  };
  let requested=new URL(location.href).pathname==='/messages'?new URL(location.href).searchParams.get('user_id'):null;
  let pendingOpen=null;
+ let requestedReply=location.pathname==='/messages'&&new URL(location.href).searchParams.get('reply')==='1';
  const open=value=>{
   if(!directoryReady){pendingOpen=String(value||'');mode='expanded';render();return;}
-  mode='expanded';change(value);close.focus({preventScroll:true});
+  mode='expanded';change(value);text.focus({preventScroll:true});
  };
 const updateUnread=value=>{
   unread=value||unread;counter(unread.total);options();
@@ -82,7 +83,7 @@ const updateUnread=value=>{
   teams=data.teams.filter(t=>Number(t.user_id)!==userId);
   if(data.unread)unread=data.unread;counter(unread.total);options();
   if(!directoryReady){
-   directoryReady=true;const initial=pendingOpen!==null?pendingOpen:requested||saved.selected||'';if(requested!==null||location.pathname==='/messages')mode='expanded';change(initial);pendingOpen=null;
+   directoryReady=true;const initial=pendingOpen!==null?pendingOpen:requested||saved.selected||'';if(requested!==null||location.pathname==='/messages')mode='expanded';change(initial);pendingOpen=null;if(requestedReply){text.focus({preventScroll:true});requestedReply=false;}
   }else if(selected&&!teams.some(t=>String(t.user_id)===selected))change('');else select.value=selected;
  };
  window.addEventListener('ecfhl-message-state',event=>updateDirectory(event.detail));

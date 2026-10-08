@@ -94,9 +94,13 @@ self.addEventListener('push',event=>{
         const id=Number(item.id);
         if(!Number.isInteger(id)||id<=lastId)continue;
         if(version!==feedVersion)return;
+        const message=['league-message','private-message'].includes(item.category);
+        const replyUrl=message?new URL(item.url||'/messages',self.location.origin):null;
+        if(replyUrl)replyUrl.searchParams.set('reply','1');
         await self.registration.showNotification(item.title||'ECFHL',{
           body:item.body||'',icon:'/ecfhl-logo.png',badge:'/favicon.svg',tag:'ecfhl-'+id,
-          data:{url:item.url||'/teams/current'}
+          ...(message?{actions:[{action:'reply',title:'Reply'}]}:{}),
+          data:{url:item.url||'/teams/current',...(replyUrl?{replyUrl:replyUrl.href}:{})}
         });
         lastId=id;advanced=true;
         // Keep delivered alerts delivered even if a later notification fails.
@@ -108,7 +112,8 @@ self.addEventListener('push',event=>{
 });
 
 self.addEventListener('notificationclick',event=>{
-  const url=event.notification.data?.url||'/';
+  event.notification.close?.();
+  const url=(event.action==='reply'?event.notification.data?.replyUrl:null)||event.notification.data?.url||'/';
   event.waitUntil((async()=>{
     const target=new URL(url,self.location.origin);
     if(target.origin!==self.location.origin)return clients.openWindow(target.href);

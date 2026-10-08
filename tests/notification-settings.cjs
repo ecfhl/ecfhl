@@ -16,7 +16,7 @@ const fs=require('node:fs'),assert=require('node:assert/strict'),{chromium}=requ
  });
  await page.goto('https://ecfhl.test/notifications#alerts');
  const toggle=page.locator('#scoring-panel-enabled'),controls=page.locator('#scoring-settings-controls');
- await page.locator('[data-message-test=league][data-test-channel=popup]').click();await page.waitForSelector('.message-popup');assert((await page.locator('.message-popup').textContent()).includes('League chat'));await page.locator('.message-popup-close').click();
+ await page.locator('[data-message-test=league][data-test-channel=popup]').click();await page.waitForSelector('.message-popup');assert((await page.locator('.message-popup').textContent()).includes('League chat'));await page.locator('.message-popup-reply').click();await page.locator('.message-popup textarea').fill('Test reply');await page.locator('.message-popup button[type=submit]').click();assert.equal(await page.locator('.message-popup-reply-status').textContent(),'Reply preview only. No message was sent.');await page.locator('.message-popup-close').click();
  await page.locator('[data-message-test=private][data-test-channel=popup]').click();await page.waitForSelector('.message-popup');assert((await page.locator('.message-popup').textContent()).includes('private message'));await page.locator('.message-popup-close').click();
  await toggle.uncheck();assert.equal(await controls.isVisible(),false);assert.equal(saved.length,0,'Local scoring switch does not submit unrelated notifications');
  await page.reload();assert.equal(await toggle.isChecked(),false);await toggle.check();assert.equal(await controls.isVisible(),true);
