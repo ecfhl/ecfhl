@@ -799,85 +799,30 @@ Route::get('/api/player-projections', function () {
 });
 
 Route::get('/job-status', function () {
-    $tz = 'America/Halifax';
-    $now = \Carbon\CarbonImmutable::now($tz);
-    $dbTime = fn($value) => $value ? \Carbon\CarbonImmutable::createFromFormat('Y-m-d H:i:s', (string)$value, $tz) : null;
-    $format = function($value) use ($dbTime,$now,$tz) {
-        $dt=$dbTime($value);
-        if(!$dt)return null;
-        $dt=$dt->setTimezone($tz);
-        $seconds=max(0,(int)floor($dt->diffInSeconds($now)));
-        if($seconds<60)return $seconds===1?'1 second ago':$seconds.' seconds ago';
-        if($seconds<3600){
-            $minutes=(int)floor($seconds/60);
-            return $minutes===1?'1 minute ago':$minutes.' minutes ago';
-        }
-        return $dt->format('M j, Y · g:i:s a T');
-    };
-    $state = function ($value, int $minutes) use ($now, $dbTime, $tz) {
-        if (!$value) return 'No data';
-        $dt=$dbTime($value); if(!$dt) return 'No data';
-        return $dt->setTimezone($tz)->gte($now->subMinutes($minutes)) ? 'Current' : 'Stale';
-    };
-    $nextHourly = function (int $minute) use ($now) {
-        $next = $now->startOfHour()->minute($minute);
-        if ($next->lte($now)) $next = $next->addHour();
-        return $next->format('M j · g:i a T');
-    };
-    $nextHalfHourly = function () use ($now) {
-        $next = $now->minute < 30 ? $now->startOfHour()->minute(30) : $now->addHour()->startOfHour();
-        return $next->format('M j · g:i a T');
-    };
-    $nextQuarterHourly = function () use ($now) {
-        $minute=(int)$now->format('i');
-        $nextMinute=(int)(ceil(($minute+0.001)/15)*15);
-        $next=$nextMinute>=60 ? $now->addHour()->startOfHour() : $now->startOfHour()->minute($nextMinute);
-        return $next->format('M j · g:i a T');
-    };
-    $nextFiveMinutes = function () use ($now) {
-        $minute=(int)$now->format('i');
-        $nextMinute=(int)(ceil(($minute+0.001)/5)*5);
-        $next=$nextMinute>=60 ? $now->addHour()->startOfHour() : $now->startOfHour()->minute($nextMinute);
-        return $next->format('M j · g:i a T');
-    };
-    $nextFourHourly = function (int $minute) use ($now) {
-        $hour = (int)$now->format('G'); $nextHour = $hour - ($hour % 4);
-        $next = $now->startOfDay()->addHours($nextHour)->minute($minute);
-        if ($next->lte($now)) $next = $next->addHours(4);
-        return $next->format('M j · g:i a T');
-    };
-    $fantraxLast = DB::table('active_daily_players')->max('last_update');
-    $goaliesLast = DB::table('active_starting_goalies')->max('checked_at');
-    $linesLast = DB::table('active_pp_lines')->max('checked_at');
-    $oddsLast = DB::table('todays_odds')->max('checked_at');
-    $teamsLast = DB::table('active_fantasy_rosters')->max('last_update');
-    $scoresLast = DB::table('live_scoring_snapshots')->max('collected_at');
-    $scoresLast = $scoresLast ? \Carbon\CarbonImmutable::parse($scoresLast, 'UTC')->setTimezone($tz)->format('Y-m-d H:i:s') : null;
-    $standingsLast = DB::table('job_run_history')->where('job_name','ecfhl:refresh-current-standings')->max('completed_at');
-    $advisorLast = \Illuminate\Support\Facades\Schema::hasTable('lineup_advice') ? DB::table('lineup_advice')->max('generated_at') : null;
-    $collectorStates = \Illuminate\Support\Facades\Schema::hasTable('collector_job_statuses')
-        ? DB::table('collector_job_statuses')->get()->keyBy('job_key')
-        : collect();
-    $withOutcome = function(array $job) use ($collectorStates) {
-        $row=$collectorStates[$job['key']]??null;
-        $job['outcome']=$row?($row->status??null):null;
-        $job['outcome_message']=$row?($row->message??null):null;
-        $job['outcome_ran_at']=$row?($row->ran_at??null):null;
-        return $job;
-    };
-    $jobs = array_map($withOutcome, [
-        ['key'=>'projections','name'=>'Regenerate Projected FPts','schedule'=>'Daily at 4:00 a.m. Atlantic','last_update'=>$format(DB::table('player_projections')->max('refreshed_at')),'records'=>DB::table('player_projections')->count(),'next_run'=>(function()use($now){$next=$now->startOfDay()->setTime(4,0);if($next->lte($now))$next=$next->addDay();return $next->format('M j · g:i a T');})(),'state'=>$state(DB::table('player_projections')->max('refreshed_at'),1560),'description'=>'All collected players: '.\App\Support\ProjectionSettings::description().'. Missing sources are excluded and remaining weights scale to 100%. Recorded zero-game stats contribute zero.'],
-        ['key'=>'players','name'=>'Fantrax Available Players','schedule'=>'Every 15 minutes (:00, :15, :30, :45)','last_update'=>$format($fantraxLast),'records'=>DB::table('active_daily_players')->count(),'next_run'=>$nextQuarterHourly(),'state'=>$state($fantraxLast,30),'description'=>'Available players playing today and tomorrow, including projected fantasy points.'],
-        ['key'=>'goalies','name'=>'Daily Faceoff Goalies','schedule'=>'Every 5 minutes','last_update'=>$format($goaliesLast),'records'=>DB::table('active_starting_goalies')->count(),'next_run'=>$nextFiveMinutes(),'state'=>$state($goaliesLast,12),'description'=>'Starting-goalie status for today and tomorrow.'],
-        ['key'=>'lines','name'=>'Daily Faceoff Lines','schedule'=>'Every hour at :00','last_update'=>$format($linesLast),'records'=>DB::table('active_pp_lines')->count(),'next_run'=>$nextHourly(0),'state'=>$state($linesLast,90),'description'=>'Current line combinations and PP1/PP2 assignments for all NHL teams.'],
-        ['key'=>'odds','name'=>'NHL Odds','schedule'=>'Every 2 hours at :00','last_update'=>$format($oddsLast),'records'=>DB::table('todays_odds')->count(),'next_run'=>($now->hour%2===0 && $now->minute===0 ? $now->format('M j · g:i a T') : $now->addHours($now->hour%2===0?2:1)->startOfHour()->format('M j · g:i a T')),'state'=>$state($oddsLast,150),'description'=>'Consensus NHL moneyline odds for today and tomorrow from The Odds API.'],
-        ['key'=>'teams','name'=>'Fantasy Team Rosters','schedule'=>'Every 15 minutes (:00, :15, :30, :45)','last_update'=>$format($teamsLast),'records'=>DB::table('active_fantasy_rosters')->count(),'next_run'=>$nextQuarterHourly(),'state'=>$state($teamsLast,30),'description'=>'Current Fantrax rosters for every fantasy team, enriched with projections, opponents, injuries, line and power-play assignments.'],
-        ['key'=>'scores','name'=>'Fantrax Live Scoring','schedule'=>'Every minute during games; hourly when idle','last_update'=>$format($scoresLast),'records'=>(int)DB::table('live_scoring_snapshots')->sum('player_count'),'next_run'=>'1 min live / 1 hour idle','state'=>$state($scoresLast,70),'description'=>'Independent yesterday, today and tomorrow Fantrax lineups, daily scores, period scores, projections and game states. Fantasy dates roll over at Pacific midnight.'],
-        ['key'=>'standings','name'=>'Current Standings','schedule'=>'Every minute during games; hourly when idle; completed days only','last_update'=>$format($standingsLast),'records'=>DB::table('team_seasons')->where('season_id','2026-27')->count(),'next_run'=>'1 min live / 1 hour idle','state'=>$state($standingsLast,70),'description'=>'2026-27 standings use finalized scoring days. Daily points update after the last NHL game finishes; W/L/T update after the scoring period ends.'],
-        ['key'=>'advisor','name'=>'Regenerate Lineup Advisor','schedule'=>'Every hour','last_update'=>$format($advisorLast),'records'=>\Illuminate\Support\Facades\Schema::hasTable('lineup_advice')?DB::table('lineup_advice')->where('advice_date',app(\App\Support\FantasyDay::class)->today()->toDateString())->count():0,'next_run'=>(function()use($now){return $now->addHour()->startOfHour()->format('M j · g:i a T');})(),'state'=>$state($advisorLast,90),'description'=>'Rebuilds lineup recommendations for every current fantasy team using moves left, roster construction, injuries, available players, projections, goalie coverage, and matchup context.'],
-    ]);
+    $definitions = [
+        ['projections', 'Projected FPts', 'player_projections', 'Daily player projections and season totals.'],
+        ['players', 'Fantrax Available Players', 'active_daily_players', 'Available players for today and tomorrow.'],
+        ['goalies', 'Daily Faceoff Goalies', 'active_starting_goalies', 'Starting-goalie confirmations for today and tomorrow.'],
+        ['lines', 'Daily Faceoff Lines', 'active_pp_lines', 'Line combinations and PP1/PP2 assignments for every NHL team.'],
+        ['odds', 'NHL Odds', 'todays_odds', 'Consensus moneyline odds for today and tomorrow.'],
+        ['teams', 'Fantasy Team Rosters', 'active_fantasy_rosters', 'Today and tomorrow rosters. Completed current-day lineups remain frozen.'],
+        ['scores', 'Fantrax Live Scoring', 'live_scoring_snapshots', 'Independent yesterday, today and tomorrow snapshots using Pacific fantasy dates.'],
+        ['standings', 'Current Standings', 'team_seasons', 'Official regular-season standings. Final reconciliation retries until successful.'],
+        ['advisor', 'Lineup Advisor', 'lineup_advice', 'Recommendations using moves, roster construction, injuries and available players.'],
+        ['birthdates', 'Player Birthdates', 'player_birthdates', 'Stored birthdates; ages are calculated locally.'],
+        ['matchups', 'Weekly Matchups', 'fantrax_scoring_period_matchups', 'Monday weekly scoring-period matchups.'],
+    ];
+    $jobs = array_map(function ($definition) {
+        [$key, $name, $table, $description] = $definition;
+        $query = DB::table($table);
+        if ($key === 'standings') $query->where('season_id', '2026-27');
+        if ($key === 'advisor') $query->where('advice_date', app(\App\Support\FantasyDay::class)->today()->toDateString());
+        $records = $key === 'scores' ? (int)$query->sum('player_count') : $query->count();
+        return compact('key', 'name', 'records', 'description') + ['schedule'=>\App\Support\CollectorCadence::LABELS[$key]];
+    }, $definitions);
+    $statuses = \App\Support\CollectorStatus::snapshot();
     return response()
-        ->view('job-status', compact('jobs'))
+        ->view('job-status', compact('jobs', 'statuses'))
         ->header('Cache-Control','no-store, no-cache, must-revalidate, max-age=0')
         ->header('Pragma','no-cache');
 });

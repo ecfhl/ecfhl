@@ -37,6 +37,10 @@ jobs:
       - if: ${{ !cancelled() }}
         run: php tests/standings-collector.php
       - if: ${{ !cancelled() }}
+        run: php tests/collector-schedule.php
+      - if: ${{ !cancelled() }}
+        run: node tests/collector-status-ui.cjs
+      - if: ${{ !cancelled() }}
         run: node tests/live-scoring-ui.cjs
       - if: ${{ !cancelled() }}
         run: node tests/standings-ui.cjs

@@ -36,6 +36,7 @@ Artisan::command('ecfhl:sync', function () {
 Artisan::command('ecfhl:validate-drafts', function () { $plan=(new \Database\Seeders\DraftsOnlySeeder)->plan(); $this->info('READ ONLY: '.count($plan['draft_picks']).' picks validated; season counts: '.json_encode($plan['counts'])); });
 Artisan::command('ecfhl:refresh-pp-lines {--team=}', function (DailyFaceoffPowerPlay $scraper) {
     $only=strtoupper((string)$this->option('team')); $teams=DailyFaceoffPowerPlay::TEAMS;if($only!==''){if(!isset($teams[$only])){$this->error("Unknown NHL team: {$only}");return 1;}$teams=[$only=>$teams[$only]];}
+    \App\Support\CollectorStatus::total('lines', count($teams));
     $failed=false;
     foreach($teams as $team=>$slug){try{
         $data=$scraper->fetch($team,$slug);
@@ -57,7 +58,7 @@ Artisan::command('ecfhl:refresh-pp-lines {--team=}', function (DailyFaceoffPower
             if($lineRows)DB::table('active_line_combinations')->insert($lineRows);
         });
         $this->info("{$team}: updated");
-    }catch(\Throwable $e){$failed=true;Log::error('Daily Faceoff lines refresh failed',['team'=>$team,'error'=>$e->getMessage()]);$this->error("{$team}: {$e->getMessage()}");}}
+    }catch(\Throwable $e){$failed=true;Log::error('Daily Faceoff lines refresh failed',['team'=>$team,'error'=>$e->getMessage()]);$this->error("{$team}: {$e->getMessage()}");}finally{\App\Support\CollectorStatus::advance('lines');}}
     return $failed?1:0;
 });
 
@@ -70,8 +71,8 @@ Artisan::command('ecfhl:refresh-daily-players', function (FantraxAvailablePlayer
         $merged=[];foreach(array_merge($all['rows'],$goalies['rows']) as $p){$key=mb_strtolower(trim($p['player_name'])).'|'.strtoupper(trim($p['team'])).'|'.strtoupper(trim((string)($p['position']??'')));$merged[$key]=$p;}
         $now=now();$rows=array_map(function($p)use($date,$now){$opp=trim((string)($p['opponent']??''));$away=str_starts_with($opp,'@');return ['game_date'=>$date->format('Y-m-d'),'player_id'=>$p['player_id'],'player_name'=>$p['player_name'],'team'=>$p['team'],'position'=>$p['position'],'opponent'=>ltrim($opp,'@'),'home_away'=>$opp===''?null:($away?'AWAY':'HOME'),'game_time'=>$p['game_time']??null,'game_started'=>(bool)($p['game_started']??false),'availability'=>$p['availability'],'waiver_day'=>$p['waiver_day'],'injury_status'=>$p['injury_status'],'projected_fpts'=>$p['projected_fpts'],'fantrax_url'=>$p['fantrax_url'],'source_rank'=>$p['source_rank'],'last_update'=>$now,'created_at'=>$now,'updated_at'=>$now];},array_values($merged));
         DB::transaction(function()use($date,$rows){DB::table('active_daily_players')->where('game_date',$date->format('Y-m-d'))->delete();if($rows)DB::table('active_daily_players')->insert($rows);});$count=count($rows);$gcount=count(array_filter($rows,fn($r)=>$r['position']==='G'));$this->info($date->format('Y-m-d').': '.$count.' Fantrax players refreshed ('.$gcount.' goalies)');Log::info('Fantrax daily players refresh completed',['date'=>$date->format('Y-m-d'),'rows'=>$count,'goalies'=>$gcount]);
-    }catch(\Throwable $e){$failed=true;Log::error('Fantrax daily players refresh failed',['date'=>$date->format('Y-m-d'),'url'=>$fantrax->url($date),'error'=>$e->getMessage(),'exception'=>get_class($e)]);$this->error($date->format('Y-m-d').': '.$e->getMessage());}}
-    if(!$failed){try{Artisan::call('ecfhl:refresh-available-goalies');$this->line(trim(Artisan::output()));}catch(\Throwable $e){$failed=true;$this->error('Available goalies: '.$e->getMessage());}}
+    }catch(\Throwable $e){$failed=true;Log::error('Fantrax daily players refresh failed',['date'=>$date->format('Y-m-d'),'url'=>$fantrax->url($date),'error'=>$e->getMessage(),'exception'=>get_class($e)]);$this->error($date->format('Y-m-d').': '.$e->getMessage());}finally{\App\Support\CollectorStatus::advance('players');}}
+    {try{if(Artisan::call('ecfhl:refresh-available-goalies')!==0)$failed=true;$this->line(trim(Artisan::output()));}catch(\Throwable $e){$failed=true;$this->error('Available goalies: '.$e->getMessage());}}
     return $failed?1:0;
 });
 
@@ -265,6 +266,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
         ]]);
     }
 
+    \App\Support\CollectorStatus::total('advisor', $teams->count());
     foreach($teams as $teamId=>$teamRows){
         $selectedAdvisor=$advisorProfiles->random();
         $advisorKey=(string)$selectedAdvisor->advisor_key;
@@ -796,6 +798,7 @@ Artisan::command('ecfhl:refresh-lineup-advice', function (FantraxDailyMoves $dai
             'created_at'=>now(),
             'updated_at'=>now(),
         ]);
+        \App\Support\CollectorStatus::advance('advisor');
     }
 
     $this->info($teams->count().' lineup advisor rows refreshed.');
@@ -806,6 +809,7 @@ Artisan::command('ecfhl:refresh-scoring-period-matchups', function (FantraxSched
     $seasonId='2026-27';
     try {
         $periods=$fantraxSchedule->periods(true);
+        \App\Support\CollectorStatus::advance('matchups');
         $updated=0;
         $normalize=fn($v)=>mb_strtolower(trim(preg_replace('/\s+/u',' ',str_replace(["’","‘"],"'",(string)$v))));
 
@@ -843,6 +847,7 @@ Artisan::command('ecfhl:refresh-scoring-period-matchups', function (FantraxSched
         }
 
         $this->info($updated.' scoring-period matchup rows refreshed.');
+        \App\Support\CollectorStatus::advance('matchups');
         return 0;
     } catch (\Throwable $e) {
         Log::error('Scoring period matchup refresh failed',['error'=>$e->getMessage()]);
@@ -866,6 +871,7 @@ Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $
     try {
         DB::table('collector_job_statuses')->updateOrInsert(['job_key'=>'standings'], ['status'=>'running','message'=>'Collecting Fantrax regular-season standings.','ran_at'=>now(),'updated_at'=>now(),'created_at'=>now()]);
         $data=$fantrax->fetch();
+        \App\Support\CollectorStatus::advance('standings');
         $seasonRows=DB::table('team_seasons')->where('season_id',$seasonId)->get();
         if($seasonRows->isEmpty())throw new \RuntimeException('No 2026-27 team_seasons rows exist.');
 
@@ -910,6 +916,7 @@ Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $
             throw new \RuntimeException('Fantrax standings matched '.count($updates).' of '.$expected.' current teams. Existing standings preserved.');
         }
 
+        \App\Support\CollectorStatus::advance('standings');
         DB::transaction(function()use($updates){
             foreach($updates as $teamSeasonId=>$values){
                 DB::table('team_seasons')->where('team_season_id',$teamSeasonId)->update($values);
@@ -965,6 +972,7 @@ Artisan::command('ecfhl:refresh-current-standings', function (FantraxStandings $
         $message=count($updates).' official Fantrax regular-season standings rows refreshed for '.($data['as_of_date']??$data['completed_through']);
         DB::table('collector_job_statuses')->updateOrInsert(['job_key'=>'standings'], ['status'=>'success','message'=>$message,'ran_at'=>now(),'updated_at'=>now(),'created_at'=>now()]);
         $this->info($message);
+        \App\Support\CollectorStatus::advance('standings');
         return 0;
     } catch (\Throwable $e) {
         Log::error('Fantrax current standings refresh failed',['error'=>$e->getMessage()]);
@@ -981,37 +989,14 @@ Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $
     $base=app(\App\Support\FantasyDay::class)->today();
     $failed=false;
 
-    $todayFrozen=false;
-    try {
-        $day=$base->toDateString();
-        $response=Http::timeout(12)->retry(1,500)->get('https://api-web.nhle.com/v1/score/'.$day);
-        $response->throw();
-        $starts=collect($response->json('games')??[])
-            ->map(function($game){
-                $utc=$game['startTimeUTC']??null;
-                if(!$utc)return null;
-                try{return CarbonImmutable::parse($utc)->utc();}catch(\Throwable){return null;}
-            })
-            ->filter();
-
-        if($starts->isNotEmpty()){
-            $lastStart=$starts->sortDesc()->first();
-            $todayFrozen=CarbonImmutable::now('UTC')->gt($lastStart->addHours(4));
-        }
-    } catch (\Throwable $e) {
-        // If the NHL schedule check fails, preserve the current-day snapshot rather
-        // than risk overwriting a completed historical lineup.
-        $todayFrozen=true;
-        Log::warning('Fantasy roster freeze-window check failed',[
-            'date'=>$base->toDateString(),
-            'error'=>$e->getMessage(),
-        ]);
-    }
+    $window=app(\App\Support\CollectorSchedule::class)->window();
+    $todayFrozen=!$window['known'] || $window['todayFinished'];
 
     foreach ([$base,$base->addDay()] as $date) {
         $isToday=$date->isSameDay($base);
         if($isToday && $todayFrozen){
             $this->info($date->toDateString().': roster snapshot frozen after live scoring window');
+            \App\Support\CollectorStatus::advance('teams');
             continue;
         }
 
@@ -1036,7 +1021,7 @@ Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $
             $failed=true;
             Log::error('Fantrax fantasy roster refresh failed',['date'=>$date->toDateString(),'error'=>$e->getMessage()]);
             $this->error($date->toDateString().': '.$e->getMessage().'. Existing roster data preserved.');
-        }
+        } finally { \App\Support\CollectorStatus::advance('teams'); }
     }
 
     try {
@@ -1060,13 +1045,7 @@ Artisan::command('ecfhl:refresh-fantasy-rosters', function (FantraxTeamRosters $
         \App\Support\PublicData::forget('standings-awards');
         $this->info(count($moveRows).' team move-limit rows refreshed.');
 
-        try {
-            Artisan::call('ecfhl:refresh-lineup-advice');
-            $output=trim(Artisan::output());
-            if($output!=='')$this->line($output);
-        } catch (\Throwable $e) {
-            Log::warning('Lineup advisor refresh after roster update failed',['error'=>$e->getMessage()]);
-        }
+        // Lineup advice runs on its own three-hour / pregame schedule.
     } catch (\Throwable $e) {
         $failed=true;
         Log::error('Fantrax daily move refresh failed',['date'=>$base->toDateString(),'error'=>$e->getMessage()]);
@@ -1185,7 +1164,13 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
             $failed = true;
             Log::error('Daily Faceoff goalie refresh failed', ['date'=>$day,'error'=>$e->getMessage()]);
             $this->error($day.': '.$e->getMessage());
-        }
+        } finally { \App\Support\CollectorStatus::advance('goalies'); }
+    }
+    try {
+        if (Artisan::call('ecfhl:refresh-available-goalies') !== 0) $failed = true;
+    } catch (\Throwable $e) {
+        $failed = true;
+        $this->error('Available goalies: '.$e->getMessage());
     }
     return $failed?1:0;
 });
@@ -1199,6 +1184,7 @@ Artisan::command('ecfhl:refresh-odds', function (NhlOdds $odds) {
         foreach ($wanted as $day) {
             $count = $counts[$day];
             $this->info($day.': '.$count.' NHL team odds refreshed');
+            \App\Support\CollectorStatus::advance('odds');
         }
         return 0;
     } catch (\Throwable $e) {
@@ -1209,7 +1195,8 @@ Artisan::command('ecfhl:refresh-odds', function (NhlOdds $odds) {
 });
 
 Schedule::command('ecfhl:refresh-lineup-advice')
-    ->hourly()
+    ->everyMinute()
+    ->when(fn()=>app(\App\Support\CollectorSchedule::class)->due('advisor'))
     ->timezone('America/Halifax')
     ->withoutOverlapping(30)
     ->runInBackground();
@@ -1221,16 +1208,16 @@ Schedule::command('ecfhl:refresh-scoring-period-matchups')
     ->runInBackground();
 
 Schedule::command('ecfhl:refresh-current-standings')
-    ->everyMinute()
+    ->everyFiveMinutes()
     ->withoutOverlapping(10)
     ->runInBackground()
-    ->when(fn()=>app(\App\Support\LiveScoring\RefreshLiveScoring::class)->due());
+    ->when(fn()=>app(\App\Support\CollectorSchedule::class)->due('standings'));
 
 
-Schedule::command('ecfhl:refresh-daily-players')->cron('*/15 * * * *')->withoutOverlapping(14);
-Schedule::command('ecfhl:refresh-fantasy-rosters')->cron('*/15 * * * *')->withoutOverlapping(14)->runInBackground();
-Schedule::command('ecfhl:refresh-starting-goalies')->cron('*/5 * * * *')->withoutOverlapping(4)->runInBackground();
-Schedule::command('ecfhl:refresh-pp-lines')->cron('0 * * * *')->withoutOverlapping(55)->runInBackground();
-Schedule::command('ecfhl:refresh-odds')->cron('0 */2 * * *')->withoutOverlapping(110)->runInBackground();
+Schedule::command('ecfhl:refresh-daily-players')->everyMinute()->when(fn()=>app(\App\Support\CollectorSchedule::class)->due('players'))->withoutOverlapping(14);
+Schedule::command('ecfhl:refresh-fantasy-rosters')->everyMinute()->when(fn()=>app(\App\Support\CollectorSchedule::class)->due('teams'))->withoutOverlapping(14)->runInBackground();
+Schedule::command('ecfhl:refresh-starting-goalies')->everyMinute()->when(fn()=>app(\App\Support\CollectorSchedule::class)->due('goalies'))->withoutOverlapping(4)->runInBackground();
+Schedule::command('ecfhl:refresh-pp-lines')->cron('0 */3 * * *')->timezone('America/Vancouver')->withoutOverlapping(55)->runInBackground();
+Schedule::command('ecfhl:refresh-odds')->cron('0 */4 * * *')->timezone('America/Vancouver')->when(fn()=>app(\App\Support\CollectorSchedule::class)->due('odds'))->withoutOverlapping(110)->runInBackground();
 
 require __DIR__.'/available-goalies.php';

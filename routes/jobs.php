@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use App\Support\WebPush;
 
+Route::get('/job-status/state', fn()=>response()->json(\App\Support\CollectorStatus::snapshot())->header('Cache-Control', 'no-store'));
+
 $sendTestScore = function (WebPush $webPush) {
     abort_unless(request()->ajax() && request()->headers->get('X-Requested-With') === 'XMLHttpRequest', 403);
     $hash=(string)request()->session()->get('push_endpoint_hash',request()->cookie('ecfhl_push_device',''));
@@ -26,6 +28,8 @@ Route::post('/job-status/run/{job}', function (string $job) {
         'scores' => 'ecfhl:refresh-live-scoring',
         'standings' => 'ecfhl:refresh-current-standings',
         'advisor' => 'ecfhl:refresh-lineup-advice',
+        'birthdates' => 'ecfhl:refresh-player-birthdates',
+        'matchups' => 'ecfhl:refresh-scoring-period-matchups',
     ];
 
     abort_unless(isset($commands[$job]) || $job === 'all', 404);
@@ -33,6 +37,7 @@ Route::post('/job-status/run/{job}', function (string $job) {
     $returnTo = in_array(request('return_to'), ['daily-targets','ai-tips'], true) ? '/players' : '/job-status';
     $jobsToRun = $job === 'all' ? $commands : [$job => $commands[$job]];
     $labels = ['projections' => 'Projected FPts', 'players' => 'Fantrax players', 'goalies' => 'Starting goalies', 'lines' => 'Power-play lines', 'odds' => 'NHL odds', 'teams' => 'Fantasy team rosters', 'scores' => 'Live daily scores', 'standings' => 'Current standings', 'advisor' => 'Lineup Advisor'];
+    $labels += ['birthdates'=>'Player Birthdates', 'matchups'=>'Weekly Matchups'];
     $results = [];
     $details = [];
     $anyFailed = false;
@@ -80,5 +85,5 @@ Route::post('/job-status/run/{job}', function (string $job) {
     }
 
     return redirect($returnTo)->with($anyFailed ? 'job_error' : 'job_success', $message);
-})->whereIn('job', ['projections', 'players', 'goalies', 'lines', 'odds', 'teams', 'scores', 'standings', 'advisor', 'all']);
+})->whereIn('job', ['projections', 'players', 'goalies', 'lines', 'odds', 'teams', 'scores', 'standings', 'advisor', 'birthdates', 'matchups', 'all']);
 

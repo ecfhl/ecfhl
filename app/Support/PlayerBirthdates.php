@@ -28,10 +28,11 @@ final class PlayerBirthdates
 
     public function refresh(bool $force=false): int
     {
-        if(!$force && DB::table('player_birthdates')->where('refreshed_at','>=',now()->subDay())->count()>=500) {
+        if(!$force && DB::table('player_birthdates')->where('refreshed_at','>=',now()->subWeek())->count()>=500) {
             return DB::table('player_birthdates')->count();
         }
         $rows=[];
+        CollectorStatus::total('birthdates', 4);
         foreach(array_chunk(array_keys(DailyFaceoffPowerPlay::TEAMS), 8) as $teams) {
             $responses=Http::pool(function(Pool $pool) use($teams) {
                 foreach($teams as $team) $pool->as($team)->connectTimeout(5)->timeout(12)
@@ -51,6 +52,7 @@ final class PlayerBirthdates
                     }
                 }
             }
+            CollectorStatus::advance('birthdates');
         }
         if(!$rows) throw new \RuntimeException('NHL birth dates unavailable; previous player ages preserved.');
         DB::transaction(function() use($rows) {
