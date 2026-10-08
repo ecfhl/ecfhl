@@ -188,6 +188,7 @@ class WebPush
 
     public function testType(int $userId,string $endpointHash,string $type): array
     {
+        if(in_array($type,['league-message','private-message'],true))return $this->testMessage($userId,$endpointHash,$type==='league-message'?'league':'private');
         $subscription=DB::table('push_subscriptions')->where('user_id',$userId)->where('endpoint_hash',$endpointHash)->where('enabled',true)->whereNotNull('feed_token_hash')->first();
         if(!$subscription)throw \Illuminate\Validation\ValidationException::withMessages(['device'=>'Enable notifications on this device before sending a test.']);
 

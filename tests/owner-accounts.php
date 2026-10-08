@@ -280,6 +280,23 @@ $feed=ownerRequest('GET','/push/notifications',[],$guest,['HTTP_AUTHORIZATION'=>
 verifyOwner(count(json_decode($feed->getContent(),true)['notifications'])===2,'Device feed did not contain the scoring tests');
 // Admin notification-type tests reformat stored alerts and still target just this device.
 $endpointHash=hash('sha256',$testEndpoint);
+$page=ownerRequest('GET','/admin/notifications',[],$admin);
+verifyOwner($page->getStatusCode()===200&&str_contains($page->getContent(),'value="league-message"')&&str_contains($page->getContent(),'value="private-message"'),'Admin message test cards missing');
+$messageCount=DB::table('chat_messages')->count();
+foreach(['league-message','private-message'] as $messageType){
+ $response=ownerRequest('POST','/admin/notifications/test',['type'=>$messageType],$admin);
+ verifyOwner($response->getStatusCode()===302,'Admin message test route failed: '.$response->getContent());
+ $alert=DB::table('push_notifications')->orderByDesc('id')->first();
+ verifyOwner($alert->category==='test-'.$messageType&&str_contains($alert->title,'TEST'),'Wrong message test payload');
+ $delivery=DB::table('push_deliveries')->where('notification_id',$alert->id)->get();
+ $deviceId=DB::table('push_subscriptions')->where('endpoint_hash',$endpointHash)->value('id');
+ verifyOwner($delivery->count()===1&&(int)$delivery[0]->subscription_id===(int)$deviceId,'Admin message test reached another owner or device');
+ verifyOwner(ownerRequest('POST','/admin/notifications/test',['type'=>$messageType],$alpha)->getStatusCode()===403,'Regular owner can use admin message tests');
+ verifyOwner(ownerRequest('POST','/admin/notifications/test',['type'=>$messageType],$guest)->getStatusCode()===401,'Guest can use admin message tests');
+}
+verifyOwner(DB::table('chat_messages')->count()===$messageCount,'Admin test added a real chat message');
+try{$push->testType($adminOwner->id,hash('sha256','https://fcm.googleapis.com/fcm/send/alpha'),'private-message');throw new RuntimeException('Another owner device accepted');}
+catch(Illuminate\Validation\ValidationException $e){verifyOwner(str_contains($e->getMessage(),'Enable notifications'),'Other owner device did not fail safely');}
 foreach(['team-score','opponent-score'] as $type){
  $push->testType($adminOwner->id,$endpointHash,$type);
  $typed=DB::table('push_notifications')->orderByDesc('id')->first();

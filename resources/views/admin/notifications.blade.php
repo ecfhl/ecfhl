@@ -1,11 +1,13 @@
 @extends('layouts.app')
 @section('title', 'Notification Tests · ECFHL')
 @section('content')
-<div class="page-head"><div class="shell"><div class="eyebrow">Administration</div><h1>Notification Tests</h1><p>Send each notification type to this device.</p></div></div>
+<div class="page-head"><div class="shell"><div class="eyebrow">Administration</div><h1>Notification Tests</h1><p>Send each notification type to your current device only. No tests are sent to other owners or added to chat history.</p></div></div>
 <div class="shell">
 @if(session('notice'))<div class="card" style="margin:16px 0">{{ session('notice') }}</div>@endif
 <div class="admin-notification-grid">
 @foreach([
+ ['league-message','League chat messages','Send a sample League chat notification to your current device only.'],
+ ['private-message','Private messages','Send a sample private-message notification to your current device only.'],
  ['team-score','My team scores','Skater scoring alert with G, A, PPG, SHG and GWG.'],
  ['team-goalie-score','My team goalie scores','Goalie scoring alert with W, L, OL, SO, G and A.'],
  ['opponent-score','My opponent scores','Scoring alert from the current opponent.'],

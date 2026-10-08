@@ -123,7 +123,7 @@ Route::post('/notifications/test-message',function(){
 
 Route::post('/admin/notifications/test', function () {
     abort_unless(request()->user()?->is_admin,403);
-    $v=request()->validate(['type'=>'required|string|in:team-score,team-goalie-score,opponent-score,own-goalie,all-goalie,available-today,available-tomorrow,watched-goalie']);
+    $v=request()->validate(['type'=>'required|string|in:league-message,private-message,team-score,team-goalie-score,opponent-score,own-goalie,all-goalie,available-today,available-tomorrow,watched-goalie']);
     $endpointHash=(string)request()->cookie('ecfhl_push_device','');
     $result=app(\App\Support\WebPush::class)->testType((int)request()->user()->id,$endpointHash,$v['type']);
     return redirect('/admin/notifications')->with('notice',$result['message']);
