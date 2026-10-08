@@ -4,3 +4,44 @@ html[data-theme] .header-actions .header-counter{display:inline-flex;align-items
 .communication-panel{position:fixed;top:76px;right:12px;z-index:1300;width:min(380px,calc(100vw - 24px));max-height:70dvh;overflow:auto;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-raised);padding:14px}.communication-panel[hidden]{display:none}.communication-panel-heading,.chat-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}.communication-panel-heading h2,.chat-heading h2{font-size:17px;margin:0}.communication-panel-heading button,.message-popup-close{border:0;background:transparent;color:inherit;font-size:24px;cursor:pointer}.communication-setting{display:flex;align-items:center;gap:8px;margin:12px 0;font-size:13px}.communication-log{margin:12px 0}.notification-entry{padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}.notification-entry[data-unread="true"]{border-left:3px solid #f4a340;padding-left:8px}.notification-entry p{white-space:pre-wrap;margin:5px 0}.notification-entry a{color:var(--text)}
 .home-league-chat{padding-top:14px}.chat-widget{margin:16px 0;padding:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px}.chat-heading a{font-size:12px}.chat-log{height:230px;overflow-y:auto;overscroll-behavior:contain;margin:12px 0;padding:6px}.chat-message{padding:8px 10px;margin-bottom:7px;border-radius:8px;background:var(--heading-bg);font-size:13px}.chat-message[data-own="true"]{border-left:3px solid var(--focus)}.chat-message p{white-space:pre-wrap;overflow-wrap:anywhere;margin:5px 0;line-height:1.5}.chat-message time{display:block;font-size:10px;color:var(--muted)}.chat-form{display:flex;gap:8px;align-items:flex-end}.chat-form textarea{resize:vertical;min-height:58px;max-height:180px;width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--panel);color:var(--text);font:inherit;font-size:13px}.chat-status{margin:8px 0 0;font-size:12px;color:var(--muted)}.messages-page select{max-width:100%;padding:8px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:6px}.messages-page .chat-log{height:45dvh}.message-preferences{padding:16px}.team-message-link{margin:6px 0}.message-popups{position:fixed;right:12px;bottom:20px;width:min(340px,calc(100vw - 24px));z-index:5200;display:flex;flex-direction:column;gap:8px;pointer-events:none}.message-popup{pointer-events:auto;background:var(--panel);color:var(--text);border:1px solid #f4a340;border-radius:12px;padding:12px;box-shadow:var(--shadow-raised)}.message-popup-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}.message-popup p{white-space:pre-wrap;overflow-wrap:anywhere;max-height:90px;overflow:auto;font-size:13px;margin:8px 0}.message-popup a{font-size:13px;font-weight:700}
 @media(max-width:700px){.header-actions{gap:1px!important}html[data-theme] .header-actions .header-counter{padding:4px;min-width:32px}.header-actions .header-theme-toggle{margin-left:0}.brand-logo{width:36px!important;height:36px!important}.brand-copy{display:none!important}.message-popups{bottom:calc(84px + env(safe-area-inset-bottom,0px))}.communication-panel{top:64px}.chat-widget{padding:12px}}
+
+/* Theme-aware messages shared by Home, Messages and Team widgets. */
+html[data-theme] .chat-message{background:var(--panel-2);color:var(--text);border:1px solid var(--line)}
+html[data-theme="light"] .chat-message[data-own="true"]{background:#eaf2ff;border-left:3px solid var(--focus)}
+.chat-message time{font-size:11px;line-height:1.5}
+.communication-panel{width:min(390px,calc(100vw - 24px));padding:0;overflow:hidden;border-color:#f4a340;border-radius:14px;box-shadow:var(--shadow-raised)}
+.communication-panel-heading{padding:8px 12px;background:#f4a340;color:#172033}
+.communication-panel-heading h2{font-size:14px}
+.communication-panel-heading button{width:28px;height:28px;line-height:1;border-radius:6px}
+.notification-panel-body{padding:12px 14px;overflow:auto;max-height:calc(70dvh - 44px)}
+.notification-panel-body .communication-setting{margin:0 0 10px}
+#header-push-state{font-size:12px;color:var(--muted);line-height:1.5;margin:8px 0}
+.notification-entry{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:8px 0}
+.notification-entry a{font-weight:700;text-decoration:none}
+.notification-panel-footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12px}
+.notification-panel-footer .button{font-size:12px;padding:8px 10px}
+html[data-theme] .live-score-updates{box-shadow:var(--shadow-raised)}
+html[data-theme] .live-score-updates-filters{display:flex;align-items:center;gap:8px;padding:12px 14px;flex-wrap:nowrap}
+.live-score-updates-filters>label{display:flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap}
+html[data-theme] .live-score-updates-filters select,.score-team-picker summary{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:7px;padding:7px 8px;font:inherit;font-size:12px}
+.score-team-picker{min-width:0;flex:1;font-size:12px}
+.score-team-picker summary{cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.score-team-options{max-height:170px;overflow:auto;padding:6px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;margin-top:6px}
+.score-team-options label{display:flex;align-items:center;gap:7px;padding:6px;font-size:12px;overflow-wrap:anywhere}
+.live-score-updates-filters:has(.score-team-picker[open]){align-items:flex-start}
+.live-score-updates-heading button:hover,.communication-panel-heading button:hover{background:#17203315}
+
+.chat-message-identity{display:flex;align-items:center;gap:9px}
+.chat-message-identity img,.message-popup-heading img{object-fit:contain;flex:none}
+.message-settings-link,.message-back{display:inline-block;font-size:13px;margin:8px 0}
+html[data-theme] .live-score-updates-filters[hidden]{display:none}
+.scoring-settings-link{padding:10px 14px;font-size:12px;color:var(--text);border-bottom:1px solid var(--line)}
+.live-score-updates[data-minimized="true"] .scoring-settings-link{display:none}
+.settings-tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px}
+.settings-tabs button{border:1px solid var(--line);border-radius:8px;background:var(--panel-2);color:var(--text);font:inherit;font-weight:700;padding:9px 16px;cursor:pointer}
+.settings-tabs button[aria-selected="true"]{background:#f4a340;color:#172033;border-color:#f4a340}
+.settings-tabs button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.notification-settings-panel .owner-settings-fieldset{display:block}
+.notification-settings-panel [role="tabpanel"]>section{margin-bottom:16px}
+.notification-settings-panel [role="tabpanel"][hidden]{display:none}
+#scoring-settings-controls .live-score-updates-filters{padding:0}

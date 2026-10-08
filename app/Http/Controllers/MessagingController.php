@@ -13,11 +13,12 @@ final class MessagingController
  private function other(Request $r): ?int {
   $v=$r->validate(['user_id'=>'nullable|integer|min:1|exists:users,id']);
   $id=isset($v['user_id'])?(int)$v['user_id']:null;
-  abort_if($id===$r->user()->id,422,'Choose another user.');return $id;
+  abort_if($id===$r->user()->id,422,'Choose another team.');
+  if($id)abort_unless(User::whereKey($id)->whereHas('claim',fn($q)=>$q->whereNotNull('fantasy_team_id')->where('fantasy_team_id','!=',''))->exists(),422,'This account is not linked to a team.');return $id;
  }
  public function index(Request $r) {
   $other=$this->other($r);
-  return response()->view('communication.messages',['other'=>$other,'people'=>User::with('claim')->where('id','!=',$r->user()->id)->orderBy('name')->get()])->header('Cache-Control','private, no-store');
+  return response()->view('communication.messages',['other'=>$other,'people'=>User::with('claim')->whereHas('claim',fn($q)=>$q->whereNotNull('fantasy_team_id')->where('fantasy_team_id','!=',''))->where('id','!=',$r->user()->id)->orderBy('name')->get()])->header('Cache-Control','private, no-store');
  }
  public function conversation(Request $r) {
   $other=$this->other($r);$r->validate(['before'=>'nullable|integer|min:1','after'=>'nullable|integer|min:0']);
@@ -40,7 +41,7 @@ final class MessagingController
    $new=true;return DB::table('chat_messages')->insertGetId(['sender_id'=>$r->user()->id,'recipient_id'=>$other,'client_id'=>$v['client_id'],'body'=>$body,'created_at'=>now(),'updated_at'=>now()]);
   });
   if($new){
-   try{$push->notify($other?'private-message':'league-message',($r->user()->claim?->team_name??$r->user()->name).($other?' sent you a message':' · League chat'),mb_substr($body,0,240),$other?'/messages?user_id='.$r->user()->id:'/messages',null,['sender_id'=>$r->user()->id,'recipient_id'=>$other]);}
+   try{$push->notify($other?'private-message':'league-message',($r->user()->claim?->team_name??'League member').($other?' sent you a message':' · League chat'),mb_substr($body,0,240),$other?'/messages?user_id='.$r->user()->id:'/messages',null,['sender_id'=>$r->user()->id,'recipient_id'=>$other]);}
    catch(\Throwable $e){Log::warning('Message saved but push failed',['message_id'=>$id,'error'=>$e->getMessage()]);}
   }
   return response()->json(['message'=>Messaging::rows(DB::table('chat_messages as m')->where('m.id',$id))[0]],$new?201:200)->header('Cache-Control','private, no-store');
@@ -61,7 +62,7 @@ final class MessagingController
   $messages=$r->filled('after')?Messaging::rows($incoming->where('m.id','>',(int)$r->input('after'))->orderBy('m.id')->limit(100)):[];
   $inbox=DB::table('owner_notification_inbox as i')->join('push_notifications as n','n.id','=','i.notification_id')->where('i.user_id',$uid);
   $notifications=(clone $inbox)->orderByRaw('CASE WHEN i.read_at IS NULL THEN 0 ELSE 1 END')->orderByDesc('n.id')->limit(50)->get(['n.id','n.title','n.body','n.url','i.read_at']);
-  $owners=DB::table('owner_team_claims')->where('user_id','!=',$uid)->get(['user_id','team_name'])->mapWithKeys(fn($c)=>[\Illuminate\Support\Str::slug($c->team_name)=>$c->user_id]);
+  $owners=DB::table('owner_team_claims')->whereNotNull('fantasy_team_id')->where('fantasy_team_id','!=','')->where('user_id','!=',$uid)->get(['user_id','team_name'])->mapWithKeys(fn($c)=>[\Illuminate\Support\Str::slug($c->team_name)=>$c->user_id]);
   return response()->json(['unread'=>Messaging::unread($uid),'messages'=>$messages,'latest_id'=>$latest,'notification_count'=>(clone $inbox)->whereNull('i.read_at')->count(),'notifications'=>$notifications,'preferences'=>Messaging::preferences($r->user()),'owners'=>$owners])->header('Cache-Control','private, no-store');
  }
  public function readNotifications(Request $r) {

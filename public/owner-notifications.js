@@ -21,9 +21,7 @@
     if(!data.preferences)throw new Error('Could not confirm the save. Please reload and try again.');
     saved=signature(data.preferences);saving=false;
     if(!updateSave()){
-     // Leave only once every displayed change has been confirmed saved.
-     saving=true;save.disabled=true;save.textContent='Saved';saveState.textContent='Saved. Opening your team…';
-     window.location.assign(data.redirect_url||'/teams/current');
+     saveState.textContent='Preferences saved.';
     }
    }catch(error){saving=false;updateSave();saveState.textContent=error.message;saveState.dataset.state='error';}
   });

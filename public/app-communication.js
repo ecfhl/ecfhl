@@ -29,12 +29,13 @@
  const savePreferences=async patch=>{const saved=await request('/api/communication/preferences',patch);preferences=saved.preferences;syncPreferences();};
  const enabledSwitch=document.getElementById('header-notifications-enabled');
  const syncPreferences=()=>{
-  enabledSwitch.checked=preferences.notifications_enabled!==false;
-  const dot=document.getElementById('header-notification-status');dot.dataset.enabled=String(enabledSwitch.checked);dot.setAttribute('aria-label','Notifications '+(enabledSwitch.checked?'on':'off'));notificationToggle.title='Notifications '+(enabledSwitch.checked?'on':'off');
+  if(enabledSwitch)enabledSwitch.checked=preferences.notifications_enabled!==false;
+  const notificationsEnabled=preferences.notifications_enabled!==false;
+  const dot=document.getElementById('header-notification-status');dot.dataset.enabled=String(notificationsEnabled);dot.setAttribute('aria-label','Notifications '+(notificationsEnabled?'on':'off'));notificationToggle.title='Notifications '+(notificationsEnabled?'on':'off');
   document.querySelectorAll('[data-message-preference]').forEach(input=>input.checked=preferences[input.dataset.messagePreference]!==false);
  };
  syncPreferences();
- enabledSwitch.addEventListener('change',async()=>{enabledSwitch.disabled=true;try{await savePreferences({notifications_enabled:enabledSwitch.checked});}catch(e){document.getElementById('header-push-state').textContent=e.message;syncPreferences();}finally{enabledSwitch.disabled=false;}});
+ enabledSwitch?.addEventListener('change',async()=>{enabledSwitch.disabled=true;try{await savePreferences({notifications_enabled:enabledSwitch.checked});}catch(e){document.getElementById('header-push-state').textContent=e.message;syncPreferences();}finally{enabledSwitch.disabled=false;}});
  document.querySelectorAll('[data-message-preference]').forEach(input=>input.addEventListener('change',async()=>{input.disabled=true;const status=document.getElementById('message-preferences-status');try{await savePreferences({[input.dataset.messagePreference]:input.checked});status.textContent='Saved.';}catch(e){status.textContent=e.message;syncPreferences();}finally{input.disabled=false;}}));
  const teamMessage=()=>{const modal=document.getElementById('team-icon-modal'),link=document.getElementById('team-icon-modal-message');if(!link)return;const owner=owners[modal?.dataset.messageSlug];link.hidden=!owner;if(owner)link.href='/messages?user_id='+owner;else link.removeAttribute('href');};
  window.addEventListener('ecfhl-team-viewer',teamMessage);
@@ -62,7 +63,7 @@
   widget.log.replaceChildren();
   [...widget.messages.values()].sort((a,b)=>a.id-b.id).forEach(message=>{
    const row=node('article',undefined,'chat-message');row.dataset.own=String(Number(message.sender_id)===userId);
-   row.append(node('strong',(message.team_name?message.team_name+' · ':'')+message.sender_name),node('p',message.body));
+   const identity=node('div',undefined,'chat-message-identity'),logo=node('img');logo.src=message.team_logo||'/team-icons/league-logo/thumbnail?size=64';logo.alt='';logo.width=32;logo.height=32;logo.loading='lazy';identity.append(logo,node('strong',message.team_name||'League member'));row.append(identity,node('p',message.body));
    const time=node('time',new Date(message.created_at).toLocaleString());row.append(time);widget.log.append(row);
   });
   if(older)widget.log.scrollTop+=widget.log.scrollHeight-height;else if(bottom)widget.log.scrollTop=widget.log.scrollHeight;
@@ -100,7 +101,7 @@
   if(preferences[league?'league_message_popups':'private_message_popups']===false)return;
   const open=widgets.find(w=>(league?w.other===null:w.other===Number(message.sender_id))&&visible(w)&&atBottom(w));if(open)return;
   const box=node('section',undefined,'message-popup'),heading=node('div',undefined,'message-popup-heading');
-  heading.append(node('strong',(league?'League chat · ':'')+(message.team_name||message.sender_name)));
+  const logo=node('img');logo.src=message.team_logo||'/team-icons/league-logo/thumbnail?size=64';logo.alt='';logo.width=32;logo.height=32;heading.append(logo,node('strong',(league?'League chat · ':'')+(message.team_name||'League member')));
   const close=node('button','×','message-popup-close');close.type='button';close.setAttribute('aria-label','Dismiss message popup');close.addEventListener('click',()=>box.remove());heading.append(close);
   const link=node('a','Open conversation');link.href=league?'/messages':'/messages?user_id='+message.sender_id;
   box.append(heading,node('p',message.body.slice(0,240)),link);
@@ -115,7 +116,7 @@
   }catch(_){/* Preserve counters and retry. */}finally{stateBusy=false;}
  };
  // Browser permission is requested only from the user's enable-button click.
- const pushButton=document.getElementById('header-enable-push'),pushStatus=document.getElementById('header-push-state');
+ const pushButton=document.getElementById('header-enable-push'),pushStatus=document.getElementById('header-push-state')||node('p');
  let deviceMuted=false;try{deviceMuted=localStorage.getItem('ecfhl-push-disabled:'+userId)==='1';}catch(_){}
  const pushSupported='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
  const b64=s=>Uint8Array.from(atob((s+'='.repeat((4-s.length%4)%4)).replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
@@ -127,12 +128,12 @@
    const saved=await request('/push/subscribe',{endpoint:subscription.endpoint});
    await new Promise((resolve,reject)=>{const channel=new MessageChannel(),timer=setTimeout(()=>reject(new Error('Reload and enable notifications again.')),10000);channel.port1.onmessage=()=>{clearTimeout(timer);resolve();};registration.active.postMessage({type:'set-owner-feed',token:saved.feedToken,lastId:saved.latestId},[channel.port2]);});
   }
-  pushStatus.textContent='Browser push notifications enabled.';pushButton.hidden=true;
+  pushStatus.textContent='Browser push notifications enabled.';if(pushButton)pushButton.hidden=true;
  };
- if(!pushSupported){pushButton.disabled=true;pushStatus.textContent='Browser push is unavailable here. Message popups still work.';}
+ if(!pushSupported){if(pushButton)pushButton.disabled=true;pushStatus.textContent='Browser push is unavailable here. Message popups still work.';}
  else if(Notification.permission==='granted'&&!deviceMuted)connectPush().catch(e=>pushStatus.textContent=e.message);
  else pushStatus.textContent=Notification.permission==='denied'?'Notifications are blocked in this browser. Allow them in browser settings.':'Messages are enabled. Allow browser notifications to receive push alerts.';
- pushButton.addEventListener('click',async()=>{pushButton.disabled=true;try{if(await Notification.requestPermission()!=='granted')throw new Error('Allow notifications in your browser to receive push alerts.');try{localStorage.removeItem('ecfhl-push-disabled:'+userId);}catch(_){}await connectPush();}catch(e){pushStatus.textContent=e.message;}finally{pushButton.disabled=false;}});
+ pushButton?.addEventListener('click',async()=>{pushButton.disabled=true;try{if(await Notification.requestPermission()!=='granted')throw new Error('Allow notifications in your browser to receive push alerts.');try{localStorage.removeItem('ecfhl-push-disabled:'+userId);}catch(_){}await connectPush();}catch(e){pushStatus.textContent=e.message;}finally{if(pushButton)pushButton.disabled=false;}});
  refreshState();setInterval(()=>{refreshState();widgets.forEach(w=>refreshWidget(w));},15000);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden){refreshScoring();refreshState();widgets.forEach(w=>refreshWidget(w));}});
  window.addEventListener('scroll',()=>widgets.forEach(readWidget),{passive:true});
