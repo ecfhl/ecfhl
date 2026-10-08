@@ -25,7 +25,8 @@ final class LiveScoringController
         $scheduleLabel = $snapshot ? 'Scoring period '.$snapshot['period'].' '.$snapshot['period_label'] : null;
         $scoreLastUpdate = $lastUpdate = $snapshot['collected_at'] ?? null;
         $autoRefresh = $date === $today;
-        return response()->view('teams.current-index', compact('teams','matchups','scheduleLabel','date','yesterday','today','tomorrow','lastUpdate','scoreLastUpdate','autoRefresh'))
+        $scoringState=\App\Support\LiveScoring\ScoringAlert::state($snapshot??['fantasy_date'=>$date]);
+        return response()->view('teams.current-index', compact('teams','matchups','scheduleLabel','date','yesterday','today','tomorrow','lastUpdate','scoreLastUpdate','autoRefresh','scoringState'))
             ->header('Cache-Control','no-store, no-cache, must-revalidate');
     }
 }

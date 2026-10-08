@@ -1,6 +1,7 @@
 (() => {
   window.EcfhlLiveScoring = {
     start({saveOpenMatchups, highlightNotificationTeam}) {
+      const scoringUpdates = window.EcfhlScoreUpdates?.start();
       let refreshing = false;
       const blocked = () => document.hidden || document.querySelector('dialog[open],#team-icon-modal.open');
       const refresh = async () => {
@@ -35,6 +36,7 @@
             replacement?.focus({preventScroll:true});
           }
           window.scrollTo(x,y);
+          scoringUpdates?.update(fresh);
         } catch (error) {
           const status=document.querySelector('.team-updated');
           if (status && !status.querySelector('[data-refresh-error]')) {

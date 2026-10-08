@@ -17,6 +17,7 @@
       <a class="button team-date-button {{ $date===$today?'primary':'team-date-inactive' }}" href="/teams/current?date={{ $today }}">Today</a>
       <a class="button team-date-button {{ $date===$tomorrow?'primary':'team-date-inactive' }}" href="/teams/current?date={{ $tomorrow }}">Tomorrow</a>
     </div>
+    @if($autoRefresh)<button type="button" class="button live-score-updates-toggle" id="live-score-updates-toggle" aria-controls="live-score-updates" aria-expanded="false">Scoring updates <span id="live-score-updates-count" hidden>0</span></button>@endif
   </div>
 
   @if($scheduleLabel)
@@ -41,7 +42,7 @@
   @endphp
 
   @if(!$scoreLastUpdate)<p>No valid Fantrax snapshot is available for this fantasy date yet.</p>@endif
-  <div class="current-matchup-list">
+  <div class="current-matchup-list" data-scoring-state="{{ json_encode($scoringState, JSON_THROW_ON_ERROR) }}">
     @foreach($matchups as $matchup)
       @php
         $away=$matchup['away'] ?? null;
@@ -253,6 +254,13 @@
   </footer>
 </div>
 
+@if($autoRefresh)
+<section id="live-score-updates" class="live-score-updates" aria-label="Scoring updates" hidden>
+  <div class="live-score-updates-heading"><div><h2>Scoring updates</h2><p>All teams · Since you opened Live Scoring</p></div><button type="button" id="live-score-updates-close" aria-label="Close scoring updates">×</button></div>
+  <div id="live-score-updates-list" class="live-score-updates-list" role="log" aria-live="polite" aria-relevant="additions" tabindex="0"><p class="live-score-updates-empty">New scoring plays will appear here as scores refresh.</p></div>
+</section>
+@endif
+
 @push('styles')
 <style>
 .current-teams-head{padding:16px 0 8px}
@@ -370,6 +378,7 @@ html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:va
 </style>
 @endpush
 
+<script src="/live-score-updates.js?v={{ hash_file('sha256', base_path('public/live-score-updates.js')) }}"></script>
 <script src="/live-scoring.js?v={{ hash_file('sha256', base_path('public/live-scoring.js')) }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{

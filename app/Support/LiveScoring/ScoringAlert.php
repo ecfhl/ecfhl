@@ -3,6 +3,24 @@ namespace App\Support\LiveScoring;
 
 final class ScoringAlert
 {
+    public static function state(array $snapshot): array
+    {
+        $players=[];
+        foreach ($snapshot['players']??[] as $player) {
+            if (($player['scoring_status']??'')!=='ACTIVE') continue;
+            $position=$player['position']??'';
+            if (is_array($position)) $position=implode(',',$position);
+            $players[]=[
+                'key'=>$player['fantasy_team_id'].'|'.$player['player_id'],
+                'team'=>$snapshot['teams'][$player['fantasy_team_id']]['name'],
+                'name'=>\App\Support\PlayerName::display($player['player_name']),
+                'nhl'=>$player['nhl_team']??'', 'goalie'=>(bool)preg_match('/(^|[,\/ ])G($|[,\/ ])/i',(string)$position),
+                'points'=>(float)($player['daily_fpts']??0), 'stats'=>self::totals($player),
+            ];
+        }
+        return ['date'=>$snapshot['fantasy_date'],'players'=>$players];
+    }
+
     private static function totals(array $player): array
     {
         $stats=$player['stats']??[];

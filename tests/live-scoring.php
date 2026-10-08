@@ -298,5 +298,11 @@ foreach(['L'=>'takes a loss','OTL'=>'takes an overtime loss','OL+ShL'=>'takes an
 }
 $eventPlayer['stats']=['GP'=>['value'=>1],'W'=>['value'=>0],'L'=>['value'=>0]];
 checkLive(App\Support\LiveScoring\ScoringAlert::payload($eventSnapshot,$eventPlayer)['body']==='Tkachuk, Matthew (FLA) has a score update.','All-zero stats must omit the summary line');
+$eventPlayer+=['player_id'=>'one','scoring_status'=>'ACTIVE'];
+$eventPlayer['stats']=['GP'=>['value'=>1],'W'=>['value'=>1],'SHO'=>['value'=>1],'OL+ShL'=>['value'=>1]];
+$eventSnapshot['players']=[$eventPlayer,array_merge($eventPlayer,['player_id'=>'bench','scoring_status'=>'BENCH']),array_merge($eventPlayer,['player_id'=>'ir','scoring_status'=>'INJURED_RESERVE']),array_merge($eventPlayer,['player_id'=>'minor','scoring_status'=>'MINORS'])];
+$popupState=App\Support\LiveScoring\ScoringAlert::state($eventSnapshot);
+checkLive(count($popupState['players'])===1&&$popupState['players'][0]['key']==='team|one'&&$popupState['players'][0]['goalie'],'Popup baseline must only include active scoring players and stable team/player IDs');
+checkLive($popupState['players'][0]['stats']['SO']===1&&$popupState['players'][0]['stats']['OTL']===1&&!isset($popupState['players'][0]['stats']['GP']),'Popup state must normalize goalie aliases and omit GP');
 CarbonImmutable::setTestNow();
 echo "Live scoring checks passed: Pacific midnight/DST, three Fantrax dates, seven matchups, IDs, zero-point players, future projections, optional missing estimates, preserved actual scoring, injury flags, failed-date preservation, independent publication, scoring notification team names/current stat lines/trigger isolation, and page rendering.\n";
