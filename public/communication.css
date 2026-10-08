@@ -105,3 +105,14 @@ html[data-theme] .live-score-updates-restore{text-align:left;padding:10px 14px;f
 [data-minimized="true"]>.panel-resize-handle{cursor:ew-resize}
 .panel-resize-handle:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 [data-resizing="true"]{user-select:none}
+
+/* Message text leads from the top-left; team identity stays in the right column. */
+.chat-message{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);align-items:start;column-gap:0}
+.chat-message>p{min-width:0;margin:0;padding-right:10px}
+.chat-message-meta{min-width:0;text-align:right}
+.chat-message-identity{min-width:0;gap:6px;align-items:center}
+.chat-message-identity img{width:28px;height:28px}
+.chat-message-identity strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat-message-meta time{margin-top:3px;overflow-wrap:anywhere;font-size:10px;line-height:1.4}
+
+html[data-theme] .site-footer .footer-inner.site-credit{display:block;white-space:nowrap;text-align:center;font-size:clamp(10px,2.8vw,14px);line-height:1.4;overflow-x:auto;padding-top:8px;padding-bottom:8px}
