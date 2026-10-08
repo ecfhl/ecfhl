@@ -47,6 +47,7 @@
    const row=node('article',undefined,'chat-message');row.dataset.own=String(Number(message.sender_id)===userId);
    const identity=node('div',undefined,'chat-message-identity'),logo=node('img');logo.src=message.team_logo||'/team-icons/league-logo/thumbnail?size=64';logo.alt='';logo.width=32;logo.height=32;const name=node('strong',message.team_name||'League member');name.title=name.textContent;identity.append(logo,name);
    const meta=node('div',undefined,'chat-message-meta');meta.append(identity,node('time',new Date(message.created_at).toLocaleString([],{timeZone:'America/Halifax',hour12:true})));
+   const receipt=window.EcfhlMessageReceipt?.(message,userId);if(receipt)meta.append(receipt);
    row.append(node('p',message.body),meta);log.append(row);
   });
   older.hidden=!state.hasMore;if(oldPage)log.scrollTop+=log.scrollHeight-height;else if(bottom)log.scrollTop=log.scrollHeight;constrain();read();
@@ -54,7 +55,8 @@
  const refresh=async(oldPage=false)=>{
   const value=selected,state=conversation(value),version=generation;if(mode!=='expanded'||document.hidden||state.busy||!directoryReady)return;state.busy=true;
   const ids=[...state.messages.keys()],params=new URLSearchParams();if(value)params.set('user_id',value);if(ids.length)params.set(oldPage?'before':'after',String(oldPage?Math.min(...ids):Math.max(...ids)));
-  try{const d=await request('/api/messages/conversation?'+params);d.messages.forEach(m=>state.messages.set(Number(m.id),m));if(oldPage||!ids.length)state.hasMore=d.has_more;if(version===generation&&value===selected){status.textContent='';draw(oldPage);}}catch(e){if(version===generation)status.textContent=e.message;}finally{state.busy=false;}
+  ids.slice(-250).forEach(id=>params.append('receipts[]',id));
+  try{const d=await request('/api/messages/conversation?'+params);(d.receipts||[]).forEach(receipt=>{const message=state.messages.get(Number(receipt.id));if(message)Object.assign(message,receipt);});d.messages.forEach(m=>state.messages.set(Number(m.id),m));if(oldPage||!ids.length)state.hasMore=d.has_more;if(version===generation&&value===selected){status.textContent='';draw(oldPage);}}catch(e){if(version===generation)status.textContent=e.message;}finally{state.busy=false;}
  };
  const change=value=>{
   value=String(value||'');if(value&&!teams.some(t=>String(t.user_id)===value))value='';

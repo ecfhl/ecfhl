@@ -21,14 +21,16 @@ final class MessagingController
   return response()->view('communication.messages',['other'=>$other,'people'=>User::with('claim')->whereHas('claim',fn($q)=>$q->whereNotNull('fantasy_team_id')->where('fantasy_team_id','!=',''))->where('id','!=',$r->user()->id)->orderBy('name')->get()])->header('Cache-Control','private, no-store');
  }
  public function conversation(Request $r) {
-  $other=$this->other($r);$r->validate(['before'=>'nullable|integer|min:1','after'=>'nullable|integer|min:0']);
+  $other=$this->other($r);$r->validate(['before'=>'nullable|integer|min:1','after'=>'nullable|integer|min:0','receipts'=>'nullable|array|max:250','receipts.*'=>'integer|min:1']);
   $q=Messaging::visible($r->user()->id,$other);
   if($r->filled('before'))$q->where('m.id','<',(int)$r->input('before'));
   if($r->filled('after'))$q->where('m.id','>',(int)$r->input('after'));
   // Initial/older pages are returned chronologically; incremental pages take the earliest new entries.
   $ascending=$r->filled('after');$q->orderBy('m.id',$ascending?'asc':'desc')->limit(50);
   $rows=Messaging::rows($q);if(!$ascending)$rows=array_reverse($rows);
-  return response()->json(['messages'=>$rows,'has_more'=>count($rows)===50])->header('Cache-Control','private, no-store');
+   $receipts=$r->input('receipts',[])?Messaging::rows(Messaging::visible($r->user()->id,$other)->whereIn('m.id',$r->input('receipts'))):[];
+  $receipts=array_map(fn($message)=>array_intersect_key($message,array_flip(['id','viewers','read','read_at'])),$receipts);
+  return response()->json(['messages'=>$rows,'receipts'=>$receipts,'has_more'=>count($rows)===50])->header('Cache-Control','private, no-store');
  }
  public function send(Request $r,WebPush $push) {
   $other=$this->other($r);$v=$r->validate(['body'=>'required|string|max:4000','client_id'=>'required|uuid']);
@@ -52,6 +54,9 @@ final class MessagingController
   DB::transaction(function()use($r,$other,$v){
    User::whereKey($r->user()->id)->lockForUpdate()->firstOrFail();$key=Messaging::conversation($other);
    $row=DB::table('chat_reads')->where('user_id',$r->user()->id)->where('conversation',$key)->first();
+   // Only newly read incoming messages get a first-view timestamp. Historical cursors retain their known read status without inventing an old time.
+   $messages=Messaging::visible($r->user()->id,$other)->where('m.sender_id','!=',$r->user()->id)->where('m.id','>',(int)($row->last_message_id??0))->where('m.id','<=',(int)$v['last_id'])->pluck('m.id');
+   foreach($messages->chunk(500) as $chunk)DB::table('chat_message_views')->insertOrIgnore($chunk->map(fn($id)=>['message_id'=>$id,'user_id'=>$r->user()->id,'read_at'=>now()])->all());
    DB::table('chat_reads')->updateOrInsert(['user_id'=>$r->user()->id,'conversation'=>$key],['last_message_id'=>max((int)($row->last_message_id??0),(int)$v['last_id']),'created_at'=>$row->created_at??now(),'updated_at'=>now()]);
   });
   return response()->json(['unread'=>Messaging::unread($r->user()->id)])->header('Cache-Control','private, no-store');
@@ -85,3 +90,4 @@ final class MessagingController
   return response()->json(['preferences'=>$p])->header('Cache-Control','private, no-store');
  }
 }
+

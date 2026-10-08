@@ -31,8 +31,37 @@ final class Messaging
   return ['total'=>$league+$private,'league'=>$league,'private'=>$private,'people'=>(object)$people];
  }
  public static function rows($query): array {
-  return $query->join('users as u','u.id','=','m.sender_id')->leftJoin('owner_team_claims as c','c.user_id','=','u.id')
+  $rows=$query->join('users as u','u.id','=','m.sender_id')->leftJoin('owner_team_claims as c','c.user_id','=','u.id')
    ->get(['m.id','m.sender_id','m.recipient_id','m.body','m.created_at','c.team_name'])->map(function($m){$row=(array)$m;$row['sender_name']=$m->team_name ?: 'League member';$row['team_logo']=$m->team_name ? TeamImages::url(\Illuminate\Support\Str::slug($m->team_name),64) : TeamImages::url('league-logo',64);$row['created_at']=\Carbon\CarbonImmutable::parse($m->created_at,config('app.timezone'))->toIso8601String();return $row;})->all();
+  return self::receipts($rows);
+ }
+ public static function receipts(array $messages): array {
+  if(!$messages)return [];
+  $ids=array_column($messages,'id');
+  $views=DB::table('chat_message_views as v')->join('users as u','u.id','=','v.user_id')->leftJoin('owner_team_claims as c','c.user_id','=','v.user_id')
+   ->whereIn('v.message_id',$ids)->get(['v.message_id','v.user_id','v.read_at','c.team_name'])->groupBy('message_id');
+  $senders=array_unique(array_column($messages,'sender_id'));
+  $keys=array_merge(['league'],array_map(fn($id)=>self::conversation((int)$id),$senders));
+  $cursors=DB::table('chat_reads as r')->join('users as u','u.id','=','r.user_id')->leftJoin('owner_team_claims as c','c.user_id','=','r.user_id')
+   ->whereIn('r.conversation',$keys)->get(['r.user_id','r.conversation','r.last_message_id','c.team_name']);
+  foreach($messages as &$message){
+   $people=[];
+   foreach($cursors as $reader){
+    if((int)$reader->user_id===(int)$message['sender_id'] || (int)$reader->last_message_id<(int)$message['id'])continue;
+    $private=$message['recipient_id']!==null;
+    if($reader->conversation!==($private?self::conversation((int)$message['sender_id']):'league'))continue;
+    if($private&&(int)$reader->user_id!==(int)$message['recipient_id'])continue;
+    $people[$reader->user_id]=['team_name'=>$reader->team_name?:'League member','read_at'=>null];
+   }
+   foreach($views[$message['id']]??[] as $reader){
+    if((int)$reader->user_id===(int)$message['sender_id'])continue;
+    if($message['recipient_id']!==null&&(int)$reader->user_id!==(int)$message['recipient_id'])continue;
+    $people[$reader->user_id]=['team_name'=>$reader->team_name?:'League member','read_at'=>\Carbon\CarbonImmutable::parse($reader->read_at,config('app.timezone'))->toIso8601String()];
+   }
+   $message['viewers']=array_values($people);$message['read']=count($people)>0;
+   $message['read_at']=$message['recipient_id']!==null?($people[$message['recipient_id']]['read_at']??null):null;
+  }
+  unset($message);return $messages;
  }
  public static function preferences(User $user): array {return array_replace(OwnerNotificationPolicy::DEFAULTS,$user->notification_preferences??[]);}
 }

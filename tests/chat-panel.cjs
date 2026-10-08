@@ -8,13 +8,14 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
  const teams=[{user_id:2,team_name:'Bob Team'},{user_id:3,team_name:'Carol Team'}];
  const message=(id,sender_id,recipient_id,body)=>({id,sender_id,recipient_id,body,created_at:'2026-10-08T17:00:00-03:00',team_name:sender_id===3?'Carol Team':sender_id===1?'Alice Team':'Bob Team'});
  const chats={'':[message(1,2,null,'League only')],'2':[message(2,2,1,'Bob private')],'3':[message(3,3,1,'Carol private')]};
+ let receiptRead=false;
  let delayBob=false,releaseBob,delaySend=false,releaseSend,latest=3,incoming=[];
  await page.route('https://ecfhl.test/**',async route=>{
   const req=route.request(),url=new URL(req.url()),body=req.method()==='POST'?req.postDataJSON():{};let json;
   if(url.pathname==='/api/messages/state')json={teams,owners:{'bob-team':2,'carol-team':3},preferences:prefs,notifications:[],notification_count:0,unread:{total:1},latest_id:latest,messages:url.searchParams.has('after')?incoming.filter(m=>m.id>Number(url.searchParams.get('after'))):[]};
   else if(url.pathname==='/api/messages/conversation'){
    const value=url.searchParams.get('user_id')||'';if(value==='2'&&delayBob){delayBob=false;await new Promise(resolve=>releaseBob=resolve);}
-   json={messages:chats[value].filter(m=>!url.searchParams.has('after')||m.id>Number(url.searchParams.get('after'))),has_more:false};
+   json={receipts:receiptRead?chats[value].filter(m=>m.sender_id===1).map(m=>({id:m.id,read:true,read_at:'2026-10-08T18:45:00Z',viewers:[{team_name:'Bob Team'}]})):[],messages:chats[value].filter(m=>!url.searchParams.has('after')||m.id>Number(url.searchParams.get('after'))),has_more:false};
   }else if(url.pathname==='/api/messages/read'){reads.push(body);json={unread:{total:0}};}
   else if(url.pathname==='/api/messages/send'){sends.push(body);if(delaySend){delaySend=false;await new Promise(resolve=>releaseSend=resolve);}const m=message(++latest,1,body.user_id,body.body);chats[body.user_id||''].push(m);json={message:m};}
   else if(url.pathname==='/api/scoring-updates')json={date:'2026-10-08',players:[],teams:[],matchups:[]};
@@ -53,7 +54,7 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
  chats[''].push(message(++latest,2,null,'New while minimized'));await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await page.waitForTimeout(100);assert.equal(reads.length,readCount,'Minimized chat does not read new messages');
  await page.locator('#chat-panel-restore').click();await page.waitForFunction(()=>document.getElementById('chat-panel-log').textContent.includes('New while minimized'));
  await page.reload();await page.waitForSelector('#chat-panel');const restored=await page.locator('#chat-panel').boundingBox();assert(Math.abs(restored.x-position.x)<2,'Position persists across pages');
- await page.setViewportSize({width:360,height:780});assert.equal(await page.locator('.site-credit').evaluate(el=>getComputedStyle(el).whiteSpace),'nowrap');assert(await page.locator('.site-credit').evaluate(el=>el.scrollWidth<=el.clientWidth),'Footer fits on one line on mobile');const mobile=await page.locator('#chat-panel').boundingBox();assert(mobile.x>=8&&mobile.x+mobile.width<=352&&mobile.y>=8,'Chat stays within mobile viewport');
+ await page.setViewportSize({width:360,height:780});assert.equal(await page.locator('.site-credit').evaluate(el=>getComputedStyle(el).whiteSpace),'nowrap');assert(await page.locator('.site-credit').evaluate(el=>el.scrollWidth<=el.clientWidth),'Footer fits on one line on mobile');await page.waitForFunction(()=>{const r=document.getElementById('chat-panel').getBoundingClientRect();return r.left>=8&&r.right<=352&&r.top>=8;});const mobile=await page.locator('#chat-panel').boundingBox();assert(mobile.x>=8&&mobile.x+mobile.width<=352&&mobile.y>=8,'Chat stays within mobile viewport');
  await handle.focus();await page.keyboard.press('ArrowLeft');await page.keyboard.press('Escape');assert(!(await page.locator('#chat-panel').isVisible()));
  const popupMessage=message(++latest,3,1,'Incoming private popup');incoming.push(popupMessage);chats['3'].push(popupMessage);
  await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await page.waitForSelector('.message-popup');await page.locator('.message-popup a').click();
@@ -62,6 +63,15 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
  await page.goto('https://ecfhl.test/messages?user_id=2');await page.waitForFunction(()=>document.getElementById('chat-panel-conversation').value==='2'&&document.getElementById('chat-panel-log').textContent.includes('Bob private'));
  const longName=await page.locator('#chat-panel-log .chat-message-identity strong').first().evaluate(el=>{el.textContent='A very long fantasy hockey team name that must stay on one line';const style=getComputedStyle(el);return {nowrap:style.whiteSpace,overflow:style.overflow,ellipsis:style.textOverflow,truncated:el.scrollWidth>el.clientWidth};});
  assert.deepEqual(longName,{nowrap:'nowrap',overflow:'hidden',ellipsis:'ellipsis',truncated:true});
+ receiptRead=true;await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await page.waitForFunction(()=>[...document.querySelectorAll('.chat-read-status')].some(node=>node.textContent.includes('Read at')));
+ await page.evaluate(()=>{
+  const host=document.getElementById('chat-panel-log');
+  const unread=window.EcfhlMessageReceipt({sender_id:1,recipient_id:2,read:false},1);unread.id='receipt-unread-test';host.append(unread);
+  host.append(window.EcfhlMessageReceipt({sender_id:1,recipient_id:2,read:true,read_at:'2026-10-08T18:45:00Z'},1));
+  host.append(window.EcfhlMessageReceipt({sender_id:1,recipient_id:null,viewers:[{team_name:'Bob Team'},{team_name:'Carol Team'}]},1));
+ });
+ assert.equal(await page.locator('#receipt-unread-test').textContent(),'Unread');assert((await page.locator('.chat-read-status').last().textContent()).includes('Read at'));assert((await page.locator('.chat-read-status').last().textContent()).includes('2026'));
+ const seen=page.locator('.chat-view-status[data-viewed="true"]').last();assert.equal(await seen.getAttribute('title'),'Seen by: Bob Team, Carol Team');
  assert.equal(await page.locator('#chat-panel-trash').count(),0,'Chat has no trash button');
  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('ecfhl-message-state',{detail:{teams:[{user_id:2,team_name:'Bob Team'},{user_id:3,team_name:'Carol Team'}],unread:{total:7,league:2,private:5,people:{2:3,3:2}}}})));
  assert.equal(await page.locator('#header-message-count').textContent(),'7');assert.equal(await page.locator('#chat-panel-conversation option[value="2"]').textContent(),'Bob Team (3 unread)');assert.equal(await page.locator('#chat-panel-conversation option[value=""]').textContent(),'League chat (2 unread)');

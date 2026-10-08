@@ -104,15 +104,16 @@
   const ids=[...widget.messages.keys()],id=ids.length?Math.max(...ids):0;if(id<=widget.lastRead)return;
   widget.readBusy=true;try{const data=await request('/api/messages/read',{user_id:widget.other,last_id:id});widget.lastRead=id;updateUnread(data.unread);}catch(_){}finally{widget.readBusy=false;}
  };
- const drawWidget=(widget,newMessages,older=false)=>{
+ const drawWidget=(widget,newMessages,older=false,receiptsChanged=false)=>{
   const bottom=atBottom(widget),height=widget.log.scrollHeight;
   const added=newMessages.filter(m=>!widget.messages.has(Number(m.id)));added.forEach(m=>widget.messages.set(Number(m.id),m));
-  if(!added.length)return;
+  if(!added.length&&!receiptsChanged)return;
   widget.log.replaceChildren();
   [...widget.messages.values()].sort((a,b)=>a.id-b.id).forEach(message=>{
    const row=node('article',undefined,'chat-message');row.dataset.own=String(Number(message.sender_id)===userId);
    const identity=node('div',undefined,'chat-message-identity'),logo=node('img');logo.src=message.team_logo||'/team-icons/league-logo/thumbnail?size=64';logo.alt='';logo.width=32;logo.height=32;logo.loading='lazy';const name=node('strong',message.team_name||'League member');name.title=name.textContent;identity.append(logo,name);
    const meta=node('div',undefined,'chat-message-meta'),time=node('time',new Date(message.created_at).toLocaleString([],{timeZone:'America/Halifax',hour12:true}));meta.append(identity,time);
+   const receipt=window.EcfhlMessageReceipt?.(message,userId);if(receipt)meta.append(receipt);
    row.append(node('p',message.body),meta);widget.log.append(row);
   });
   if(older)widget.log.scrollTop+=widget.log.scrollHeight-height;else if(bottom)widget.log.scrollTop=widget.log.scrollHeight;
@@ -123,7 +124,8 @@
   try{
    const ids=[...widget.messages.keys()],params=new URLSearchParams();if(widget.other)params.set('user_id',widget.other);
    if(ids.length)params.set(older?'before':'after',String(older?Math.min(...ids):Math.max(...ids)));
-   const data=await request('/api/messages/conversation?'+params);drawWidget(widget,data.messages,older);
+   ids.slice(-250).forEach(id=>params.append('receipts[]',id));
+   const data=await request('/api/messages/conversation?'+params);(data.receipts||[]).forEach(receipt=>{const message=widget.messages.get(Number(receipt.id));if(message)Object.assign(message,receipt);});drawWidget(widget,data.messages,older,Boolean(data.receipts?.length));
    if(older||!ids.length)widget.element.querySelector('.chat-older').hidden=!data.has_more;
    if(!widget.messages.size)widget.log.textContent='No messages yet. Start the conversation.';
    widget.status.textContent='';

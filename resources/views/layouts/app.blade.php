@@ -429,7 +429,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 <div id="communication-context" hidden data-user-id="{{ auth()->id() ?? '' }}" data-preferences='@json(array_replace(\App\Support\OwnerNotificationPolicy::DEFAULTS,auth()->user()?->notification_preferences??[]))'></div>
 <script src="/live-score-updates.js?v={{ hash_file('sha256', base_path('public/live-score-updates.js')) }}"></script>
 <script src="/app-communication.js?v={{ hash_file('sha256', base_path('public/app-communication.js')) }}" defer></script>
-@auth<script src="/chat-panel.js?v={{ hash_file('sha256', base_path('public/chat-panel.js')) }}" defer></script>@endauth
+@auth<script src="/message-receipts.js?v={{ hash_file('sha256', base_path('public/message-receipts.js')) }}" defer></script>
+<script src="/chat-panel.js?v={{ hash_file('sha256', base_path('public/chat-panel.js')) }}" defer></script>@endauth
 <script src="/popup-resize.js?v={{ hash_file('sha256', base_path('public/popup-resize.js')) }}" defer></script>
 @stack('scripts')
 </body></html>
+
