@@ -142,7 +142,10 @@
 <a href="/teams/current/{{ $away['slug'] }}?date={{ $date }}" title="{{ $away['name'] }}{{ $away['rank_label'] ? ' ('.$away['rank_label'].')' : '' }}"><span class="team-live-team-name">{{ $away['name'] }}</span>@if($away['rank_label'])<span class="team-live-rank">({{ $away['rank_label'] }})</span>@endif</a>
 <button type="button" class="team-logo-viewer team-live-logo" data-team-icon-viewer data-team-slug="{{ $away['slug'] }}" data-team-name="{{ $away['name'] }}" aria-label="View {{ $away['name'] }} logo"><img src="{{ \App\Support\TeamImages::url($away['slug'],160) }}" data-full-src="{{ \App\Support\TeamImages::url($away['slug']) }}" alt="{{ $away['name'] }} team icon" width="160" height="160" loading="lazy" decoding="async"></button>
 </div>
+<div class="team-live-meta">
+<span class="team-live-games" aria-label="{{ $away['name'] }}: {{ $away['games_in_progress'] ?? 0 }} NHL games in progress, {{ $away['games_not_started'] ?? 0 }} not started" title="Distinct NHL games for today's roster"><span class="team-live-games-live">{{ $away['games_in_progress'] ?? 0 }} Live</span><span>{{ $away['games_not_started'] ?? 0 }} Upcoming</span></span>
 @if($away['record'] !== null)<span class="team-live-record" aria-label="{{ $away['name'] }} win-loss-tie record">{{ $away['record'] }}</span>@endif
+</div>
 <div class="team-live-body"><div class="team-live-scores">
 <span class="team-live-score team-live-weekly"><strong class="{{ $awayWeekClass }}">{{ number_format($away['week_fpts'] ?? 0,0) }}</strong><small>Weekly</small></span>
 <span class="team-live-score team-live-today"><strong class="{{ $awayDayClass }}">{{ number_format($awayDay,0) }}</strong><small>Daily</small></span>
@@ -154,7 +157,10 @@
 <a href="/teams/current/{{ $home['slug'] }}?date={{ $date }}" title="{{ $home['name'] }}{{ $home['rank_label'] ? ' ('.$home['rank_label'].')' : '' }}"><span class="team-live-team-name">{{ $home['name'] }}</span>@if($home['rank_label'])<span class="team-live-rank">({{ $home['rank_label'] }})</span>@endif</a>
 <button type="button" class="team-logo-viewer team-live-logo" data-team-icon-viewer data-team-slug="{{ $home['slug'] }}" data-team-name="{{ $home['name'] }}" aria-label="View {{ $home['name'] }} logo"><img src="{{ \App\Support\TeamImages::url($home['slug'],160) }}" data-full-src="{{ \App\Support\TeamImages::url($home['slug']) }}" alt="{{ $home['name'] }} team icon" width="160" height="160" loading="lazy" decoding="async"></button>
 </div>
+<div class="team-live-meta">
+<span class="team-live-games" aria-label="{{ $home['name'] }}: {{ $home['games_in_progress'] ?? 0 }} NHL games in progress, {{ $home['games_not_started'] ?? 0 }} not started" title="Distinct NHL games for today's roster"><span class="team-live-games-live">{{ $home['games_in_progress'] ?? 0 }} Live</span><span>{{ $home['games_not_started'] ?? 0 }} Upcoming</span></span>
 @if($home['record'] !== null)<span class="team-live-record" aria-label="{{ $home['name'] }} win-loss-tie record">{{ $home['record'] }}</span>@endif
+</div>
 <div class="team-live-body"><div class="team-live-scores">
 <span class="team-live-score team-live-weekly"><strong class="{{ $homeWeekClass }}">{{ number_format($home['week_fpts'] ?? 0,0) }}</strong><small>Weekly</small></span>
 <span class="team-live-score team-live-today"><strong class="{{ $homeDayClass }}">{{ number_format($homeDay,0) }}</strong><small>Daily</small></span>

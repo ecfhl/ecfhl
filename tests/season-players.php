@@ -306,6 +306,28 @@ $profile=app(\App\Support\PlayerProfile::class)->data('p61');
 verifySeason(array_keys($profile['categoryLabels'])===['FPTS','FPTS/GP','GP','W','L','OTL','SO']&&$profile['seasonStats']['OTL']===4&&$profile['seasonStats']['SO']===3,'Goalie table must map Fantrax overtime losses and shutouts.');
 $profileHtml=seasonRequest('/players/p1')->getContent();
 verifySeason(str_contains($profileHtml,'<h2>Stats</h2>')&&str_contains($profileHtml,'2025-26')&&!str_contains($profileHtml,'player-profile-categories'),'Player profile must render season rows without stat boxes.');
+// Popup daily values come only from the current Pacific fantasy date, never season totals.
+verifySeason($profile['todayStats']===null,'A missing daily snapshot must not fabricate zero stats.');
+$profileDate=app(\App\Support\FantasyDay::class)->today()->toDateString();
+$profileRepository=app(\App\Support\LiveScoring\SnapshotRepository::class);
+$profileRepository->publish(['fantasy_date'=>$profileDate,'source_date'=>$profileDate,'players'=>[
+ ['player_id'=>'p1','daily_fpts'=>4,'gp'=>1,'game_status'=>'2','stats'=>['G'=>['value'=>1],'A'=>['value'=>2],'PPG'=>['value'=>0],'GWG'=>['value'=>1]]],
+ ['player_id'=>'p61','daily_fpts'=>-1,'gp'=>1,'game_status'=>'3','stats'=>['W'=>['value'=>0],'OL+ShL'=>['value'=>1],'SHO'=>['value'=>0]]],
+]],[],\Carbon\CarbonImmutable::now('UTC'));
+$dailyProfile=app(\App\Support\PlayerProfile::class)->data('p1');
+verifySeason($dailyProfile['todayStats']===['fpts'=>4.0,'line'=>'1 G · 2 A · GWG','state'=>'Live'],'Popup must show current-day points, only nonzero stats, and live state.');
+verifySeason(app(\App\Support\PlayerProfile::class)->data('p61')['todayStats']===['fpts'=>-1.0,'line'=>'1 OTL','state'=>'Final'],'Goalie popup must show negative points and mapped overtime losses.');
+$dailyPopup=json_decode(seasonRequest('/players/p1',true)->getContent(),true)['html'];
+verifySeason(str_contains($dailyPopup,'aria-label="Today\'s stats"')&&str_contains($dailyPopup,'4 <small>FPts</small>')&&str_contains($dailyPopup,'1 G · 2 A · GWG'),'Fetched popup must include the actual daily stat summary.');
+$profileRepository=app(\App\Support\LiveScoring\SnapshotRepository::class);
+$profileRepository->publish(['fantasy_date'=>$profileDate,'source_date'=>$profileDate,'players'=>[
+ ['player_id'=>'p1','daily_fpts'=>0,'gp'=>0,'game_status'=>'1','stats'=>[]],
+]],[],\Carbon\CarbonImmutable::now('UTC'));
+verifySeason(app(\App\Support\PlayerProfile::class)->data('p1')['todayStats']['line']==='Awaiting puck drop','Upcoming players must not be labelled Not Playing.');
+$profileRepository->publish(['fantasy_date'=>$profileDate,'source_date'=>$profileDate,'players'=>[
+ ['player_id'=>'p1','daily_fpts'=>0,'gp'=>0,'game_status'=>'3','stats'=>[]],
+]],[],\Carbon\CarbonImmutable::now('UTC'));
+verifySeason(app(\App\Support\PlayerProfile::class)->data('p1')['todayStats']['line']==='Not Playing','A finished game without participation must say Not Playing.');
 // Zero-game prospects still open profiles using roster metadata after stats pruning.
 DB::table('active_fantasy_rosters')->insert(['game_date'=>'2026-10-04','fantasy_team_id'=>'a','fantasy_team_name'=>'Alpha','player_id'=>'zero-prospect','player_name'=>'Zero Prospect','position'=>'F','nhl_team'=>'MTL','is_bench'=>true]);
 $zeroProfile=seasonRequest('/players/zero-prospect');

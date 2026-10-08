@@ -14,6 +14,10 @@
       <div><dt>{{ $label }}</dt><dd><strong>{{ $game ? (($game['away']?'@':'vs ').$game['opponent']) : 'Not playing' }}</strong>@if($game)<span>{{ $game['time'] ?: 'Time unavailable' }}</span>@endif</dd></div>
     @endforeach
   </dl>
+  <div class="player-profile-today" aria-label="Today's stats">
+    <span class="player-profile-today-label">Today @if($todayStats)<small>{{ $todayStats['state'] }}</small>@endif</span>
+    @if($todayStats)<strong>{{ number_format($todayStats['fpts'],0) }} <small>FPts</small></strong><span class="player-profile-today-line">{{ $todayStats['line'] }}</span>@else<span class="player-profile-today-line">Daily stats unavailable</span>@endif
+  </div>
   <p class="muted player-profile-time">Times: Atlantic · Today/Tomorrow: Pacific</p>
   <div class="player-profile-table"><table><thead><tr><th>Stats period</th><th>GP</th><th>FPts</th><th>FPts / Game</th></tr></thead><tbody>
     @foreach($statRows as $row)<tr><th scope="row">{{ $row['label']==='Current Season' ? 'Season' : $row['label'] }}</th><td>{{ $row['gp'] ?? '—' }}</td><td>{{ $row['fpts']!==null ? number_format($row['fpts'],0) : '—' }}</td><td>{{ $row['rate']!==null ? number_format($row['rate'],2) : '—' }}</td></tr>@endforeach

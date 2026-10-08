@@ -99,3 +99,12 @@ html[data-theme="dark"] .ecfhl-scoreboard .team-live-matchup-summary{background:
  .current-teams-page .ecfhl-scoreboard .team-live-scores .team-live-today strong{font-size:20px!important}
  .current-teams-page .ecfhl-scoreboard .team-live-score{gap:1px!important}
 }
+
+/* Game counts share the record row, keeping the collapsed card height intact. */
+.current-teams-page .team-live-meta{grid-column:1 / -1;grid-row:2;display:flex;align-items:center;justify-content:space-between;gap:4px;min-width:0}
+.current-teams-page .team-live-side-right .team-live-meta{flex-direction:row-reverse}
+.current-teams-page .team-live-games{display:flex;gap:5px;font-size:9px;line-height:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.current-teams-page .team-live-games-live{color:var(--accent);font-weight:700}
+.current-teams-page .ecfhl-scoreboard .team-live-logo{grid-row:3;width:44px!important;height:44px!important;align-self:center}
+@media(min-width:901px){.current-teams-page .ecfhl-scoreboard .team-live-logo{width:36px!important;height:36px!important}}
+@media(max-width:380px){.current-teams-page .team-live-games{font-size:8px;gap:4px}}

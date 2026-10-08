@@ -66,6 +66,16 @@ foreach ($expected as $date) {
         checkLive($team['daily_projected_fpts'] === round($projectedTotal,2), 'Team daily projection changed');
     }
 }
+// Count distinct dated NHL events, not multiple roster players from the same game.
+foreach($snapshots as $date=>$snapshot){
+ $viewTeams=(new App\Support\LiveScoring\ViewData)->teams($snapshot);
+ foreach($snapshot['teams'] as $id=>$team){
+  foreach(['2'=>'games_in_progress','1'=>'games_not_started'] as $state=>$key){
+   $ids=array_unique(array_filter(array_column(array_filter($snapshot['players'],fn($p)=>$p['fantasy_team_id']===$id && $p['game_status']===(string)$state),'game_id')));
+   checkLive($viewTeams[$id][$key]===count($ids),'Incorrect distinct NHL game count for '.$date.' '.$key);
+  }
+ }
+}
 $lone = array_values(array_filter($snapshots['2026-10-02']['players'], fn($p)=>$p['fantasy_team_id']==='65yfc2nwmolvao6q' && $p['scoring_status']==='ACTIVE'));
 $byId = array_column($lone, null, 'player_id');
 checkLive(count($lone) === 4, 'Lone Tsar daily lineup does not match Fantrax');
@@ -195,6 +205,7 @@ foreach ($expected as $date) {
     checkLive(str_contains($html,'data-page-logo="'.App\Support\TeamImages::url('league-logo',160).'"') && str_contains($html,'data-page-name="ECFHL"'), 'Live Scoring must use the league loading logo');
     checkLive(preg_match_all('/<details\\b[^>]*class="[^"]*\\bmatchup-card\\b[^"]*"/', $html)===7, 'Rendered matchups incomplete');
     checkLive(str_contains($html, 'matchup-scoreboard.css') && substr_count($html, 'team-live-matchup-summary')>=7, 'Live Scoring does not use the shared Home scoreboard');
+    checkLive(substr_count($html,'class="team-live-games"')===14 && substr_count($html,'NHL games in progress')===14,'Every fantasy team must show its live and not-started NHL game counts');
     checkLive(substr_count($html, 'class="team-live-record"')===14 && substr_count($html, '>0–1–0</span>')===14, 'Live Scoring must show each team record separately, including zero wins/ties');
     foreach (['1st','2nd','3rd','5th','11th','12th','13th','14th'] as $ordinal) checkLive(str_contains($html, 'class="team-live-rank">('.$ordinal.')</span>'), 'Live Scoring rank suffix missing: '.$ordinal);
     checkLive(str_contains($html,'date=2026-10-01') && str_contains($html,'date=2026-10-02') && str_contains($html,'date=2026-10-03'), 'Date buttons wrong after Atlantic midnight');

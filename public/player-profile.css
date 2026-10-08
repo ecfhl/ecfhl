@@ -92,3 +92,19 @@ html[data-theme="dark"] .player-profile-rookie{color:var(--gold)}
  #player-stats-dialog .player-profile-season-table th:nth-child(3){width:42px}
  #player-stats-dialog .player-profile h1{font-size:17px}
 }
+
+.player-profile-today{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:12px;line-height:1.3;font-variant-numeric:tabular-nums}
+.player-profile-today-label{font-weight:800}
+.player-profile-today-label small{margin-left:5px;font-size:9px;font-weight:600;color:var(--muted)}
+.player-profile-today strong{color:var(--accent);white-space:nowrap}
+.player-profile-today strong small{font-size:10px;font-weight:600}
+.player-profile-today-line{flex:1;min-width:0;color:var(--muted)}
+#player-stats-dialog .player-profile-today{padding:6px 0;gap:3px 8px;font-size:10px;line-height:1.3}
+#player-stats-dialog .player-profile-today-line{font-size:10px}
+#player-stats-dialog .player-profile th,#player-stats-dialog .player-profile td{padding-top:4px;padding-bottom:4px}
+#player-stats-dialog .player-profile h2{margin-top:7px}
+@media(max-height:600px){
+ #player-stats-dialog .player-profile th,#player-stats-dialog .player-profile td{padding-top:3px;padding-bottom:3px}
+ #player-stats-dialog .player-profile header{padding-top:6px;padding-bottom:6px}
+ #player-stats-dialog .player-profile-time{margin:3px 0}
+}

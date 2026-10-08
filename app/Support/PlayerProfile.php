@@ -30,6 +30,7 @@ final class PlayerProfile
         $games=app(PlayerGames::class);$team=PlayerGames::team($player->nhl_team);
         $todayGame=$games->forDate($today->toDateString())[$team]??null;
         $tomorrowGame=$games->forDate($today->addDay()->toDateString())[$team]??null;
+        $todayStats=$this->dailyStats($id,$today->toDateString(),$player->position);
         $statRows=[['label'=>'Current Season','fpts'=>$player->season_fpts,'gp'=>$player->season_gp,'rate'=>$player->season_fpts_per_game]];
         foreach([7,14,21] as $days) $statRows[]=['label'=>'Last '.$days.' days','fpts'=>$projection->{'fpts_'.$days.'d'}??null,'gp'=>$projection->{'gp_'.$days.'d'}??null,'rate'=>$projection->{'fpts_per_game_'.$days.'d'}??null];
         $statRows[]=['label'=>'Fantrax Proj','fpts'=>$baseline->fantrax_season_fpts??null,'gp'=>null,'rate'=>$baseline->fantrax_fpts_per_game??null];
@@ -44,6 +45,26 @@ final class PlayerProfile
         $previous=DB::table('historical_player_stats')->where('season_id','2025-26')->where('player_id',$id)->first();
         if ($previous) $seasonRows[]=['season'=>$previous->season_id,'stats'=>$values(json_decode($previous->stats_json,true)?:[],$previous->fpts,$previous->fpts_per_game,$previous->gp)];
         $teamSlug=$roster?Str::slug($roster->fantasy_team_name):null;
-        return compact('player','age','projection','baseline','roster','teamSlug','todayGame','tomorrowGame','statRows','seasonStats','categoryLabels','seasonRows');
+        return compact('player','age','projection','baseline','roster','teamSlug','todayGame','tomorrowGame','todayStats','statRows','seasonStats','categoryLabels','seasonRows');
+    }
+
+    private function dailyStats(string $id,string $date,string $position): ?array
+    {
+        $snapshot=app(\App\Support\LiveScoring\SnapshotRepository::class)->get($date);
+        $daily=collect($snapshot['players']??[])->firstWhere('player_id',$id);
+        if(!$daily) return null;
+        $labels=$position==='G'
+            ? ['W'=>'W','L'=>'L','OL'=>'OTL','SHO'=>'SO','G'=>'G','A'=>'A']
+            : ['G'=>'G','A'=>'A','PPG'=>'PPG','SHG'=>'SHG','GWG'=>'GWG'];
+        $parts=[];
+        foreach($labels as $key=>$label){
+            $value=(int)($daily['stats'][$key]['value']??$daily['goalie_stats'][$key]??0);
+            if($key==='OL') $value=(int)($daily['stats']['OL+ShL']['value']??$daily['goalie_stats']['OL']??$value);
+            if($value!==0) $parts[]=$key==='GWG'?'GWG':$value.' '.$label;
+        }
+        $state=match((string)($daily['game_status']??'')){'1'=>'Not started','2'=>'Live','3'=>'Final',default=>'Today'};
+        $line=implode(' · ',$parts);
+        if($line==='') $line=in_array($state,['Live','Final'],true) && ($daily['gp']??0)==0?'Not Playing':($state==='Not started'?'Awaiting puck drop':'No scoring stats');
+        return ['fpts'=>(float)$daily['daily_fpts'],'line'=>$line,'state'=>$state];
     }
 }
