@@ -83,7 +83,7 @@
   if(!inbox.length)list.append(node('p','No notifications yet.'));
   const visibleInbox=inbox.filter(item=>!clearedNotifications.has(Number(item.id)));
   if(inbox.length&&!visibleInbox.length)list.append(node('p','No notifications yet.'));
-  visibleInbox.forEach(item=>{const entry=node('div',undefined,'notification-entry');entry.dataset.unread=String(!item.read_at);const link=node('a',item.title);link.href=safeUrl(item.url);link.addEventListener('click',async event=>{if(event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();try{await request('/api/notifications/read',{ids:[item.id]});}finally{location.assign(link.href);}});entry.append(link,node('p',item.body));list.append(entry);});
+  visibleInbox.forEach(item=>{const entry=node('div',undefined,'notification-entry');entry.dataset.unread=String(!item.read_at);const link=node('a',item.title);link.href=safeUrl(item.url);link.addEventListener('click',async event=>{if(event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;const handled=event.defaultPrevented;event.preventDefault();notificationMode='expanded';renderNotifications();try{await request('/api/notifications/read',{ids:[item.id]});item.read_at=item.read_at||'read';entry.dataset.unread='false';counter('header-notification-count',inbox.filter(item=>!item.read_at).length);}catch(_){/* Keep the panel open and retry read status later. */}finally{if(!handled)location.assign(link.href);}});entry.append(link,node('p',item.body));list.append(entry);});
   notificationTotal=visibleInbox.length;renderNotifications();
  };
  notificationTrash.addEventListener('click',async()=>{

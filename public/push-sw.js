@@ -112,7 +112,6 @@ self.addEventListener('push',event=>{
 });
 
 self.addEventListener('notificationclick',event=>{
-  event.notification.close?.();
   const url=(event.action==='reply'?event.notification.data?.replyUrl:null)||event.notification.data?.url||'/';
   event.waitUntil((async()=>{
     const target=new URL(url,self.location.origin);

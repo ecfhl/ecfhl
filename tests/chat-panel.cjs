@@ -9,10 +9,10 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
  const message=(id,sender_id,recipient_id,body)=>({id,sender_id,recipient_id,body,created_at:'2026-10-08T17:00:00-03:00',team_name:sender_id===3?'Carol Team':sender_id===1?'Alice Team':'Bob Team'});
  const chats={'':[message(1,2,null,'League only')],'2':[message(2,2,1,'Bob private')],'3':[message(3,3,1,'Carol private')]};
  let receiptRead=false,failSend=false;
- let delayBob=false,releaseBob,delaySend=false,releaseSend,latest=3,incoming=[];
+ let delayBob=false,releaseBob,delaySend=false,releaseSend,latest=3,incoming=[],inbox=[];
  await page.route('https://ecfhl.test/**',async route=>{
   const req=route.request(),url=new URL(req.url()),body=req.method()==='POST'?req.postDataJSON():{};let json;
-  if(url.pathname==='/api/messages/state')json={teams,owners:{'bob-team':2,'carol-team':3},preferences:prefs,notifications:[],notification_count:0,unread:{total:1},latest_id:latest,messages:url.searchParams.has('after')?incoming.filter(m=>m.id>Number(url.searchParams.get('after'))):[]};
+  if(url.pathname==='/api/messages/state')json={teams,owners:{'bob-team':2,'carol-team':3},preferences:prefs,notifications:inbox,notification_count:inbox.filter(n=>!n.read_at).length,unread:{total:1},latest_id:latest,messages:url.searchParams.has('after')?incoming.filter(m=>m.id>Number(url.searchParams.get('after'))):[]};
   else if(url.pathname==='/api/messages/conversation'){
    const value=url.searchParams.get('user_id')||'';if(value==='2'&&delayBob){delayBob=false;await new Promise(resolve=>releaseBob=resolve);}
    json={receipts:receiptRead?chats[value].filter(m=>m.sender_id===1).map(m=>({id:m.id,read:true,read_at:'2026-10-08T18:45:00Z',viewers:[{team_name:'Bob Team'}]})):[],messages:chats[value].filter(m=>!url.searchParams.has('after')||m.id>Number(url.searchParams.get('after'))),has_more:false};
@@ -86,6 +86,17 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
  let max=await page.locator('#chat-panel').boundingBox(),menu=await page.locator('.mobile-primary-nav').boundingBox(),top=await page.locator('.site-header').boundingBox();assert(max.y>=top.y+top.height&&max.y+max.height<=menu.y,'Maximized mobile chat fits between menus');assert.equal(Math.round(max.width),344);
  await page.setViewportSize({width:1280,height:900});await page.waitForTimeout(100);max=await page.locator('#chat-panel').boundingBox();assert.equal(Math.round(max.width),1264);assert(max.y>0&&max.y+max.height<=900);
  await page.locator('#chat-panel-maximize').click();await page.waitForTimeout(100);assert((await page.locator('#chat-panel').boundingBox()).width<600,'Restore returns to popup size');
+
+ // Tapping a mobile inbox message opens chat without reloading or dismissing notifications.
+ await page.setViewportSize({width:360,height:740});
+ inbox=[{id:91,title:'Bob notification',body:'Tap to chat',url:'/messages?user_id=2',read_at:null}];
+ await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
+ await page.locator('#header-notifications-toggle').click();
+ await page.locator('#notification-inbox a').filter({hasText:'Bob notification'}).waitFor();
+ const beforeNotificationUrl=page.url();await page.locator('#notification-inbox a').filter({hasText:'Bob notification'}).click();
+ await page.waitForFunction(()=>document.getElementById('chat-panel-conversation').value==='2');
+ assert.equal(page.url(),beforeNotificationUrl,'Message notification stays on the current page');
+ assert(await page.locator('#notification-panel').isVisible(),'Mobile notification panel stays open after a tap');
  assert.deepEqual(errors,[]);if(process.env.ECFHL_CHAT_SCREENSHOT)await page.screenshot({path:process.env.ECFHL_CHAT_SCREENSHOT});
  await browser.close();console.log('Chat panel checks passed: team switching, private isolation, late responses, send recipient/drafts, escaping, drag, minimize/read behavior, persistence, mobile and direct links.');
 })().catch(e=>{console.error(e);process.exit(1)});

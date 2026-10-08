@@ -7,6 +7,7 @@
   <div class="team-page-head-shell">
     <div class="team-page-head-logo">
       @include('teams.partials.team-icon-uploader',['slug'=>$slug,'name'=>$teamName])
+      @include('communication.team-message',['messageTeamName'=>$teamName])
     </div>
     <div class="team-page-head-copy">
       <label class="team-title-switcher">
@@ -17,7 +18,6 @@
           @endforeach
         </select>
       </label>
-      @include('communication.team-message',['messageTeamName'=>$teamName])
       @if($fantraxTeamUrl)
         <p class="team-fantrax-row">
           <a class="team-fantrax-link" href="{{ $fantraxTeamUrl }}" target="_blank" rel="noopener noreferrer">

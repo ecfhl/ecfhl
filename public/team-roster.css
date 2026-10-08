@@ -5,7 +5,7 @@ html[data-theme="dark"] .individual-team-page{--team-blue:var(--accent);--team-h
 .team-roster-breadcrumb a{display:inline-flex;align-items:center;min-height:32px;font-size:12px;color:var(--team-blue);font-weight:700;text-decoration:none}
 .team-page-head{padding:0 0 10px}
 .team-page-head-shell{display:flex;align-items:center;gap:14px;min-width:0}
-.team-page-head-logo{flex:0 0 64px;display:flex;align-items:center;justify-content:center}
+.team-page-head-logo{flex:0 0 64px;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center}
 .team-page-head-logo .team-icon-uploader{display:block;border:0;padding:0;background:transparent;cursor:zoom-in}
 .team-page-head-logo .team-icon-uploader img{display:block;width:64px;height:64px;object-fit:contain;border-radius:0}
 .team-page-head-copy{flex:1;min-width:0}

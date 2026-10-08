@@ -10,7 +10,7 @@ $teamIconKey=\Illuminate\Support\Str::slug((string)($team['team']??'team'));
 .franchise-title{display:flex;align-items:center;gap:12px}.franchise-title .team-icon-uploader img{width:58px;height:58px;border-radius:16px}.franchise-title .team-icon-uploader{flex:0 0 58px}@media(max-width:700px){.franchise-title .team-icon-uploader img{width:50px;height:50px;border-radius:14px}.franchise-title .team-icon-uploader{flex-basis:50px}.franchise-title{gap:9px}}
 </style>
 @endpush
-<div class="page-head"><div class="eyebrow">Franchise history</div><h1 class="franchise-title">@include('teams.partials.team-icon-uploader',['slug'=>$teamIconKey,'name'=>$team['team']])<span>{{ $team['team'] }}</span></h1><p>Complete recorded franchise history.</p>@include('communication.team-message',['messageTeamName'=>$team['team']])</div>
+<div class="page-head"><div class="eyebrow">Franchise history</div><h1 class="franchise-title"><span class="team-message-logo-stack">@include('teams.partials.team-icon-uploader',['slug'=>$teamIconKey,'name'=>$team['team']])@include('communication.team-message',['messageTeamName'=>$team['team']])</span><span>{{ $team['team'] }}</span></h1><p>Complete recorded franchise history.</p></div>
 @php
 $archive=app(\App\Support\Archive::class);
 $franchiseOptions=$archive->teamLedger($archive->mode(),'all');
