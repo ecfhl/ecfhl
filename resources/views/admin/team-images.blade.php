@@ -17,6 +17,13 @@
           <h2><a href="/teams/current/{{ $team->slug }}">{{ $team->name }}</a></h2>
           @if($team->account)
             <div class="team-account-linked"><span class="pill">Account linked</span><strong>{{ $team->account->account_name }}</strong><span>{{ $team->account->account_email }}</span></div>
+            <p class="subtle" style="font-size:12px;margin:8px 0">Message notifications: <strong>{{ $team->account->message_notifications ? 'On' : 'Off' }}</strong><br>Message popups: <strong>{{ $team->account->message_popups ? 'On' : 'Off' }}</strong><br>Devices enabled: {{ $team->account->message_devices }}</p>
+            @if(!$team->account->message_notifications || !$team->account->message_popups)
+            <form action="/admin/teams/{{ rawurlencode($team->account->fantasy_team_id) }}/enable-messages" method="post">
+              @csrf<input type="hidden" name="user_id" value="{{ $team->account->user_id }}">
+              <button type="submit" class="button">Enable message notifications</button>
+            </form>
+            @endif
             <form action="/admin/teams/{{ rawurlencode($team->account->fantasy_team_id) }}/unlink" method="post" class="team-account-unlink">
               @csrf
               <input type="hidden" name="user_id" value="{{ $team->account->user_id }}">

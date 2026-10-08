@@ -1157,8 +1157,10 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
                 ->get(['player_name','team','opponent','home_away','starting_status']);
             foreach(\App\Support\GoalieStatusChanges::snapshot($day,$stored) as $key=>$goalie){
                 $previous=$previousStatuses[$key]??null;
-                if(!$previous)continue;
-                $oldStatus=trim((string)($previous->starting_status??''));
+                // A new named starter on an established day has no old row; do not lose its announcement.
+                // The first snapshot of a day remains a baseline, avoiding a flood of old statuses.
+                if(!$previous && $previousGoalies->isEmpty())continue;
+                $oldStatus=trim((string)($previous->starting_status??'Unconfirmed'));
                 $newStatus=trim((string)($goalie->starting_status??''));
                 if($newStatus==='' || strcasecmp($oldStatus,$newStatus)===0)continue;
 

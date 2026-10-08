@@ -1,6 +1,6 @@
 const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),assert=require('assert/strict');
 (async()=>{
- const root=path.resolve(__dirname,'..'),html=fs.readFileSync(root+'/storage/app/communication-test.html','utf8');
+ const root=path.resolve(__dirname,'..'),html=fs.readFileSync(root+'/storage/app/communication-test.html','utf8').replace('</body>','<a class="team-message-link" data-message-user="2" href="/messages?user_id=2" aria-label="Message owner"><span>💬</span><span class="team-message-count" hidden></span></a></body>');
  const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{channel:'chrome'})});
  const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[],reads=[],sends=[];
  page.on('pageerror',e=>errors.push(e.message));
@@ -81,12 +81,14 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
  const seen=page.locator('.chat-view-status[data-viewed="true"]').last();assert.equal(await seen.getAttribute('title'),'Seen by: Bob Team, Carol Team');
  assert.equal(await page.locator('#chat-panel-trash').count(),0,'Chat has no trash button');
  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('ecfhl-message-state',{detail:{teams:[{user_id:2,team_name:'Bob Team'},{user_id:3,team_name:'Carol Team'}],unread:{total:7,league:2,private:5,people:{2:3,3:2}}}})));
+ assert.equal(await page.locator('.team-message-count').textContent(),'3','Owner badge excludes League and other people');assert(await page.locator('.team-message-count').isVisible());
  assert.equal(await page.locator('#header-message-count').textContent(),'7');assert.equal(await page.locator('#chat-panel-conversation option[value="2"]').textContent(),'Bob Team (3 unread)');assert.equal(await page.locator('#chat-panel-conversation option[value=""]').textContent(),'League chat (2 unread)');
  await page.locator('#chat-panel-maximize').click();await page.waitForTimeout(100);
  let max=await page.locator('#chat-panel').boundingBox(),menu=await page.locator('.mobile-primary-nav').boundingBox(),top=await page.locator('.site-header').boundingBox();assert(max.y>=top.y+top.height&&max.y+max.height<=menu.y,'Maximized mobile chat fits between menus');assert.equal(Math.round(max.width),344);
  await page.setViewportSize({width:1280,height:900});await page.waitForTimeout(100);max=await page.locator('#chat-panel').boundingBox();assert.equal(Math.round(max.width),1264);assert(max.y>0&&max.y+max.height<=900);
  await page.locator('#chat-panel-maximize').click();await page.waitForTimeout(100);assert((await page.locator('#chat-panel').boundingBox()).width<600,'Restore returns to popup size');
 
+ await page.evaluate(()=>window.dispatchEvent(new CustomEvent('ecfhl-unread',{detail:{total:4,league:2,people:{3:2}}})));assert(!(await page.locator('.team-message-count').isVisible()),'Owner badge hides when his conversation is read');
  // Tapping a mobile inbox message opens chat without reloading or dismissing notifications.
  await page.setViewportSize({width:360,height:740});
  inbox=[{id:91,title:'Bob notification',body:'Tap to chat',url:'/messages?user_id=2',read_at:null}];

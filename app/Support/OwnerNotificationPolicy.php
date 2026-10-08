@@ -37,8 +37,10 @@ class OwnerNotificationPolicy {
    foreach($players as $p){
     $position=$p['position']??'';if(is_array($position))$position=implode(',',$position);
     if(!preg_match('/(^|[,\/ ])G($|[,\/ ])/i',(string)$position))continue;
-    $goalieKey=self::goalieKey((string)($p['nhl_team']??''),(string)($p['player_name']??''));
-    $this->rosterGoalies[$date][(string)$p['fantasy_team_id']][$this->canonicalKey($goalieKey)]=true;
+    foreach(PlayerName::searchVariants((string)($p['player_name']??'')) as $name){
+     $goalieKey=self::goalieKey((string)($p['nhl_team']??''),$name);
+     $this->rosterGoalies[$date][(string)$p['fantasy_team_id']][$this->canonicalKey($goalieKey)]=true;
+    }
    }
   }
   return isset($this->rosterGoalies[$date][$teamId][$this->canonicalKey($key)]);

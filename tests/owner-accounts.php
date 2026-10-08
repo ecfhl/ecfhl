@@ -151,7 +151,7 @@ verifyOwner(str_starts_with((string)$response->headers->get('Location'),'https:/
 // Own-goalie alerts include every roster slot and are independent of free-agent alerts.
 $ownGoalieKey='LAK|ownedgoalie';$ownContext=['game_date'=>$day,'available'=>false,'goalie_key'=>$ownGoalieKey];
 foreach([$day,'2026-10-03'] as $rosterDay)foreach(['ACTIVE','BENCH','MINORS','INJURED_RESERVE'] as $slot){
- DB::table('active_fantasy_rosters')->insert(['game_date'=>$rosterDay,'fantasy_team_id'=>'a','fantasy_team_name'=>'Alpha','player_id'=>'g-'.$slot,'player_name'=>$slot==='ACTIVE'?'Owned Goalie':'Owned '.$slot,'nhl_team'=>'LA','position'=>'G','roster_status'=>$slot]);
+ DB::table('active_fantasy_rosters')->insert(['game_date'=>$rosterDay,'fantasy_team_id'=>'a','fantasy_team_name'=>'Alpha','player_id'=>'g-'.$slot,'player_name'=>$slot==='ACTIVE'?'Goalie, Owned':'Owned '.$slot,'nhl_team'=>'LA','position'=>'G','roster_status'=>$slot]);
 }
 $a->notification_preferences=['own_goalies'=>true,'goalies'=>[]];$a->save();$ownPolicy=new OwnerNotificationPolicy;
 verifyOwner($ownPolicy->accepts($a,'goalie-status',null,$ownContext),'Roster goalie rejected unless a free agent');
@@ -285,7 +285,7 @@ verifyOwner($page->getStatusCode()===200&&str_contains($page->getContent(),'valu
 $messageCount=DB::table('chat_messages')->count();
 foreach(['league-message','private-message'] as $messageType){
  $response=ownerRequest('POST','/admin/notifications/test',['type'=>$messageType],$admin);
- verifyOwner($response->getStatusCode()===302,'Admin message test route failed: '.$response->getContent());
+ verifyOwner($response->getStatusCode()===200&&json_decode($response->getContent(),true)['ok'],'Admin message test route failed: '.$response->getContent());
  $alert=DB::table('push_notifications')->orderByDesc('id')->first();
  verifyOwner($alert->category==='test-'.$messageType&&str_contains($alert->title,'TEST'),'Wrong message test payload');
  $delivery=DB::table('push_deliveries')->where('notification_id',$alert->id)->get();
@@ -331,6 +331,14 @@ DB::table('push_notifications')->where('category','live-score')->delete();
 try{$push->testLatestScore($adminOwner->id,hash('sha256','https://fcm.googleapis.com/fcm/send/admin-other'));throw new RuntimeException('No scorer invented a test');}catch(Illuminate\Validation\ValidationException $e){verifyOwner(str_contains($e->getMessage(),'No scoring alert'),'Empty scoring history gave an unclear error');}
 CarbonImmutable::setTestNow();
 
+// An admin may enable a linked owner's message preferences while preserving other settings.
+$a->notification_preferences=['notifications_enabled'=>false,'private_message_push'=>false,'league_message_push'=>false,'all_goalies'=>true,'opponent_scores'=>false];$a->save();
+verifyOwner(ownerRequest('POST','/admin/teams/a/enable-messages',['user_id'=>$a->id],$guest)->getStatusCode()===401,'Guest changed message settings');
+verifyOwner(ownerRequest('POST','/admin/teams/a/enable-messages',['user_id'=>$a->id],$alpha)->getStatusCode()===403,'Owner changed another account via admin');
+verifyOwner(ownerRequest('POST','/admin/teams/a/enable-messages',['user_id'=>$b->id],$admin)->getStatusCode()===409,'Stale association changed settings');
+verifyOwner(ownerRequest('POST','/admin/teams/a/enable-messages',['user_id'=>$a->id],$admin)->getStatusCode()===302,'Admin enable-messages failed');
+$enabled=\App\Support\Messaging::preferences($a->fresh());foreach(['notifications_enabled','private_message_push','league_message_push','private_message_popups','league_message_popups'] as $key)verifyOwner($enabled[$key]===true,'Message preference stayed off: '.$key);
+verifyOwner($enabled['all_goalies']===true&&$enabled['opponent_scores']===false,'Enabling messages overwrote other preferences');
 // Team administration exposes account details only to admins and unlinks atomically.
 $adminTeams=ownerRequest('GET','/admin/teams',[],$admin,['HTTP_ACCEPT'=>'text/html']);
 verifyOwner($adminTeams->getStatusCode()===200&&str_contains($adminTeams->getContent(),'Account linked')&&str_contains($adminTeams->getContent(),'a@example.org')&&str_contains($adminTeams->getContent(),'Change Image'),'Admin Teams must show linked accounts and image controls.');

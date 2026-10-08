@@ -98,6 +98,13 @@
  const widgets=[...document.querySelectorAll('[data-chat-widget]')].map(element=>({element,other:element.dataset.other?Number(element.dataset.other):null,log:element.querySelector('.chat-log'),status:element.querySelector('.chat-status'),messages:new Map(),busy:false,lastRead:0}));
  const visible=widget=>{if(document.hidden)return false;const rect=widget.log.getBoundingClientRect();return rect.bottom>0&&rect.top<window.innerHeight&&rect.width>0;};
  const atBottom=widget=>widget.log.scrollHeight-widget.log.scrollTop-widget.log.clientHeight<40;
+ const ownerUnreadBadges=value=>document.querySelectorAll('.team-message-link[data-message-user]').forEach(link=>{
+  const count=Number(value.people?.[link.dataset.messageUser]||0),badge=link.querySelector('.team-message-count');
+  if(badge){badge.hidden=count===0;badge.textContent=count>0?String(count):'';}
+  link.setAttribute('aria-label','Message owner'+(count>0?', '+count+' unread message'+(count===1?'':'s'):''));
+ });
+ window.addEventListener('ecfhl-unread',event=>ownerUnreadBadges(event.detail));
+ window.addEventListener('ecfhl-message-state',event=>{if(event.detail.unread)ownerUnreadBadges(event.detail.unread);});
  const updateUnread=value=>{counter('header-message-count',value.total);window.dispatchEvent(new CustomEvent('ecfhl-unread',{detail:value}));};
  const readWidget=async widget=>{
   if(!visible(widget)||!atBottom(widget)||widget.readBusy)return;

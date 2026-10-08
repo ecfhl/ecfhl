@@ -30,7 +30,15 @@ final class CurrentTeams
     {
         $identities = app(OwnerTeams::class)->all()->keyBy('slug');
         $claims = DB::table('owner_team_claims as c')->join('users as u', 'u.id', '=', 'c.user_id')
-            ->get(['c.fantasy_team_id', 'c.team_name', 'c.user_id', 'u.name as account_name', 'u.email as account_email']);
+            ->get(['c.fantasy_team_id', 'c.team_name', 'c.user_id', 'u.name as account_name', 'u.email as account_email','u.notification_preferences']);
+        $devices=DB::table('push_subscriptions')->where('enabled',true)->whereNotNull('feed_token_hash')->select('user_id')->selectRaw('COUNT(*) as devices')->groupBy('user_id')->pluck('devices','user_id');
+        foreach($claims as $claim){
+            $p=array_replace(OwnerNotificationPolicy::DEFAULTS,json_decode($claim->notification_preferences??'{}',true)??[]);
+            $claim->message_notifications=$p['notifications_enabled']&&$p['private_message_push']&&$p['league_message_push'];
+            $claim->message_popups=$p['private_message_popups']&&$p['league_message_popups'];
+            $claim->message_devices=(int)($devices[$claim->user_id]??0);
+            unset($claim->notification_preferences);
+        }
         $byId = $claims->keyBy('fantasy_team_id');
         $bySlug = $claims->keyBy(fn($claim)=>Str::slug($claim->team_name));
         return array_map(function ($team) use ($identities, $byId, $bySlug) {

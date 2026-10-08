@@ -137,5 +137,12 @@ goalieCheck(count(array_filter($push->sent,fn($event)=>str_contains($event['body
 goalieCheck(DB::table('active_starting_goalies')->where('player_name','Tristan Jarry')->where('game_date','2026-09-29')->value('starting_status')==='Not starting','Previous starter is no longer confirmed');
 $push->sent=[];Artisan::call('ecfhl:refresh-starting-goalies');
 goalieCheck($push->sent===[],'Unchanged negative status is not sent again');
+// A newly named confirmed starter must alert even if he was absent from previous pools.
+$push->sent=[];$late=$changed;$late['props']['pageProps']['data'][3]['homeGoalieName']='New Arrival';
+Http::swap(new \Illuminate\Http\Client\Factory);Http::preventStrayRequests();
+Http::fake(fn($request)=>Http::response(goalieHtml(basename($request->url())==='2026-09-29'?$late:$fixtures['2026-09-30']),200));
+goalieCheck(Artisan::call('ecfhl:refresh-starting-goalies')===0,'New starter refresh succeeds');
+goalieCheck(count(array_filter($push->sent,fn($event)=>str_contains($event['body'],'Arrival')&&str_contains($event['body'],'Confirmed')))===1,'First published confirmed starter was missed');
+$push->sent=[];Artisan::call('ecfhl:refresh-starting-goalies');goalieCheck($push->sent===[],'New starter repeats on unchanged refresh');
 CarbonImmutable::setTestNow();
 echo "Starting-goalie parser, safe replacement, exit-code and AI Tips join checks passed.\n";

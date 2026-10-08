@@ -130,3 +130,9 @@ html[data-theme] #chat-panel[data-maximized="true"]{left:8px!important;right:8px
 .chat-read-status{display:block;color:var(--muted);font-size:10px;margin-top:5px}.chat-view-status{display:inline-block;opacity:.35;cursor:help;font-size:14px;margin-top:5px}.chat-view-status[data-viewed="true"]{opacity:1;color:var(--focus)}.chat-view-status:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
 .message-popup-reply{margin-left:10px;font-size:12px}.message-popup-reply-form{display:flex;flex-direction:column;gap:8px;margin-top:10px}.message-popup-reply-form[hidden]{display:none}.message-popup-reply-form textarea{box-sizing:border-box;resize:vertical;width:100%;min-height:58px;max-height:160px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);color:var(--text);font:inherit;font-size:13px}.message-popup-reply-form button{align-self:flex-end}.message-popup .message-popup-reply-status{font-size:12px;margin:6px 0 0}.message-popup-reply-status:empty{display:none}
+
+.team-message-link{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;font-size:26px;line-height:1;text-decoration:none;border-radius:10px}
+.team-message-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.team-message-logo-stack{display:flex;flex-direction:column;align-items:center;gap:4px}
+.team-message-count{position:absolute;top:0;right:0;display:flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:999px;background:#e92323;color:#fff;font-size:10px;font-weight:800;line-height:1;border:2px solid var(--panel)}
+.team-message-count[hidden]{display:none}

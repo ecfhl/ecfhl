@@ -126,6 +126,7 @@ Route::post('/admin/notifications/test', function () {
     $v=request()->validate(['type'=>'required|string|in:league-message,private-message,team-score,team-goalie-score,opponent-score,own-goalie,all-goalie,available-today,available-tomorrow,watched-goalie']);
     $endpointHash=(string)request()->cookie('ecfhl_push_device','');
     $result=app(\App\Support\WebPush::class)->testType((int)request()->user()->id,$endpointHash,$v['type']);
+    if(request()->expectsJson())return response()->json($result);
     return redirect('/admin/notifications')->with('notice',$result['message']);
 })->middleware(['auth','throttle:20,1,admin-notification-test']);
 
@@ -135,6 +136,20 @@ Route::get('/admin/teams', function () {
     return view('admin.team-images',compact('teams'));
 });
 Route::get('/admin/team-images', fn()=>redirect('/admin/teams'));
+
+Route::post('/admin/teams/{teamId}/enable-messages', function (string $teamId) {
+    abort_unless(request()->user()?->is_admin,403);
+    $expected=request()->validate(['user_id'=>'required|integer']);
+    $name=DB::transaction(function()use($teamId,$expected){
+        $claim=\App\Models\TeamClaim::whereKey($teamId)->lockForUpdate()->first();
+        abort_unless($claim,404);
+        abort_unless((int)$claim->user_id===(int)$expected['user_id'],409,'The associated account changed. Refresh this page.');
+        $owner=\App\Models\User::whereKey($claim->user_id)->lockForUpdate()->firstOrFail();
+        $owner->notification_preferences=array_replace($owner->notification_preferences??[],['notifications_enabled'=>true,'private_message_push'=>true,'league_message_push'=>true,'private_message_popups'=>true,'league_message_popups'=>true]);
+        $owner->save();return $claim->team_name;
+    });
+    return redirect('/admin/teams')->with('notice','Message notifications enabled for '.$name.'.');
+})->middleware('auth')->where('teamId','[A-Za-z0-9_-]+');
 
 Route::post('/admin/teams/{teamId}/unlink', function (string $teamId) {
     $expected=request()->validate(['user_id'=>'required|integer']);
