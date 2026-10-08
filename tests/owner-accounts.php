@@ -271,7 +271,7 @@ foreach(['/job-status/test-scoring-notification','/job-status/test-goalie-notifi
  verifyOwner($response->getStatusCode()===200&&json_decode($response->getContent(),true)['ok'],'Scoring test failed: '.$response->getContent());
  $testAlert=DB::table('push_notifications')->orderByDesc('id')->first();
  verifyOwner($testAlert->category==='test-score'&&$testAlert->title==='Beta - 7pts','Test selected goalie / prior test / older score');
- verifyOwner($testAlert->body==="Skater, Latest scores 2 goals, including the game winner and a power-play goal and a short-handed goal and adds 3 assists.\nG: 2 · A: 3 · PPG: 1 · SHG: 1 · GWG: 1",'Test omitted current stat totals / legacy team name');
+ verifyOwner($testAlert->body==="Skater, Latest scores 2 goals, including the game winner and a power-play goal and a short-handed goal and gets 3 assists.\nG: 2 · A: 3 · PPG: 1 · SHG: 1 · GWG: 1",'Test omitted current stat totals / legacy team name');
  $delivery=DB::table('push_deliveries')->where('notification_id',$testAlert->id)->get();
  $deviceId=DB::table('push_subscriptions')->where('endpoint_hash',hash('sha256',$testEndpoint))->value('id');
  verifyOwner($delivery->count()===1&&(int)$delivery[0]->subscription_id===(int)$deviceId,'Test broadcast to other owners/devices');
