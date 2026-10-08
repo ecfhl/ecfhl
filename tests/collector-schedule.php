@@ -42,7 +42,9 @@ $postponed=nhlGame('2026-10-08T23:00:00Z');$postponed['gameScheduleState']='PPD'
 $schedule=windowAt('2026-10-08T23:05:00Z',['2026-10-08'=>[$postponed]]);verifyCollector(!$schedule->due('scores')&&!$schedule->due('odds'),'Postponement kept a window open');
 Cache::flush();Http::swap(new \Illuminate\Http\Client\Factory);Http::fake(fn()=>Http::response([],503));$schedule=new CollectorSchedule;
 verifyCollector($schedule->due('scores')&&!$schedule->due('odds'),'NHL outage must preserve scoring and suppress paid odds polling');
-foreach(['2026-11-01T06:59:00Z'=>'2026-10-31','2026-11-01T07:00:00Z'=>'2026-11-01','2026-11-02T07:59:00Z'=>'2026-11-01','2026-11-02T08:00:00Z'=>'2026-11-02'] as $time=>$day){Clock::setTestNow(Clock::parse($time));verifyCollector((new FantasyDay)->today()->toDateString()===$day,'DST fantasy date mismatch');}
+// Historical DST transition: future Pacific offset rules can differ between
+// system timezone databases, while FantasyDay must keep using Vancouver rules.
+foreach(['2025-11-02T06:59:00Z'=>'2025-11-01','2025-11-02T07:00:00Z'=>'2025-11-02','2025-11-03T07:59:00Z'=>'2025-11-02','2025-11-03T08:00:00Z'=>'2025-11-03'] as $time=>$day){Clock::setTestNow(Clock::parse($time));verifyCollector((new FantasyDay)->today()->toDateString()===$day,'DST fantasy date mismatch');}
 Clock::setTestNow(Clock::parse('2026-10-08T17:00:00Z'));CollectorStatus::start('players');CollectorStatus::advance('players');$state=CollectorStatus::snapshot()['players'];
 verifyCollector($state['status']==='running'&&$state['completed']===1&&$state['total']===2,'Progress must count real units');CollectorStatus::finish('players',1);
 verifyCollector(CollectorStatus::snapshot()['players']['status']==='failed','Failure missing');CollectorStatus::start('players');Clock::setTestNow(Clock::parse('2026-10-08T20:00:00Z'));
