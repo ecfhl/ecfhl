@@ -17,7 +17,7 @@
       <a class="button team-date-button {{ $date===$today?'primary':'team-date-inactive' }}" href="/teams/current?date={{ $today }}">Today</a>
       <a class="button team-date-button {{ $date===$tomorrow?'primary':'team-date-inactive' }}" href="/teams/current?date={{ $tomorrow }}">Tomorrow</a>
     </div>
-    @if($autoRefresh)<button type="button" class="button live-score-updates-toggle" id="live-score-updates-toggle" aria-controls="live-score-updates" aria-expanded="false" aria-pressed="false" aria-label="Enable scoring updates" title="Enable scoring updates" data-enabled="false" data-has-updates="false"><span class="live-score-updates-icon" aria-hidden="true">🚨</span><span id="live-score-updates-count" hidden>0</span></button>@endif
+    @if($autoRefresh)<button type="button" class="button live-score-updates-toggle" id="live-score-updates-toggle" aria-controls="live-score-updates" aria-expanded="false" aria-pressed="false" aria-label="Show scoring updates" title="Show scoring updates" data-enabled="false" data-has-updates="false"><span class="live-score-updates-icon" aria-hidden="true">🚨</span><span id="live-score-updates-count" hidden>0</span></button>@endif
   </div>
 
   @if($scheduleLabel)
