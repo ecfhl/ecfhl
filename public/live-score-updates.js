@@ -56,7 +56,7 @@
           const next = read(panel);
           if (!next) return;
           const events = compare(baseline, next);
-          if (baseline && baseline.date !== next.date) { list.replaceChildren(); total = 0; count.hidden = true; show(false); }
+          if (baseline && baseline.date !== next.date) { list.replaceChildren(element('p', 'live-score-updates-empty', 'No updates')); total = 0; count.hidden = true; toggle.setAttribute('data-has-updates', 'false'); show(false); }
           baseline = next;
           if (!events.length) return;
           list.querySelector('.live-score-updates-empty')?.remove();
@@ -86,6 +86,7 @@
           total += events.length;
           count.textContent = String(total);
           count.hidden = false;
+          toggle.setAttribute('data-has-updates', 'true');
           show(true);
         }
       };

@@ -17,7 +17,7 @@
       <a class="button team-date-button {{ $date===$today?'primary':'team-date-inactive' }}" href="/teams/current?date={{ $today }}">Today</a>
       <a class="button team-date-button {{ $date===$tomorrow?'primary':'team-date-inactive' }}" href="/teams/current?date={{ $tomorrow }}">Tomorrow</a>
     </div>
-    @if($autoRefresh)<button type="button" class="button live-score-updates-toggle" id="live-score-updates-toggle" aria-controls="live-score-updates" aria-expanded="false">Scoring updates <span id="live-score-updates-count" hidden>0</span></button>@endif
+    @if($autoRefresh)<button type="button" class="button live-score-updates-toggle" id="live-score-updates-toggle" aria-controls="live-score-updates" aria-expanded="false" data-has-updates="false">Scoring updates <span id="live-score-updates-count" hidden>0</span></button>@endif
   </div>
 
   @if($scheduleLabel)
@@ -256,8 +256,8 @@
 
 @if($autoRefresh)
 <section id="live-score-updates" class="live-score-updates" aria-label="Scoring updates" hidden>
-  <div class="live-score-updates-heading"><div><h2>Scoring updates</h2><p>All teams · Since you opened Live Scoring</p></div><button type="button" id="live-score-updates-close" aria-label="Close scoring updates">×</button></div>
-  <div id="live-score-updates-list" class="live-score-updates-list" role="log" aria-live="polite" aria-relevant="additions" tabindex="0"><p class="live-score-updates-empty">New scoring plays will appear here as scores refresh.</p></div>
+  <div class="live-score-updates-heading"><h2>Scoring updates</h2><button type="button" id="live-score-updates-close" aria-label="Close scoring updates">×</button></div>
+  <div id="live-score-updates-list" class="live-score-updates-list" role="log" aria-live="polite" aria-relevant="additions" tabindex="0"><p class="live-score-updates-empty">No updates</p></div>
 </section>
 @endif
 

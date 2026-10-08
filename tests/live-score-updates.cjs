@@ -31,6 +31,7 @@ assert.equal(alerts.compare(state([player('a',0)]),state([player('a',.5,{A:1})])
 const ui=alerts.start();ui.update(panel(before));assert.equal(elements['live-score-updates-list'].children.length,0);
 ui.update(panel(next));
 assert.equal(elements['live-score-updates-count'].textContent,'3');assert.equal(elements['live-score-updates'].hidden,false);
+assert.equal(elements['live-score-updates-toggle'].attributes['data-has-updates'],'true','The button must glow when updates exist.');
 const batch=elements['live-score-updates-list'].children[0];
 assert.equal(batch.children.length,3,'One time label and one group per team.');
 assert.equal(batch.children[1].children[0].children[1].textContent,'+3 FPts');
@@ -41,4 +42,7 @@ elements['live-score-updates-toggle'].handlers.click();assert.equal(elements['li
 ui.update(panel(state([player('a',3,{A:3}),...next.players.slice(1)])));
 assert.equal(elements['live-score-updates-count'].textContent,'4');assert.equal(elements['live-score-updates-list'].children.length,2);
 ui.update({dataset:{scoringState:'broken'}});assert.equal(elements['live-score-updates-count'].textContent,'4');
+ui.update(panel({...next,date:'2026-10-08'}));
+assert.equal(elements['live-score-updates-list'].children[0].textContent,'No updates');
+assert.equal(elements['live-score-updates-toggle'].attributes['data-has-updates'],'false','Clear the glow when a new date clears the updates.');
 console.log('Scoring popup checks passed: all teams, grouped point gains, stat deltas, goalie plays, fractions, initial/date baselines, duplicates/corrections, dismiss/reopen, batching and invalid state.');
