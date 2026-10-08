@@ -20,10 +20,10 @@ html[data-theme="light"] .chat-message[data-own="true"]{background:#eaf2ff;borde
 .notification-entry a{font-weight:700;text-decoration:none}
 .notification-panel-footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12px}
 .notification-panel-footer .button{font-size:12px;padding:8px 10px}
-.live-score-updates{box-shadow:var(--shadow-raised)}
-.live-score-updates-filters{display:flex;align-items:center;gap:8px;padding:12px 14px;flex-wrap:nowrap}
+html[data-theme] .live-score-updates{box-shadow:var(--shadow-raised)}
+html[data-theme] .live-score-updates-filters{display:flex;align-items:center;gap:8px;padding:12px 14px;flex-wrap:nowrap}
 .live-score-updates-filters>label{display:flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap}
-.live-score-updates-filters select,.score-team-picker summary{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:7px;padding:7px 8px;font:inherit;font-size:12px}
+html[data-theme] .live-score-updates-filters select,.score-team-picker summary{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:7px;padding:7px 8px;font:inherit;font-size:12px}
 .score-team-picker{min-width:0;flex:1;font-size:12px}
 .score-team-picker summary{cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .score-team-options{max-height:170px;overflow:auto;padding:6px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;margin-top:6px}
