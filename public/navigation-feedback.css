@@ -21,7 +21,7 @@
 .login-create-account p{margin:0 0 10px;font-weight:700}.login-create-account .button{width:100%;min-height:46px}
 @keyframes navigation-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.navigation-spinner{animation:none}}
-@media(max-width:900px){.nav-toggle{display:block}.main-nav{display:none;position:absolute;left:0;right:0;top:58px;max-height:calc(100dvh - 58px);overflow-y:auto;background:var(--navy);padding:10px 16px;flex-direction:column;align-items:stretch}.nav-open .main-nav{display:flex}.main-nav a.nav-create-account{margin-bottom:6px;padding:12px!important;text-align:center!important}.guest-signup-dialog{padding:26px 22px}}
+@media(max-width:900px){.nav-toggle{display:block}.main-nav{display:none;position:absolute;left:0;right:0;top:58px;max-height:calc(100dvh - 58px - 84px - env(safe-area-inset-bottom,0px));overflow-y:auto;overscroll-behavior:contain;background:var(--navy);padding:10px 16px;flex-direction:column;align-items:stretch}.nav-open .main-nav{display:flex}.main-nav a.nav-create-account{margin-bottom:6px;padding:12px!important;text-align:center!important}.guest-signup-dialog{padding:26px 22px}}
 
 .navigation-loading-image{display:block;width:96px;height:96px;object-fit:contain}.navigation-loading-image[hidden]{display:none!important}
 
