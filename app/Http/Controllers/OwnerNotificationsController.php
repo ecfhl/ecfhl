@@ -31,7 +31,7 @@ class OwnerNotificationsController {
  public function save(Request $r,OwnerGoalies $goalies){
   $allowed=$goalies->options()->pluck('key')->merge($r->user()->notification_preferences['goalies']??[])->unique()->all();
   $v=$r->validate(['goalies'=>'nullable|array|max:100','goalies.*'=>['string',Rule::in($allowed)]]);
-  $p=[];foreach(array_keys(OwnerNotificationPolicy::DEFAULTS) as $key)if($key!=='goalies')$p[$key]=$r->boolean($key);
+  $p=[];foreach(array_keys(OwnerNotificationPolicy::DEFAULTS) as $key)if($key!=='goalies')$p[$key]=in_array($key,['notifications_enabled','private_message_popups','league_message_popups','private_message_push','league_message_push'],true)&&!$r->has($key) ? (array_replace(OwnerNotificationPolicy::DEFAULTS,$r->user()->notification_preferences??[])[$key]) : $r->boolean($key);
   $p['goalies']=array_values(array_unique($v['goalies']??[]));
   \Illuminate\Support\Facades\DB::transaction(function()use($r,$p){
    $r->user()->notification_preferences=$p;$r->user()->save();

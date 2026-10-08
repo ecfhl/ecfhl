@@ -17,6 +17,7 @@ COPY . .
 RUN COMPOSER_ALLOW_SUPERUSER=1 composer dump-autoload --optimize --no-dev
 RUN php tests/drafts-only.php
 RUN php tests/owner-accounts.php
+RUN php tests/messaging.php
 RUN php tests/performance.php
 RUN php tests/site-audit.php
 RUN php tests/live-scoring.php

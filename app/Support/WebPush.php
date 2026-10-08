@@ -111,11 +111,18 @@ class WebPush
         DB::table('push_notifications')->where('id','<',$id-250)->delete();
 
         $subscriptions=DB::table('push_subscriptions')->where('enabled',true)->whereNotNull('user_id')->whereNotNull('feed_token_hash');
-        $owners=\App\Models\User::with('claim')->whereIn('id',$subscriptions->pluck('user_id'))->get()->keyBy('id');
+        $owners=\App\Models\User::with('claim')->get()->keyBy('id');
         $policy=new OwnerNotificationPolicy;
+        if(!in_array($category,['private-message','league-message'],true)){
+            $inbox=[];
+            foreach($owners as $owner){
+                if($policy->accepts($owner,$category,$fantasyTeamId,$context))$inbox[]=['user_id'=>$owner->id,'notification_id'=>$id,'created_at'=>now(),'updated_at'=>now()];
+            }
+            if($inbox)DB::table('owner_notification_inbox')->insert($inbox);
+        }
         foreach($subscriptions->get() as $subscription){
             $owner=$owners->get($subscription->user_id);
-            if(!$owner || !$policy->accepts($owner,$category,$fantasyTeamId,$context))continue;
+            if(!$owner || !(array_replace(OwnerNotificationPolicy::DEFAULTS,$owner->notification_preferences??[])['notifications_enabled']) || !$policy->accepts($owner,$category,$fantasyTeamId,$context))continue;
             DB::table('push_deliveries')->insert(['subscription_id'=>$subscription->id,'notification_id'=>$id]);
             try {
                 $status=$this->sendEmptyPush((string)$subscription->endpoint);

@@ -218,7 +218,7 @@ verifySeason(!str_contains($otherHtml,' player-on-my-team"'),'Selecting a differ
 verifySeason(str_contains($ownedHtml,'data-team-icon-viewer data-team-slug="beta" data-team-name="Beta"')&&str_contains($ownedHtml,'data-full-src="/team-icons/beta"'),'Player logos must open the full-size team viewer.');
 preg_match('/<nav class="mobile-primary-nav".*?<\/nav>/s',$ownedHtml,$mobileNav);
 verifySeason(str_contains($mobileNav[0],'mobile-nav-players active')&&!str_contains($mobileNav[0],'/daily-targets')&&!str_contains($ownedHtml,'href="/daily-targets"'),'Players must replace the bottom Targets shortcut and Targets must be absent from navigation.');
-verifySeason(str_contains($ownedHtml,'id="team-icon-modal-title"')&&str_contains($ownedHtml,'id="team-icon-modal-view-team"')&&str_contains($ownedHtml,'/team-image-viewer.js?v=10'),'Shared titled viewer and View Team action missing.');
+verifySeason(str_contains($ownedHtml,'id="team-icon-modal-title"')&&str_contains($ownedHtml,'id="team-icon-modal-view-team"')&&str_contains($ownedHtml,'/team-image-viewer.js?v='.hash_file('sha256',__DIR__.'/../public/team-image-viewer.js')),'Shared titled viewer and View Team action missing.');
 $unclaimed = new \App\Models\User(['name'=>'Unclaimed']);$unclaimed->setRelation('claim',null);
 \Illuminate\Support\Facades\Auth::guard()->setUser($unclaimed);
 verifySeason(!str_contains(seasonRequest('/players?availability=all')->getContent(),' player-on-my-team"'),'Unclaimed accounts must not highlight free agents.');

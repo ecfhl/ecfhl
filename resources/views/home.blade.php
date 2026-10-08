@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Home · ECFHL')
 @section('content')
+@auth<div class="shell home-league-chat">@include('communication.chat-widget')</div>@endauth
 @push('styles')
 <link rel="stylesheet" href="/matchup-scoreboard.css?v={{ hash_file('sha256', base_path('public/matchup-scoreboard.css')) }}">
 @endpush

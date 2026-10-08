@@ -2,13 +2,17 @@
 namespace App\Support;
 use App\Models\User;
 class OwnerNotificationPolicy {
- public const DEFAULTS=['team_scores'=>true,'opponent_scores'=>false,'all_goalies'=>false,'own_goalies'=>false,'available_today'=>false,'available_tomorrow'=>false,'goalies'=>[]];
+ public const DEFAULTS=['notifications_enabled'=>true,'private_message_popups'=>true,'league_message_popups'=>true,'private_message_push'=>true,'league_message_push'=>true,'team_scores'=>true,'opponent_scores'=>false,'all_goalies'=>false,'own_goalies'=>false,'available_today'=>false,'available_tomorrow'=>false,'goalies'=>[]];
  private array $rosterGoalies=[];
  public static function goalieKey(string $team,string $name): string {
   return strtoupper(trim($team)).'|'.(preg_replace('/[^\pL\pN]+/u','',mb_strtolower($name))??'');
  }
  public function accepts(User $user,string $category,?string $teamId,array $context): bool {
   $p=array_replace(self::DEFAULTS,$user->notification_preferences??[]);
+  if(in_array($category,['private-message','league-message'],true)){
+   if($user->id===(int)($context['sender_id']??0))return false;
+   return $category==='private-message' ? $user->id===(int)($context['recipient_id']??0) && $p['private_message_push'] : (bool)$p['league_message_push'];
+  }
   if($category==='live-score'){
    $own=$user->claim?->fantasy_team_id;if(!$own)return false;
    return ($own===$teamId && $p['team_scores']) || ($own===($context['opponent_team_id']??null) && $p['opponent_scores']);

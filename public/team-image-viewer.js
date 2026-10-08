@@ -59,6 +59,8 @@ document.addEventListener('DOMContentLoaded',()=>{
       viewingLeagueLogo=button.hasAttribute('data-league-logo');
       lastTrigger=button;
       activeSlug=button.dataset.teamSlug||'';
+      modal.dataset.messageSlug=viewingLeagueLogo?'':activeSlug;
+      window.dispatchEvent(new Event('ecfhl-team-viewer'));
       activeAdvisorKey=button.dataset.advisorKey||'';
       if(modalTitle)modalTitle.textContent=(viewingLeagueLogo?'East Coast Fantasy Hockey League':button.dataset.teamName)||button.dataset.advisorFirstName||img.alt||'Team logo';
       if(viewTeamButton){

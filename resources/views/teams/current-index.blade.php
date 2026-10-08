@@ -17,7 +17,6 @@
       <a class="button team-date-button {{ $date===$today?'primary':'team-date-inactive' }}" href="/teams/current?date={{ $today }}">Today</a>
       <a class="button team-date-button {{ $date===$tomorrow?'primary':'team-date-inactive' }}" href="/teams/current?date={{ $tomorrow }}">Tomorrow</a>
     </div>
-    @if($autoRefresh)<button type="button" class="button live-score-updates-toggle" id="live-score-updates-toggle" aria-controls="live-score-updates" aria-expanded="false" aria-pressed="true" aria-label="Scoring updates on" title="Scoring updates on" data-enabled="true" data-has-updates="false"><span class="live-score-updates-icon" aria-hidden="true">🚨</span><span id="live-score-updates-status">On</span><span id="live-score-updates-count" hidden>0</span></button>@endif
   </div>
 
   @if($scheduleLabel)
@@ -254,14 +253,6 @@
   </footer>
 </div>
 
-@if($autoRefresh)
-<section id="live-score-updates" class="live-score-updates" aria-label="Scoring updates" hidden>
-  <div class="live-score-updates-heading" id="live-score-updates-handle" tabindex="0" role="group" aria-label="Move scoring updates: drag or use arrow keys"><h2>Scoring updates</h2><div class="live-score-updates-actions"><button type="button" id="live-score-updates-trash" disabled aria-label="Clear scoring updates" title="Clear updates"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button><button type="button" id="live-score-updates-minimize" aria-label="Minimize scoring updates" title="Minimize">−</button><button type="button" id="live-score-updates-close" aria-label="Close scoring updates" title="Close">×</button></div></div>
-  <button type="button" id="live-score-updates-restore" class="live-score-updates-restore" hidden aria-label="Expand scoring updates">0 updates</button>
-  <div class="live-score-updates-filters"><label>Updates for <select id="live-score-updates-scope"><option value="team">Our team</option><option value="matchup" selected>Matchup</option><option value="league">League</option><option value="nhl">All NHL</option></select></label><label id="live-score-updates-team-label">Team <select id="live-score-updates-team" data-account-team="{{ request()->user()?->claim?->fantasy_team_id ?? '' }}">@foreach($teams as $team)<option value="{{ $team['id'] }}">{{ $team['name'] }}</option>@endforeach</select></label></div>
-  <div id="live-score-updates-list" class="live-score-updates-list" role="log" aria-live="polite" aria-relevant="additions" tabindex="0"><p class="live-score-updates-empty">No updates</p></div>
-</section>
-@endif
 
 @push('styles')
 <style>
@@ -380,7 +371,7 @@ html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:va
 </style>
 @endpush
 
-<script src="/live-score-updates.js?v={{ hash_file('sha256', base_path('public/live-score-updates.js')) }}"></script>
+
 <script src="/live-scoring.js?v={{ hash_file('sha256', base_path('public/live-scoring.js')) }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{

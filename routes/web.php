@@ -780,10 +780,14 @@ Route::get('/push/notifications', function () {
     $token=request()->bearerToken();
     $subscription=$token?DB::table('push_subscriptions')->where('feed_token_hash',hash('sha256',$token))->where('enabled',true)->first():null;
     if(!$subscription)return response()->json(['notifications'=>[],'latestId'=>0])->header('Cache-Control','no-store');
+    $owner=\App\Models\User::find($subscription->user_id);
+    $preferences=$owner?\App\Support\Messaging::preferences($owner):[];
+    if(!$owner||!($preferences['notifications_enabled']??true))return response()->json(['notifications'=>[]])->header('Cache-Control','no-store');
     $after=max(0,(int)request('after',0));
     $rows=DB::table('push_deliveries as d')->join('push_notifications as n','n.id','=','d.notification_id')
         ->where('d.subscription_id',$subscription->id)->where('n.id','>',$after)->orderBy('n.id')->limit(100)
         ->get(['n.id','n.category','n.title','n.body','n.url','n.fantasy_team_id']);
+    $rows=$rows->filter(fn($n)=>($n->category!=='private-message'||$preferences['private_message_push'])&&($n->category!=='league-message'||$preferences['league_message_push']))->values();
     return response()->json(['notifications'=>$rows])->header('Cache-Control','no-store');
 })->middleware('throttle:120,1,push-feed');
 
@@ -911,3 +915,5 @@ require __DIR__.'/accounts.php';
 require __DIR__.'/projection-settings.php';
 
 require __DIR__.'/season-players.php';
+
+require __DIR__.'/communication.php';

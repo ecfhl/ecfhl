@@ -17,6 +17,7 @@
           @endforeach
         </select>
       </label>
+      @include('communication.team-message',['messageTeamName'=>$teamName])
       @if($fantraxTeamUrl)
         <p class="team-fantrax-row">
           <a class="team-fantrax-link" href="{{ $fantraxTeamUrl }}" target="_blank" rel="noopener noreferrer">

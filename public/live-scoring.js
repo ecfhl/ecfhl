@@ -1,7 +1,7 @@
 (() => {
   window.EcfhlLiveScoring = {
     start({saveOpenMatchups, highlightNotificationTeam}) {
-      const scoringUpdates = window.EcfhlScoreUpdates?.start();
+
       let refreshing = false;
       const blocked = () => document.hidden || document.querySelector('dialog[open],#team-icon-modal.open');
       const refresh = async () => {
@@ -12,7 +12,6 @@
         const timeout = setTimeout(() => controller.abort(), 20000);
         try {
           const refreshUrl = new URL(location.href);
-          if (scoringUpdates?.scope?.() === 'nhl') refreshUrl.searchParams.set('updates_scope', 'nhl');
           const response = await fetch(refreshUrl, {headers:{'X-Requested-With':'XMLHttpRequest',Accept:'text/html'},cache:'no-store',signal:controller.signal});
           if (!response.ok) throw new Error('Refresh failed');
           const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
@@ -38,7 +37,6 @@
             replacement?.focus({preventScroll:true});
           }
           window.scrollTo(x,y);
-          scoringUpdates?.update(fresh);
         } catch (error) {
           const status=document.querySelector('.team-updated');
           if (status && !status.querySelector('[data-refresh-error]')) {

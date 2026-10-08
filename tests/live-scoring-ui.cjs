@@ -16,7 +16,7 @@ function setup(){
 }
 (async()=>{
  const ui=setup();const pending=ui.refresh();await ui.refresh();assert.equal(ui.calls,1);ui.oldCards[1].open=true;ui.release();await pending;
- assert.ok(ui.old.replaced&&ui.window.restored&&ui.cleared);assert.deepEqual(ui.newCards.map(c=>c.open),[true,true]);assert.equal(ui.pinned,1);assert.equal(ui.saved,1);assert.equal(ui.alerts,1);
+ assert.ok(ui.old.replaced&&ui.window.restored&&ui.cleared);assert.deepEqual(ui.newCards.map(c=>c.open),[true,true]);assert.equal(ui.pinned,1);assert.equal(ui.saved,1);assert.equal(ui.alerts,0,'Scoring alerts are handled by the shared app poller.');
  const fail=setup();fail.fail();let work=fail.refresh();fail.release();await work;assert.equal(fail.old.replaced,undefined);assert.match(fail.warning[0].textContent,/retrying automatically/);work=fail.refresh();fail.release();await work;assert.equal(fail.calls,2);assert.equal(fail.warning.length,1);
  const missing=setup();missing.missing();work=missing.refresh();missing.release();await work;assert.equal(missing.old.replaced,undefined);
  const modal=setup();modal.document.modal=true;await modal.refresh();assert.equal(modal.calls,0);modal.document.modal=false;work=modal.refresh();modal.document.modal=true;modal.release();await work;assert.equal(modal.old.replaced,undefined);

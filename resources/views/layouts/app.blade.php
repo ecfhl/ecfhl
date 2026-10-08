@@ -15,8 +15,8 @@
         elseif(request()->is('teams/*')&&isset($team)){$browserTitle='ECFHL - '.($team['team']??'Franchise');}
         elseif(request()->is('seasons/*')&&isset($season)){$browserTitle='ECFHL - '.($season['season']??'Season');}
         elseif(request()->is('teams/current')){$browserTitle='ECFHL - Live Scoring';}
-        else{$pageTitles=['seasons'=>'Seasons','standings'=>'Standings','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','daily-targets'=>'Daily Targets','job-status'=>'Collector Status','admin'=>'Admin','login'=>'Sign In','register'=>'Create Account','account'=>'Account','notifications'=>'Notifications','rules'=>'Rules'];$browserTitle='ECFHL - '.($pageTitles[request()->segment(1)]??'East Coast Fantasy Hockey League');}
-        $showSeasonFilter=!request()->is('login','register','account','account/*','notifications','auth/*','rules','players','players/*','daily-targets','job-status','admin','admin/*','teams/current','teams/current/*','seasons','seasons/*','standings','teams/league');$showSeasonFilter=$showSeasonFilter&&!request()->is('/');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
+        else{$pageTitles=['seasons'=>'Seasons','standings'=>'Standings','teams'=>'Franchises','prizes'=>'Prizes','trades'=>'Trades','draft'=>'Draft','players'=>'Players','daily-targets'=>'Daily Targets','job-status'=>'Collector Status','admin'=>'Admin','login'=>'Sign In','register'=>'Create Account','account'=>'Account','messages'=>'Messages','notifications'=>'Notifications','rules'=>'Rules'];$browserTitle='ECFHL - '.($pageTitles[request()->segment(1)]??'East Coast Fantasy Hockey League');}
+        $showSeasonFilter=!request()->is('login','register','account','account/*','notifications','messages','auth/*','rules','players','players/*','daily-targets','job-status','admin','admin/*','teams/current','teams/current/*','seasons','seasons/*','standings','teams/league');$showSeasonFilter=$showSeasonFilter&&!request()->is('/');if($showSeasonFilter)$seasonMode=app(\App\Support\Archive::class)->mode();
         $currentTeamMenu=\App\Support\PublicData::teamMenu();
         $loadingLeagueLogo=\App\Support\TeamImages::url('league-logo',160);
         $loadingTeamSlug=request()->is('teams/current/*')&&isset($slug)?$slug:(request()->is('teams/*')&&!request()->is('teams/league','teams/current')&&isset($team['team'])?\Illuminate\Support\Str::slug($team['team']):null);
@@ -63,6 +63,7 @@ document.documentElement.dataset.theme=theme;})();
 @if(request()->is('players','daily-targets','teams/current/*'))
 <link rel="stylesheet" href="/goalie-watches.css?v={{ hash_file('sha256', base_path('public/goalie-watches.css')) }}">
 @endif
+<link rel="stylesheet" href="/communication.css?v={{ hash_file('sha256', base_path('public/communication.css')) }}">
 <link rel="stylesheet" href="/themes.css?v={{ hash_file('sha256', base_path('public/themes.css')) }}">
 </head>
 <body>
@@ -75,7 +76,7 @@ document.documentElement.dataset.theme=theme;})();
 </div>
 <script id="navigation-team-logos" type="application/json">{!! json_encode($loadingTeamLogos, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) !!}</script>
 <script>document.getElementById('navigation-loading').hidden=false;</script>
-<header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><div class="brand"><button type="button" class="league-logo-viewer" data-team-icon-viewer data-league-logo data-team-name="East Coast Fantasy Hockey League" aria-label="View East Coast Fantasy Hockey League logo"><img class="brand-logo" src="{{ \App\Support\TeamImages::url('league-logo',160) }}" data-full-src="{{ \App\Support\TeamImages::url('league-logo') }}" alt="ECFHL league logo"></button><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></div></div><div class="header-actions"><a class="push-notification-toggle" href="/notifications" data-loading-label="Notifications" aria-label="Notification settings" title="Notification settings">🔔</a><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav" id="main-navigation">
+<header class="site-header"><div class="shell nav-wrap"><div class="brand-area"><div class="brand"><button type="button" class="league-logo-viewer" data-team-icon-viewer data-league-logo data-team-name="East Coast Fantasy Hockey League" aria-label="View East Coast Fantasy Hockey League logo"><img class="brand-logo" src="{{ \App\Support\TeamImages::url('league-logo',160) }}" data-full-src="{{ \App\Support\TeamImages::url('league-logo') }}" alt="ECFHL league logo"></button><span class="brand-copy"><strong>EAST COAST</strong><small>FANTASY HOCKEY LEAGUE</small></span></div></div><div class="header-actions"><a class="header-counter" href="/messages" aria-label="Messages" title="Messages"><span aria-hidden="true">✉</span><span id="header-message-count" class="header-count" data-active="false">0</span></a><button class="header-counter" type="button" id="header-notifications-toggle" aria-controls="notification-panel" aria-expanded="false" aria-label="Notifications" title="Notifications"><span aria-hidden="true">🔔</span><span id="header-notification-status" class="header-status" aria-label="Notifications on">●</span><span id="header-notification-count" class="header-count" data-active="false">0</span></button><button class="header-counter live-score-updates-toggle" type="button" id="live-score-updates-toggle" aria-controls="live-score-updates" aria-expanded="false" aria-label="Open scoring updates" title="Open scoring updates" data-enabled="true"><span class="live-score-updates-icon" aria-hidden="true">🚨</span><span id="live-score-updates-count" class="header-count" data-active="false">0</span></button><button class="theme-toggle header-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch theme">◐</button><button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">☰</button></div><nav class="main-nav" id="main-navigation">
 
 <a href="/" class="{{ request()->is('/')?'active':'' }}"><span class="nav-item-icon" aria-hidden="true">⌂</span>Home</a>
 <a id="my-team-nav-link" class="my-team-link" data-my-team-link href="#"><span class="nav-item-icon" aria-hidden="true">★</span>My Team</a>
@@ -400,6 +401,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     <div class="team-icon-modal-loader" role="status" aria-label="Loading full-size team logo"></div>
     <img id="team-icon-modal-image" class="team-icon-modal-image" alt="">
     <div class="team-icon-modal-actions">
+      @auth<a id="team-icon-modal-message" class="team-icon-modal-view-team" hidden>✉ Message owner</a>@endauth
       <a id="team-icon-modal-view-team" class="team-icon-modal-view-team" hidden>View Team</a>
       @if(auth()->user()?->is_admin)<div id="team-icon-advisor-name" class="team-icon-advisor-name">
         <label class="team-icon-advisor-label" for="team-icon-advisor-input">First Name</label>
@@ -414,12 +416,17 @@ document.addEventListener('DOMContentLoaded',()=>{
     <button id="team-icon-modal-close" class="team-icon-modal-close" type="button" aria-label="Close team icon preview">×</button>
   </div>
 </div>
-<script src="/team-image-viewer.js?v=10&build=14" defer></script>
+<script src="/team-image-viewer.js?v={{ hash_file('sha256', base_path('public/team-image-viewer.js')) }}" defer></script>
 <dialog id="player-stats-dialog" class="player-stats-dialog" aria-label="Player stats"><button type="button" class="player-stats-close" aria-label="Close player stats">×</button><div id="player-stats-content" aria-live="polite"></div></dialog>
 <script src="/player-profile.js?v={{ hash_file('sha256', base_path('public/player-profile.js')) }}" defer></script>
 
 @if(request()->is('players','daily-targets','teams/current/*'))
 <script src="/goalie-watches.js?v=3" defer></script>
 @endif
+@include('communication.scoring-popup')
+@include('communication.notification-panel')
+<div id="communication-context" hidden data-user-id="{{ auth()->id() ?? '' }}" data-preferences='@json(array_replace(\App\Support\OwnerNotificationPolicy::DEFAULTS,auth()->user()?->notification_preferences??[]))'></div>
+<script src="/live-score-updates.js?v={{ hash_file('sha256', base_path('public/live-score-updates.js')) }}"></script>
+<script src="/app-communication.js?v={{ hash_file('sha256', base_path('public/app-communication.js')) }}" defer></script>
 @stack('scripts')
 </body></html>
