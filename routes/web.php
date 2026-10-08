@@ -471,15 +471,10 @@ Route::get('/teams/current/{slug}', function(string $slug) {
 
     $positions=[];
     foreach(['F'=>'Forwards','D'=>'Defense','G'=>'Goalies'] as $code=>$label){
-        $positionRows=$rows->where('position',$code)->reject(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){
-            $rank=fn($p)=>(bool)$p->is_ir?2:(!empty($p->daily_participant)?0:1);
-            $ar=$rank($a);$br=$rank($b);
-            if($ar!==$br)return $ar<=>$br;
-            return strnatcasecmp((string)$a->player_name,(string)$b->player_name);
-        })->values();
+        $positionRows=\App\Support\LiveScoring\ViewData::sortPlayers($rows->where('position',$code)->reject(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS'));
         $positions[$code]=['label'=>$label,'rows'=>$positionRows];
     }
-    $minorRows=$rows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS')->sort(function($a,$b){$ar=(bool)$a->is_ir?3:(!empty($a->opponent)?0:1);$br=(bool)$b->is_ir?3:(!empty($b->opponent)?0:1);return $ar!==$br?$ar<=>$br:strnatcasecmp((string)$a->player_name,(string)$b->player_name);})->values();
+    $minorRows=\App\Support\LiveScoring\ViewData::sortPlayers($rows->filter(fn($p)=>strtoupper((string)$p->roster_status)==='MINORS'));
     $positions['M']=['label'=>'Minors','rows'=>$minorRows];
     $teamTodayFpts=$snapshot['teams'][$fantasyTeamId]['daily_fpts']??0;
 

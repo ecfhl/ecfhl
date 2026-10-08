@@ -306,3 +306,12 @@ checkLive(count($popupState['players'])===1&&$popupState['players'][0]['key']===
 checkLive($popupState['players'][0]['stats']['SO']===1&&$popupState['players'][0]['stats']['OTL']===1&&!isset($popupState['players'][0]['stats']['GP']),'Popup state must normalize goalie aliases and omit GP');
 CarbonImmutable::setTestNow();
 echo "Live scoring checks passed: Pacific midnight/DST, three Fantrax dates, seven matchups, IDs, zero-point players, future projections, optional missing estimates, preserved actual scoring, injury flags, failed-date preservation, independent publication, scoring notification team names/current stat lines/trigger isolation, and page rendering.\n";
+
+// Bench ordering is applied within each playing group, before player names.
+$sortRow=static fn($name,$playing,$bench)=>(object)['player_name'=>$name,'daily_participant'=>$playing,'is_bench'=>$bench,'is_ir'=>false];
+$sorted=\App\Support\LiveScoring\ViewData::sortPlayers(collect([
+    $sortRow('Alpha Bench Idle',false,true),$sortRow('Alpha Bench Playing',true,true),
+    $sortRow('Zulu Idle',false,false),$sortRow('Zulu Playing',true,false),
+    $sortRow('Beta Playing',true,false),$sortRow('Beta Idle',false,false),
+]));
+checkLive($sorted->pluck('player_name')->all()===['Beta Playing','Zulu Playing','Alpha Bench Playing','Beta Idle','Zulu Idle','Alpha Bench Idle'],'Playing first, then bench last within each group, then alphabetical');

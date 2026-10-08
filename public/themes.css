@@ -372,3 +372,9 @@ html[data-theme] .team-icon-modal-title{position:relative;color:#f0f6ff;font-wei
 .live-score-update-player[data-new="true"] .live-score-update-player-points{color:var(--success)}
 html[data-theme] :is(.matchup-player-row,.team-player-data-row).team-injured-row.team-injured-row{background:var(--badge-red-bg)!important;box-shadow:inset 3px 0 0 var(--badge-red-line)}
 html[data-theme] .team-player-data-row.team-injured-row>td{background:var(--badge-red-bg)!important}
+
+/* Subtle roster contrast; live, finished and injury colors retain priority. */
+html[data-theme="light"] .individual-team-page{--roster-playing-bg:#f6f9ff;--roster-idle-bg:#eff2f6}
+html[data-theme="dark"] .individual-team-page{--roster-playing-bg:#1c293b;--roster-idle-bg:#182231}
+html[data-theme] .individual-team-page .team-player-data-row[data-playing="1"]:not(.team-game-live-row):not(.team-game-finished-row):not(.team-injured-row):not(.team-ir-row){background:var(--roster-playing-bg)!important}
+html[data-theme] .individual-team-page .team-player-data-row[data-playing="0"]:not(.team-injured-row):not(.team-ir-row){background:var(--roster-idle-bg)!important}

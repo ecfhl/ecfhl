@@ -6,13 +6,20 @@ use Illuminate\Support\Str;
 
 final class ViewData
 {
+    public static function isPlaying(object $player): bool
+    {
+        $participant = (bool)($player->daily_participant ?? !empty($player->opponent));
+        return $participant && (!isset($player->game_status) || (string)$player->game_status === '1'
+            || (in_array((string)$player->game_status, ['2','3'], true) && (float)($player->today_gp ?? 0) > 0));
+    }
+
     public static function sortPlayers($players)
     {
         return $players->sort(function ($a, $b) {
-            $playing = static fn($p) => (bool)($p->daily_participant ?? false)
-                && (!isset($p->game_status) || (string)$p->game_status === '1'
-                    || (in_array((string)$p->game_status, ['2','3'], true) && (float)($p->today_gp ?? 0) > 0));
-            return ($playing($b) <=> $playing($a)) ?: strcasecmp($a->player_name, $b->player_name);
+            $rank = static fn($p) => !empty($p->is_ir) ? 2 : (self::isPlaying($p) ? 0 : 1);
+            return ($rank($a) <=> $rank($b))
+                ?: ((bool)($a->is_bench ?? false) <=> (bool)($b->is_bench ?? false))
+                ?: strnatcasecmp($a->player_name, $b->player_name);
         })->values();
     }
 

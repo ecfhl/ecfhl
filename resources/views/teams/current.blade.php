@@ -78,7 +78,7 @@
             </tr>
             @foreach($group['rows'] as $player)
                 @php
-                  $isPlaying=(bool)$player->daily_participant;
+                  $isPlaying=\App\Support\LiveScoring\ViewData::isPlaying($player);
                 @endphp
                 <tr class="team-player-data-row {{ !$isPlaying?'team-not-playing':'' }} {{ $player->is_ir?'team-ir-row':'' }} {{ !empty($player->injury_status)||$player->is_ir?'team-injured-row':'' }} {{ $player->is_bench?'team-bench-row':'' }} {{ strtoupper((string)$player->roster_status)==='MINORS'?'team-minors-row':'' }} {{ !empty($player->game_in_progress)?'team-game-live-row':'' }} {{ !empty($player->game_finished)?'team-game-finished-row':'' }} {{ ($player->game_status??'')==='1'?'team-game-upcoming-row':'' }}" data-playing="{{ $isPlaying?'1':'0' }}">
                   <td data-label="Player">
