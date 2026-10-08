@@ -281,11 +281,11 @@ $eventSnapshot=['fantasy_date'=>'2026-10-07','teams'=>['team'=>['name'=>'Morning
 $event=App\Support\LiveScoring\ScoringAlert::payload($eventSnapshot,$eventPlayer,['stats'=>[]]);
 checkLive($event['title']==='Morning Sherwood - 2pts' && $event['body']==="Tkachuk, Matthew (FLA) scores the game winner.\nG: 1 · GWG: 1",'Score message must describe the event without zero categories');
 $eventPlayer['stats']['A']['value']=1;$oldEvent=$eventPlayer;$oldEvent['stats']['A']['value']=0;
-checkLive(App\Support\LiveScoring\ScoringAlert::payload($eventSnapshot,$eventPlayer,$oldEvent)['body']==="Tkachuk, Matthew (FLA) adds an assist.\nG: 1 · A: 1 · GWG: 1",'Old goals must not be repeated for a new assist');
+checkLive(App\Support\LiveScoring\ScoringAlert::payload($eventSnapshot,$eventPlayer,$oldEvent)['body']==="Tkachuk, Matthew (FLA) gets an assist.\nG: 1 · A: 1 · GWG: 1",'Old goals must not be repeated for a new assist');
 $eventPlayer['position']='G';$eventPlayer['stats']=['W'=>['value'=>1],'SHO'=>['value'=>1]];
 checkLive(App\Support\LiveScoring\ScoringAlert::payload($eventSnapshot,$eventPlayer,['stats'=>[]])['body']==="Tkachuk, Matthew (FLA) records a win and records a shutout.\nW: 1 · SO: 1",'Goalie message must describe a win/shutout');
 $eventPlayer['position']='F';
-foreach(['G'=>'scores a goal','A'=>'adds an assist','PPG'=>'scores a power-play goal','SHG'=>'scores a short-handed goal','GWG'=>'scores the game winner'] as $key=>$sentence){
+foreach(['G'=>'scores a goal','A'=>'gets an assist','PPG'=>'scores a power-play goal','SHG'=>'scores a short-handed goal','GWG'=>'scores the game winner'] as $key=>$sentence){
  $eventPlayer['stats']=['GP'=>['value'=>1],$key=>['value'=>1],'W'=>['value'=>1]];
  $alert=App\Support\LiveScoring\ScoringAlert::payload($eventSnapshot,$eventPlayer);
  checkLive($alert['body']==="Tkachuk, Matthew (FLA) ".$sentence.".\n".$key.': 1','Skater sentence/stat filtering failed for '.$key);
