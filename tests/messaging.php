@@ -65,7 +65,12 @@ $state=payload(chatRequest('GET','/api/messages/state',[],$cookies['Alice']));ch
 chatRequest('POST','/api/notifications/read',['ids'=>[$notificationId]],$cookies['Bob']);checkChat(DB::table('owner_notification_inbox')->where('user_id',$alice->id)->whereNull('read_at')->count()===1,'Other user marked bell event read');
 chatRequest('POST','/api/notifications/read',['ids'=>[$notificationId]],$cookies['Alice']);checkChat(payload(chatRequest('GET','/api/messages/state',[],$cookies['Alice']))['notification_count']===0,'Bell read count not cleared');
 $r=chatRequest('GET','/messages?user_id='.$bob->id,[],$cookies['Alice'],true);if(in_array('--browser-page',$argv,true))file_put_contents(__DIR__.'/../storage/app/communication-test.html',$r->getContent());checkChat($r->getStatusCode()===200&&str_contains($r->getContent(),'Private conversation with Bob Team'),'Private page render failed');checkChat(str_contains($r->headers->get('Cache-Control'),'no-store'),'Private messages cacheable');
-$r=chatRequest('GET','/account',[],$cookies['Alice'],true);$html=$r->getContent();checkChat(str_contains($html,'id="live-score-updates-enabled"')&&str_contains($html,'/app-communication.js'),'Scoring not global');
+$r=chatRequest('GET','/account',[],$cookies['Alice'],true);$html=$r->getContent();checkChat($r->getStatusCode()===200&&str_contains($html,'id="live-score-updates"')&&str_contains($html,'/live-score-updates.js')&&str_contains($html,'/app-communication.js'),'Shared scoring panel or scripts missing');
+checkChat(!str_contains($html,'id="live-score-updates-enabled"'),'Removed scoring checkbox returned');
+checkChat(str_contains($html,'href="/notifications#alerts"'),'Scoring settings link missing');
+$r=chatRequest('GET','/notifications',[],$cookies['Alice'],true);$settings=$r->getContent();
+checkChat($r->getStatusCode()===200&&str_contains($settings,'id="settings-notifications"')&&str_contains($settings,'id="settings-alerts"'),'Notification and alert settings tabs missing');
+checkChat(str_contains($settings,'id="scoring-settings-controls"')&&str_contains($settings,'/notification-settings.js'),'Scoring settings controls missing');
 checkChat(!str_contains($html,'id="live-score-updates-status"'),'On/Off text still in header');
 $r=chatRequest('GET','/api/scoring-updates',[],$guest);checkChat($r->getStatusCode()===200&&isset(payload($r)['matchups']),'Scoring endpoint unavailable across app');
 // Pagination and monotonic read positions.
