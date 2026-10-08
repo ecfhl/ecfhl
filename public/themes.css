@@ -308,3 +308,25 @@ html[data-theme] .site-header :is(.nav-live-icon,.nav-live-text){color:#ff8992!i
 html[data-theme] .team-target-add{background:var(--action-bg);color:var(--on-action);border-color:var(--action-bg)}
 html[data-theme] .team-target-add:hover{background:var(--action-hover);border-color:var(--action-hover)}
 html[data-theme] .tips-ir{background:#b42338!important;color:#ffffff!important;border-color:#b42338!important}
+
+/* Shared image viewer: silhouette shadows lift transparent artwork off the page. */
+html[data-theme] .team-icon-modal{background:rgba(8,18,32,.64);backdrop-filter:blur(3px)}
+html[data-theme] .team-icon-modal-card{isolation:isolate;perspective:900px;gap:16px}
+.team-icon-modal-card::before{content:"";position:absolute;inset:15% -6% 10%;z-index:-1;border-radius:50%;background:radial-gradient(ellipse,rgba(115,181,255,.18),transparent 68%);pointer-events:none}
+html[data-theme] .team-icon-modal-image{filter:drop-shadow(0 22px 16px rgba(0,0,0,.55)) drop-shadow(0 0 14px rgba(147,197,253,.32));transform-origin:50% 65%;transition:transform .25s ease,filter .25s ease;max-height:calc(88dvh - 170px)}
+.team-icon-modal.open:not(.loading) .team-icon-modal-image{animation:team-viewer-pop .42s cubic-bezier(.2,.8,.25,1) backwards}
+html[data-theme] .team-icon-modal-title{position:relative;color:#f0f6ff;font-weight:900;font-size:clamp(21px,3.5vw,32px);font-style:italic;letter-spacing:.035em;line-height:1.15;text-wrap:balance;text-shadow:0 2px 2px #081220,0 6px 20px #081220b3;padding-bottom:12px}
+.team-icon-modal-title::after{content:"";position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:clamp(48px,20%,90px);height:3px;border-radius:3px;background:linear-gradient(90deg,#93c5fd,#e4c878);box-shadow:0 2px 12px #93c5fd66}
+.team-icon-modal-actions{position:relative}
+@keyframes team-viewer-pop{from{opacity:0;transform:translateY(18px) scale(.9) rotateX(7deg)}to{opacity:1;transform:translateY(0) scale(1) rotateX(0)}}
+@media(hover:hover) and (pointer:fine){
+ .team-icon-modal-image:hover{transform:translateY(-5px) scale(1.015);filter:drop-shadow(0 28px 18px rgba(0,0,0,.6)) drop-shadow(0 0 20px rgba(147,197,253,.4))}
+}
+@media(max-width:700px){
+ html[data-theme] .team-icon-modal-card{gap:12px}
+ html[data-theme] .team-icon-modal-title{font-size:clamp(20px,5vw,28px);padding-inline:28px}
+}
+@media(prefers-reduced-motion:reduce){
+ .team-icon-modal.open:not(.loading) .team-icon-modal-image{animation:none}
+ html[data-theme] .team-icon-modal-image,html[data-theme] .team-icon-modal-image:hover{transition:none;transform:none}
+}
