@@ -112,5 +112,30 @@ $xpath = new DOMXPath($dom);
 goalieCheck($xpath->query('//tr[contains(@class,"tips-not-starting")]')->length === 1, 'Greyed backup row rendered');
 goalieCheck($xpath->query('//tr[contains(@class,"tips-not-starting")]//a[contains(@class,"tips-add-button")]')->length === 0, 'Disabled backup has no Add link');
 goalieCheck($xpath->query('//tr[contains(@class,"tips-not-starting")]//*[@aria-disabled="true"]')->length === 1, 'Disabled Add semantics');
+// Negative labels and a newly confirmed teammate must alert once, including watched backups.
+$push = new class extends \App\Support\WebPush {
+    public array $sent=[];
+    public function notify(string $category,string $title,string $body,?string $url=null,?string $fantasyTeamId=null,array $context=[]): void { $this->sent[]=compact('category','body','context'); }
+};
+$app->instance(\App\Support\WebPush::class,$push);
+$negative=$fixtures['2026-09-29'];
+$negative['props']['pageProps']['data'][3]['awayNewsStrengthName']='Unlikely';
+$negative['props']['pageProps']['data'][3]['homeNewsStrengthName']='Unconfirmed';
+goalieCheck($collector->parse(goalieHtml($negative),'2026-09-29')[6]['starting_status']==='Unlikely','Preserve explicit Unlikely');
+$explicit=$negative;$explicit['props']['pageProps']['data'][3]['awayNewsStrengthName']='Not Starting';
+goalieCheck($collector->parse(goalieHtml($explicit),'2026-09-29')[6]['starting_status']==='Not starting','Preserve explicit Not Starting');
+Http::swap(new \Illuminate\Http\Client\Factory);Http::preventStrayRequests();
+Http::fake(fn($request)=>Http::response(goalieHtml(basename($request->url())==='2026-09-29'?$negative:$fixtures['2026-09-30']),200));
+goalieCheck(Artisan::call('ecfhl:refresh-starting-goalies')===0,'Negative status refresh succeeds');
+goalieCheck(count(array_filter($push->sent,fn($event)=>str_contains($event['body'],'Lankinen')&&str_contains($event['body'],'Unlikely')))===1,'Unlikely transition alerts once');
+$push->sent=[];
+$changed=$negative;$changed['props']['pageProps']['data'][3]['homeGoalieName']='Test backup';$changed['props']['pageProps']['data'][3]['homeNewsStrengthName']='Confirmed';
+Http::swap(new \Illuminate\Http\Client\Factory);Http::preventStrayRequests();
+Http::fake(fn($request)=>Http::response(goalieHtml(basename($request->url())==='2026-09-29'?$changed:$fixtures['2026-09-30']),200));
+goalieCheck(Artisan::call('ecfhl:refresh-starting-goalies')===0,'Replacement starter refresh succeeds');
+goalieCheck(count(array_filter($push->sent,fn($event)=>str_contains($event['body'],'Jarry')&&str_contains(strtolower($event['body']),'not starting')))===1,'Previous starter becoming Not Starting alerts once');
+goalieCheck(DB::table('active_starting_goalies')->where('player_name','Tristan Jarry')->where('game_date','2026-09-29')->value('starting_status')==='Not starting','Previous starter is no longer confirmed');
+$push->sent=[];Artisan::call('ecfhl:refresh-starting-goalies');
+goalieCheck($push->sent===[],'Unchanged negative status is not sent again');
 CarbonImmutable::setTestNow();
 echo "Starting-goalie parser, safe replacement, exit-code and AI Tips join checks passed.\n";

@@ -35,11 +35,12 @@
 @foreach(['private_message_popups'=>'Private message popups','league_message_popups'=>'League chat popups'] as $key=>$label)
 <input type="hidden" name="{{ $key }}" value="0"><label class="owner-setting"><span><strong>{{ $label }}</strong></span><input type="checkbox" name="{{ $key }}" value="1" @checked($preferences[$key])></label>
 @endforeach</section>
-<section class="card"><h2>Scoring update panel</h2><p class="subtle">Choose which teams appear in scoring updates. Changes save automatically in this browser.</p><div id="scoring-settings-controls"></div></section>
+<section class="card"><h2>Scoring Updates</h2><label class="owner-setting"><span><strong>Scoring Updates panel</strong></span><input type="checkbox" id="scoring-panel-enabled" role="switch" aria-controls="scoring-settings-controls"></label><p class="subtle">Choose which teams appear in scoring updates. Changes save automatically in this browser.</p><div id="scoring-settings-controls"></div></section>
 </div>
-@if($owner)<div class="owner-save"><button class="button primary" type="submit" id="owner-save-preferences">Save preferences</button><p id="owner-save-state" class="subtle" role="status" aria-live="polite">All changes saved.</p><p class="subtle">Preferences apply to every device enabled for your account. Today and tomorrow follow the league’s Pacific fantasy day.</p></div>@endif
+@if($owner)<div class="owner-save"><button class="button primary" type="submit" id="owner-save-preferences" hidden>Retry saving</button><p id="owner-save-state" class="subtle" role="status" aria-live="polite">All changes saved.</p><p class="subtle">Preferences apply to every device enabled for your account. Today and tomorrow follow the league’s Pacific fantasy day.</p></div>@endif
 </fieldset></form></section>
 </div>
 @if($owner)<script src="/owner-notifications.js?v={{ hash_file('sha256', base_path('public/owner-notifications.js')) }}" defer></script>@endif
 <script src="/notification-settings.js?v={{ hash_file('sha256', base_path('public/notification-settings.js')) }}" defer></script>
 @endsection
+

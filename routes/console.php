@@ -1086,6 +1086,7 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
                 ->get()
                 ->keyBy(fn($r)=>strtoupper(trim((string)$r->team)).'|'.mb_strtolower(trim((string)$r->player_name)));
 
+            $previousStatuses=\App\Support\GoalieStatusChanges::snapshot($day,$previousGoalies);
             $data = $dfo->fetch($date);
             $now = now();
             $rows = [];
@@ -1115,7 +1116,7 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
                 }
 
                 $status=trim((string)($g['starting_status']??'Unconfirmed'));
-                if(!in_array($status,['Confirmed','Likely','Unconfirmed'],true))$status='Unconfirmed';
+                $status=DailyFaceoffStartingGoalies::normalizeStatus($status);
 
                 $rows[] = [
                     'game_date'=>$day, 'team'=>$team, 'opponent'=>$opponent,
@@ -1130,6 +1131,10 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
             // Never erase good existing rows just because one matchup is not ready yet.
             DB::transaction(function () use ($day, $rows) {
                 foreach($rows as $row){
+                    if($row['starting_status']==='Confirmed'){
+                        DB::table('active_starting_goalies')->where('game_date',$day)->where('team',$row['team'])
+                            ->where('player_name','!=',$row['player_name'])->update(['starting_status'=>'Not starting','updated_at'=>$row['updated_at']]);
+                    }
                     DB::table('active_starting_goalies')->updateOrInsert(
                         [
                             'game_date'=>$day,
@@ -1150,15 +1155,14 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
             }
             $stored = DB::table('active_starting_goalies')->where('game_date', $day)
                 ->get(['player_name','team','opponent','home_away','starting_status']);
-            foreach($stored as $goalie){
-                $key=strtoupper(trim((string)$goalie->team)).'|'.mb_strtolower(trim((string)$goalie->player_name));
-                $previous=$previousGoalies[$key]??null;
+            foreach(\App\Support\GoalieStatusChanges::snapshot($day,$stored) as $key=>$goalie){
+                $previous=$previousStatuses[$key]??null;
                 if(!$previous)continue;
                 $oldStatus=trim((string)($previous->starting_status??''));
                 $newStatus=trim((string)($goalie->starting_status??''));
                 if($newStatus==='' || strcasecmp($oldStatus,$newStatus)===0)continue;
 
-                $body=\App\Support\PlayerName::display($goalie->player_name).' ('.$goalie->team.') is now '.$newStatus.'.';
+                $body=\App\Support\PlayerName::display($goalie->player_name).' ('.$goalie->team.') is now '.($newStatus==='Not starting'?'Not Starting':$newStatus).'.';
                 $fantraxGoalieUrl='https://www.fantrax.com/fantasy/league/092zcn40molvao69/players;searchName='.rawurlencode(strtolower((string)$goalie->player_name)).';miscDisplayType=1;statusOrTeamFilter=ALL;positionOrGroup=ALL;pageNumber=1';
                 try {
                     $available=app(\App\Support\OwnerGoalies::class)->available($day)->contains(fn($g)=>\App\Support\OwnerNotificationPolicy::goalieKey($g->team,$g->player_name)===\App\Support\OwnerNotificationPolicy::goalieKey($goalie->team,$goalie->player_name));

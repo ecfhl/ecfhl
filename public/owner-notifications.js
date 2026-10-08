@@ -4,27 +4,31 @@
  watches.forEach(input=>input.addEventListener('change',()=>{watches.filter(other=>other.value===input.value).forEach(other=>{other.checked=input.checked;});}));
  const form=document.getElementById('owner-preferences-form'),save=document.getElementById('owner-save-preferences'),saveState=document.getElementById('owner-save-state');
  if(form&&save){
-  const settings=[...form.querySelectorAll('input[type="checkbox"]')].filter(input=>input.name!=='goalies[]');
+  const settings=[...form.querySelectorAll('input[type="checkbox"]')].filter(input=>input.name&&input.name!=='goalies[]');
   const read=()=>{const preferences={};settings.forEach(input=>{preferences[input.name]=input.checked;});preferences.goalies=[...new Set(new FormData(form).getAll('goalies[]'))].sort();return preferences;};
   const signature=preferences=>JSON.stringify([...settings.map(input=>Boolean(preferences[input.name])),[...new Set(preferences.goalies||[])].sort()]);
   let saved=signature(read()),saving=false;
-  const updateSave=()=>{const dirty=signature(read())!==saved;save.disabled=saving||!dirty;save.textContent=saving?'Saving…':'Save preferences';if(!saving){saveState.textContent=dirty?'Unsaved changes.':'All changes saved.';saveState.dataset.state=dirty?'dirty':'saved';}return dirty;};
-  updateSave();
-  form.addEventListener('change',updateSave);
-  form.addEventListener('submit',async event=>{
-   event.preventDefault();if(saving||!updateSave())return;
-   const preferences=read();saving=true;updateSave();saveState.textContent='Saving preferences…';saveState.dataset.state='saving';
+  const autosave=async()=>{
+   if(saving||signature(read())===saved)return;
+   saving=true;save.hidden=true;save.disabled=true;
    try{
-    const response=await fetch(form.action,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content,'Accept':'application/json'},body:JSON.stringify(preferences)});
-    const data=await response.json();
-    if(!response.ok)throw new Error(Object.values(data.errors||{}).flat().join(' ')||data.message||'Could not save preferences. Please try again.');
-    if(!data.preferences)throw new Error('Could not confirm the save. Please reload and try again.');
-    saved=signature(data.preferences);saving=false;
-    if(!updateSave()){
-     saveState.textContent='Preferences saved.';
+    // Serialize writes and include changes made while the previous request was saving.
+    while(signature(read())!==saved){
+     const preferences=read();saveState.textContent='Saving preferences…';saveState.dataset.state='saving';
+     const response=await fetch(form.action,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content,'Accept':'application/json'},body:JSON.stringify(preferences)});
+     const data=await response.json();
+     if(!response.ok)throw new Error(Object.values(data.errors||{}).flat().join(' ')||data.message||'Could not save preferences. Please try again.');
+     if(!data.preferences)throw new Error('Could not confirm the save. Please reload and try again.');
+     if(signature(data.preferences)!==signature(preferences))throw new Error('Could not confirm all preferences. Please retry saving.');
+     saved=signature(data.preferences);
+     window.dispatchEvent(new CustomEvent('ecfhl-preferences-saved',{detail:data.preferences}));
     }
-   }catch(error){saving=false;updateSave();saveState.textContent=error.message;saveState.dataset.state='error';}
-  });
+    saveState.textContent='All changes saved.';saveState.dataset.state='saved';
+   }catch(error){saveState.textContent=error.message;saveState.dataset.state='error';save.hidden=false;}
+   finally{saving=false;save.disabled=false;}
+  };
+  form.addEventListener('change',autosave);
+  form.addEventListener('submit',event=>{event.preventDefault();autosave();});
  }
  const enable=document.getElementById('owner-enable-push'),disable=document.getElementById('owner-disable-push'),state=document.getElementById('owner-push-state');
  const supported='serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;

@@ -7,5 +7,9 @@
  tabs.forEach(tab=>{tab.addEventListener('click',()=>{show(tab.dataset.settingsTab);history.replaceState(null,'','#'+tab.dataset.settingsTab);});tab.addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const next=event.key==='Home'?'notifications':event.key==='End'?'alerts':tab.dataset.settingsTab==='notifications'?'alerts':'notifications';show(next,true);history.replaceState(null,'','#'+next);}});});
  show(location.hash==='#alerts'?'alerts':'notifications');
  const host=document.getElementById('scoring-settings-controls'),filters=document.querySelector('.live-score-updates-filters');
- if(host&&filters){host.append(filters);filters.hidden=false;}
+ if(host&&filters){
+  host.append(filters);filters.hidden=false;
+  const toggle=document.getElementById('scoring-panel-enabled'),scoring=window.EcfhlScoreUpdates?.start();
+  if(toggle&&scoring){const sync=()=>{toggle.checked=scoring.enabled();host.hidden=!toggle.checked;};sync();toggle.addEventListener('change',()=>{scoring.setEnabled(toggle.checked);sync();});}
+ }
 })();

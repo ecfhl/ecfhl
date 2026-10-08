@@ -73,7 +73,7 @@ $r=chatRequest('GET','/account',[],$cookies['Alice'],true);$html=$r->getContent(
 checkChat(!str_contains($html,'id="live-score-updates-enabled"'),'Removed scoring checkbox returned');
 checkChat(str_contains($html,'class="scoring-settings-icon" href="/notifications#alerts"'),'Scoring settings icon missing');
 checkChat(!str_contains($html,'class="scoring-settings-link"'),'Old scoring settings link remains');
-$r=chatRequest('GET','/notifications',[],$cookies['Alice'],true);$settings=$r->getContent();
+$r=chatRequest('GET','/notifications',[],$cookies['Alice'],true);$settings=$r->getContent();if(in_array('--browser-page',$argv,true))file_put_contents(__DIR__.'/../storage/app/settings-test.html',$settings);
 checkChat($r->getStatusCode()===200&&str_contains($settings,'id="settings-notifications"')&&str_contains($settings,'id="settings-alerts"'),'Notification and alert settings tabs missing');
 checkChat(str_contains($settings,'id="scoring-settings-controls"')&&str_contains($settings,'/notification-settings.js'),'Scoring settings controls missing');
 $settingsDom=new DOMDocument();@$settingsDom->loadHTML($settings);$settingsXpath=new DOMXPath($settingsDom);
@@ -95,3 +95,4 @@ $r=payload(chatRequest('GET','/api/messages/conversation?user_id='.$alice->id.'&
 chatRequest('POST','/api/messages/read',['user_id'=>$alice->id,'last_id'=>$latest],$cookies['Bob']);chatRequest('POST','/api/messages/read',['user_id'=>$alice->id,'last_id'=>$privateId],$cookies['Bob']);
 checkChat(Messaging::unread($bob->id)['private']===0,'Stale tab moved read cursor backward');
 echo "Messaging checks passed: private isolation, league chat, unread/read cursors, idempotent sends, pagination, defaults/mutes, push recipients, bell inbox, shared header and scoring endpoint.\n";
+

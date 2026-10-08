@@ -12,6 +12,15 @@ class DailyFaceoffStartingGoalies
 {
     private const TEAMS = ['Anaheim Ducks','Boston Bruins','Buffalo Sabres','Calgary Flames','Carolina Hurricanes','Chicago Blackhawks','Colorado Avalanche','Columbus Blue Jackets','Dallas Stars','Detroit Red Wings','Edmonton Oilers','Florida Panthers','Los Angeles Kings','Minnesota Wild','Montreal Canadiens','Nashville Predators','New Jersey Devils','New York Islanders','New York Rangers','Ottawa Senators','Philadelphia Flyers','Pittsburgh Penguins','San Jose Sharks','Seattle Kraken','St. Louis Blues','Tampa Bay Lightning','Toronto Maple Leafs','Utah Mammoth','Vancouver Canucks','Vegas Golden Knights','Washington Capitals','Winnipeg Jets'];
 
+    public static function normalizeStatus(mixed $status): string
+    {
+        return match (strtolower(trim((string)$status))) {
+            'confirmed' => 'Confirmed', 'likely' => 'Likely',
+            'unlikely' => 'Unlikely', 'not starting', 'not_starting' => 'Not starting',
+            default => 'Unconfirmed',
+        };
+    }
+
     public function fetch(CarbonImmutable $date): array
     {
         $day = $date->format('Y-m-d');
@@ -106,12 +115,7 @@ class DailyFaceoffStartingGoalies
                     throw new RuntimeException('Missing goalie starting-status field');
                 }
                 // The page renders null NewsStrengthName as Unconfirmed (verified in browser).
-                $status = $game[$side.'NewsStrengthName'] ?? 'Unconfirmed';
-                if (! in_array($status, ['Confirmed', 'Likely', 'Unconfirmed'], true)) {
-                    // DFO can briefly publish internal/unknown status labels.
-                    // Treat them as Unconfirmed rather than failing the full refresh.
-                    $status = 'Unconfirmed';
-                }
+                $status = self::normalizeStatus($game[$side.'NewsStrengthName']);
                 $key = $team.'|'.mb_strtolower(trim($name));
                 if (isset($seen[$key])) {
                     throw new RuntimeException('Duplicate matchup goalie');

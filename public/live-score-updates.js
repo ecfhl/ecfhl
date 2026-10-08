@@ -36,7 +36,7 @@
       try { saved = JSON.parse(sessionStorage.getItem(storageKey) || 'null'); } catch (_) {}
       let baseline = saved?.baseline || null, nhlBaseline = saved?.nhlBaseline || null;
       let history = Array.isArray(saved?.history) ? saved.history : [];
-      const enabled = true;
+      let enabled = filters.enabled !== false;
       let mode = saved?.mode || 'closed';
       let position = saved?.position || null, drag = null;
       const savedScope=filters.scope||saved?.scope;
@@ -100,7 +100,7 @@
       trash.addEventListener('click',()=>{history=[];mode='minimized';render();restore.focus({preventScroll:true});});
       close.addEventListener('click',()=>{mode='closed';render();toggle.focus({preventScroll:true});});
       tray.addEventListener('keydown',event=>{if(event.key==='Escape'){mode='closed';render();toggle.focus({preventScroll:true});}});
-      const filtersChanged=()=>{try{localStorage.setItem(filterKey,JSON.stringify({scope:scope.value,teams:selectedTeams}));}catch(_){}history=[];nhlBaseline=null;render();window.dispatchEvent(new Event('ecfhl-scoring-filter'));};
+      const filtersChanged=()=>{try{localStorage.setItem(filterKey,JSON.stringify({enabled,scope:scope.value,teams:selectedTeams}));}catch(_){}history=[];nhlBaseline=null;render();window.dispatchEvent(new Event('ecfhl-scoring-filter'));};
       scope.addEventListener('change',filtersChanged);team.addEventListener('change',()=>{selectedTeams=[...team.querySelectorAll('input:checked')].map(input=>input.value);filtersChanged();});
       const accepts = event => {
         if (scope.value==='league')return true;
@@ -148,7 +148,13 @@
       });window.addEventListener('resize',constrain);
       tray.addEventListener('ecfhl-panel-resize',event=>{if(event.detail?.position)position=event.detail.position;constrain();persist();});
       render();
-      return window.ecfhlScoringPopup={scope:()=>scope.value,update};
+      return window.ecfhlScoringPopup={scope:()=>scope.value,update,enabled:()=>enabled,setEnabled(value){
+        enabled=Boolean(value);baseline=null;nhlBaseline=null;
+        if(!enabled)mode='closed';
+        try{localStorage.setItem(filterKey,JSON.stringify({enabled,scope:scope.value,teams:selectedTeams}));}catch(_){}
+        render();window.dispatchEvent(new Event('ecfhl-scoring-filter'));
+      }};
     }
   };
 })();
+
