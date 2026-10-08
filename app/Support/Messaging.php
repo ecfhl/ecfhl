@@ -31,7 +31,7 @@ final class Messaging
  }
  public static function rows($query): array {
   return $query->join('users as u','u.id','=','m.sender_id')->leftJoin('owner_team_claims as c','c.user_id','=','u.id')
-   ->get(['m.id','m.sender_id','m.recipient_id','m.body','m.created_at','u.name as sender_name','c.team_name'])->map(fn($m)=>(array)$m)->all();
+   ->get(['m.id','m.sender_id','m.recipient_id','m.body','m.created_at','u.name as sender_name','c.team_name'])->map(function($m){$row=(array)$m;$row['created_at']=\Carbon\CarbonImmutable::parse($m->created_at,config('app.timezone'))->toIso8601String();return $row;})->all();
  }
  public static function preferences(User $user): array {return array_replace(OwnerNotificationPolicy::DEFAULTS,$user->notification_preferences??[]);}
 }

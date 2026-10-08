@@ -33,7 +33,7 @@ checkChat(chatRequest('POST','/api/messages/send',['body'=>'Hello','client_id'=>
 $alice=$users['Alice'];$bob=$users['Bob'];$carol=$users['Carol'];
 $push=app(App\Support\WebPush::class);foreach($users as $name=>$u)$push->subscribe('https://fcm.googleapis.com/fcm/send/'.strtolower($name),$u->id,'token-'.$name);
 $send=['user_id'=>$bob->id,'body'=>'Private hello <script>alert(1)</script>','client_id'=>Str::uuid()->toString()];
-$r=chatRequest('POST','/api/messages/send',$send,$cookies['Alice']);checkChat($r->getStatusCode()===201,'Private send failed: '.$r->getContent());$privateId=payload($r)['message']['id'];
+$r=chatRequest('POST','/api/messages/send',$send,$cookies['Alice']);checkChat($r->getStatusCode()===201,'Private send failed: '.$r->getContent());$privateId=payload($r)['message']['id'];checkChat((bool)preg_match('/T.*[+-]\d{2}:\d{2}$/',payload($r)['message']['created_at']),'Message time has no timezone offset');
 checkChat(chatRequest('POST','/api/messages/send',$send,$cookies['Alice'])->getStatusCode()===200&&DB::table('chat_messages')->count()===1,'Retry duplicates messages');
 checkChat(chatRequest('POST','/api/messages/send',array_replace($send,['body'=>'Changed']),$cookies['Alice'])->getStatusCode()===409,'Idempotency key changes body');
 $rows=payload(chatRequest('GET','/api/messages/conversation?user_id='.$alice->id,[],$cookies['Bob']))['messages'];checkChat(count($rows)===1&&str_contains($rows[0]['body'],'<script>'),'Message content altered or missing');

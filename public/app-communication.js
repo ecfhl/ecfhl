@@ -63,7 +63,7 @@
   [...widget.messages.values()].sort((a,b)=>a.id-b.id).forEach(message=>{
    const row=node('article',undefined,'chat-message');row.dataset.own=String(Number(message.sender_id)===userId);
    row.append(node('strong',(message.team_name?message.team_name+' · ':'')+message.sender_name),node('p',message.body));
-   const time=node('time',new Date(message.created_at.replace(' ','T')+'Z').toLocaleString());row.append(time);widget.log.append(row);
+   const time=node('time',new Date(message.created_at).toLocaleString());row.append(time);widget.log.append(row);
   });
   if(older)widget.log.scrollTop+=widget.log.scrollHeight-height;else if(bottom)widget.log.scrollTop=widget.log.scrollHeight;
   readWidget(widget);
