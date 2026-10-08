@@ -3,7 +3,7 @@
   --badge-yellow-bg:#fef3c7;--badge-yellow-text:#854d0e;--badge-yellow-line:#fcd34d;
   --badge-orange-bg:#ffedd5;--badge-orange-text:#9a3412;--badge-orange-line:#fdba74;
   --badge-red-bg:#fee2e2;--badge-red-text:#991b1b;--badge-red-line:#fca5a5;
-  --game-live:#eaf3ff;--game-finished:#f8f4eb;--game-upcoming:#eff2f6;--selection-bg:#eaf1ff;
+  --game-live:#eaf3ff;--game-finished:#eceff3;--game-upcoming:#eff2f6;--selection-bg:#eaf1ff;
   --player-defense-bg:#f0edfc;--player-goalie-bg:#e9f5f5;
   --ir-bg:#edf0f7;--ir-text:#465572;--ir-line:#aebcd3;
   --eyebrow-text:var(--accent);
@@ -45,7 +45,7 @@ html[data-theme="dark"] {
   --badge-yellow-bg:#453510;--badge-yellow-text:#fde68a;--badge-yellow-line:#9b792b;
   --badge-orange-bg:#482b16;--badge-orange-text:#fdba74;--badge-orange-line:#a76636;
   --badge-red-bg:#482027;--badge-red-text:#fecaca;--badge-red-line:#a95160;
-  --game-live:#1c344e;--game-finished:#2c2a24;--game-upcoming:#182231;--selection-bg:#1b3558;
+  --game-live:#1c344e;--game-finished:#263445;--game-upcoming:#182231;--selection-bg:#1b3558;
   --player-defense-bg:#272641;--player-goalie-bg:#18343b;
   --ir-bg:#252d40;--ir-text:#c3cfec;--ir-line:#566783;
   --eyebrow-text:var(--accent);
