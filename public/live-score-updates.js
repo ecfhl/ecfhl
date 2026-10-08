@@ -34,11 +34,54 @@
       const toggle = document.getElementById('live-score-updates-toggle');
       const close = document.getElementById('live-score-updates-close');
       const count = document.getElementById('live-score-updates-count');
+      const handle = document.getElementById('live-score-updates-handle');
+      let position = null, drag = null;
+      const constrain = () => {
+        if (!position || tray.hidden) return;
+        const rect = tray.getBoundingClientRect();
+        const nav = document.querySelector('.mobile-primary-nav');
+        const bottom = nav && getComputedStyle(nav).display !== 'none' ? nav.getBoundingClientRect().top : window.innerHeight;
+        position.x = Math.max(8, Math.min(position.x, window.innerWidth - rect.width - 8));
+        position.y = Math.max(8, Math.min(position.y, bottom - rect.height - 8));
+        tray.style.left = position.x + 'px';
+        tray.style.top = position.y + 'px';
+        tray.style.right = 'auto';
+      };
+      handle.addEventListener('pointerdown', event => {
+        if (event.button !== 0 || event.target.closest('button')) return;
+        const rect = tray.getBoundingClientRect();
+        drag = {id:event.pointerId, x:event.clientX, y:event.clientY, left:rect.left, top:rect.top};
+        handle.setPointerCapture(event.pointerId);
+        tray.setAttribute('data-dragging', 'true');
+      });
+      handle.addEventListener('pointermove', event => {
+        if (!drag || event.pointerId !== drag.id) return;
+        position = {x:drag.left + event.clientX - drag.x, y:drag.top + event.clientY - drag.y};
+        constrain();
+      });
+      const endDrag = event => {
+        if (!drag || event.pointerId !== drag.id) return;
+        if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
+        drag = null;
+        tray.setAttribute('data-dragging', 'false');
+      };
+      handle.addEventListener('pointerup', endDrag);
+      handle.addEventListener('pointercancel', endDrag);
+      handle.addEventListener('lostpointercapture', endDrag);
+      handle.addEventListener('keydown', event => {
+        if (event.target.closest('button') || !['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) return;
+        event.preventDefault();
+        const rect = tray.getBoundingClientRect(), step = event.shiftKey ? 30 : 10;
+        position = {x:rect.left + (event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0), y:rect.top + (event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0)};
+        constrain();
+      });
+      window.addEventListener('resize', constrain);
       let baseline = read(document.querySelector('.current-matchup-list'));
       let total = 0;
       const show = open => {
         tray.hidden = !open;
         toggle.setAttribute('aria-expanded', String(open));
+        if (open) constrain();
       };
       toggle.addEventListener('click', () => show(tray.hidden));
       close.addEventListener('click', () => { show(false); toggle.focus({preventScroll:true}); });

@@ -1,6 +1,6 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 class Node {
-  constructor(){this.children=[];this.handlers={};this.hidden=false;this.attributes={};}
+  constructor(){this.children=[];this.handlers={};this.hidden=false;this.attributes={};this.style={};}
   append(...nodes){this.children.push(...nodes)}
   prepend(node){this.children.unshift(node)}
   replaceChildren(...nodes){this.children=nodes}
@@ -8,14 +8,20 @@ class Node {
   addEventListener(type,handler){this.handlers[type]=handler}
   setAttribute(key,value){this.attributes[key]=value}
   focus(){this.focused=true}
+  getBoundingClientRect(){return {left:parseFloat(this.style.left)||950,top:parseFloat(this.style.top)||185,width:390,height:100}}
+  setPointerCapture(id){this.pointer=id}
+  hasPointerCapture(id){return this.pointer===id}
+  releasePointerCapture(){this.pointer=null}
+  closest(){return null}
 }
 const player=(key,points,stats={},extra={})=>({key,points,stats,team:'Lone Tsar',name:'Dubois, Pierre-Luc',nhl:'WSH',goalie:false,...extra});
 const state=players=>({date:'2026-10-07',players});
 const before=state([player('a',1,{A:1}),player('b',0),player('c',0,{}, {team:'Young Guns',goalie:true,name:'Askarov, Yaroslav',nhl:'SJS'})]);
 const next=state([player('a',2,{A:2}),player('b',2,{G:1,PPG:1},{name:'Eichel, Jack',nhl:'VGK'}),player('c',5,{W:1,SO:1},{team:'Young Guns',goalie:true,name:'Askarov, Yaroslav',nhl:'SJS'})]);
-const elements=Object.fromEntries(['live-score-updates','live-score-updates-list','live-score-updates-toggle','live-score-updates-close','live-score-updates-count'].map(id=>[id,new Node()]));
+const elements=Object.fromEntries(['live-score-updates','live-score-updates-list','live-score-updates-toggle','live-score-updates-close','live-score-updates-count','live-score-updates-handle'].map(id=>[id,new Node()]));
 const panel=data=>({dataset:{scoringState:JSON.stringify(data)}});
-const context={window:{},document:{getElementById:id=>elements[id],querySelector:()=>panel(before),createElement:()=>new Node()},Map,Date};
+const windowEvents={};
+const context={window:{innerWidth:1363,innerHeight:936,addEventListener(type,fn){windowEvents[type]=fn}},document:{getElementById:id=>elements[id],querySelector:selector=>selector==='.current-matchup-list'?panel(before):null,createElement:()=>new Node()},Map,Date};
 vm.runInNewContext(fs.readFileSync('public/live-score-updates.js','utf8'),context);
 const alerts=context.window.EcfhlScoreUpdates;
 const changes=alerts.compare(before,next);
@@ -32,6 +38,18 @@ const ui=alerts.start();ui.update(panel(before));assert.equal(elements['live-sco
 ui.update(panel(next));
 assert.equal(elements['live-score-updates-count'].textContent,'3');assert.equal(elements['live-score-updates'].hidden,false);
 assert.equal(elements['live-score-updates-toggle'].attributes['data-has-updates'],'true','The button must glow when updates exist.');
+const handle=elements['live-score-updates-handle'],tray=elements['live-score-updates'];
+handle.handlers.pointerdown({button:0,pointerId:1,clientX:1000,clientY:190,target:handle});
+handle.handlers.pointermove({pointerId:1,clientX:850,clientY:230});
+assert.equal(tray.style.left,'800px');assert.equal(tray.style.top,'225px');
+handle.handlers.pointerup({pointerId:1});assert.equal(tray.attributes['data-dragging'],'false');
+handle.handlers.keydown({key:'ArrowDown',target:handle,preventDefault(){}});assert.equal(tray.style.top,'235px');
+handle.handlers.pointerdown({button:0,pointerId:2,clientX:850,clientY:240,target:handle});
+handle.handlers.pointermove({pointerId:2,clientX:-2000,clientY:-2000});
+assert.equal(tray.style.left,'8px');assert.equal(tray.style.top,'8px','Dragging cannot move the header off screen.');
+handle.handlers.pointercancel({pointerId:2});
+handle.handlers.pointerdown({button:0,pointerId:3,clientX:10,clientY:10,target:{closest:()=>elements['live-score-updates-close']}});
+handle.handlers.pointermove({pointerId:3,clientX:1000,clientY:1000});assert.equal(tray.style.left,'8px','Close button must not start dragging.');
 const batch=elements['live-score-updates-list'].children[0];
 assert.equal(batch.children.length,3,'One time label and one group per team.');
 assert.equal(batch.children[1].children[0].children[1].textContent,'+3 FPts');
@@ -45,4 +63,4 @@ ui.update({dataset:{scoringState:'broken'}});assert.equal(elements['live-score-u
 ui.update(panel({...next,date:'2026-10-08'}));
 assert.equal(elements['live-score-updates-list'].children[0].textContent,'No updates');
 assert.equal(elements['live-score-updates-toggle'].attributes['data-has-updates'],'false','Clear the glow when a new date clears the updates.');
-console.log('Scoring popup checks passed: all teams, grouped point gains, stat deltas, goalie plays, fractions, initial/date baselines, duplicates/corrections, dismiss/reopen, batching and invalid state.');
+console.log('Scoring popup checks passed: grouped gains, stat deltas, duplicates/corrections, dismiss/reopen, orange update state, pointer/keyboard movement, viewport bounds, cancel and close-button isolation.');

@@ -256,7 +256,7 @@
 
 @if($autoRefresh)
 <section id="live-score-updates" class="live-score-updates" aria-label="Scoring updates" hidden>
-  <div class="live-score-updates-heading"><h2>Scoring updates</h2><button type="button" id="live-score-updates-close" aria-label="Close scoring updates">×</button></div>
+  <div class="live-score-updates-heading" id="live-score-updates-handle" tabindex="0" role="group" aria-label="Move scoring updates: drag or use arrow keys"><h2>Scoring updates</h2><button type="button" id="live-score-updates-close" aria-label="Close scoring updates">×</button></div>
   <div id="live-score-updates-list" class="live-score-updates-list" role="log" aria-live="polite" aria-relevant="additions" tabindex="0"><p class="live-score-updates-empty">No updates</p></div>
 </section>
 @endif
