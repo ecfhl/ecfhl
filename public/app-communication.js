@@ -17,12 +17,48 @@
  const refreshScoring=async()=>{if(document.hidden)return;if(scoreBusy){scorePending=true;return;}scoreBusy=true;try{scoring?.update(await request('/api/scoring-updates?scope='+encodeURIComponent(scoring.scope())));}catch(_){/* Keep saved scores and retry next tick. */}finally{scoreBusy=false;if(scorePending){scorePending=false;refreshScoring();}}};
  refreshScoring();setInterval(refreshScoring,60000);window.addEventListener('ecfhl-scoring-filter',refreshScoring);
  const notificationPanel=document.getElementById('notification-panel'),notificationToggle=document.getElementById('header-notifications-toggle');
- notificationToggle.addEventListener('click',()=>{notificationPanel.hidden=false;notificationToggle.setAttribute('aria-expanded','true');document.querySelector('[data-close-notifications]').focus();});
- const closeNotifications=()=>{notificationPanel.hidden=true;notificationToggle.setAttribute('aria-expanded','false');notificationToggle.focus({preventScroll:true});};
- document.querySelector('[data-close-notifications]').addEventListener('click',closeNotifications);
+ const notificationHandle=document.getElementById('notification-handle'),notificationClose=document.querySelector('[data-close-notifications]'),notificationTrash=document.getElementById('notification-trash'),notificationRestore=document.getElementById('notification-restore');
+ const notificationKey='ecfhl-notification-panel:'+(userId||'guest');
+ let savedNotifications={};try{savedNotifications=JSON.parse(sessionStorage.getItem(notificationKey)||'{}')||{};}catch(_){}
+ let notificationMode=['closed','expanded','minimized'].includes(savedNotifications.mode)?savedNotifications.mode:'closed',notificationPosition=savedNotifications.position||null,notificationDrag=null,notificationTotal=0;
+ let clearedNotifications=new Set(Array.isArray(savedNotifications.cleared)?savedNotifications.cleared.map(Number):[]);
+ const persistNotifications=()=>{try{sessionStorage.setItem(notificationKey,JSON.stringify({mode:notificationMode,position:notificationPosition,cleared:[...clearedNotifications].slice(-1000)}));}catch(_){}};
+ const constrainNotifications=()=>{
+  if(!notificationPosition||notificationPanel.hidden)return;
+  const rect=notificationPanel.getBoundingClientRect(),nav=document.querySelector('.mobile-primary-nav');
+  const bottom=nav&&getComputedStyle(nav).display!=='none'?nav.getBoundingClientRect().top:window.innerHeight;
+  notificationPosition.x=Math.max(8,Math.min(notificationPosition.x,window.innerWidth-rect.width-8));
+  notificationPosition.y=Math.max(8,Math.min(notificationPosition.y,bottom-rect.height-8));
+  Object.assign(notificationPanel.style,{left:notificationPosition.x+'px',top:notificationPosition.y+'px',right:'auto'});
+ };
+ const renderNotifications=()=>{
+  notificationPanel.hidden=notificationMode==='closed';notificationPanel.dataset.minimized=String(notificationMode==='minimized');
+  notificationRestore.hidden=notificationMode!=='minimized';notificationRestore.textContent=notificationTotal+' notifications';
+  notificationTrash.disabled=notificationTotal===0;notificationToggle.setAttribute('aria-expanded',String(notificationMode!=='closed'));
+  constrainNotifications();persistNotifications();
+ };
+ notificationToggle.addEventListener('click',()=>{notificationMode='expanded';renderNotifications();notificationClose.focus({preventScroll:true});});
+ const closeNotifications=()=>{notificationMode='closed';renderNotifications();notificationToggle.focus({preventScroll:true});};
+ notificationClose.addEventListener('click',closeNotifications);
+ document.getElementById('notification-minimize').addEventListener('click',()=>{notificationMode='minimized';renderNotifications();notificationRestore.focus({preventScroll:true});});
+ notificationRestore.addEventListener('click',()=>{notificationMode='expanded';renderNotifications();notificationClose.focus({preventScroll:true});});
  notificationPanel.addEventListener('keydown',event=>{if(event.key==='Escape')closeNotifications();});
+ notificationHandle.addEventListener('pointerdown',event=>{
+  if(event.button!==0||event.target.closest('button,a,select,input,label'))return;
+  const rect=notificationPanel.getBoundingClientRect();notificationDrag={id:event.pointerId,x:event.clientX,y:event.clientY,left:rect.left,top:rect.top};
+  notificationHandle.setPointerCapture(event.pointerId);notificationPanel.dataset.dragging='true';
+ });
+ notificationHandle.addEventListener('pointermove',event=>{if(!notificationDrag||notificationDrag.id!==event.pointerId)return;notificationPosition={x:notificationDrag.left+event.clientX-notificationDrag.x,y:notificationDrag.top+event.clientY-notificationDrag.y};constrainNotifications();});
+ const endNotificationDrag=event=>{if(!notificationDrag||notificationDrag.id!==event.pointerId)return;if(notificationHandle.hasPointerCapture(event.pointerId))notificationHandle.releasePointerCapture(event.pointerId);notificationDrag=null;notificationPanel.dataset.dragging='false';persistNotifications();};
+ ['pointerup','pointercancel','lostpointercapture'].forEach(type=>notificationHandle.addEventListener(type,endNotificationDrag));
+ notificationHandle.addEventListener('keydown',event=>{
+  if(event.target!==notificationHandle||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;
+  event.preventDefault();const rect=notificationPanel.getBoundingClientRect(),step=event.shiftKey?30:10;
+  notificationPosition={x:rect.left+(event.key==='ArrowLeft'?-step:event.key==='ArrowRight'?step:0),y:rect.top+(event.key==='ArrowUp'?-step:event.key==='ArrowDown'?step:0)};constrainNotifications();persistNotifications();
+ });
+ window.addEventListener('resize',()=>{constrainNotifications();persistNotifications();});renderNotifications();
  if(!userId){document.getElementById('header-notification-status').dataset.enabled='false';document.getElementById('header-notification-status').setAttribute('aria-label','Sign in for notifications');document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshScoring();});return;}
- let owners={},inbox=[],stateBusy=false;
+ let owners={},inbox=[],stateBusy=false,notificationStateReady=false;
  const popupCursorKey='ecfhl-message-cursor:'+userId;
  let cursor=null;try{const value=sessionStorage.getItem(popupCursorKey);if(value!==null)cursor=Number(value);}catch(_){}
  const setCursor=value=>{cursor=value;try{sessionStorage.setItem(popupCursorKey,String(value));}catch(_){}};
@@ -43,10 +79,20 @@
  const drawInbox=()=>{
   const list=document.getElementById('notification-inbox');list.replaceChildren();
   if(!inbox.length)list.append(node('p','No notifications yet.'));
-  inbox.forEach(item=>{const entry=node('div',undefined,'notification-entry');entry.dataset.unread=String(!item.read_at);const link=node('a',item.title);link.href=safeUrl(item.url);link.addEventListener('click',async event=>{if(event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();try{await request('/api/notifications/read',{ids:[item.id]});}finally{location.assign(link.href);}});entry.append(link,node('p',item.body));list.append(entry);});
-  document.getElementById('notification-mark-read').disabled=!inbox.some(item=>!item.read_at);
+  const visibleInbox=inbox.filter(item=>!clearedNotifications.has(Number(item.id)));
+  if(inbox.length&&!visibleInbox.length)list.append(node('p','No notifications yet.'));
+  visibleInbox.forEach(item=>{const entry=node('div',undefined,'notification-entry');entry.dataset.unread=String(!item.read_at);const link=node('a',item.title);link.href=safeUrl(item.url);link.addEventListener('click',async event=>{if(event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();try{await request('/api/notifications/read',{ids:[item.id]});}finally{location.assign(link.href);}});entry.append(link,node('p',item.body));list.append(entry);});
+  notificationTotal=visibleInbox.length;renderNotifications();
  };
- document.getElementById('notification-mark-read').addEventListener('click',async()=>{try{await request('/api/notifications/read',{ids:inbox.filter(n=>!n.read_at).map(n=>n.id)});await refreshState();}catch(e){document.getElementById('header-push-state').textContent=e.message;}});
+ notificationTrash.addEventListener('click',async()=>{
+  const items=inbox.filter(item=>!clearedNotifications.has(Number(item.id))),status=document.getElementById('notification-panel-status');notificationTrash.disabled=true;
+  try{
+   const ids=items.filter(item=>!item.read_at).map(item=>item.id);if(ids.length)await request('/api/notifications/read',{ids});
+   items.forEach(item=>{clearedNotifications.add(Number(item.id));item.read_at=item.read_at||'read';});
+   if(status){status.hidden=true;status.textContent='';}
+   notificationMode='minimized';drawInbox();counter('header-notification-count',inbox.filter(item=>!item.read_at).length);notificationRestore.focus({preventScroll:true});await refreshState();
+  }catch(e){notificationMode='expanded';renderNotifications();if(status){status.hidden=false;status.textContent=e.message;}}
+ });
  const widgets=[...document.querySelectorAll('[data-chat-widget]')].map(element=>({element,other:element.dataset.other?Number(element.dataset.other):null,log:element.querySelector('.chat-log'),status:element.querySelector('.chat-status'),messages:new Map(),busy:false,lastRead:0}));
  const visible=widget=>{if(document.hidden)return false;const rect=widget.log.getBoundingClientRect();return rect.bottom>0&&rect.top<window.innerHeight&&rect.width>0;};
  const atBottom=widget=>widget.log.scrollHeight-widget.log.scrollTop-widget.log.clientHeight<40;
@@ -111,7 +157,10 @@
   if(stateBusy||document.hidden)return;stateBusy=true;
   try{
    const data=await request('/api/messages/state'+(cursor!==null?'?after='+cursor:''));
-   preferences=data.preferences;syncPreferences();owners=data.owners;teamMessage();inbox=data.notifications;drawInbox();updateUnread(data.unread);counter('header-notification-count',data.notification_count);
+   preferences=data.preferences;syncPreferences();owners=data.owners;teamMessage();const previousIds=new Set(inbox.map(item=>Number(item.id)));
+   inbox=data.notifications;
+   if(notificationStateReady&&inbox.some(item=>!item.read_at&&!clearedNotifications.has(Number(item.id))&&!previousIds.has(Number(item.id)))&&notificationMode==='closed')notificationMode='minimized';
+   notificationStateReady=true;drawInbox();updateUnread(data.unread);counter('header-notification-count',data.notification_count);
    if(cursor===null)setCursor(data.latest_id);else{data.messages.forEach(showPopup);setCursor(data.messages.length?Number(data.messages[data.messages.length-1].id):Math.max(cursor,data.latest_id));}
   }catch(_){/* Preserve counters and retry. */}finally{stateBusy=false;}
  };

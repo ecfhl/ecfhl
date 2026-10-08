@@ -1,0 +1,25 @@
+const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),assert=require('assert/strict');
+(async()=>{
+const root=path.resolve(__dirname,'..');
+const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{channel:'chrome'})});
+const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];
+page.on('pageerror',e=>errors.push(e.message));
+let notifications=[{id:1,title:'Goalie Status',body:'Hofer, Joel (STL) is now Confirmed.',url:'/notifications',read_at:null}],readIds=[];
+const panel=fs.readFileSync(root+'/resources/views/communication/notification-panel.blade.php','utf8').replace('@auth','').replace(/@else[\s\S]*?@endauth/,'');
+const html=`<html data-theme="light"><head><style>:root{--panel:#fff;--panel-2:#edf2fa;--text:#172033;--line:#ccd8ee;--focus:#2563eb;--shadow-raised:0 8px 25px #0002}[hidden]{display:none!important}</style><link rel="stylesheet" href="/communication.css"></head><body><div id="communication-context" data-user-id="1" data-preferences='{}'></div><button id="header-notifications-toggle">Bell</button><span id="header-notification-status"></span><span id="header-notification-count"></span><span id="header-message-count"></span>${panel}<script src="/app-communication.js"></script></body></html>`;
+await page.route('https://ecfhl.test/**',async route=>{const url=new URL(route.request().url());if(url.pathname==='/app-communication.js'||url.pathname==='/communication.css')return route.fulfill({path:root+'/public'+url.pathname});if(url.pathname==='/api/messages/state')return route.fulfill({json:{preferences:{},owners:{},notifications,notification_count:notifications.filter(x=>!x.read_at).length,unread:{total:0},messages:[],latest_id:0}});if(url.pathname==='/api/notifications/read'){readIds=route.request().postDataJSON().ids;notifications=notifications.map(x=>readIds.includes(x.id)?{...x,read_at:'now'}:x);return route.fulfill({json:{ok:true}});}if(url.pathname.startsWith('/api/'))return route.fulfill({json:{}});return route.fulfill({contentType:'text/html; charset=utf-8',body:html});});
+await page.goto('https://ecfhl.test/');await page.locator('#header-notifications-toggle').click();await page.waitForSelector('.notification-entry');
+assert.equal(await page.locator('.notification-settings').getAttribute('href'),'/notifications');
+assert.equal(await page.locator('.notification-panel-actions').evaluate(e=>e.lastElementChild.previousElementSibling.className),'notification-settings');
+const handle=page.locator('#notification-handle');let box=await handle.boundingBox();await page.mouse.move(box.x+60,box.y+15);await page.mouse.down();await page.mouse.move(350,320);await page.mouse.up();
+const position=await page.locator('#notification-panel').boundingBox();assert(position.x>100&&position.y>100,'Drag moves panel');
+await page.locator('#notification-minimize').click();assert(await page.locator('#notification-restore').isVisible());assert(!(await page.locator('.notification-panel-body').isVisible()));
+await page.locator('#notification-restore').click();await page.locator('#notification-trash').click();await page.waitForFunction(()=>document.getElementById('header-notification-count').textContent==='0');assert.deepEqual(readIds,[1]);assert.equal(await page.locator('.notification-entry').count(),0);assert(await page.locator('#notification-restore').isVisible());
+await page.locator('[data-close-notifications]').click();await page.locator('#header-notifications-toggle').click();assert(await page.locator('#notification-panel').isVisible());
+await page.reload();await page.waitForFunction(()=>document.getElementById('notification-restore').textContent==='0 notifications');assert.equal(await page.locator('.notification-entry').count(),0,'Cleared entries remain cleared on navigation');
+const restored=await page.locator('#notification-panel').boundingBox();assert(Math.abs(restored.x-position.x)<2,'Position survives navigation');
+notifications.push({id:2,title:'New goal',body:'New event',url:'/notifications',read_at:null});await page.locator('[data-close-notifications]').click();await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await page.waitForSelector('#notification-restore');assert.equal(await page.locator('.notification-entry').count(),1,'New notifications survive clear');
+await page.setViewportSize({width:360,height:780});await page.locator('#notification-restore').click();const mobile=await page.locator('#notification-panel').boundingBox();assert(mobile.x>=8&&mobile.x+mobile.width<=352&&mobile.y>=8,'Mobile panel stays in viewport');
+await handle.focus();await page.keyboard.press('ArrowLeft');await page.keyboard.press('Escape');assert(!(await page.locator('#notification-panel').isVisible()));assert.deepEqual(errors,[]);
+await browser.close();console.log('Notifications checks passed: controls, drag, minimize/restore, clear/read, navigation persistence, new events, keyboard and mobile bounds.');
+})().catch(e=>{console.error(e);process.exit(1)});

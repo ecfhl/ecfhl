@@ -45,3 +45,16 @@ html[data-theme] .live-score-updates-filters[hidden]{display:none}
 .notification-settings-panel [role="tabpanel"]>section{margin-bottom:16px}
 .notification-settings-panel [role="tabpanel"][hidden]{display:none}
 #scoring-settings-controls .live-score-updates-filters{padding:0}
+
+/* Match the scoring panel's controls and drag interaction. */
+.notification-panel-actions{display:flex;align-items:center;gap:2px}
+.communication-panel-heading{cursor:grab;touch-action:none;user-select:none}
+.communication-panel[data-dragging="true"] .communication-panel-heading{cursor:grabbing}
+.communication-panel-heading .notification-settings,.communication-panel-heading button{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:0;background:transparent;color:inherit;border-radius:6px;flex:none}
+.communication-panel-heading .notification-settings:hover{background:#17203315}
+.communication-panel-heading button:disabled{opacity:.35;cursor:default}
+.notification-restore{display:block;width:100%;padding:10px 14px;border:0;background:var(--panel);color:var(--text);font:inherit;font-size:12px;text-align:left;cursor:pointer}
+.notification-restore[hidden]{display:none}
+.communication-panel[data-minimized="true"] .notification-panel-body{display:none}
+.communication-panel-heading :focus-visible,.notification-restore:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+#notification-panel-status{font-size:12px;color:var(--text)}
