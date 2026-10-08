@@ -18,8 +18,8 @@ function luminance(hex){
 }
 for(const theme of ['light','dark']){
   const get=variables(theme);
-  const pairs=['--bg','--panel','--panel-2','--selection-bg','--hover-bg','--game-live','--game-finished','--game-upcoming'].flatMap(bg=>['--text','--muted'].map(text=>[text,bg]));
-  pairs.push(['--accent','--panel'],['--gold','--panel'],['--on-action','--action-bg'],['--on-action','--action-hover'],['--heading-text','--heading-bg'],['--table-heading-text','--table-heading-bg']);
+  const pairs=['--bg','--panel','--panel-2','--selection-bg','--hover-bg','--game-live','--game-finished','--game-upcoming','--ir-bg','--player-defense-bg','--player-goalie-bg'].flatMap(bg=>['--text','--muted'].map(text=>[text,bg]));
+  pairs.push(['--ir-text','--ir-bg'],['--heading-text','--reserve-ir'],['--accent','--panel'],['--gold','--panel'],['--on-action','--action-bg'],['--on-action','--action-hover'],['--heading-text','--heading-bg'],['--table-heading-text','--table-heading-bg']);
   for(const color of ['green','yellow','orange','red'])pairs.push(['--badge-'+color+'-text','--badge-'+color+'-bg']);
   for(const [text,bg] of pairs){
     const a=luminance(get(text)),b=luminance(get(bg));const contrast=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);

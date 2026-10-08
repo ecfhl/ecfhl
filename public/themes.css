@@ -4,8 +4,10 @@
   --badge-orange-bg:#ffedd5;--badge-orange-text:#9a3412;--badge-orange-line:#fdba74;
   --badge-red-bg:#fee2e2;--badge-red-text:#991b1b;--badge-red-line:#fca5a5;
   --game-live:#eaf3ff;--game-finished:#f8f4eb;--game-upcoming:#eff2f6;--selection-bg:#eaf1ff;
+  --player-defense-bg:#f0edfc;--player-goalie-bg:#e9f5f5;
+  --ir-bg:#edf0f7;--ir-text:#465572;--ir-line:#aebcd3;
   --eyebrow-text:var(--accent);
-  --reserve-ir:#a9323f;--reserve-bench:#526174;--reserve-minors:#e8bd4c;
+  --reserve-ir:#4f5b78;--reserve-bench:#526174;--reserve-minors:#e8bd4c;
 }
 html[data-theme="dark"] {
   color-scheme:dark;
@@ -14,6 +16,8 @@ html[data-theme="dark"] {
   --badge-orange-bg:#482b16;--badge-orange-text:#fdba74;--badge-orange-line:#a76636;
   --badge-red-bg:#482027;--badge-red-text:#fecaca;--badge-red-line:#a95160;
   --game-live:#1c344e;--game-finished:#2c2a24;--game-upcoming:#182231;--selection-bg:#1b3558;
+  --player-defense-bg:#272641;--player-goalie-bg:#18343b;
+  --ir-bg:#252d40;--ir-text:#c3cfec;--ir-line:#566783;
   --eyebrow-text:var(--accent);
 }
 html[data-theme="light"]{color-scheme:light}
@@ -128,7 +132,8 @@ html[data-theme="dark"] :is(.matchup-player-opponent,.team-player-opponent) > :i
 }
 html[data-theme="dark"] .ecfhl-scoreboard .matchup-expanded .matchup-player-opponent > :is(.team-playing-text,.team-home,.team-away){color:#fde68a!important}
 
-html[data-theme] .matchup-player-row.team-ir-row{background:var(--badge-red-bg)!important}
+html[data-theme] :is(.matchup-player-row,.team-player-data-row,.team-target-row).team-ir-row{background:var(--ir-bg)!important;color:var(--text)}
+html[data-theme] .pill.team-ir{background:var(--ir-bg)!important;color:var(--ir-text)!important;border-color:var(--ir-line)!important}
 
 /* Shared table headers: position blue, with distinct reserve-group colors. */
 :root{--table-heading-bg:var(--heading-bg);--table-heading-text:var(--heading-text)}
@@ -213,7 +218,9 @@ html[data-theme] :is(.owner-team-choice,.owner-goalie-choice):has(input:checked)
 html[data-theme] :is(.data-table,.season-player-table,.league-teams-table,.team-roster-table,.tips-table,.player-profile table){font-variant-numeric:tabular-nums}
 html[data-theme] main table thead th,html[data-theme] .player-fixed-header thead th{font-weight:800;border-bottom-color:#ffffff1f!important}
 html[data-theme] main table thead th :is(a,button){color:inherit}
-html[data-theme] .data-table tbody tr:hover td{background:var(--hover-bg)}
+@media(hover:hover) and (pointer:fine){
+ html[data-theme] .data-table:not(.team-roster-table) tbody tr:hover td{background:var(--hover-bg)}
+}
 html[data-theme] .league-team-row:hover{background:var(--hover-bg)}
 html[data-theme] .league-team-row-mine,html[data-theme] .league-team-row-mine:hover{background:var(--selection-bg)}
 html[data-theme] .league-team-mine-label,html[data-theme] .league-teams-my-link{color:var(--accent)}
