@@ -78,15 +78,21 @@
       window.addEventListener('resize', constrain);
       let baseline = read(document.querySelector('.current-matchup-list'));
       let total = 0;
+      const hasGreenScore = panel => !!panel?.querySelector('.score-up');
+      const syncAlertState = panel => {
+        const active = hasGreenScore(panel);
+        toggle.dataset.enabled = String(active);
+        toggle.setAttribute('aria-pressed', String(active));
+        toggle.setAttribute('aria-label', active ? 'Scoring updates available' : 'Show scoring updates');
+        toggle.title = active ? 'Scoring updates available' : 'Show scoring updates';
+      };
       const show = open => {
         tray.hidden = !open;
-        toggle.dataset.enabled = String(open);
         toggle.setAttribute('aria-expanded', String(open));
-        toggle.setAttribute('aria-pressed', String(open));
-        toggle.setAttribute('aria-label', open ? 'Hide scoring updates' : 'Show scoring updates');
-        toggle.title = open ? 'Hide scoring updates' : 'Show scoring updates';
+        syncAlertState(document.querySelector('.current-matchup-list'));
         if (open) constrain();
       };
+      syncAlertState(document.querySelector('.current-matchup-list'));
       toggle.addEventListener('click', () => show(tray.hidden));
       close.addEventListener('click', () => { show(false); toggle.focus({preventScroll:true}); });
       tray.addEventListener('keydown', event => {
@@ -105,6 +111,7 @@
           const events = compare(baseline, next);
           if (baseline && baseline.date !== next.date) { list.replaceChildren(element('p', 'live-score-updates-empty', 'No updates')); total = 0; count.hidden = true; toggle.setAttribute('data-has-updates', 'false'); show(false); }
           baseline = next;
+          syncAlertState(panel);
           if (!events.length) return;
           list.querySelector('.live-score-updates-empty')?.remove();
           const batch = element('div', 'live-score-update-batch');
