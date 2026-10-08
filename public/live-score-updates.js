@@ -16,7 +16,7 @@
         if (key === 'GWG') return ['GWG'];
         return [gain + ' ' + label + (gain !== 1 && ['goal','assist','win','shutout'].includes(label) ? 's' : gain !== 1 && label === 'loss' ? 'es' : '')];
       });
-      return [{team:player.team, player:player.name + (player.nhl ? ' (' + player.nhl + ')' : ''), points, stats:stats.join(' · ') || 'Points updated'}];
+      return [{key:player.key, team:player.team, player:player.name + (player.nhl ? ' (' + player.nhl + ')' : ''), points, stats:stats.join(' · ') || 'Points updated'}];
     });
   };
   const read = panel => {
@@ -33,6 +33,7 @@
       const list = document.getElementById('live-score-updates-list');
       const toggle = document.getElementById('live-score-updates-toggle');
       const close = document.getElementById('live-score-updates-close');
+      const minimize = document.getElementById('live-score-updates-minimize');
       const count = document.getElementById('live-score-updates-count');
       const handle = document.getElementById('live-score-updates-handle');
       let position = null, drag = null;
@@ -77,10 +78,11 @@
       });
       window.addEventListener('resize', constrain);
       let baseline = read(document.querySelector('.current-matchup-list'));
-      let total = 0;
+      let total = 0, cleared = false;
+      const highlighted = new Map();
       const hasGreenScore = panel => !!panel?.querySelector('.score-up');
       const syncAlertState = panel => {
-        const active = hasGreenScore(panel);
+        const active = !cleared && hasGreenScore(panel);
         toggle.dataset.enabled = String(active);
         toggle.setAttribute('aria-pressed', String(active));
         toggle.setAttribute('aria-label', active ? 'Scoring updates available' : 'Show scoring updates');
@@ -94,7 +96,14 @@
       };
       syncAlertState(document.querySelector('.current-matchup-list'));
       toggle.addEventListener('click', () => show(tray.hidden));
-      close.addEventListener('click', () => { show(false); toggle.focus({preventScroll:true}); });
+      minimize.addEventListener('click', () => { show(false); toggle.focus({preventScroll:true}); });
+      close.addEventListener('click', () => {
+        cleared = true; total = 0; highlighted.clear();
+        list.replaceChildren(element('p', 'live-score-updates-empty', 'No updates'));
+        count.textContent = '0'; count.hidden = true;
+        toggle.setAttribute('data-has-updates', 'false');
+        show(false); toggle.focus({preventScroll:true});
+      });
       tray.addEventListener('keydown', event => {
         if (event.key === 'Escape') { show(false); toggle.focus({preventScroll:true}); }
       });
@@ -109,13 +118,16 @@
           const next = read(panel);
           if (!next) return;
           const events = compare(baseline, next);
-          if (baseline && baseline.date !== next.date) { list.replaceChildren(element('p', 'live-score-updates-empty', 'No updates')); total = 0; count.hidden = true; toggle.setAttribute('data-has-updates', 'false'); show(false); }
+          if (baseline && baseline.date !== next.date) { list.replaceChildren(element('p', 'live-score-updates-empty', 'No updates')); total = 0; cleared = false; highlighted.clear(); count.hidden = true; toggle.setAttribute('data-has-updates', 'false'); show(false); }
           baseline = next;
+          if (events.length) cleared = false;
+          const green = new Set(next.players.filter(player => player.change === 'up').map(player => player.key));
+          highlighted.forEach((row, key) => row.setAttribute('data-new', String(green.has(key))));
           syncAlertState(panel);
           if (!events.length) return;
           list.querySelector('.live-score-updates-empty')?.remove();
           const batch = element('div', 'live-score-update-batch');
-          batch.append(element('time', 'live-score-update-time', new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})));
+          batch.append(element('time', 'live-score-update-time', new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit', second:'2-digit', hour12:true})));
           const teams = new Map();
           events.forEach(event => {
             if (!teams.has(event.team)) teams.set(event.team, []);
@@ -128,6 +140,9 @@
             group.append(heading);
             plays.forEach(play => {
               const row = element('div', 'live-score-update-player');
+              highlighted.get(play.key)?.setAttribute('data-new', 'false');
+              row.setAttribute('data-new', String(green.has(play.key)));
+              highlighted.set(play.key, row);
               const detail = element('div', '');
               detail.append(element('strong', '', play.player), element('span', 'live-score-update-stats', play.stats));
               row.append(detail, element('span', 'live-score-update-player-points', '+' + formatPoints(play.points)));

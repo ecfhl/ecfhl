@@ -68,7 +68,7 @@
         $homeAll=$allPlayers($home);
 
         $sectionGroups=function($rows){
-          $playing=$rows->filter(fn($p)=>(bool)$p->daily_participant)->values();
+          $playing=\App\Support\LiveScoring\ViewData::sortPlayers($rows->filter(fn($p)=>(bool)$p->daily_participant));
 
           return [
             'Forwards'=>$playing->filter(fn($p)=>
@@ -256,7 +256,7 @@
 
 @if($autoRefresh)
 <section id="live-score-updates" class="live-score-updates" aria-label="Scoring updates" hidden>
-  <div class="live-score-updates-heading" id="live-score-updates-handle" tabindex="0" role="group" aria-label="Move scoring updates: drag or use arrow keys"><h2>Scoring updates</h2><button type="button" id="live-score-updates-close" aria-label="Close scoring updates">×</button></div>
+  <div class="live-score-updates-heading" id="live-score-updates-handle" tabindex="0" role="group" aria-label="Move scoring updates: drag or use arrow keys"><h2>Scoring updates</h2><div class="live-score-updates-actions"><button type="button" id="live-score-updates-minimize" aria-label="Minimize scoring updates" title="Minimize">−</button><button type="button" id="live-score-updates-close" aria-label="Clear scoring updates" title="Clear updates"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button></div></div>
   <div id="live-score-updates-list" class="live-score-updates-list" role="log" aria-live="polite" aria-relevant="additions" tabindex="0"><p class="live-score-updates-empty">No updates</p></div>
 </section>
 @endif

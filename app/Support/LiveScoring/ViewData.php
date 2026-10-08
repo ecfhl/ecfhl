@@ -6,15 +6,25 @@ use Illuminate\Support\Str;
 
 final class ViewData
 {
+    public static function sortPlayers($players)
+    {
+        return $players->sort(function ($a, $b) {
+            $playing = static fn($p) => (bool)($p->daily_participant ?? false)
+                && (!isset($p->game_status) || (string)$p->game_status === '1'
+                    || (in_array((string)$p->game_status, ['2','3'], true) && (float)($p->today_gp ?? 0) > 0));
+            return ($playing($b) <=> $playing($a)) ?: strcasecmp($a->player_name, $b->player_name);
+        })->values();
+    }
+
     public function teams(array $snapshot): array
     {
         $teams = [];
         $allPlayers = (new PlayerDisplayEnrichment)->decorate(collect($snapshot['players'])->map(fn($p)=>$this->player($p)), $snapshot['fantasy_date']);
         foreach ($snapshot['teams'] as $id=>$team) {
-            $players = $allPlayers->where('fantasy_team_id', (string)$id);
+            $players = self::sortPlayers($allPlayers->where('fantasy_team_id', (string)$id));
             $positions = [];
             foreach (['F'=>'Forwards','D'=>'Defense','G'=>'Goalies'] as $pos=>$label) {
-                $positions[$pos] = ['label'=>$label,'rows'=>$players->where('position',$pos)->reject(fn($p)=>$p->roster_status==='MINORS')->sortBy(fn($p)=>$p->is_ir?1:0)->values()];
+                $positions[$pos] = ['label'=>$label,'rows'=>$players->where('position',$pos)->reject(fn($p)=>$p->roster_status==='MINORS')->values()];
             }
             $positions['M'] = ['label'=>'Minors','rows'=>$players->where('roster_status','MINORS')->values()];
             $active = $players->where('scoring_status','ACTIVE');

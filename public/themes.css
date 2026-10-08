@@ -365,3 +365,10 @@ html[data-theme] .team-icon-modal-title{position:relative;color:#f0f6ff;font-wei
  .team-icon-modal.open:not(.loading) .team-icon-modal-image{animation:none}
  html[data-theme] .team-icon-modal-image,html[data-theme] .team-icon-modal-image:hover{transition:none;transform:none}
 }
+
+.live-score-updates-actions{display:flex;align-items:center;gap:3px}
+.live-score-updates-actions button{display:inline-flex;align-items:center;justify-content:center}
+.live-score-update-player[data-new="true"]{background:var(--badge-green-bg);border-left-color:var(--success);border-radius:4px}
+.live-score-update-player[data-new="true"] .live-score-update-player-points{color:var(--success)}
+html[data-theme] :is(.matchup-player-row,.team-player-data-row).team-injured-row.team-injured-row{background:var(--badge-red-bg)!important;box-shadow:inset 3px 0 0 var(--badge-red-line)}
+html[data-theme] .team-player-data-row.team-injured-row>td{background:var(--badge-red-bg)!important}

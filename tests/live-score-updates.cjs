@@ -1,9 +1,10 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 class Node {
-  constructor(){this.children=[];this.handlers={};this.hidden=false;this.attributes={};this.style={};}
-  append(...nodes){this.children.push(...nodes)}
+  constructor(){this.dataset={};this.children=[];this.handlers={};this.hidden=false;this.attributes={};this.style={};}
+  append(...nodes){nodes.forEach(n=>n.parent=this);this.children.push(...nodes)}
   prepend(node){this.children.unshift(node)}
-  replaceChildren(...nodes){this.children=nodes}
+  replaceChildren(...nodes){nodes.forEach(n=>n.parent=this);this.children=nodes}
+  remove(){this.parent.children=this.parent.children.filter(n=>n!==this)}
   querySelector(selector){return this.children.find(node=>'.'+node.className===selector)||null}
   addEventListener(type,handler){this.handlers[type]=handler}
   setAttribute(key,value){this.attributes[key]=value}
@@ -14,12 +15,12 @@ class Node {
   releasePointerCapture(){this.pointer=null}
   closest(){return null}
 }
-const player=(key,points,stats={},extra={})=>({key,points,stats,team:'Lone Tsar',name:'Dubois, Pierre-Luc',nhl:'WSH',goalie:false,...extra});
+const player=(key,points,stats={},extra={})=>({key,points,stats,team:'Lone Tsar',name:'Dubois, Pierre-Luc',nhl:'WSH',goalie:false,change:'up',...extra});
 const state=players=>({date:'2026-10-07',players});
 const before=state([player('a',1,{A:1}),player('b',0),player('c',0,{}, {team:'Young Guns',goalie:true,name:'Askarov, Yaroslav',nhl:'SJS'})]);
 const next=state([player('a',2,{A:2}),player('b',2,{G:1,PPG:1},{name:'Eichel, Jack',nhl:'VGK'}),player('c',5,{W:1,SO:1},{team:'Young Guns',goalie:true,name:'Askarov, Yaroslav',nhl:'SJS'})]);
-const elements=Object.fromEntries(['live-score-updates','live-score-updates-list','live-score-updates-toggle','live-score-updates-close','live-score-updates-count','live-score-updates-handle'].map(id=>[id,new Node()]));
-const panel=data=>({dataset:{scoringState:JSON.stringify(data)}});
+const elements=Object.fromEntries(['live-score-updates','live-score-updates-list','live-score-updates-toggle','live-score-updates-close','live-score-updates-minimize','live-score-updates-count','live-score-updates-handle'].map(id=>[id,new Node()]));
+const panel=data=>({dataset:{scoringState:JSON.stringify(data)},querySelector:()=>data.players.some(p=>p.change==='up')?{}:null});
 const windowEvents={};
 const context={window:{innerWidth:1363,innerHeight:936,addEventListener(type,fn){windowEvents[type]=fn}},document:{getElementById:id=>elements[id],querySelector:selector=>selector==='.current-matchup-list'?panel(before):null,createElement:()=>new Node()},Map,Date};
 vm.runInNewContext(fs.readFileSync('public/live-score-updates.js','utf8'),context);
@@ -54,12 +55,25 @@ const batch=elements['live-score-updates-list'].children[0];
 assert.equal(batch.children.length,3,'One time label and one group per team.');
 assert.equal(batch.children[1].children[0].children[1].textContent,'+3 FPts');
 assert.equal(batch.children[2].children[0].children[1].textContent,'+5 FPts');
-elements['live-score-updates-close'].handlers.click();assert.equal(elements['live-score-updates'].hidden,true);
+elements['live-score-updates-minimize'].handlers.click();assert.equal(elements['live-score-updates'].hidden,true);
 ui.update(panel(next));assert.equal(elements['live-score-updates'].hidden,true,'Unchanged scores must not reopen a dismissed popup.');
 elements['live-score-updates-toggle'].handlers.click();assert.equal(elements['live-score-updates'].hidden,false);
 ui.update(panel(state([player('a',3,{A:3}),...next.players.slice(1)])));
 assert.equal(elements['live-score-updates-count'].textContent,'4');assert.equal(elements['live-score-updates-list'].children.length,2);
-ui.update({dataset:{scoringState:'broken'}});assert.equal(elements['live-score-updates-count'].textContent,'4');
+assert.equal(batch.children[1].children[1].attributes['data-new'],'false');
+assert.match(batch.children[0].textContent,/AM|PM/);
+elements['live-score-updates-close'].handlers.click();
+assert.equal(tray.hidden,true);
+assert.equal(elements['live-score-updates-list'].children[0].textContent,'No updates');
+assert.equal(elements['live-score-updates-toggle'].dataset.enabled,'false');
+ui.update(panel(state([player('a',3,{A:3}),...next.players.slice(1)])));
+assert.equal(elements['live-score-updates-toggle'].dataset.enabled,'false','Clear stays off despite existing green scores.');
+ui.update(panel(state([player('a',4,{A:4}),...next.players.slice(1)])));
+assert.equal(elements['live-score-updates-count'].textContent,'1');
+assert.equal(elements['live-score-updates-toggle'].dataset.enabled,'true');
+ui.update(panel(state([player('a',4,{A:4},{change:'same'}),...next.players.slice(1).map(p=>({...p,change:'same'}))])));
+assert.equal(elements['live-score-updates-list'].children[0].children[1].children[1].attributes['data-new'],'false','Highlight expires with green numbers.');
+ui.update({dataset:{scoringState:'broken'}});assert.equal(elements['live-score-updates-count'].textContent,'1');
 ui.update(panel({...next,date:'2026-10-08'}));
 assert.equal(elements['live-score-updates-list'].children[0].textContent,'No updates');
 assert.equal(elements['live-score-updates-toggle'].attributes['data-has-updates'],'false','Clear the glow when a new date clears the updates.');
