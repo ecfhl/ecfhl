@@ -78,22 +78,16 @@
       window.addEventListener('resize', constrain);
       let baseline = read(document.querySelector('.current-matchup-list'));
       let total = 0;
-      let enabled = false;
       const show = open => {
         tray.hidden = !open;
+        toggle.dataset.enabled = String(open);
         toggle.setAttribute('aria-expanded', String(open));
+        toggle.setAttribute('aria-pressed', String(open));
+        toggle.setAttribute('aria-label', open ? 'Hide scoring updates' : 'Show scoring updates');
+        toggle.title = open ? 'Hide scoring updates' : 'Show scoring updates';
         if (open) constrain();
       };
-      const setEnabled = next => {
-        enabled = next;
-        toggle.dataset.enabled = String(enabled);
-        toggle.setAttribute('aria-pressed', String(enabled));
-        toggle.setAttribute('aria-label', enabled ? 'Disable scoring updates' : 'Enable scoring updates');
-        toggle.title = enabled ? 'Disable scoring updates' : 'Enable scoring updates';
-        if (!enabled) show(false);
-        else show(true);
-      };
-      toggle.addEventListener('click', () => setEnabled(!enabled));
+      toggle.addEventListener('click', () => show(tray.hidden));
       close.addEventListener('click', () => { show(false); toggle.focus({preventScroll:true}); });
       tray.addEventListener('keydown', event => {
         if (event.key === 'Escape') { show(false); toggle.focus({preventScroll:true}); }
@@ -111,7 +105,7 @@
           const events = compare(baseline, next);
           if (baseline && baseline.date !== next.date) { list.replaceChildren(element('p', 'live-score-updates-empty', 'No updates')); total = 0; count.hidden = true; toggle.setAttribute('data-has-updates', 'false'); show(false); }
           baseline = next;
-          if (!enabled || !events.length) return;
+          if (!events.length) return;
           list.querySelector('.live-score-updates-empty')?.remove();
           const batch = element('div', 'live-score-update-batch');
           batch.append(element('time', 'live-score-update-time', new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})));
