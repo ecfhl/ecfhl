@@ -1,8 +1,8 @@
 @auth
 <section id="chat-panel" class="communication-panel floating-chat" aria-label="League and team messages" hidden>
- <div id="chat-panel-handle" class="communication-panel-heading" tabindex="0" role="group" aria-label="Move chat: drag or use arrow keys"><h2>Messages</h2><div class="notification-panel-actions">
- <button type="button" id="chat-panel-minimize" aria-label="Minimize chat" title="Minimize">−</button>
- <a class="notification-settings" href="/notifications#alerts" aria-label="Chat alert settings" title="Chat alert settings">⚙</a>
+ <div id="chat-panel-handle" class="communication-panel-heading" tabindex="0" role="group" aria-label="Move chat: drag or use arrow keys"><h2>Messages</h2><div class="notification-panel-actions"><button type="button" id="chat-panel-trash" disabled aria-label="Clear displayed messages" title="Clear displayed messages"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button>
+ 
+ <a class="notification-settings" href="/notifications#alerts" aria-label="Chat alert settings" title="Chat alert settings">⚙</a><button type="button" id="chat-panel-minimize" aria-label="Minimize chat" title="Minimize">−</button><button type="button" class="panel-header-restore" disabled aria-label="Restore panel" title="Restore">□</button>
  <button type="button" id="chat-panel-close" aria-label="Close chat" title="Close">×</button></div></div>
  <button type="button" id="chat-panel-restore" class="notification-restore" hidden aria-label="Expand chat">League chat</button>
  <div class="chat-panel-body">

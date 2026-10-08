@@ -5,6 +5,8 @@
  const header=document.querySelector('.header-actions a[href="/messages"]'),key='ecfhl-chat-panel:'+userId;
  let saved={};try{saved=JSON.parse(sessionStorage.getItem(key)||'{}')||{};}catch(_){}
  let mode=['closed','expanded','minimized'].includes(saved.mode)?saved.mode:'closed',position=saved.position||null,drag=null,selected='',teams=[],directoryReady=false,generation=0,sending=false;
+ let cleared={};try{cleared=JSON.parse(sessionStorage.getItem(key+':cleared')||'{}')||{};}catch(_){}
+ const trash=$('trash');
  const conversations=new Map();
  const conversation=value=>{if(!conversations.has(value))conversations.set(value,{messages:new Map(),draft:'',pending:null,lastRead:0,hasMore:false,busy:false,readBusy:false});return conversations.get(value);};
  const csrf=()=>document.querySelector('meta[name="csrf-token"]')?.content||'';
@@ -30,14 +32,15 @@
  const node=(tag,value,className)=>{const el=document.createElement(tag);if(value!==undefined)el.textContent=value;if(className)el.className=className;return el;};
  const draw=(oldPage=false)=>{
   const state=conversation(selected),bottom=atBottom(),height=log.scrollHeight;log.replaceChildren();
-  if(!state.messages.size)log.append(node('p','No messages yet. Start the conversation.'));
-  [...state.messages.values()].sort((a,b)=>a.id-b.id).forEach(message=>{
+  const visibleMessages=[...state.messages.values()].filter(message=>Number(message.id)>Number(cleared[selected]||0));trash.disabled=!visibleMessages.length;
+  if(!visibleMessages.length)log.append(node('p','No messages yet. Start the conversation.'));
+  visibleMessages.sort((a,b)=>a.id-b.id).forEach(message=>{
    const row=node('article',undefined,'chat-message');row.dataset.own=String(Number(message.sender_id)===userId);
    const identity=node('div',undefined,'chat-message-identity'),logo=node('img');logo.src=message.team_logo||'/team-icons/league-logo/thumbnail?size=64';logo.alt='';logo.width=32;logo.height=32;const name=node('strong',message.team_name||'League member');name.title=name.textContent;identity.append(logo,name);
    const meta=node('div',undefined,'chat-message-meta');meta.append(identity,node('time',new Date(message.created_at).toLocaleString([],{timeZone:'America/Halifax',hour12:true})));
    row.append(node('p',message.body),meta);log.append(row);
   });
-  older.hidden=!state.hasMore;if(oldPage)log.scrollTop+=log.scrollHeight-height;else if(bottom)log.scrollTop=log.scrollHeight;constrain();read();
+  older.hidden=!state.hasMore||Boolean(cleared[selected]);if(oldPage)log.scrollTop+=log.scrollHeight-height;else if(bottom)log.scrollTop=log.scrollHeight;constrain();read();
  };
  const refresh=async(oldPage=false)=>{
   const value=selected,state=conversation(value),version=generation;if(mode!=='expanded'||document.hidden||state.busy||!directoryReady)return;state.busy=true;
@@ -79,6 +82,11 @@
   try{const d=await request('/api/messages/send',{...attempt,user_id:value?Number(value):null});state.pending=null;state.messages.set(Number(d.message.id),d.message);if(state.draft.trim()===body)state.draft='';
    if(value===selected){if(text.value.trim()===body)text.value='';draw();log.scrollTop=log.scrollHeight;await read();status.textContent='Sent.';}
   }catch(e){if(value===selected)status.textContent=e.message;}finally{sending=false;send.disabled=false;}
+ });
+ trash.addEventListener('click',async()=>{
+  const value=selected,state=conversation(value),ids=[...state.messages.keys()],id=ids.length?Math.max(...ids):0;if(!id)return;trash.disabled=true;
+  try{const d=await request('/api/messages/read',{user_id:value?Number(value):null,last_id:id});state.lastRead=Math.max(state.lastRead,id);counter(d.unread.total);cleared[value]=id;try{sessionStorage.setItem(key+':cleared',JSON.stringify(cleared));}catch(_){}if(value===selected){mode='minimized';draw();render();restore.focus({preventScroll:true});}}
+  catch(e){if(value===selected){status.textContent=e.message;trash.disabled=false;}}
  });
  const hide=()=>{mode='closed';render();header?.focus({preventScroll:true});};
  close.addEventListener('click',hide);$('minimize').addEventListener('click',()=>{mode='minimized';render();restore.focus({preventScroll:true});});

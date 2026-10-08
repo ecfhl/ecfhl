@@ -5,15 +5,21 @@
   try{const value=JSON.parse(sessionStorage.getItem(key)||'null');if(value&&Number.isFinite(value.width)&&Number.isFinite(value.height))size=value;}catch(_){}
   const handle=document.createElement('button');handle.type='button';handle.className='panel-resize-handle';handle.setAttribute('aria-label','Resize '+panel.getAttribute('aria-label')+': drag or use arrow keys');handle.title='Resize: drag or use arrow keys';panel.append(handle);panel.dataset.resizablePanel='true';
   const minimized=()=>panel.dataset.minimized==='true';
+  const minimizeButton=panel.querySelector('button[id$="-minimize"]'),restoreButton=panel.querySelector('.panel-header-restore'),restoreRow=panel.querySelector('.notification-restore,.live-score-updates-restore');
+  restoreButton?.addEventListener('click',()=>restoreRow?.click());
+  const controls=()=>{if(restoreButton)restoreButton.disabled=!minimized();if(minimizeButton)minimizeButton.disabled=minimized();};
+  const collapsedHeight=()=>panel.querySelector('.communication-panel-heading,.live-score-updates-heading').getBoundingClientRect().height+36;
+
   const notify=position=>panel.dispatchEvent(new CustomEvent('ecfhl-panel-resize',{detail:position?{position}:{}}));
   const persist=()=>{if(size)try{sessionStorage.setItem(key,JSON.stringify(size));}catch(_){}};
   const apply=()=>{
-   if(!size||panel.hidden)return;
+   controls();if(!size||panel.hidden)return;
+   if(!minimized()&&size.height<=collapsedHeight()){size.height=drag?.height||300;minimizeButton?.click();return;}
    const rect=panel.getBoundingClientRect(),nav=document.querySelector('.mobile-primary-nav');
    const bottom=nav&&getComputedStyle(nav).display!=='none'?nav.getBoundingClientRect().top:window.innerHeight;
    const availableWidth=Math.max(1,window.innerWidth-Math.max(8,rect.left)-8),availableHeight=Math.max(1,bottom-Math.max(8,rect.top)-8);
    panel.style.width=Math.min(Math.max(280,size.width),availableWidth)+'px';
-   panel.style.height=minimized()?'':Math.min(Math.max(180,size.height),availableHeight)+'px';
+   panel.style.height=minimized()?'':Math.min(Math.max(collapsedHeight(),size.height),availableHeight)+'px';
    panel.dataset.customSize='true';notify();
   };
   handle.addEventListener('pointerdown',event=>{

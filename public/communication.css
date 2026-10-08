@@ -116,3 +116,8 @@ html[data-theme] .live-score-updates-restore{text-align:left;padding:10px 14px;f
 .chat-message-meta time{margin-top:3px;overflow-wrap:anywhere;font-size:10px;line-height:1.4}
 
 html[data-theme] .site-footer .footer-inner.site-credit{display:block;white-space:nowrap;text-align:center;font-size:clamp(10px,2.8vw,14px);line-height:1.4;overflow-x:auto;padding-top:8px;padding-bottom:8px}
+
+.live-score-updates-actions{display:flex;align-items:center;gap:2px;flex:none}
+.live-score-updates-heading,.communication-panel-heading{gap:6px}
+.live-score-updates-heading h2,.communication-panel-heading h2{min-width:0;white-space:nowrap;font-size:13px}
+.communication-panel-heading button:disabled,.live-score-updates-heading button:disabled{opacity:.35;cursor:default}

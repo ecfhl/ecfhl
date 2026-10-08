@@ -62,6 +62,9 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
  await page.goto('https://ecfhl.test/messages?user_id=2');await page.waitForFunction(()=>document.getElementById('chat-panel-conversation').value==='2'&&document.getElementById('chat-panel-log').textContent.includes('Bob private'));
  const longName=await page.locator('#chat-panel-log .chat-message-identity strong').first().evaluate(el=>{el.textContent='A very long fantasy hockey team name that must stay on one line';const style=getComputedStyle(el);return {nowrap:style.whiteSpace,overflow:style.overflow,ellipsis:style.textOverflow,truncated:el.scrollWidth>el.clientWidth};});
  assert.deepEqual(longName,{nowrap:'nowrap',overflow:'hidden',ellipsis:'ellipsis',truncated:true});
+ const sentBeforeClear=sends.length;await page.locator('#chat-panel-trash').click();await page.waitForFunction(()=>document.getElementById('chat-panel').dataset.minimized==='true');await page.locator('#chat-panel .panel-header-restore').click();assert.equal(await page.locator('#chat-panel-log .chat-message').count(),0,'Trash clears only displayed conversation');
+ assert.equal(sends.length,sentBeforeClear,'Clear does not send or delete messages');
+ chats['2'].push(message(++latest,2,1,'New after clear'));await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await page.waitForFunction(()=>document.getElementById('chat-panel-log').textContent.includes('New after clear'));assert.equal(await page.locator('#chat-panel-log .chat-message').count(),1);
  assert.deepEqual(errors,[]);if(process.env.ECFHL_CHAT_SCREENSHOT)await page.screenshot({path:process.env.ECFHL_CHAT_SCREENSHOT});
  await browser.close();console.log('Chat panel checks passed: team switching, private isolation, late responses, send recipient/drafts, escaping, drag, minimize/read behavior, persistence, mobile and direct links.');
 })().catch(e=>{console.error(e);process.exit(1)});

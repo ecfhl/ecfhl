@@ -24,15 +24,20 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
  for(const p of panels){
   await page.locator(p.open).click();const panel=page.locator('#'+p.id);await panel.waitFor({state:'visible'});
   const heading=await page.locator(p.handle).boundingBox();await page.mouse.move(heading.x+45,heading.y+15);await page.mouse.down();await page.mouse.move(145,115);await page.mouse.up();
+  const order=await panel.locator('.live-score-updates-actions,.notification-panel-actions').evaluate(el=>[...el.children].map(child=>child.id.endsWith('-trash')?'trash':child.tagName==='A'?'settings':child.id.endsWith('-minimize')?'minimize':child.classList.contains('panel-header-restore')?'restore':'close'));assert.deepEqual(order,['trash','settings','minimize','restore','close']);
   const before=await panel.boundingBox(),grip=await panel.locator('.panel-resize-handle').boundingBox();await page.mouse.move(grip.x+10,grip.y+10);await page.mouse.down();await page.mouse.move(grip.x+70,grip.y+90);await page.mouse.up();
   const after=await panel.boundingBox();assert(after.width>before.width+40&&after.height>before.height+40,p.id+' resizes on both axes');
   await panel.locator('.panel-resize-handle').focus();await page.keyboard.press('ArrowRight');const keyboard=await panel.boundingBox();assert(keyboard.width>after.width,p.id+' supports keyboard resizing');
   dimensions[p.id]=keyboard;await page.locator(p.minimize).click();await page.waitForTimeout(50);assert(await page.locator(p.handle).isVisible(),p.id+' retains its orange header when minimized');assert(await page.locator(p.restore).isVisible());
   const small=await panel.boundingBox();assert(small.height<keyboard.height,p.id+' collapses despite its saved expanded height');
   await page.locator(p.restore).click();await page.waitForTimeout(50);const restored=await panel.boundingBox();assert(Math.abs(restored.height-keyboard.height)<2,p.id+' restores expanded height');
+  const shrinkGrip=await panel.locator('.panel-resize-handle').boundingBox();await page.mouse.move(shrinkGrip.x+10,shrinkGrip.y+10);await page.mouse.down();await page.mouse.move(shrinkGrip.x+10,50);await page.mouse.up();await page.waitForTimeout(50);
+  assert.equal(await panel.getAttribute('data-minimized'),'true',p.id+' can shrink to minimized height');
+  await panel.locator('.panel-header-restore').click();await page.waitForTimeout(50);assert.equal(await panel.getAttribute('data-minimized'),'false',p.id+' restores from header');
   await page.locator(p.close).click();
  }
  await page.locator('#live-score-updates-toggle').click();await page.locator('#live-score-updates-minimize').click();
+ assert.equal(await page.locator('#live-score-updates-handle h2').textContent(),'Scoring Updates');
  const settings=page.locator('.scoring-settings-icon');assert.equal(await settings.getAttribute('href'),'/notifications#alerts');assert(await settings.isVisible());assert.equal(await page.locator('.scoring-settings-link').count(),0);
  await page.reload();await page.waitForSelector('#live-score-updates-handle');assert(await page.locator('#live-score-updates-handle').isVisible());
  await page.locator('#live-score-updates-restore').click();await page.waitForTimeout(50);const saved=await page.locator('#live-score-updates').boundingBox();assert(Math.abs(saved.width-dimensions['live-score-updates'].width)<2&&Math.abs(saved.height-dimensions['live-score-updates'].height)<2,'Size survives navigation');
