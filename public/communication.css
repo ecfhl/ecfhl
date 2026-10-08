@@ -69,3 +69,17 @@ html[data-theme] .live-score-updates-filters[hidden]{display:none}
 .floating-chat .chat-form textarea{min-width:0}
 .floating-chat .chat-form button{flex:none}
 @media(max-width:700px){.floating-chat{top:72px;right:12px}.floating-chat .chat-log{height:30dvh}}
+
+/* Header counts sit over their icons and disappear when empty. */
+html[data-theme] .header-actions .header-count,
+html[data-theme] .header-actions .live-score-updates-toggle #live-score-updates-count{
+ position:absolute;top:-3px;right:-4px;display:inline-flex!important;align-items:center;justify-content:center;
+ min-width:17px;height:17px;padding:0 4px;box-sizing:border-box;border:2px solid var(--panel);
+ border-radius:999px;background:#e92323;color:#fff!important;font-size:10px;font-weight:800;line-height:1;
+ pointer-events:none;
+}
+html[data-theme] .header-actions .header-count[data-active="false"],
+html[data-theme] .header-actions .header-count[hidden],
+html[data-theme] .header-actions .live-score-updates-toggle #live-score-updates-count[data-active="false"]{display:none!important}
+.chat-message-identity{justify-content:flex-end;text-align:right}
+.chat-message time{text-align:right}

@@ -21,7 +21,7 @@
  const render=()=>{panel.hidden=mode==='closed';panel.dataset.minimized=String(mode==='minimized');restore.hidden=mode!=='minimized';restore.textContent=title();header?.setAttribute('aria-expanded',String(mode!=='closed'));constrain();persist();};
  const atBottom=()=>log.scrollHeight-log.scrollTop-log.clientHeight<40;
  const isReading=message=>mode==='expanded'&&!document.hidden&&atBottom()&&(message.recipient_id===null?selected==='':selected===String(message.sender_id));
- const counter=value=>{const el=document.getElementById('header-message-count');if(el){el.textContent=String(value);el.dataset.active=String(value>0);}};
+ const counter=value=>{const el=document.getElementById('header-message-count');if(el){el.textContent=value>0?String(value):'';el.hidden=!(value>0);el.dataset.active=String(value>0);}};
  const read=async()=>{
   const value=selected,state=conversation(value);if(mode!=='expanded'||document.hidden||!atBottom()||state.readBusy)return;
   const ids=[...state.messages.keys()],id=ids.length?Math.max(...ids):0;if(id<=state.lastRead)return;state.readBusy=true;

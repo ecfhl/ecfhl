@@ -11,7 +11,7 @@
   }finally{clearTimeout(timer);}
  };
  const node=(tag,text,className)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(className)n.className=className;return n;};
- const counter=(id,value)=>{const n=document.getElementById(id);if(n){n.textContent=String(value);n.dataset.active=String(value>0);}};
+ const counter=(id,value)=>{const n=document.getElementById(id);if(n){n.textContent=value>0?String(value):'';n.hidden=!(value>0);n.dataset.active=String(value>0);}};
  const scoring=window.EcfhlScoreUpdates?.start();
  let scoreBusy=false,scorePending=false;
  const refreshScoring=async()=>{if(document.hidden)return;if(scoreBusy){scorePending=true;return;}scoreBusy=true;try{scoring?.update(await request('/api/scoring-updates?scope='+encodeURIComponent(scoring.scope())));}catch(_){/* Keep saved scores and retry next tick. */}finally{scoreBusy=false;if(scorePending){scorePending=false;refreshScoring();}}};

@@ -25,8 +25,13 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
   return route.fulfill({status:404,body:''});
  });
  await page.goto('https://ecfhl.test/account');await page.waitForFunction(()=>document.querySelectorAll('#chat-panel-conversation option').length===3);
+ const badge=await page.locator('#header-message-count').evaluate(el=>({color:getComputedStyle(el).backgroundColor,position:getComputedStyle(el).position,text:el.textContent}));assert.deepEqual(badge,{color:'rgb(233, 35, 35)',position:'absolute',text:'1'},'Unread messages use a red overlay badge');
+ assert(!(await page.locator('#header-notification-count').isVisible()));assert(!(await page.locator('#live-score-updates-count').isVisible()));
  assert(!(await page.locator('#chat-panel').isVisible()));assert.equal(reads.length,0,'Closed panel does not mark messages read');
  await page.locator('.header-actions a[href="/messages"]').click();await page.waitForFunction(()=>document.getElementById('chat-panel-log').textContent.includes('League only'));
+ await page.waitForFunction(()=>document.getElementById('header-message-count').hidden);
+ assert.equal(await page.locator('#chat-panel-log .chat-message-identity').first().evaluate(el=>getComputedStyle(el).justifyContent),'flex-end');
+ assert.equal(await page.locator('#chat-panel-log time').first().evaluate(el=>getComputedStyle(el).textAlign),'right');
  assert.equal(page.url(),'https://ecfhl.test/account','Chat opens without navigation');
  await page.locator('#chat-panel-text').fill('League draft');delayBob=true;
  await page.locator('#chat-panel-conversation').selectOption('2');await page.waitForTimeout(100);await page.locator('#chat-panel-conversation').selectOption('3');

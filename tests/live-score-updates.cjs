@@ -23,7 +23,7 @@ let app=setup(),ui=app.start(),e=app.elements;
 assert.equal(app.start(),ui,'One scoring panel per page');
 assert.equal(app.api.compare(before,next).length,3);assert.equal(app.api.compare(null,next).length,0);assert.equal(app.api.compare(next,next).length,0);assert.equal(app.api.compare(next,before).length,0);
 assert.equal(app.api.compare(before,next)[0].stats,'1 goal');assert.equal(app.api.compare(before,next)[2].stats,'1 win · 1 shutout');
-ui.update(before);assert.equal(e['live-score-updates-count'].textContent,'0');assert.equal(e['live-score-updates-count'].hidden,false);
+ui.update(before);assert.equal(e['live-score-updates-count'].textContent,'');assert.equal(e['live-score-updates-count'].hidden,true);
 ui.update(next);assert.equal(e['live-score-updates-count'].textContent,'2','Default matchup excludes other league teams');
 assert.equal(e['live-score-updates'].dataset.minimized,'true');
 e['live-score-updates-toggle'].handlers.click();assert.equal(e['live-score-updates'].dataset.minimized,'false');
@@ -33,12 +33,12 @@ const later=state([p('a',4,{G:2}),...next.players.slice(1)]);ui.update(later);as
 e['live-score-updates-minimize'].handlers.click();assert.equal(e['live-score-updates'].dataset.minimized,'true');
 // A new page restores the baseline, content, enabled setting and minimized mode.
 app=setup();ui=app.start();e=app.elements;assert.equal(e['live-score-updates-count'].textContent,'3');assert.equal(e['live-score-updates'].dataset.minimized,'true');ui.update(later);assert.equal(e['live-score-updates-count'].textContent,'3','Navigation does not duplicate events');
-e['live-score-updates-trash'].handlers.click();assert.equal(e['live-score-updates-trash'].disabled,true);assert.equal(e['live-score-updates-count'].textContent,'0');
+e['live-score-updates-trash'].handlers.click();assert.equal(e['live-score-updates-trash'].disabled,true);assert.equal(e['live-score-updates-count'].textContent,'');
 e['live-score-updates-scope'].value='team';e['live-score-updates-scope'].handlers.change();ui.update(state([p('a',6,{G:3}),p('b',2,{A:2},{teamId:'2'}),later.players[2]]));assert.equal(e['live-score-updates-count'].textContent,'1');
 e['live-score-updates-scope'].value='teams';e['live-score-updates-team'].children[2].children[0].checked=true;e['live-score-updates-team'].handlers.change();e['live-score-updates-scope'].handlers.change();ui.update(state([p('a',6,{G:3}),p('b',2,{A:2},{teamId:'2'}),p('c',6,{W:2},{teamId:'3'})]));assert.equal(e['live-score-updates-count'].textContent,'1','Specific teams filters selected teams');assert.equal(e['live-score-updates-team-label'].hidden,false);
 e['live-score-updates-scope'].value='league';e['live-score-updates-scope'].handlers.change();ui.update(state([p('a',8,{G:4}),p('b',3,{A:3},{teamId:'2'}),p('c',7,{W:2},{teamId:'3'})]));assert.equal(e['live-score-updates-count'].textContent,'3');
 e['live-score-updates-close'].handlers.click();ui.update(state([p('a',10,{G:5}),p('b',3,{A:3},{teamId:'2'}),p('c',7,{W:2},{teamId:'3'})]));assert.equal(e['live-score-updates'].hidden,false);assert.equal(e['live-score-updates'].dataset.minimized,'true');
-e['live-score-updates-scope'].value='nhl';e['live-score-updates-scope'].handlers.change();const nhl={key:'goal1',team:'WSH',player:'Scorer',stats:'Goal',points:0};ui.update({...next,nhlEvents:[nhl]});assert.equal(e['live-score-updates-count'].textContent,'0');ui.update({...next,nhlEvents:[nhl,{...nhl,key:'goal2'}]});assert.equal(e['live-score-updates-count'].textContent,'1');ui.update({...next,nhlEvents:null});ui.update({...next,nhlEvents:[nhl,{...nhl,key:'goal2'}]});assert.equal(e['live-score-updates-count'].textContent,'1');
+e['live-score-updates-scope'].value='nhl';e['live-score-updates-scope'].handlers.change();const nhl={key:'goal1',team:'WSH',player:'Scorer',stats:'Goal',points:0};ui.update({...next,nhlEvents:[nhl]});assert.equal(e['live-score-updates-count'].textContent,'');ui.update({...next,nhlEvents:[nhl,{...nhl,key:'goal2'}]});assert.equal(e['live-score-updates-count'].textContent,'1');ui.update({...next,nhlEvents:null});ui.update({...next,nhlEvents:[nhl,{...nhl,key:'goal2'}]});assert.equal(e['live-score-updates-count'].textContent,'1');
 e['live-score-updates-toggle'].handlers.click();const handle=e['live-score-updates-handle'];handle.handlers.pointerdown({button:0,pointerId:1,clientX:1000,clientY:190,target:handle});handle.handlers.pointermove({pointerId:1,clientX:-2000,clientY:-2000});assert.equal(e['live-score-updates'].style.left,'8px');handle.handlers.pointerup({pointerId:1});
-ui.update({...next,date:'2026-10-08'});assert.equal(e['live-score-updates-count'].textContent,'0');
+ui.update({...next,date:'2026-10-08'});assert.equal(e['live-score-updates-count'].textContent,'');
 console.log('Scoring popup checks passed: one-click reopen, always-on updates, navigation persistence, specific teams and all scopes, controls and dragging.');

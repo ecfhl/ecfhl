@@ -63,7 +63,7 @@
         const total = history.reduce((sum,batch)=>sum+batch.events.length,0);
         tray.hidden = mode === 'closed'; tray.dataset.minimized = String(mode === 'minimized');
         restore.hidden = mode !== 'minimized'; restore.textContent = total + ' updates';
-        trash.disabled = total === 0; count.textContent = String(total); count.hidden = false;
+        trash.disabled = total === 0; count.textContent = total > 0 ? String(total) : ''; count.hidden = total === 0;
         count.dataset.active = String(total > 0);
         toggle.dataset.enabled = String(enabled); toggle.setAttribute('aria-expanded',String(mode !== 'closed'));
         toggle.setAttribute('aria-label','Open scoring updates, '+total+' stored, updates '+(enabled?'on':'off'));
