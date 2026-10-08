@@ -6,6 +6,7 @@
   @foreach([
     ['/admin/projections', '📊', 'Projection Weights', 'Adjust your MyProj formula and preview the top players.'],
     ['/job-status', '🔄', 'Collector Status', 'Check data refreshes and run collectors.'],
+    ['/admin/gary', '💬', 'Gary Betman', 'Send private or League messages as the fictional league persona.'],
     ['/admin/advisors', '💬', 'Advisors', 'Manage lineup advisors and their profiles.'],
     ['/admin/teams', '👥', 'Teams', 'Manage team logos and associated accounts.'],
     ['/admin/notifications', '🔔', 'Notification Tests', 'Send a test for every scoring and goalie notification type.'],

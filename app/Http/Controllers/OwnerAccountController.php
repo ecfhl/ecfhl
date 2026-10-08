@@ -30,7 +30,7 @@ class OwnerAccountController {
  }
  public function login(Request $r){
   $v=$r->validate(['email'=>'required|email','password'=>'required|string']);$v['email']=strtolower(trim($v['email']));
-  if(!Auth::attempt($v,$r->boolean('remember')))throw ValidationException::withMessages(['email'=>'Email or password is incorrect.']);
+  if(!Auth::attempt(array_merge($v,['messaging_persona'=>null]),$r->boolean('remember')))throw ValidationException::withMessages(['email'=>'Email or password is incorrect.']);
   $this->revokePreviousDevice($r,$r->user()->id);$r->session()->regenerate();return redirect()->intended('/account');
  }
  public function logout(Request $r){

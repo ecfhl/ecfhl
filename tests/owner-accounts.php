@@ -94,7 +94,7 @@ verifyOwner(ownerRequest('GET','/account/admin-invite?token='.$configInvite,[],$
 $response=ownerRequest('GET','/account',[],$admin,['HTTP_ACCEPT'=>'text/html']);verifyOwner(str_contains($response->getContent(),'href="/admin"'),'Administrator menu absent');
 verifyOwner(str_contains($response->getContent(),'href="/admin/projections"'),'Projection weights link missing from administrator menu');
 $landing=ownerRequest('GET','/admin',[],$admin,['HTTP_ACCEPT'=>'text/html']);
-verifyOwner($landing->getStatusCode()===200 && substr_count($landing->getContent(),'class="card admin-menu-card"')===5, 'Admin must open a card menu instead of redirecting to Advisors');
+verifyOwner($landing->getStatusCode()===200 && substr_count($landing->getContent(),'class="card admin-menu-card"')===6, 'Admin must open a card menu instead of redirecting to Advisors');
 $response=ownerRequest('GET','/admin/projections',[],$admin,['HTTP_ACCEPT'=>'text/html']);
 verifyOwner($response->getStatusCode()===200 && str_contains($response->getContent(),'Season to date') && str_contains($response->getContent(),'units[21d]'),'Projection settings page failed to render');
 $response=ownerRequest('POST','/admin/projections',['weights'=>['fantrax'=>20,'season'=>30,'7d'=>25,'14d'=>15,'21d'=>10]],$admin);

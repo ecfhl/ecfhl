@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\DB;
 
 final class Messaging
 {
+ public static function participants() {
+  return User::with('claim')->where(fn($q)=>$q->whereHas('claim',fn($q)=>$q->whereNotNull('fantasy_team_id')->where('fantasy_team_id','!=',''))->orWhereNotNull('messaging_persona'));
+ }
  public static function conversation(?int $other): string {return $other ? 'user:'.$other : 'league';}
  public static function visible(int $userId,?int $other) {
   $q=DB::table('chat_messages as m');
@@ -32,7 +35,7 @@ final class Messaging
  }
  public static function rows($query): array {
   $rows=$query->join('users as u','u.id','=','m.sender_id')->leftJoin('owner_team_claims as c','c.user_id','=','u.id')
-   ->get(['m.id','m.sender_id','m.recipient_id','m.body','m.created_at','c.team_name'])->map(function($m){$row=(array)$m;$row['sender_name']=$m->team_name ?: 'League member';$row['team_logo']=$m->team_name ? TeamImages::url(\Illuminate\Support\Str::slug($m->team_name),64) : TeamImages::url('league-logo',64);$row['created_at']=\Carbon\CarbonImmutable::parse($m->created_at,config('app.timezone'))->toIso8601String();return $row;})->all();
+   ->get(['m.id','m.sender_id','m.recipient_id','m.body','m.created_at','c.team_name','u.messaging_persona','u.name as persona_name'])->map(function($m){$row=(array)$m;if($m->messaging_persona)$row['team_name']=$m->persona_name;unset($row['messaging_persona'],$row['persona_name']);$row['sender_name']=$row['team_name'] ?: 'League member';$row['team_logo']=$m->team_name ? TeamImages::url(\Illuminate\Support\Str::slug($m->team_name),64) : TeamImages::url('league-logo',64);$row['created_at']=\Carbon\CarbonImmutable::parse($m->created_at,config('app.timezone'))->toIso8601String();return $row;})->all();
   return self::receipts($rows);
  }
  public static function receipts(array $messages): array {
