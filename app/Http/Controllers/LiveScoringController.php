@@ -26,6 +26,7 @@ final class LiveScoringController
         $scoreLastUpdate = $lastUpdate = $snapshot['collected_at'] ?? null;
         $autoRefresh = $date === $today;
         $scoringState=\App\Support\LiveScoring\ScoringAlert::state($snapshot??['fantasy_date'=>$date]);
+        if (request('updates_scope') === 'nhl') $scoringState['nhlEvents'] = \App\Support\LiveScoring\NhlUpdates::events($date);
         return response()->view('teams.current-index', compact('teams','matchups','scheduleLabel','date','yesterday','today','tomorrow','lastUpdate','scoreLastUpdate','autoRefresh','scoringState'))
             ->header('Cache-Control','no-store, no-cache, must-revalidate');
     }

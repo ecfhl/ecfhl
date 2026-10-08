@@ -11,6 +11,7 @@ final class ScoringAlert
             $position=$player['position']??'';
             if (is_array($position)) $position=implode(',',$position);
             $players[]=[
+                'teamId'=>(string)$player['fantasy_team_id'],
                 'key'=>$player['fantasy_team_id'].'|'.$player['player_id'],
                 'team'=>$snapshot['teams'][$player['fantasy_team_id']]['name'],
                 'name'=>\App\Support\PlayerName::display($player['player_name']),

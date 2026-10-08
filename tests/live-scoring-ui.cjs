@@ -9,7 +9,7 @@ function setup(){
  const window={EcfhlScoreUpdates:{start(){return{update(panel){assert.equal(panel,fresh);assert.ok(old.replaced);alerts++}}}},scrollX:12,scrollY:620,scrollTo(x,y){assert.equal(x,12);assert.equal(y,620);this.restored=true}};
  let calls=0,release,ok=true,missing=false,cleared=false,pinned=0,saved=0,tick;
  const fetch=async(url,opts)=>{calls++;assert.equal(opts.cache,'no-store');assert.equal(opts.headers.Accept,'text/html');await new Promise(r=>release=r);return{ok,text:async()=>'<html>fresh</html>'}};
- const context={window,document,location:{href:'https://ecfhl.example/teams/current'},fetch,AbortController,Map,DOMParser:class{parseFromString(){return{querySelector:s=>s==='.current-matchup-list'&&!missing?fresh:null}}},setInterval(fn,ms){assert.equal(ms,60000);tick=fn},setTimeout(){return 1},clearTimeout(){cleared=true}};
+ const context={URL,window,document,location:{href:'https://ecfhl.example/teams/current'},fetch,AbortController,Map,DOMParser:class{parseFromString(){return{querySelector:s=>s==='.current-matchup-list'&&!missing?fresh:null}}},setInterval(fn,ms){assert.equal(ms,60000);tick=fn},setTimeout(){return 1},clearTimeout(){cleared=true}};
  vm.runInNewContext(fs.readFileSync('public/live-scoring.js','utf8'),context);
  const refresh=window.EcfhlLiveScoring.start({saveOpenMatchups(){saved++},highlightNotificationTeam(){pinned++}});
  return{old,document,window,status,oldCards,newCards,handlers,warning,refresh,get alerts(){return alerts},get calls(){return calls},get cleared(){return cleared},get pinned(){return pinned},get saved(){return saved},release(){release()},fail(){ok=false},missing(){missing=true}};

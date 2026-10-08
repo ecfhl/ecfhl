@@ -16,7 +16,7 @@
         if (key === 'GWG') return ['GWG'];
         return [gain + ' ' + label + (gain !== 1 && ['goal','assist','win','shutout'].includes(label) ? 's' : gain !== 1 && label === 'loss' ? 'es' : '')];
       });
-      return [{key:player.key, team:player.team, player:player.name + (player.nhl ? ' (' + player.nhl + ')' : ''), points, stats:stats.join(' · ') || 'Points updated'}];
+      return [{key:player.key, team:player.team, teamId:player.teamId, player:player.name + (player.nhl ? ' (' + player.nhl + ')' : ''), points, stats:stats.join(' · ') || 'Points updated'}];
     });
   };
   const read = panel => {
@@ -32,6 +32,12 @@
       if (!tray) return null;
       const list = document.getElementById('live-score-updates-list');
       const toggle = document.getElementById('live-score-updates-toggle');
+      const trash = document.getElementById('live-score-updates-trash');
+      const restore = document.getElementById('live-score-updates-restore');
+      const scope = document.getElementById('live-score-updates-scope');
+      const team = document.getElementById('live-score-updates-team');
+      const status = document.getElementById('live-score-updates-status');
+      try { team.value = team.dataset.accountTeam || localStorage.getItem('ecfhl-notification-team-id') || team.value; } catch (_) {}
       const close = document.getElementById('live-score-updates-close');
       const minimize = document.getElementById('live-score-updates-minimize');
       const count = document.getElementById('live-score-updates-count');
@@ -78,53 +84,79 @@
       });
       window.addEventListener('resize', constrain);
       let baseline = read(document.querySelector('.current-matchup-list'));
-      let total = 0, cleared = false;
+      let total = 0, enabled = true, mode = 'closed';
       const highlighted = new Map();
-      const hasGreenScore = panel => !!panel?.querySelector('.score-up');
-      const syncAlertState = panel => {
-        const active = !cleared && hasGreenScore(panel);
-        toggle.dataset.enabled = String(active);
-        toggle.setAttribute('aria-pressed', String(active));
-        toggle.setAttribute('aria-label', active ? 'Scoring updates available' : 'Show scoring updates');
-        toggle.title = active ? 'Scoring updates available' : 'Show scoring updates';
+      const render = () => {
+        tray.hidden = mode === 'closed';
+        tray.dataset.minimized = String(mode === 'minimized');
+        restore.hidden = mode !== 'minimized';
+        restore.textContent = total + ' updates';
+        trash.disabled = total === 0;
+        count.textContent = String(total);
+        count.hidden = total === 0;
+        toggle.dataset.enabled = String(enabled);
+        toggle.setAttribute('aria-pressed', String(enabled));
+        toggle.setAttribute('aria-expanded', String(mode !== 'closed'));
+        toggle.setAttribute('aria-label', 'Scoring updates ' + (enabled ? 'on' : 'off'));
+        toggle.title = 'Scoring updates ' + (enabled ? 'on' : 'off');
+        status.textContent = enabled ? 'On' : 'Off';
+        toggle.setAttribute('data-has-updates', String(total > 0));
+        if (!tray.hidden) constrain();
       };
-      const show = open => {
-        tray.hidden = !open;
-        toggle.setAttribute('aria-expanded', String(open));
-        syncAlertState(document.querySelector('.current-matchup-list'));
-        if (open) constrain();
-      };
-      syncAlertState(document.querySelector('.current-matchup-list'));
-      toggle.addEventListener('click', () => show(tray.hidden));
-      minimize.addEventListener('click', () => { show(false); toggle.focus({preventScroll:true}); });
-      close.addEventListener('click', () => {
-        cleared = true; total = 0; highlighted.clear();
+      const clear = () => {
+        total = 0; highlighted.clear();
         list.replaceChildren(element('p', 'live-score-updates-empty', 'No updates'));
-        count.textContent = '0'; count.hidden = true;
-        toggle.setAttribute('data-has-updates', 'false');
-        show(false); toggle.focus({preventScroll:true});
+      };
+      toggle.addEventListener('click', () => {
+        enabled = !enabled;
+        mode = enabled ? 'expanded' : 'closed';
+        render();
       });
+      minimize.addEventListener('click', () => { mode = 'minimized'; render(); restore.focus({preventScroll:true}); });
+      restore.addEventListener('click', () => { mode = 'expanded'; render(); });
+      trash.addEventListener('click', () => { clear(); mode = 'minimized'; render(); restore.focus({preventScroll:true}); });
+      close.addEventListener('click', () => { mode = 'closed'; render(); toggle.focus({preventScroll:true}); });
       tray.addEventListener('keydown', event => {
-        if (event.key === 'Escape') { show(false); toggle.focus({preventScroll:true}); }
+        if (event.key === 'Escape') { mode = 'closed'; render(); toggle.focus({preventScroll:true}); }
       });
+      const filterChanged = () => {
+        clear();
+        document.getElementById('live-score-updates-team-label').hidden = !['team','matchup'].includes(scope.value);
+        render();
+      };
+      scope.addEventListener('change', filterChanged);
+      team.addEventListener('change', filterChanged);
+      const accepts = event => {
+        if (scope.value === 'league' || scope.value === 'nhl') return true;
+        if (scope.value === 'team') return event.teamId === team.value;
+        const card = [...document.querySelectorAll('[data-matchup-key]')].find(card => [card.dataset.awayTeamId, card.dataset.homeTeamId].includes(team.value));
+        return !!card && [card.dataset.awayTeamId, card.dataset.homeTeamId].includes(event.teamId);
+      };
       const element = (tag, className, text) => {
         const node = document.createElement(tag);
         node.className = className;
         if (text !== undefined) node.textContent = text;
         return node;
       };
+      render();
+      let nhlBaseline = null;
       return {
+        scope: () => scope.value,
         update(panel) {
           const next = read(panel);
           if (!next) return;
-          const events = compare(baseline, next);
-          if (baseline && baseline.date !== next.date) { list.replaceChildren(element('p', 'live-score-updates-empty', 'No updates')); total = 0; cleared = false; highlighted.clear(); count.hidden = true; toggle.setAttribute('data-has-updates', 'false'); show(false); }
+          let events = compare(baseline, next).filter(accepts);
+          if (baseline && baseline.date !== next.date) { clear(); mode = 'closed'; nhlBaseline = null; }
           baseline = next;
-          if (events.length) cleared = false;
+          if (scope.value === 'nhl') {
+            const current = next.nhlEvents;
+            events = Array.isArray(current) && nhlBaseline ? current.filter(event => !nhlBaseline.has(event.key)) : [];
+            if (Array.isArray(current)) nhlBaseline = new Set(current.map(event => event.key));
+          } else { nhlBaseline = null; }
+          if (!enabled) { render(); return; }
           const green = new Set(next.players.filter(player => player.change === 'up').map(player => player.key));
           highlighted.forEach((row, key) => row.setAttribute('data-new', String(green.has(key))));
-          syncAlertState(panel);
-          if (!events.length) return;
+          if (!events.length) { render(); return; }
           list.querySelector('.live-score-updates-empty')?.remove();
           const batch = element('div', 'live-score-update-batch');
           batch.append(element('time', 'live-score-update-time', new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit', second:'2-digit', hour12:true})));
@@ -136,7 +168,8 @@
           teams.forEach((plays, team) => {
             const group = element('div', 'live-score-update-team');
             const heading = element('div', 'live-score-update-team-heading');
-            heading.append(element('strong', '', team), element('span', 'live-score-update-points', '+' + formatPoints(plays.reduce((sum, play) => sum + play.points, 0)) + ' FPts'));
+            heading.append(element('strong', '', team));
+            if (scope.value !== 'nhl') heading.append(element('span', 'live-score-update-points', '+' + formatPoints(plays.reduce((sum, play) => sum + play.points, 0)) + ' FPts'));
             group.append(heading);
             plays.forEach(play => {
               const row = element('div', 'live-score-update-player');
@@ -145,7 +178,8 @@
               highlighted.set(play.key, row);
               const detail = element('div', '');
               detail.append(element('strong', '', play.player), element('span', 'live-score-update-stats', play.stats));
-              row.append(detail, element('span', 'live-score-update-player-points', '+' + formatPoints(play.points)));
+              row.append(detail);
+              if (scope.value !== 'nhl') row.append(element('span', 'live-score-update-player-points', '+' + formatPoints(play.points)));
               group.append(row);
             });
             batch.append(group);
@@ -156,7 +190,8 @@
           count.textContent = String(total);
           count.hidden = false;
           toggle.setAttribute('data-has-updates', 'true');
-          show(true);
+          if (mode === 'closed') mode = 'minimized';
+          render();
         }
       };
     }

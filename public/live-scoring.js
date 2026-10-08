@@ -11,7 +11,9 @@
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 20000);
         try {
-          const response = await fetch(location.href, {headers:{'X-Requested-With':'XMLHttpRequest',Accept:'text/html'},cache:'no-store',signal:controller.signal});
+          const refreshUrl = new URL(location.href);
+          if (scoringUpdates?.scope?.() === 'nhl') refreshUrl.searchParams.set('updates_scope', 'nhl');
+          const response = await fetch(refreshUrl, {headers:{'X-Requested-With':'XMLHttpRequest',Accept:'text/html'},cache:'no-store',signal:controller.signal});
           if (!response.ok) throw new Error('Refresh failed');
           const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
           const fresh = doc.querySelector('.current-matchup-list');
