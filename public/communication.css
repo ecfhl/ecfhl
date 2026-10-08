@@ -58,3 +58,14 @@ html[data-theme] .live-score-updates-filters[hidden]{display:none}
 .communication-panel[data-minimized="true"] .notification-panel-body{display:none}
 .communication-panel-heading :focus-visible,.notification-restore:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 #notification-panel-status{font-size:12px;color:var(--text)}
+
+.floating-chat{top:100px;right:24px;z-index:1400;width:min(420px,calc(100vw - 24px))}
+.chat-panel-body{padding:12px 14px}
+.floating-chat[data-minimized="true"] .chat-panel-body{display:none}
+.floating-chat[data-dragging="true"] .communication-panel-heading{cursor:grabbing}
+.chat-conversation-label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}
+#chat-panel-conversation{width:100%;padding:8px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:7px;font:inherit;font-size:13px}
+.floating-chat .chat-log{height:min(280px,35dvh);margin:10px 0}
+.floating-chat .chat-form textarea{min-width:0}
+.floating-chat .chat-form button{flex:none}
+@media(max-width:700px){.floating-chat{top:72px;right:12px}.floating-chat .chat-log{height:30dvh}}

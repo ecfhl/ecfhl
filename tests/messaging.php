@@ -41,6 +41,10 @@ $r=chatRequest('GET','/api/messages/conversation?user_id='.$alice->id,[],$cookie
 $state=payload(chatRequest('GET','/api/messages/state?after=0',[],$cookies['Carol']));checkChat($state['messages']===[]&&$state['unread']['total']===0,'Private popup or counter leaked');
 $state=payload(chatRequest('GET','/api/messages/state?after=0',[],$cookies['Bob']));checkChat($state['unread']['private']===1&&count($state['messages'])===1,'Recipient unread or popup missing');
 checkChat(!str_contains(json_encode($state),'alice@example.org'),'Private email exposed');
+$unlinked=User::create(['name'=>'Unlinked account','email'=>'unlinked@example.org','password'=>'example-password-123']);
+$directory=payload(chatRequest('GET','/api/messages/state',[],$cookies['Bob']))['teams'];
+checkChat(count($directory)===2&&collect($directory)->pluck('user_id')->sort()->values()->all()===collect([$alice->id,$carol->id])->sort()->values()->all(),'Chat team directory includes self or unlinked accounts');
+checkChat(!str_contains(json_encode($directory),'example.org')&&!str_contains(json_encode($directory),'"name":"'),'Chat directory exposes personal identity');
 checkChat(chatRequest('POST','/api/messages/read',['user_id'=>$alice->id,'last_id'=>$privateId],$cookies['Carol'])->getStatusCode()===403,'Stranger marks private message read');
 $r=chatRequest('POST','/api/messages/read',['user_id'=>$alice->id,'last_id'=>$privateId],$cookies['Bob']);checkChat(payload($r)['unread']['total']===0,'Reading private message does not clear count');
 $r=chatRequest('POST','/api/messages/send',['body'=>'League hello','client_id'=>Str::uuid()->toString()],$cookies['Alice']);$leagueId=payload($r)['message']['id'];
@@ -71,6 +75,15 @@ checkChat(str_contains($html,'href="/notifications#alerts"'),'Scoring settings l
 $r=chatRequest('GET','/notifications',[],$cookies['Alice'],true);$settings=$r->getContent();
 checkChat($r->getStatusCode()===200&&str_contains($settings,'id="settings-notifications"')&&str_contains($settings,'id="settings-alerts"'),'Notification and alert settings tabs missing');
 checkChat(str_contains($settings,'id="scoring-settings-controls"')&&str_contains($settings,'/notification-settings.js'),'Scoring settings controls missing');
+$settingsDom=new DOMDocument();@$settingsDom->loadHTML($settings);$settingsXpath=new DOMXPath($settingsDom);
+foreach(['notifications_enabled','private_message_push','league_message_push','team_scores','opponent_scores','own_goalies','all_goalies','available_today','available_tomorrow','goalies[]'] as $key){
+ checkChat($settingsXpath->query('//*[@id="settings-alerts"]//input[@name="'.$key.'"]')->length===0,'Notification setting in Alerts: '.$key);
+}
+foreach(['private_message_popups','league_message_popups'] as $key){
+ checkChat($settingsXpath->query('//*[@id="settings-alerts"]//input[@type="checkbox" and @name="'.$key.'"]')->length===1,'Popup setting missing in Alerts: '.$key);
+ checkChat($settingsXpath->query('//*[@id="settings-notifications"]//input[@name="'.$key.'"]')->length===0,'Popup setting in Notifications: '.$key);
+}
+checkChat(str_contains($html,'id="chat-panel"')&&str_contains($html,'/chat-panel.js'),'Shared chat panel missing');
 checkChat(!str_contains($html,'id="live-score-updates-status"'),'On/Off text still in header');
 $r=chatRequest('GET','/api/scoring-updates',[],$guest);checkChat($r->getStatusCode()===200&&isset(payload($r)['matchups']),'Scoring endpoint unavailable across app');
 // Pagination and monotonic read positions.

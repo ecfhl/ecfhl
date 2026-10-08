@@ -145,6 +145,7 @@
   if(Number(message.sender_id)===userId)return;
   const league=message.recipient_id===null;
   if(preferences[league?'league_message_popups':'private_message_popups']===false)return;
+  if(window.EcfhlChatPanel?.isReading(message))return;
   const open=widgets.find(w=>(league?w.other===null:w.other===Number(message.sender_id))&&visible(w)&&atBottom(w));if(open)return;
   const box=node('section',undefined,'message-popup'),heading=node('div',undefined,'message-popup-heading');
   const logo=node('img');logo.src=message.team_logo||'/team-icons/league-logo/thumbnail?size=64';logo.alt='';logo.width=32;logo.height=32;heading.append(logo,node('strong',(league?'League chat · ':'')+(message.team_name||'League member')));
@@ -157,7 +158,7 @@
   if(stateBusy||document.hidden)return;stateBusy=true;
   try{
    const data=await request('/api/messages/state'+(cursor!==null?'?after='+cursor:''));
-   preferences=data.preferences;syncPreferences();owners=data.owners;teamMessage();const previousIds=new Set(inbox.map(item=>Number(item.id)));
+   preferences=data.preferences;syncPreferences();owners=data.owners;window.dispatchEvent(new CustomEvent('ecfhl-message-state',{detail:data}));teamMessage();const previousIds=new Set(inbox.map(item=>Number(item.id)));
    inbox=data.notifications;
    if(notificationStateReady&&inbox.some(item=>!item.read_at&&!clearedNotifications.has(Number(item.id))&&!previousIds.has(Number(item.id)))&&notificationMode==='closed')notificationMode='minimized';
    notificationStateReady=true;drawInbox();updateUnread(data.unread);counter('header-notification-count',data.notification_count);
