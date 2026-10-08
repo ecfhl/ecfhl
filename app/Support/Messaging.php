@@ -27,7 +27,8 @@ final class Messaging
   });
   $league=(clone $rows)->whereNull('m.recipient_id')->count();
   $private=(clone $rows)->whereNotNull('m.recipient_id')->count();
-  return ['total'=>$league+$private,'league'=>$league,'private'=>$private];
+  $people=(clone $rows)->whereNotNull('m.recipient_id')->select('m.sender_id')->selectRaw('COUNT(*) as unread_count')->groupBy('m.sender_id')->pluck('unread_count','sender_id')->map(fn($count)=>(int)$count)->all();
+  return ['total'=>$league+$private,'league'=>$league,'private'=>$private,'people'=>(object)$people];
  }
  public static function rows($query): array {
   return $query->join('users as u','u.id','=','m.sender_id')->leftJoin('owner_team_claims as c','c.user_id','=','u.id')

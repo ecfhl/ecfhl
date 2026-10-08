@@ -13,7 +13,7 @@
   const notify=position=>panel.dispatchEvent(new CustomEvent('ecfhl-panel-resize',{detail:position?{position}:{}}));
   const persist=()=>{if(size)try{sessionStorage.setItem(key,JSON.stringify(size));}catch(_){}};
   const apply=()=>{
-   controls();if(!size||panel.hidden)return;
+   controls();if(panel.dataset.maximized==='true')return;if(!size||panel.hidden)return;
    if(!minimized()&&size.height<=collapsedHeight()){size.height=drag?.height||300;minimizeButton?.click();return;}
    const rect=panel.getBoundingClientRect(),nav=document.querySelector('.mobile-primary-nav');
    const bottom=nav&&getComputedStyle(nav).display!=='none'?nav.getBoundingClientRect().top:window.innerHeight;
@@ -45,7 +45,8 @@
    if(!minimized())size.height=rect.height+(event.key==='ArrowUp'?-step:event.key==='ArrowDown'?step:0);
    apply();const updated=panel.getBoundingClientRect();size.width=updated.width;if(!minimized())size.height=updated.height;persist();
   });
-  new MutationObserver(apply).observe(panel,{attributes:true,attributeFilter:['hidden','data-minimized']});
+  new MutationObserver(apply).observe(panel,{attributes:true,attributeFilter:['hidden','data-minimized','data-maximized']});
   window.addEventListener('resize',apply);apply();
  });
 })();
+

@@ -40,6 +40,7 @@ $rows=payload(chatRequest('GET','/api/messages/conversation?user_id='.$alice->id
 $r=chatRequest('GET','/api/messages/conversation?user_id='.$alice->id,[],$cookies['Carol']);checkChat(payload($r)['messages']===[],'Private messages leaked to another owner');
 $state=payload(chatRequest('GET','/api/messages/state?after=0',[],$cookies['Carol']));checkChat($state['messages']===[]&&$state['unread']['total']===0,'Private popup or counter leaked');
 $state=payload(chatRequest('GET','/api/messages/state?after=0',[],$cookies['Bob']));checkChat($state['unread']['private']===1&&count($state['messages'])===1,'Recipient unread or popup missing');
+checkChat(($state['unread']['people'][$alice->id]??0)===1&&!isset($state['unread']['people'][$carol->id]),'Per-person unread counts wrong or leaked');
 checkChat(!str_contains(json_encode($state),'alice@example.org'),'Private email exposed');
 $unlinked=User::create(['name'=>'Unlinked account','email'=>'unlinked@example.org','password'=>'example-password-123']);
 $directory=payload(chatRequest('GET','/api/messages/state',[],$cookies['Bob']))['teams'];
@@ -69,6 +70,17 @@ $state=payload(chatRequest('GET','/api/messages/state',[],$cookies['Alice']));ch
 chatRequest('POST','/api/notifications/read',['ids'=>[$notificationId]],$cookies['Bob']);checkChat(DB::table('owner_notification_inbox')->where('user_id',$alice->id)->whereNull('read_at')->count()===1,'Other user marked bell event read');
 chatRequest('POST','/api/notifications/read',['ids'=>[$notificationId]],$cookies['Alice']);checkChat(payload(chatRequest('GET','/api/messages/state',[],$cookies['Alice']))['notification_count']===0,'Bell read count not cleared');
 $r=chatRequest('GET','/messages?user_id='.$bob->id,[],$cookies['Alice'],true);if(in_array('--browser-page',$argv,true))file_put_contents(__DIR__.'/../storage/app/communication-test.html',$r->getContent());checkChat($r->getStatusCode()===200&&str_contains($r->getContent(),'Private conversation with Bob Team'),'Private page render failed');checkChat(str_contains($r->headers->get('Cache-Control'),'no-store'),'Private messages cacheable');
+$unread=App\Support\Messaging::unread($bob->id);checkChat(isset($unread['people']),'Per-person unread map missing');
+$beforeMessages=DB::table('chat_messages')->count();
+foreach(['league','private'] as $type){
+ $result=$push->testMessage($alice->id,hash('sha256','https://fcm.googleapis.com/fcm/send/alice'),$type);
+ checkChat($result['ok'],'Message browser test failed');$testId=DB::table('push_notifications')->max('id');
+ $deliveries=DB::table('push_deliveries')->where('notification_id',$testId)->get();$device=DB::table('push_subscriptions')->where('user_id',$alice->id)->first();
+ checkChat($deliveries->count()===1&&(int)$deliveries[0]->subscription_id===(int)$device->id,'Message test delivered to another person');
+}
+checkChat(DB::table('chat_messages')->count()===$beforeMessages,'Notification tests sent real messages');
+checkChat(chatRequest('POST','/notifications/test-message',['type'=>'league'],$guest)->getStatusCode()===401,'Guest can test message push');
+checkChat(chatRequest('POST','/notifications/test-message',['type'=>'league'],$cookies['Alice'])->getStatusCode()===422,'Missing current-device cookie accepted');
 $r=chatRequest('GET','/account',[],$cookies['Alice'],true);$html=$r->getContent();checkChat($r->getStatusCode()===200&&str_contains($html,'id="live-score-updates"')&&str_contains($html,'/live-score-updates.js')&&str_contains($html,'/app-communication.js'),'Shared scoring panel or scripts missing');
 checkChat(!str_contains($html,'id="live-score-updates-enabled"'),'Removed scoring checkbox returned');
 checkChat(str_contains($html,'class="scoring-settings-icon" href="/notifications#alerts"'),'Scoring settings icon missing');

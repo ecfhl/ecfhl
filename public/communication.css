@@ -121,3 +121,8 @@ html[data-theme] .site-footer .footer-inner.site-credit{display:block;white-spac
 .live-score-updates-heading,.communication-panel-heading{gap:6px}
 .live-score-updates-heading h2,.communication-panel-heading h2{min-width:0;white-space:nowrap;font-size:13px}
 .communication-panel-heading button:disabled,.live-score-updates-heading button:disabled{opacity:.35;cursor:default}
+
+
+html[data-theme] #chat-panel[data-maximized="true"]{left:8px!important;right:8px!important;top:var(--chat-max-top,80px)!important;width:calc(100vw - 16px)!important;max-width:none!important;height:var(--chat-max-height,80dvh)!important;max-height:none!important}
+#chat-panel[data-maximized="true"]>.panel-resize-handle{display:none}
+#chat-panel[data-maximized="true"]>.communication-panel-heading{cursor:default}

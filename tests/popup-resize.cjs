@@ -24,7 +24,7 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
  for(const p of panels){
   await page.locator(p.open).click();const panel=page.locator('#'+p.id);await panel.waitFor({state:'visible'});
   const heading=await page.locator(p.handle).boundingBox();await page.mouse.move(heading.x+45,heading.y+15);await page.mouse.down();await page.mouse.move(145,115);await page.mouse.up();
-  const order=await panel.locator('.live-score-updates-actions,.notification-panel-actions').evaluate(el=>[...el.children].map(child=>child.id.endsWith('-trash')?'trash':child.tagName==='A'?'settings':child.id.endsWith('-minimize')?'minimize':child.classList.contains('panel-header-restore')?'restore':'close'));assert.deepEqual(order,['trash','settings','minimize','restore','close']);
+  const order=await panel.locator('.live-score-updates-actions,.notification-panel-actions').evaluate(el=>[...el.children].map(child=>child.id.endsWith('-trash')?'trash':child.tagName==='A'?'settings':child.id.endsWith('-maximize')?'maximize':child.id.endsWith('-minimize')?'minimize':child.classList.contains('panel-header-restore')?'restore':'close'));assert.deepEqual(order,p.id==='chat-panel'?['settings','minimize','restore','maximize','close']:['trash','settings','minimize','restore','close']);
   const before=await panel.boundingBox(),grip=await panel.locator('.panel-resize-handle').boundingBox();await page.mouse.move(grip.x+10,grip.y+10);await page.mouse.down();await page.mouse.move(grip.x+70,grip.y+90);await page.mouse.up();
   const after=await panel.boundingBox();assert(after.width>before.width+40&&after.height>before.height+40,p.id+' resizes on both axes');
   await panel.locator('.panel-resize-handle').focus();await page.keyboard.press('ArrowRight');const keyboard=await panel.boundingBox();assert(keyboard.width>after.width,p.id+' supports keyboard resizing');
@@ -45,3 +45,4 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
  for(const p of panels){await page.locator(p.open).click();await page.waitForTimeout(50);const rect=await page.locator('#'+p.id).boundingBox(),nav=await page.locator('.mobile-primary-nav').boundingBox();assert(rect.x>=8&&rect.x+rect.width<=352,p.id+' stays within mobile width');assert(rect.y>=8&&rect.y+rect.height<=nav.y-7,p.id+' stays above mobile navigation');await page.locator(p.close).click();}
  assert.deepEqual(errors,[]);await browser.close();console.log('Popup resize checks passed: all three panels resize, keyboard controls, minimize/restore, saved sizes, scoring settings icon and mobile bounds.');
 })().catch(e=>{console.error(e);process.exit(1)});
+

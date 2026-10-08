@@ -62,9 +62,14 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
  await page.goto('https://ecfhl.test/messages?user_id=2');await page.waitForFunction(()=>document.getElementById('chat-panel-conversation').value==='2'&&document.getElementById('chat-panel-log').textContent.includes('Bob private'));
  const longName=await page.locator('#chat-panel-log .chat-message-identity strong').first().evaluate(el=>{el.textContent='A very long fantasy hockey team name that must stay on one line';const style=getComputedStyle(el);return {nowrap:style.whiteSpace,overflow:style.overflow,ellipsis:style.textOverflow,truncated:el.scrollWidth>el.clientWidth};});
  assert.deepEqual(longName,{nowrap:'nowrap',overflow:'hidden',ellipsis:'ellipsis',truncated:true});
- const sentBeforeClear=sends.length;await page.locator('#chat-panel-trash').click();await page.waitForFunction(()=>document.getElementById('chat-panel').dataset.minimized==='true');await page.locator('#chat-panel .panel-header-restore').click();assert.equal(await page.locator('#chat-panel-log .chat-message').count(),0,'Trash clears only displayed conversation');
- assert.equal(sends.length,sentBeforeClear,'Clear does not send or delete messages');
- chats['2'].push(message(++latest,2,1,'New after clear'));await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await page.waitForFunction(()=>document.getElementById('chat-panel-log').textContent.includes('New after clear'));assert.equal(await page.locator('#chat-panel-log .chat-message').count(),1);
+ assert.equal(await page.locator('#chat-panel-trash').count(),0,'Chat has no trash button');
+ await page.evaluate(()=>window.dispatchEvent(new CustomEvent('ecfhl-message-state',{detail:{teams:[{user_id:2,team_name:'Bob Team'},{user_id:3,team_name:'Carol Team'}],unread:{total:7,league:2,private:5,people:{2:3,3:2}}}})));
+ assert.equal(await page.locator('#header-message-count').textContent(),'7');assert.equal(await page.locator('#chat-panel-conversation option[value="2"]').textContent(),'Bob Team (3 unread)');assert.equal(await page.locator('#chat-panel-conversation option[value=""]').textContent(),'League chat (2 unread)');
+ await page.locator('#chat-panel-maximize').click();await page.waitForTimeout(100);
+ let max=await page.locator('#chat-panel').boundingBox(),menu=await page.locator('.mobile-primary-nav').boundingBox(),top=await page.locator('.site-header').boundingBox();assert(max.y>=top.y+top.height&&max.y+max.height<=menu.y,'Maximized mobile chat fits between menus');assert.equal(Math.round(max.width),344);
+ await page.setViewportSize({width:1280,height:900});await page.waitForTimeout(100);max=await page.locator('#chat-panel').boundingBox();assert.equal(Math.round(max.width),1264);assert(max.y>0&&max.y+max.height<=900);
+ await page.locator('#chat-panel-maximize').click();await page.waitForTimeout(100);assert((await page.locator('#chat-panel').boundingBox()).width<600,'Restore returns to popup size');
  assert.deepEqual(errors,[]);if(process.env.ECFHL_CHAT_SCREENSHOT)await page.screenshot({path:process.env.ECFHL_CHAT_SCREENSHOT});
  await browser.close();console.log('Chat panel checks passed: team switching, private isolation, late responses, send recipient/drafts, escaping, drag, minimize/read behavior, persistence, mobile and direct links.');
 })().catch(e=>{console.error(e);process.exit(1)});
+

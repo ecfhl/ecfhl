@@ -169,6 +169,23 @@ class WebPush
         return ['ok'=>true,'message'=>'Test sent to this device. '.$alert['title']."\n".$alert['body']];
     }
 
+    public function testMessage(int $userId,string $endpointHash,string $type): array
+    {
+        abort_unless(in_array($type,['league','private'],true),422);
+        $preferences=Messaging::preferences(\App\Models\User::findOrFail($userId));
+        if(!$preferences['notifications_enabled'] || !$preferences[$type==='league'?'league_message_push':'private_message_push'])
+            throw \Illuminate\Validation\ValidationException::withMessages(['preferences'=>'Turn on the matching message notifications first.']);
+        $subscription=DB::table('push_subscriptions')->where('user_id',$userId)->where('endpoint_hash',$endpointHash)->where('enabled',true)->whereNotNull('feed_token_hash')->first();
+        if(!$subscription)throw \Illuminate\Validation\ValidationException::withMessages(['device'=>'Enable notifications on this device before sending a test.']);
+        $id=DB::transaction(function()use($subscription,$type){
+            $id=DB::table('push_notifications')->insertGetId(['category'=>'test-'.$type.'-message','title'=>($type==='league'?'League chat':'Private message').' · TEST','body'=>'This is a message notification test. No message was sent to another person.','url'=>'/messages','created_at'=>now(),'updated_at'=>now()]);
+            DB::table('push_deliveries')->insert(['subscription_id'=>$subscription->id,'notification_id'=>$id]);return $id;
+        });
+        try{$status=$this->sendEmptyPush($subscription->endpoint);if($status<200||$status>=300)throw new \RuntimeException('The browser could not receive the test. Re-enable notifications on this device and try again.');}
+        catch(\Throwable $error){DB::table('push_notifications')->where('id',$id)->delete();throw \Illuminate\Validation\ValidationException::withMessages(['device'=>$error->getMessage()]);}
+        return ['ok'=>true,'message'=>'Test message notification sent to this device.'];
+    }
+
     public function testType(int $userId,string $endpointHash,string $type): array
     {
         $subscription=DB::table('push_subscriptions')->where('user_id',$userId)->where('endpoint_hash',$endpointHash)->where('enabled',true)->whereNotNull('feed_token_hash')->first();

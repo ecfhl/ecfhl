@@ -16,6 +16,8 @@ const fs=require('node:fs'),assert=require('node:assert/strict'),{chromium}=requ
  });
  await page.goto('https://ecfhl.test/notifications#alerts');
  const toggle=page.locator('#scoring-panel-enabled'),controls=page.locator('#scoring-settings-controls');
+ await page.locator('[data-message-test=league][data-test-channel=popup]').click();await page.waitForSelector('.message-popup');assert((await page.locator('.message-popup').textContent()).includes('League chat'));await page.locator('.message-popup-close').click();
+ await page.locator('[data-message-test=private][data-test-channel=popup]').click();await page.waitForSelector('.message-popup');assert((await page.locator('.message-popup').textContent()).includes('private message'));await page.locator('.message-popup-close').click();
  await toggle.uncheck();assert.equal(await controls.isVisible(),false);assert.equal(saved.length,0,'Local scoring switch does not submit unrelated notifications');
  await page.reload();assert.equal(await toggle.isChecked(),false);await toggle.check();assert.equal(await controls.isVisible(),true);
  await page.locator('#live-score-updates-scope').selectOption('league');await page.reload();assert.equal(await page.locator('#live-score-updates-scope').inputValue(),'league');

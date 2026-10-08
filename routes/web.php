@@ -116,6 +116,11 @@ Route::get('/admin/notifications', function () {
     return view('admin.notifications');
 })->middleware('auth');
 
+Route::post('/notifications/test-message',function(){
+    $v=request()->validate(['type'=>'required|string|in:league,private']);
+    return response()->json(app(\App\Support\WebPush::class)->testMessage((int)request()->user()->id,(string)request()->cookie('ecfhl_push_device',''),$v['type']));
+})->middleware(['auth','throttle:20,1,message-notification-test']);
+
 Route::post('/admin/notifications/test', function () {
     abort_unless(request()->user()?->is_admin,403);
     $v=request()->validate(['type'=>'required|string|in:team-score,team-goalie-score,opponent-score,own-goalie,all-goalie,available-today,available-tomorrow,watched-goalie']);

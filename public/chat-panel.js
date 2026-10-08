@@ -5,8 +5,8 @@
  const header=document.querySelector('.header-actions a[href="/messages"]'),key='ecfhl-chat-panel:'+userId;
  let saved={};try{saved=JSON.parse(sessionStorage.getItem(key)||'{}')||{};}catch(_){}
  let mode=['closed','expanded','minimized'].includes(saved.mode)?saved.mode:'closed',position=saved.position||null,drag=null,selected='',teams=[],directoryReady=false,generation=0,sending=false;
- let cleared={};try{cleared=JSON.parse(sessionStorage.getItem(key+':cleared')||'{}')||{};}catch(_){}
- const trash=$('trash');
+ let maximized=false,unread={total:0,league:0,people:{}};
+ const maximize=$('maximize');
  const conversations=new Map();
  const conversation=value=>{if(!conversations.has(value))conversations.set(value,{messages:new Map(),draft:'',pending:null,lastRead:0,hasMore:false,busy:false,readBusy:false});return conversations.get(value);};
  const csrf=()=>document.querySelector('meta[name="csrf-token"]')?.content||'';
@@ -17,22 +17,31 @@
  const title=()=>selected?(teams.find(t=>String(t.user_id)===selected)?.team_name||'Team messages'):'League chat';
  const persist=()=>{try{sessionStorage.setItem(key,JSON.stringify({mode,position,selected}));}catch(_){}};
  const constrain=()=>{
-  if(!position||panel.hidden)return;const rect=panel.getBoundingClientRect(),nav=document.querySelector('.mobile-primary-nav'),bottom=nav&&getComputedStyle(nav).display!=='none'?nav.getBoundingClientRect().top:window.innerHeight;
+  if(maximized||!position||panel.hidden)return;const rect=panel.getBoundingClientRect(),nav=document.querySelector('.mobile-primary-nav'),bottom=nav&&getComputedStyle(nav).display!=='none'?nav.getBoundingClientRect().top:window.innerHeight;
   position.x=Math.max(8,Math.min(position.x,window.innerWidth-rect.width-8));position.y=Math.max(8,Math.min(position.y,bottom-rect.height-8));Object.assign(panel.style,{left:position.x+'px',top:position.y+'px',right:'auto'});
  };
- const render=()=>{panel.hidden=mode==='closed';panel.dataset.minimized=String(mode==='minimized');restore.hidden=mode!=='minimized';restore.textContent=title();header?.setAttribute('aria-expanded',String(mode!=='closed'));constrain();persist();};
+ const fitMaximized=()=>{
+  if(!maximized)return;
+  let top=8,bottom=window.innerHeight-8;
+  document.querySelectorAll('.site-header,.main-nav,.mobile-primary-nav').forEach(menu=>{
+   if(getComputedStyle(menu).display==='none')return;const rect=menu.getBoundingClientRect();if(!rect.height)return;
+   if(rect.top<window.innerHeight/2)top=Math.max(top,rect.bottom+8);else bottom=Math.min(bottom,rect.top-8);
+  });
+  panel.style.setProperty('--chat-max-top',top+'px');panel.style.setProperty('--chat-max-height',Math.max(80,bottom-top)+'px');
+ };
+ const render=()=>{panel.dataset.maximized=String(maximized&&mode==='expanded');maximize.textContent=maximized?'❐':'⛶';maximize.setAttribute('aria-label',maximized?'Restore chat size':'Maximize chat');maximize.title=maximized?'Restore size':'Maximize';fitMaximized();panel.hidden=mode==='closed';panel.dataset.minimized=String(mode==='minimized');restore.hidden=mode!=='minimized';restore.textContent=title();header?.setAttribute('aria-expanded',String(mode!=='closed'));constrain();persist();};
  const atBottom=()=>log.scrollHeight-log.scrollTop-log.clientHeight<40;
  const isReading=message=>mode==='expanded'&&!document.hidden&&atBottom()&&(message.recipient_id===null?selected==='':selected===String(message.sender_id));
  const counter=value=>{const el=document.getElementById('header-message-count');if(el){el.textContent=value>0?String(value):'';el.hidden=!(value>0);el.dataset.active=String(value>0);}};
  const read=async()=>{
   const value=selected,state=conversation(value);if(mode!=='expanded'||document.hidden||!atBottom()||state.readBusy)return;
   const ids=[...state.messages.keys()],id=ids.length?Math.max(...ids):0;if(id<=state.lastRead)return;state.readBusy=true;
-  try{const d=await request('/api/messages/read',{user_id:value?Number(value):null,last_id:id});state.lastRead=Math.max(state.lastRead,id);counter(d.unread.total);}catch(_){}finally{state.readBusy=false;}
+  try{const d=await request('/api/messages/read',{user_id:value?Number(value):null,last_id:id});state.lastRead=Math.max(state.lastRead,id);updateUnread(d.unread);}catch(_){}finally{state.readBusy=false;}
  };
  const node=(tag,value,className)=>{const el=document.createElement(tag);if(value!==undefined)el.textContent=value;if(className)el.className=className;return el;};
  const draw=(oldPage=false)=>{
   const state=conversation(selected),bottom=atBottom(),height=log.scrollHeight;log.replaceChildren();
-  const visibleMessages=[...state.messages.values()].filter(message=>Number(message.id)>Number(cleared[selected]||0));trash.disabled=!visibleMessages.length;
+  const visibleMessages=[...state.messages.values()];
   if(!visibleMessages.length)log.append(node('p','No messages yet. Start the conversation.'));
   visibleMessages.sort((a,b)=>a.id-b.id).forEach(message=>{
    const row=node('article',undefined,'chat-message');row.dataset.own=String(Number(message.sender_id)===userId);
@@ -40,7 +49,7 @@
    const meta=node('div',undefined,'chat-message-meta');meta.append(identity,node('time',new Date(message.created_at).toLocaleString([],{timeZone:'America/Halifax',hour12:true})));
    row.append(node('p',message.body),meta);log.append(row);
   });
-  older.hidden=!state.hasMore||Boolean(cleared[selected]);if(oldPage)log.scrollTop+=log.scrollHeight-height;else if(bottom)log.scrollTop=log.scrollHeight;constrain();read();
+  older.hidden=!state.hasMore;if(oldPage)log.scrollTop+=log.scrollHeight-height;else if(bottom)log.scrollTop=log.scrollHeight;constrain();read();
  };
  const refresh=async(oldPage=false)=>{
   const value=selected,state=conversation(value),version=generation;if(mode!=='expanded'||document.hidden||state.busy||!directoryReady)return;state.busy=true;
@@ -57,11 +66,19 @@
   if(!directoryReady){pendingOpen=String(value||'');mode='expanded';render();return;}
   mode='expanded';change(value);close.focus({preventScroll:true});
  };
+const updateUnread=value=>{
+  unread=value||unread;counter(unread.total);options();
+ };
+ const options=()=>{
+  const count=n=>Number(n)>0?' ('+Number(n)+' unread)':'';
+  select.replaceChildren(node('option','League chat'+count(unread.league)));select.firstElementChild.value='';
+  teams.forEach(t=>{const option=node('option',t.team_name+count(unread.people?.[t.user_id]));option.value=String(t.user_id);select.append(option);});select.value=selected;
+ };
+ window.addEventListener('ecfhl-unread',event=>updateUnread(event.detail));
  const updateDirectory=data=>{
   if(!Array.isArray(data.teams))return;
   teams=data.teams.filter(t=>Number(t.user_id)!==userId);
-  select.replaceChildren(node('option','League chat'));select.firstElementChild.value='';
-  teams.forEach(t=>{const option=node('option',t.team_name);option.value=String(t.user_id);select.append(option);});
+  if(data.unread)unread=data.unread;counter(unread.total);options();
   if(!directoryReady){
    directoryReady=true;const initial=pendingOpen!==null?pendingOpen:requested||saved.selected||'';if(requested!==null||location.pathname==='/messages')mode='expanded';change(initial);pendingOpen=null;
   }else if(selected&&!teams.some(t=>String(t.user_id)===selected))change('');else select.value=selected;
@@ -83,22 +100,20 @@
    if(value===selected){if(text.value.trim()===body)text.value='';draw();log.scrollTop=log.scrollHeight;await read();status.textContent='Sent.';}
   }catch(e){if(value===selected)status.textContent=e.message;}finally{sending=false;send.disabled=false;}
  });
- trash.addEventListener('click',async()=>{
-  const value=selected,state=conversation(value),ids=[...state.messages.keys()],id=ids.length?Math.max(...ids):0;if(!id)return;trash.disabled=true;
-  try{const d=await request('/api/messages/read',{user_id:value?Number(value):null,last_id:id});state.lastRead=Math.max(state.lastRead,id);counter(d.unread.total);cleared[value]=id;try{sessionStorage.setItem(key+':cleared',JSON.stringify(cleared));}catch(_){}if(value===selected){mode='minimized';draw();render();restore.focus({preventScroll:true});}}
-  catch(e){if(value===selected){status.textContent=e.message;trash.disabled=false;}}
- });
+ maximize.addEventListener('click',()=>{maximized=!maximized;mode='expanded';render();refresh();});
  const hide=()=>{mode='closed';render();header?.focus({preventScroll:true});};
  close.addEventListener('click',hide);$('minimize').addEventListener('click',()=>{mode='minimized';render();restore.focus({preventScroll:true});});
  restore.addEventListener('click',()=>{mode='expanded';render();refresh();read();close.focus({preventScroll:true});});
  older.addEventListener('click',()=>refresh(true));log.addEventListener('scroll',read);
  panel.addEventListener('keydown',event=>{if(event.key==='Escape')hide();});
- handle.addEventListener('pointerdown',event=>{if(event.button!==0||event.target.closest('button,a,select,input,label'))return;const rect=panel.getBoundingClientRect();drag={id:event.pointerId,x:event.clientX,y:event.clientY,left:rect.left,top:rect.top};handle.setPointerCapture(event.pointerId);panel.dataset.dragging='true';});
+ handle.addEventListener('pointerdown',event=>{if(maximized||event.button!==0||event.target.closest('button,a,select,input,label'))return;const rect=panel.getBoundingClientRect();drag={id:event.pointerId,x:event.clientX,y:event.clientY,left:rect.left,top:rect.top};handle.setPointerCapture(event.pointerId);panel.dataset.dragging='true';});
  handle.addEventListener('pointermove',event=>{if(!drag||event.pointerId!==drag.id)return;position={x:drag.left+event.clientX-drag.x,y:drag.top+event.clientY-drag.y};constrain();});
  const end=event=>{if(!drag||event.pointerId!==drag.id)return;if(handle.hasPointerCapture(event.pointerId))handle.releasePointerCapture(event.pointerId);drag=null;panel.dataset.dragging='false';persist();};
  ['pointerup','pointercancel','lostpointercapture'].forEach(type=>handle.addEventListener(type,end));
- handle.addEventListener('keydown',event=>{if(event.target!==handle||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;event.preventDefault();const rect=panel.getBoundingClientRect(),step=event.shiftKey?30:10;position={x:rect.left+(event.key==='ArrowLeft'?-step:event.key==='ArrowRight'?step:0),y:rect.top+(event.key==='ArrowUp'?-step:event.key==='ArrowDown'?step:0)};constrain();persist();});
+ handle.addEventListener('keydown',event=>{if(maximized||event.target!==handle||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;event.preventDefault();const rect=panel.getBoundingClientRect(),step=event.shiftKey?30:10;position={x:rect.left+(event.key==='ArrowLeft'?-step:event.key==='ArrowRight'?step:0),y:rect.top+(event.key==='ArrowUp'?-step:event.key==='ArrowDown'?step:0)};constrain();persist();});
  panel.addEventListener('ecfhl-panel-resize',event=>{if(event.detail?.position)position=event.detail.position;constrain();persist();});
- window.addEventListener('resize',()=>{constrain();persist();});document.addEventListener('visibilitychange',()=>{if(!document.hidden){refresh();read();}});
+ window.addEventListener('resize',()=>{fitMaximized();constrain();persist();});window.addEventListener('scroll',fitMaximized,{passive:true});document.addEventListener('visibilitychange',()=>{if(!document.hidden){refresh();read();}});
+ if('ResizeObserver' in window){const observer=new ResizeObserver(fitMaximized);document.querySelectorAll('.site-header,.main-nav,.mobile-primary-nav').forEach(menu=>observer.observe(menu));}
  window.EcfhlChatPanel={open,isReading};render();request('/api/messages/state').then(updateDirectory).catch(e=>status.textContent=e.message);setInterval(()=>refresh(),15000);
 })();
+

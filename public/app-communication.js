@@ -98,7 +98,7 @@
  const widgets=[...document.querySelectorAll('[data-chat-widget]')].map(element=>({element,other:element.dataset.other?Number(element.dataset.other):null,log:element.querySelector('.chat-log'),status:element.querySelector('.chat-status'),messages:new Map(),busy:false,lastRead:0}));
  const visible=widget=>{if(document.hidden)return false;const rect=widget.log.getBoundingClientRect();return rect.bottom>0&&rect.top<window.innerHeight&&rect.width>0;};
  const atBottom=widget=>widget.log.scrollHeight-widget.log.scrollTop-widget.log.clientHeight<40;
- const updateUnread=value=>counter('header-message-count',value.total);
+ const updateUnread=value=>{counter('header-message-count',value.total);window.dispatchEvent(new CustomEvent('ecfhl-unread',{detail:value}));};
  const readWidget=async widget=>{
   if(!visible(widget)||!atBottom(widget)||widget.readBusy)return;
   const ids=[...widget.messages.keys()],id=ids.length?Math.max(...ids):0;if(id<=widget.lastRead)return;
@@ -144,19 +144,20 @@
    }catch(e){widget.status.textContent=e.message;}finally{send.disabled=false;}
   });refreshWidget(widget);
  });
- const showPopup=message=>{
+ const showPopup=(message,test=false)=>{
   if(Number(message.sender_id)===userId)return;
   const league=message.recipient_id===null;
   if(preferences[league?'league_message_popups':'private_message_popups']===false)return;
-  if(window.EcfhlChatPanel?.isReading(message))return;
-  const open=widgets.find(w=>(league?w.other===null:w.other===Number(message.sender_id))&&visible(w)&&atBottom(w));if(open)return;
+  if(!test&&window.EcfhlChatPanel?.isReading(message))return;
+  const open=widgets.find(w=>(league?w.other===null:w.other===Number(message.sender_id))&&visible(w)&&atBottom(w));if(open&&!test)return;
   const box=node('section',undefined,'message-popup'),heading=node('div',undefined,'message-popup-heading');
   const logo=node('img');logo.src=message.team_logo||'/team-icons/league-logo/thumbnail?size=64';logo.alt='';logo.width=32;logo.height=32;heading.append(logo,node('strong',(league?'League chat · ':'')+(message.team_name||'League member')));
   const close=node('button','×','message-popup-close');close.type='button';close.setAttribute('aria-label','Dismiss message popup');close.addEventListener('click',()=>box.remove());heading.append(close);
-  const link=node('a','Open conversation');link.href=league?'/messages':'/messages?user_id='+message.sender_id;
+  const link=node('a','Open conversation');link.href=test?'/notifications#alerts':league?'/messages':'/messages?user_id='+message.sender_id;
   box.append(heading,node('p',message.body.slice(0,240)),link);
   const host=document.getElementById('message-popups');host.append(box);while(host.children.length>3)host.firstElementChild.remove();
  };
+ window.addEventListener('ecfhl-test-message',event=>showPopup(event.detail,true));
  const refreshState=async()=>{
   if(stateBusy||document.hidden)return;stateBusy=true;
   try{
