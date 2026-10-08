@@ -47,13 +47,12 @@ checkCollector(Artisan::call('ecfhl:refresh-current-standings')===1&&str_contain
 flock($lock,LOCK_UN);fclose($lock);
 $events=$app->make(Illuminate\Console\Scheduling\Schedule::class)->events();
 $event=collect($events)->first(fn($e)=>str_contains((string)$e->command,'ecfhl:refresh-current-standings'));
-checkCollector($event&&$event->expression==='* * * * *'&&$event->runInBackground&&$event->withoutOverlapping,'Standings must use the live-scoring scheduler cadence with overlap protection');
-foreach([['2026-10-04T17:00:00Z',true],['2026-10-04T17:15:00Z',false]] as [$instant,$expected]){
- \Carbon\CarbonImmutable::setTestNow(\Carbon\CarbonImmutable::parse($instant));checkCollector($event->filtersPass($app)===$expected,'Standings scheduler did not share idle live-scoring cadence');
-}
-$app->make(\App\Support\LiveScoring\SnapshotRepository::class)->publish(['fantasy_date'=>'2026-10-04','source_date'=>'2026-10-04','players'=>[['game_status'=>'2']]],[],\Carbon\CarbonImmutable::now('UTC'));
-foreach([['2026-10-04T17:16:00Z',true],['2026-10-04T17:17:00Z',true]] as [$instant,$expected]){
- \Carbon\CarbonImmutable::setTestNow(\Carbon\CarbonImmutable::parse($instant));checkCollector($event->filtersPass($app)===$expected,'Standings scheduler did not share live one-minute cadence');
+checkCollector($event&&$event->expression==='*/5 * * * *'&&$event->runInBackground&&$event->withoutOverlapping,'Standings must run every five minutes with overlap protection');
+$app->instance(\App\Support\CollectorSchedule::class,new class extends \App\Support\CollectorSchedule {
+ public function window():array{return ['live'=>true,'pregame'=>false,'pending'=>false,'finals'=>[],'known'=>true];}
+});
+foreach([['2026-10-04T17:15:00Z',true],['2026-10-04T17:16:00Z',false]] as [$instant,$expected]){
+ \Carbon\CarbonImmutable::setTestNow(\Carbon\CarbonImmutable::parse($instant));checkCollector($event->filtersPass($app)===$expected,'Standings must preserve five-minute cadence during games');
 }
 \Carbon\CarbonImmutable::setTestNow();
 $kernel=$app->make(Illuminate\Contracts\Http\Kernel::class);$request=Illuminate\Http\Request::create('/standings');$response=$kernel->handle($request);$kernel->terminate($request,$response);

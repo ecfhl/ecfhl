@@ -57,7 +57,7 @@ final class RefreshLiveScoring
                 $failed = true;
                 Log::error('Live scoring date refresh failed', ['fantasy_date'=>$date,'error'=>$e->getMessage()]);
                 $output($date.': failed — '.$e->getMessage().'. Previous valid snapshot preserved.');
-            }
+            } finally { \App\Support\CollectorStatus::advance('scores'); }
         }
         return !$failed;
     }
@@ -81,19 +81,6 @@ final class RefreshLiveScoring
 
     public function due(): bool
     {
-        $now = CarbonImmutable::now('UTC');
-        $live = false;
-        foreach ((new FantasyDay)->dates() as $date) {
-            foreach (($this->repository->get($date)['players'] ?? []) as $player) {
-                if ($player['game_status'] === '2') $live = true;
-                if ($player['game_status'] === '1' && $player['starts_at']) {
-                    $start = CarbonImmutable::parse($player['starts_at']);
-                    if ($now->betweenIncluded($start, $start->addHours(5))) $live = true;
-                }
-            }
-        }
-        // The scheduler invokes this check every minute. During the live-game
-        // window collect on every invocation; outside games refresh once per hour.
-        return $live || (int)$now->format('i') === 0;
+        return app(\App\Support\CollectorSchedule::class)->due('scores');
     }
 }

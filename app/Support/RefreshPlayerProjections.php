@@ -20,6 +20,7 @@ final class RefreshPlayerProjections
             return $currentCount;
         }
         $baseline = DB::table('player_projection_baselines')->orderBy('source_rank')->get()->map(fn($r)=>(array)$r)->all();
+        CollectorStatus::total('projections', 5);
         $capture = !$baseline;
         if ($capture) $baseline = $this->source->baseline();
         if (count($baseline) !== 1000 || collect($baseline)->pluck('season_id')->unique()->all() !== [FantraxProjectionSource::SEASON_ID]) throw new RuntimeException('The frozen projection baseline is incomplete or belongs to a different season.');
@@ -55,6 +56,7 @@ final class RefreshPlayerProjections
         $this->source->scopeToActiveStats(array_values($tracked),$scope);
         if ($seasonStart <= $end) $cache[$seasonStart] = $seasonActual;
         if ($log) $log('Season actual FPts/GP collected through '.$end.'.');
+        CollectorStatus::advance('projections');
         foreach ([7, 14, 21] as $days) {
             $start = max(CarbonImmutable::parse($end)->subDays($days - 1)->toDateString(), $seasonStart);
             if ($start > $end) $windows[$days] = [];
@@ -63,6 +65,7 @@ final class RefreshPlayerProjections
                 $windows[$days] = $cache[$start];
             }
             if ($log) $log($days.'-day actual FPts/GP collected through '.$end.'.');
+            CollectorStatus::advance('projections');
         }
         $now = now();
         $weights = ProjectionSettings::weights();
@@ -124,6 +127,7 @@ final class RefreshPlayerProjections
         PublicData::forget('standings-awards');
         if ($log && $storeSeason) $log(count($seasonRows).' season player stat lines stored: played this season or listed on Daily Faceoff.');
         if ($log) $log(count($rows).' player projections regenerated for '.$date.'. Fantrax baseline '.($capture ? 'captured' : 'unchanged').'.');
+        CollectorStatus::advance('projections');
         return count($rows);
     }
 }
