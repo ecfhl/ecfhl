@@ -302,10 +302,14 @@ html[data-theme] #player-stats-dialog .player-profile header .eyebrow{color:#d6e
 html[data-theme] #player-stats-dialog .player-profile-overview .player-profile-projection{color:var(--accent)}
 html[data-theme] #player-stats-dialog .player-profile header .player-profile-rookie{color:#f2cb70}
 html[data-theme] :is(.guest-signup-dialog,.player-stats-dialog)::backdrop{background:#081220b8;backdrop-filter:blur(5px)}
-html[data-theme] .mobile-primary-nav{box-shadow:var(--shadow-raised);border-color:var(--line);border-radius:16px}
-html[data-theme] .mobile-primary-nav a{border-radius:10px}
-html[data-theme] .mobile-primary-nav a.active{background:var(--accent-soft)!important;color:var(--accent)}
+html[data-theme] .mobile-primary-nav{isolation:isolate;background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 92%,white),var(--panel) 45%,color-mix(in srgb,var(--panel) 92%,black));box-shadow:inset 0 1px 0 #ffffff40,inset 0 -2px 0 #00000025,0 4px 0 color-mix(in srgb,var(--panel) 70%,black),0 10px 18px #00000035,0 20px 34px #00000030;border-color:color-mix(in srgb,var(--line) 75%,white);border-radius:16px}
+html[data-theme] .mobile-primary-nav::before{content:"";position:absolute;top:1px;left:16px;right:16px;height:1px;background:linear-gradient(90deg,transparent,#ffffff60,transparent);pointer-events:none}
+html[data-theme] .mobile-primary-nav a{border-radius:10px;position:relative;transition:background .16s ease,color .16s ease,transform .12s ease,box-shadow .12s ease}
+html[data-theme] .mobile-primary-nav .mobile-nav-icon{filter:drop-shadow(0 2px 1px #00000030)}
+html[data-theme] .mobile-primary-nav a.active{background:linear-gradient(180deg,color-mix(in srgb,var(--accent-soft) 92%,white),var(--accent-soft))!important;color:var(--accent);transform:translateY(-3px);box-shadow:inset 0 1px 0 #ffffff40,inset 0 -1px 0 #00000025,0 3px 0 color-mix(in srgb,var(--accent-soft) 65%,black),0 7px 12px #00000035,0 0 12px color-mix(in srgb,var(--focus) 15%,transparent)}
 html[data-theme] .mobile-primary-nav a.active .mobile-nav-label{color:var(--accent)}
+html[data-theme] .mobile-primary-nav a:active{transform:translateY(1px) scale(.98);box-shadow:inset 0 2px 4px #00000025,0 1px 0 #00000020}
+@media(prefers-reduced-motion:reduce){html[data-theme] .mobile-primary-nav a{transition:none}}
 
 @media(min-width:901px){.current-teams-page .ecfhl-scoreboard{border-radius:10px}}
 @media(max-width:600px){
