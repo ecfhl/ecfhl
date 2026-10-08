@@ -26,7 +26,7 @@
       const $ = id => document.getElementById('live-score-updates-' + id);
       const tray = document.getElementById('live-score-updates');
       if (!tray) return null;
-      const list = $('list'), toggle = $('toggle'), enabledSwitch = $('enabled');
+      const list = $('list'), toggle = $('toggle');
       const close = $('close'), trash = $('trash'), minimize = $('minimize'), restore = $('restore');
       const count = $('count'), handle = $('handle'), scope = $('scope'), team = $('team');
       const storageKey = 'ecfhl-scoring-popup:' + (document.getElementById('communication-context')?.dataset.userId || 'guest');
@@ -34,18 +34,19 @@
       try { saved = JSON.parse(sessionStorage.getItem(storageKey) || 'null'); } catch (_) {}
       let baseline = saved?.baseline || null, nhlBaseline = saved?.nhlBaseline || null;
       let history = Array.isArray(saved?.history) ? saved.history : [];
-      let enabled = saved?.enabled !== false, mode = saved?.mode || 'closed';
+      const enabled = true;
+      let mode = saved?.mode || 'closed';
       let position = saved?.position || null, drag = null;
-      scope.value = ['team','matchup','league','nhl'].includes(saved?.scope) ? saved.scope : 'matchup';
-      let selectedTeam = team.dataset.accountTeam || saved?.team || '';
-      try { selectedTeam ||= localStorage.getItem('ecfhl-notification-team-id') || ''; } catch (_) {}
+      scope.value = ['team','matchup','teams','league','nhl'].includes(saved?.scope) ? saved.scope : 'matchup';
+      const selectedTeam = String(team.dataset.accountTeam || '');
+      let selectedTeams = Array.isArray(saved?.teams) ? saved.teams.map(String) : [];
       const element = (tag, className, text) => {
         const node = document.createElement(tag); node.className = className;
         if (text !== undefined) node.textContent = text;
         return node;
       };
       const persist = () => {
-        try { sessionStorage.setItem(storageKey, JSON.stringify({baseline,nhlBaseline,history,enabled,mode,position,scope:scope.value,team:selectedTeam})); } catch (_) {}
+        try { sessionStorage.setItem(storageKey, JSON.stringify({baseline,nhlBaseline,history,enabled,mode,position,scope:scope.value,team:selectedTeam,teams:selectedTeams})); } catch (_) {}
       };
       const constrain = () => {
         if (!position || tray.hidden) return;
@@ -60,10 +61,11 @@
         tray.hidden = mode === 'closed'; tray.dataset.minimized = String(mode === 'minimized');
         restore.hidden = mode !== 'minimized'; restore.textContent = total + ' updates';
         trash.disabled = total === 0; count.textContent = String(total); count.hidden = false;
-        count.dataset.active = String(total > 0); enabledSwitch.checked = enabled;
+        count.dataset.active = String(total > 0);
         toggle.dataset.enabled = String(enabled); toggle.setAttribute('aria-expanded',String(mode !== 'closed'));
         toggle.setAttribute('aria-label','Open scoring updates, '+total+' stored, updates '+(enabled?'on':'off'));
-        $('team-label').hidden = !['team','matchup'].includes(scope.value);
+        $('team-label').hidden = scope.value !== 'teams';
+        $('team-summary').textContent = selectedTeams.length ? selectedTeams.length + ' selected' : 'Select teams';
         list.replaceChildren();
         if (!total) list.append(element('p','live-score-updates-empty','No updates'));
         const green = new Set((baseline?.players || []).filter(p=>p.change==='up').map(p=>p.key));
@@ -90,27 +92,31 @@
       };
       // Opening the box never changes whether updates are received.
       toggle.addEventListener('click',()=>{mode='expanded';render();close.focus({preventScroll:true});});
-      enabledSwitch.addEventListener('change',()=>{enabled=enabledSwitch.checked;render();});
       minimize.addEventListener('click',()=>{mode='minimized';render();restore.focus({preventScroll:true});});
       restore.addEventListener('click',()=>{mode='expanded';render();close.focus({preventScroll:true});});
       trash.addEventListener('click',()=>{history=[];mode='minimized';render();restore.focus({preventScroll:true});});
       close.addEventListener('click',()=>{mode='closed';render();toggle.focus({preventScroll:true});});
       tray.addEventListener('keydown',event=>{if(event.key==='Escape'){mode='closed';render();toggle.focus({preventScroll:true});}});
-      const filtersChanged=()=>{selectedTeam=team.value||selectedTeam;history=[];nhlBaseline=null;render();window.dispatchEvent(new Event('ecfhl-scoring-filter'));};
-      scope.addEventListener('change',filtersChanged);team.addEventListener('change',filtersChanged);
+      const filtersChanged=()=>{history=[];nhlBaseline=null;render();window.dispatchEvent(new Event('ecfhl-scoring-filter'));};
+      scope.addEventListener('change',filtersChanged);team.addEventListener('change',()=>{selectedTeams=[...team.querySelectorAll('input:checked')].map(input=>input.value);filtersChanged();});
       const accepts = event => {
         if (scope.value==='league')return true;
-        if (scope.value==='team')return event.teamId===selectedTeam;
+        if (scope.value==='teams')return selectedTeams.includes(String(event.teamId));
+        if (scope.value==='team')return String(event.teamId)===selectedTeam;
         const pair=(baseline?.matchups||[]).find(pair=>[String(pair.away_team_id),String(pair.home_team_id)].includes(selectedTeam));
-        return !!pair && [String(pair.away_team_id),String(pair.home_team_id)].includes(event.teamId);
+        return !!pair && [String(pair.away_team_id),String(pair.home_team_id)].includes(String(event.teamId));
       };
       const update = next => {
         if (!next || typeof next.date!=='string' || !Array.isArray(next.players))return;
         if (baseline && baseline.date!==next.date){baseline=null;history=[];nhlBaseline=null;mode='closed';}
         if (Array.isArray(next.teams)) {
           const ids=next.teams.map(t=>String(t.id));
-          if (!ids.includes(selectedTeam))selectedTeam=ids[0]||'';
-          team.replaceChildren(...next.teams.map(t=>{const option=element('option','',t.name);option.value=String(t.id);return option;}));team.value=selectedTeam;
+          selectedTeams=selectedTeams.filter(id=>ids.includes(id));
+          team.replaceChildren(...next.teams.map(t=>{
+            const label=element('label',''),input=element('input','');
+            input.type='checkbox';input.value=String(t.id);input.checked=selectedTeams.includes(input.value);
+            label.append(input,element('span','',t.name));return label;
+          }));
         }
         let events=compare(baseline,next);baseline=next;events=events.filter(accepts);
         if(scope.value==='nhl'){
