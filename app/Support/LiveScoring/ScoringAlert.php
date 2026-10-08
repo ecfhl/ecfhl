@@ -70,7 +70,7 @@ final class ScoringAlert
             }elseif($gain('G')){
                 $events[]='scores a goal';
             }
-            if($gain('A'))$events[]=$gain('A')===1?'adds an assist':'adds '.$gain('A').' assists';
+            if($gain('A'))$events[]=$gain('A')===1?'gets an assist':'gets '.$gain('A').' assists';
         }
         $name=\App\Support\PlayerName::display($player['player_name']);
         $nhl=trim((string)($player['nhl_team']??''));
