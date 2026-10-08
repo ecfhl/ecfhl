@@ -19,7 +19,7 @@ final class ViewData
             $rank = static fn($p) => !empty($p->is_ir) ? 2 : (self::isPlaying($p) ? 0 : 1);
             return ($rank($a) <=> $rank($b))
                 ?: ((bool)($a->is_bench ?? false) <=> (bool)($b->is_bench ?? false))
-                ?: strnatcasecmp($a->player_name, $b->player_name);
+                ?: strnatcasecmp(\App\Support\PlayerName::display($a->player_name), \App\Support\PlayerName::display($b->player_name));
         })->values();
     }
 
