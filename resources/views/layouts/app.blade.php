@@ -60,6 +60,9 @@ document.documentElement.dataset.theme=theme;})();
 </script>
 <meta name="theme-color" content="#0b172b">
 <link rel="stylesheet" href="/player-profile.css?v={{ hash_file('sha256', base_path('public/player-profile.css')) }}">
+@if(request()->is('players','daily-targets','teams/current/*'))
+<link rel="stylesheet" href="/goalie-watches.css?v={{ hash_file('sha256', base_path('public/goalie-watches.css')) }}">
+@endif
 <link rel="stylesheet" href="/themes.css?v={{ hash_file('sha256', base_path('public/themes.css')) }}">
 </head>
 <body>
@@ -416,7 +419,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script src="/player-profile.js?v={{ hash_file('sha256', base_path('public/player-profile.js')) }}" defer></script>
 
 @if(request()->is('players','daily-targets','teams/current/*'))
-<link rel="stylesheet" href="/goalie-watches.css?v={{ hash_file('sha256', base_path('public/goalie-watches.css')) }}">
 <script src="/goalie-watches.js?v=3" defer></script>
 @endif
 @stack('scripts')

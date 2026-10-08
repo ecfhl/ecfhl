@@ -1,8 +1,12 @@
 @extends('layouts.app')
 @section('title', 'Home · ECFHL')
 @section('content')
+@push('styles')
 <link rel="stylesheet" href="/matchup-scoreboard.css?v={{ hash_file('sha256', base_path('public/matchup-scoreboard.css')) }}">
+@endpush
+@push('styles')
 <link rel="stylesheet" href="/overview-home.css?v={{ hash_file('sha256', base_path('public/overview-home.css')) }}">
+@endpush
 <section class="overview-hero">
   <div class="shell overview-hero__inner">
     <span class="overview-home__date">{{ \Carbon\CarbonImmutable::parse($today)->format('l, M j') }}</span>

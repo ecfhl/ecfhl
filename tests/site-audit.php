@@ -42,6 +42,9 @@ function auditPage(string $path, bool $signedIn=false, bool $fragment=false): ar
     if(!$fragment){
         checkSpeed(str_contains($html,'themes.css?v='.hash_file('sha256',base_path('public/themes.css'))),'Shared theme missing: '.$path);
         checkSpeed(strpos($html,'localStorage.getItem')<strpos($html,'<body'),'Theme applied after page paint: '.$path);
+        $headEnd=strpos($html,'</head>');
+        checkSpeed(strpos($html,'/themes.css?v=')<$headEnd,'Shared theme must load in the head: '.$path);
+        checkSpeed(!preg_match('/<link\s+rel="stylesheet"/',substr($html,$headEnd)),'Page stylesheet loaded after the shared theme: '.$path);
         $pagePath=parse_url($path,PHP_URL_PATH);
         if(!str_starts_with($pagePath,'/teams/') || in_array($pagePath,['/teams/league','/teams/current'],true)){
             checkSpeed(str_contains($html,'data-page-logo="'.App\Support\TeamImages::url('league-logo',160).'"') && str_contains($html,'data-page-name="ECFHL"'),'Non-team page must use the league loading logo: '.$path);

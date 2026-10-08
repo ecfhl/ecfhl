@@ -6,7 +6,9 @@
   $myTeamSlug = $myTeamName ? \Illuminate\Support\Str::slug($myTeamName) : null;
   $directoryTeams = collect($teams)->sortBy(fn($team) => $team['slug'] === $myTeamSlug ? -1 : ($team['rank'] ?? PHP_INT_MAX))->values();
 @endphp
+@push('styles')
 <link rel="stylesheet" href="/league-teams.css?v={{ hash_file('sha256', base_path('public/league-teams.css')) }}">
+@endpush
 <section class="shell league-teams" data-league-teams>
   <header class="league-teams-heading">
     <div><h1>Teams <span>{{ count($teams) }}</span></h1><p>Regular season · 2026–27</p></div>

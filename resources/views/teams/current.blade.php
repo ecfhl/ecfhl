@@ -735,5 +735,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 @endsection
 @push('styles')
+@push('styles')
 <link rel="stylesheet" href="/team-roster.css?v={{ hash_file('sha256', base_path('public/team-roster.css')) }}">
+@endpush
 @endpush
