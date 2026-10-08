@@ -7,8 +7,8 @@
 .player-profile header p{margin:0;font-size:12px;line-height:1.4;color:var(--muted)}
 .player-profile header .player-profile-age{grid-column:1/-1;margin-bottom:3px;font-size:12px;font-weight:600}
 .player-profile-owner{text-align:right;font-weight:700;overflow-wrap:anywhere}
-.player-profile-rookie{font-size:9px;font-weight:800;text-decoration:none;color:#8a6407}
-html[data-theme="dark"] .player-profile-rookie{color:#f1cd72}
+.player-profile-rookie{font-size:9px;font-weight:800;text-decoration:none;color:var(--gold)}
+html[data-theme="dark"] .player-profile-rookie{color:var(--gold)}
 .player-profile-overview{margin:12px 0 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .player-profile-overview>div{display:grid;grid-template-columns:74px minmax(0,1fr);align-items:center;gap:10px;padding:6px 0}
 .player-profile-overview>div+div{border-top:1px solid var(--line)}
@@ -56,14 +56,14 @@ html[data-theme="dark"] .player-profile-rookie{color:#f1cd72}
 /* Inline popup styles override older footer assets on already-open pages. */
 #player-stats-dialog{width:min(560px,calc(100vw - 16px));max-width:calc(100vw - 16px);max-height:calc(100dvh - 20px);border-radius:12px}
 #player-stats-dialog .player-profile{padding:10px;border-radius:12px}
-#player-stats-dialog .player-profile header{display:block;margin:-10px -10px 0;padding:9px 46px 8px 10px;background:#19456f;color:#fff}
+#player-stats-dialog .player-profile header{display:block;margin:-10px -10px 0;padding:9px 46px 8px 10px;background:var(--heading-bg);color:#fff}
 #player-stats-dialog .player-profile header .eyebrow{font-size:8px;line-height:1.2;letter-spacing:.06em;color:#e3c777}
 #player-stats-dialog .player-profile h1{margin:3px 0 2px;padding:0;font-size:18px;line-height:1.15;color:#fff}
 #player-stats-dialog .player-profile header p,#player-stats-dialog .player-profile header .player-profile-age{margin:0;font-size:10px;line-height:1.4;color:#d5e2ef}
 #player-stats-dialog .player-profile header .player-profile-owner{margin-top:1px;text-align:left;font-size:10px}
 #player-stats-dialog .player-profile-owner a{color:#fff}
-#player-stats-dialog .player-profile-rookie{color:#f1cd72}
-#player-stats-dialog .player-stats-close{top:3px;width:40px;height:40px;margin:3px 3px -43px 0;border-color:#ffffff30;background:#19456f;color:#fff;font-size:24px}
+#player-stats-dialog .player-profile-rookie{color:var(--gold)}
+#player-stats-dialog .player-stats-close{top:3px;width:40px;height:40px;margin:3px 3px -43px 0;border-color:#ffffff30;background:var(--heading-bg);color:#fff;font-size:24px}
 #player-stats-dialog .player-profile-overview{display:grid;grid-template-columns:.8fr 1fr 1fr;gap:0;margin:0 -10px;padding:7px 10px;background:var(--panel-2);border-top:0;border-bottom:1px solid var(--line)}
 #player-stats-dialog .player-profile-overview>div{display:block;min-width:0;padding:0 8px;border:0}
 #player-stats-dialog .player-profile-overview>div:first-child{padding-left:0}

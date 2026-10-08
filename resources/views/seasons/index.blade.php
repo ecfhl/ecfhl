@@ -28,9 +28,11 @@
 {{-- Top Earners is calculated per franchise per individual season. --}}
 <section class="section"><div class="section-title"><h2>All-time leaders</h2></div>@include('partials.leaders',['leaderRows'=>$seasonLeaders,'cards'=>['top_seasons'=>'📈 Top Seasons (10+ games)','most_fpts'=>'🏒 Most Fpts','top_earners'=>'💵 Top Earners','season_trades'=>'🔄 Most Trades','season_awards'=>'🏅 Most Awards','worst_records'=>'📉 Worst Records']])</section>
 
+@push('styles')
 <style>
 .season-playoff-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:8px;min-height:160px;margin-top:8px}.season-playoff-podium .podium-entry{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}.season-playoff-podium .podium-team{font-size:13px;text-align:center;margin-bottom:7px;line-height:1.15;overflow-wrap:anywhere}.season-playoff-podium .podium-place{width:100%;padding:8px 5px;justify-content:center}.season-playoff-podium .podium-second{height:84px}.season-playoff-podium .podium-first{height:112px}.season-playoff-podium .podium-third{height:70px}.season-playoff-podium .podium-medal{margin-bottom:4px}.season-playoff-podium small{font-size:10px}.season-current-card{margin-bottom:24px}
 </style>
+@endpush
 
 <div class="season-cards">
 @foreach($previousSeasons as $season)

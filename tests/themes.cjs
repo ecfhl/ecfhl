@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const css = fs.readFileSync('public/app.css','utf8')+'\n'+fs.readFileSync('public/themes.css','utf8');
+const css = (fs.readFileSync('public/app.css','utf8')+'\n'+fs.readFileSync('public/themes.css','utf8')).replace(/\/\*[\s\S]*?\*\//g,'');
 function variables(theme){
   const values={};
   for(const [,selector,body] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)){
@@ -18,11 +18,12 @@ function luminance(hex){
 }
 for(const theme of ['light','dark']){
   const get=variables(theme);
-  const pairs=['--bg','--panel','--panel-2'].flatMap(bg=>['--text','--muted'].map(text=>[text,bg]));
+  const pairs=['--bg','--panel','--panel-2','--selection-bg','--hover-bg','--game-live','--game-finished','--game-upcoming'].flatMap(bg=>['--text','--muted'].map(text=>[text,bg]));
+  pairs.push(['--accent','--panel'],['--gold','--panel'],['--on-action','--action-bg'],['--on-action','--action-hover'],['--heading-text','--heading-bg'],['--table-heading-text','--table-heading-bg']);
   for(const color of ['green','yellow','orange','red'])pairs.push(['--badge-'+color+'-text','--badge-'+color+'-bg']);
   for(const [text,bg] of pairs){
     const a=luminance(get(text)),b=luminance(get(bg));const contrast=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);
     assert.ok(contrast>=4.5,`${theme} ${text}/${bg} contrast ${contrast.toFixed(2)} < 4.5`);
   }
 }
-console.log('Light/dark contrast passed: body, panels, muted text and every assignment sticker meet 4.5:1.');
+console.log('Light/dark contrast passed: surfaces, game states, selections, links, actions, table headings and semantic badges meet 4.5:1.');

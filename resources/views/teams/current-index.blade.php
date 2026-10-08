@@ -245,6 +245,7 @@
   </footer>
 </div>
 
+@push('styles')
 <style>
 .current-teams-head{padding:16px 0 8px}
 .current-teams-head .live-scoring-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
@@ -267,18 +268,18 @@ html[data-theme="dark"] .current-teams-page{--matchup-shadow:0 2px 5px rgba(0,0,
 .team-toolbar{margin:4px 0 10px}
 .team-date-buttons{display:flex;gap:6px;margin:4px 0}
 .team-date-buttons .button{padding:6px 10px;font-size:12px}
-.team-date-inactive{background:#e5e7eb!important;border-color:#d1d5db!important;color:#374151!important}
+.team-date-inactive{background:var(--panel-2)!important;border-color:var(--line)!important;color:var(--text)!important}
 .matchup-period-label{margin:4px 0 10px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .current-matchup-list{display:flex;flex-direction:column;gap:7px;margin-bottom:6px}
 .matchup-card{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}
 .current-teams-page .matchup-card.ecfhl-scoreboard{box-shadow:var(--matchup-shadow)!important}
-.current-teams-page .matchup-card.notification-team-matchup{border:3px solid #3b82f6!important;background:#eaf5ff!important;box-shadow:0 0 0 1px rgba(59,130,246,.18),var(--matchup-shadow)!important}
-.current-teams-page .matchup-card.notification-team-matchup>.matchup-summary{background:#eaf5ff!important}
+.current-teams-page .matchup-card.notification-team-matchup{border:3px solid var(--focus)!important;background:var(--selection-bg)!important;box-shadow:0 0 0 1px rgba(59,130,246,.18),var(--matchup-shadow)!important}
+.current-teams-page .matchup-card.notification-team-matchup>.matchup-summary{background:var(--selection-bg)!important}
 .current-teams-page .matchup-card[open]{border:3px solid #f97316!important;box-shadow:0 0 0 1px rgba(249,115,22,.18),var(--matchup-shadow)!important}
-html[data-theme="dark"] .current-teams-page .matchup-card.notification-team-matchup{border-color:#60a5fa!important;background:#123452!important}
-html[data-theme="dark"] .current-teams-page .matchup-card.notification-team-matchup>.matchup-summary{background:#123452!important}
+html[data-theme="dark"] .current-teams-page .matchup-card.notification-team-matchup{border-color:var(--focus)!important;background:var(--selection-bg)!important}
+html[data-theme="dark"] .current-teams-page .matchup-card.notification-team-matchup>.matchup-summary{background:var(--selection-bg)!important}
 html[data-theme="dark"] .current-teams-page .matchup-card[open]{border-color:#fb923c!important}
-.matchup-card.notification-team-matchup>.matchup-summary{background:#eaf5ff}
+.matchup-card.notification-team-matchup>.matchup-summary{background:var(--selection-bg)}
 .matchup-summary{display:grid;grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr);gap:5px;padding:10px 14px;cursor:pointer;list-style:none}
 .matchup-summary::-webkit-details-marker{display:none}
 .matchup-summary-side{position:relative;display:flex;flex-direction:column;min-width:0}
@@ -295,8 +296,8 @@ html[data-theme="dark"] .current-teams-page .matchup-card[open]{border-color:#fb
 .matchup-summary-score{display:flex;gap:3px;align-items:flex-start}
 .matchup-week-score{font-size:33px;line-height:.95;font-weight:600}
 .matchup-day-score{font-size:20px;line-height:1;font-weight:600;transform:translateY(-3px)}
-.matchup-week-score.score-up,.matchup-day-score.score-up{color:#16834f!important}
-.matchup-week-score.score-down,.matchup-day-score.score-down{color:#dc2626!important}
+.matchup-week-score.score-up,.matchup-day-score.score-up{color:var(--success)!important}
+.matchup-week-score.score-down,.matchup-day-score.score-down{color:var(--danger)!important}
 .matchup-summary-vs{text-align:center;align-self:center;font-size:10px;font-weight:900;color:var(--muted)}
 .matchup-projected-score{display:inline-block;margin-top:10px;padding:3px 7px;border-radius:7px;background:#fff1e6;color:#b45309!important;font-size:11px!important;font-weight:800!important;width:max-content}
 .matchup-summary-home .matchup-projected-score{margin-left:auto}
@@ -304,7 +305,7 @@ html[data-theme="dark"] .current-teams-page .matchup-card[open]{border-color:#fb
 .matchup-summary-meta{margin-top:4px}
 .matchup-live-games,.matchup-daily-cats{font-size:9px;font-weight:800}
 .matchup-expanded{border-top:1px solid var(--line)}
-.matchup-section-title{display:grid;grid-template-columns:1fr 1fr;padding:7px 12px;background:#e5e7eb;color:#374151;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+.matchup-section-title{display:grid;grid-template-columns:1fr 1fr;padding:7px 12px;background:var(--panel-2);color:var(--text);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
 .matchup-section-side-home{text-align:right}
 .matchup-section-toggle{grid-template-columns:1fr auto 1fr;cursor:pointer;list-style:none}
 .matchup-section-chevron{font-size:11px}
@@ -326,16 +327,16 @@ html[data-theme="dark"] .current-teams-page .matchup-card[open]{border-color:#fb
 .matchup-player-blank{min-height:44px}
 .matchup-empty{padding:12px;color:var(--muted);font-size:12px}
 .matchup-player-row.team-game-live-row{background:#e8f7ee!important}
-.matchup-player-row.team-game-finished-row{background:#eef1f5!important}
+.matchup-player-row.team-game-finished-row{background:var(--game-finished)!important}
 .matchup-player-row.team-game-upcoming-row{background:var(--game-upcoming)!important}
-html[data-theme="dark"] .matchup-card{background:#0f1c2b;border-color:#334155}
-html[data-theme="dark"] .matchup-card.notification-team-matchup>.matchup-summary{background:#123452}
-html[data-theme="dark"] .matchup-summary{background:#0f1c2b}
-html[data-theme="dark"] .matchup-week-score.score-same,html[data-theme="dark"] .matchup-day-score.score-same{color:#f8fafc!important}
-html[data-theme="dark"] .matchup-projected-score{background:#3b291d;color:#fdba74!important}
-html[data-theme="dark"] .matchup-section-title{background:#1f2937;color:#e5e7eb}
-html[data-theme="dark"] .matchup-roster-col{border-color:#334155}
-html[data-theme="dark"] .matchup-player-row{color:#f8fafc;border-color:#334155}
+html[data-theme="dark"] .matchup-card{background:var(--panel);border-color:var(--line)}
+html[data-theme="dark"] .matchup-card.notification-team-matchup>.matchup-summary{background:var(--selection-bg)}
+html[data-theme="dark"] .matchup-summary{background:var(--panel)}
+html[data-theme="dark"] .matchup-week-score.score-same,html[data-theme="dark"] .matchup-day-score.score-same{color:var(--text)!important}
+html[data-theme="dark"] .matchup-projected-score{background:#3b291d;color:var(--badge-orange-line)!important}
+html[data-theme="dark"] .matchup-section-title{background:#1f2937;color:var(--panel-2)}
+html[data-theme="dark"] .matchup-roster-col{border-color:var(--line)}
+html[data-theme="dark"] .matchup-player-row{color:var(--text);border-color:var(--line)}
 html[data-theme="dark"] .matchup-player-row.team-game-live-row{background:#123d30!important}
 html[data-theme="dark"] .matchup-player-row.team-game-finished-row{background:#263243!important}
 html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:var(--game-upcoming)!important}
@@ -359,6 +360,7 @@ html[data-theme="dark"] .matchup-player-row.team-game-upcoming-row{background:va
  .matchup-player-today strong{font-size:28px}
 }
 </style>
+@endpush
 
 <script src="/live-scoring.js?v={{ hash_file('sha256', base_path('public/live-scoring.js')) }}"></script>
 <script>
@@ -441,6 +443,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 @endsection
 
+@push('styles')
 <style>
 .matchup-team-name-row .team-icon-uploader,
 .matchup-team-name-row .team-icon-uploader img{
@@ -451,3 +454,4 @@ document.addEventListener('DOMContentLoaded',()=>{
 }
 .matchup-team-name-row .team-icon-uploader img{object-fit:contain!important}
 </style>
+@endpush

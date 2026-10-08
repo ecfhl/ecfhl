@@ -49,7 +49,7 @@ document.querySelectorAll('.leader-expand-button').forEach(btn=>btn.addEventList
 .leader-card-head .leader-card-title{padding-right:42px}
 .leader-expand-button{position:absolute;top:50%;right:14px;transform:translateY(-50%);display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:7px;background:transparent;color:inherit;font:inherit;font-size:18px;line-height:1;cursor:pointer}
 .leader-expand-button:hover{background:rgba(127,127,127,.12)}
-.leader-expand-button:focus-visible{outline:2px solid var(--accent,#1d5fa7);outline-offset:2px}
+.leader-expand-button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .franchise-link,.franchise-link:hover{text-decoration:none}
 </style>
 @endpush

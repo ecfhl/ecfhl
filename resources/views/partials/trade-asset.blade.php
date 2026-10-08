@@ -47,9 +47,9 @@
 @once
 <style>
 .trade-contract{display:inline-block;vertical-align:middle;margin-left:.3rem;padding:.15rem .45rem;border-radius:.35rem;font-size:.68em;font-weight:700;line-height:1.45;letter-spacing:.025em;white-space:nowrap}
-.trade-contract--gray{background:#e5e7eb;color:#374151}
-.trade-contract--blue{background:#dbeafe;color:#1e40af}
-.trade-contract--orange{background:#ffedd5;color:#9a3412}
+.trade-contract--gray{background:var(--panel-2);color:var(--text)}
+.trade-contract--blue{background:var(--selection-bg);color:var(--accent)}
+.trade-contract--orange{background:var(--badge-orange-bg);color:var(--badge-orange-text)}
 .trade-player-link{color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
 .trade-player-link:hover{color:var(--brand,#2563eb)}
 .trade-missing-contract{text-decoration-style:dotted}

@@ -5,6 +5,7 @@
 <div class="page-head"><div class="eyebrow">Player history</div><h1>📖 Players</h1><p>Explore draft selections, trades and awards across all seasons, from oldest to newest.</p></div>
 <form method="get" class="toolbar"><label class="sr-only" for="playerQuery">Player name</label><input id="playerQuery" name="q" value="{{ $q }}" class="control" placeholder="Enter a player name…" style="flex:1" required><button class="button primary" type="submit">Search</button></form>
 
+@push('styles')
 <style>
 .player-leader-grid{margin:22px 0 28px}
 #player-results{scroll-margin-top:110px}
@@ -25,6 +26,7 @@
 .timeline-event .card h3{margin:0;font-size:15px;line-height:1.4}
 @media(max-width:600px){.timeline-season{margin-top:22px}.timeline-event .card{padding:9px 11px}.timeline-label{margin-left:6px}}
 </style>
+@endpush
 <div class="player-leader-grid">
 @include('partials.leaders',[
     'leaderRows'=>[

@@ -1,7 +1,7 @@
 /* Shared Home and team scoreboard layout. Load after page styles. */
 .ecfhl-scoreboard{border:1px solid #cbdde9;border-radius:18px;box-shadow:none;overflow:hidden;margin-bottom:10px}
 .ecfhl-scoreboard[open]{border-width:1px;box-shadow:0 0 0 2px rgba(37,99,235,.15)}
-.ecfhl-scoreboard .team-live-matchup-summary{display:grid;position:relative;min-width:0;list-style:none;padding:16px 30px 16px 16px!important;gap:12px!important;background:#eaf5ff!important;align-items:center;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr)}
+.ecfhl-scoreboard .team-live-matchup-summary{display:grid;position:relative;min-width:0;list-style:none;padding:16px 30px 16px 16px!important;gap:12px!important;background:var(--selection-bg)!important;align-items:center;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr)}
 .ecfhl-scoreboard .team-live-side{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between;gap:16px!important;min-width:0}
 .ecfhl-scoreboard .team-live-side-right{flex-direction:row-reverse!important;text-align:right}
 .ecfhl-scoreboard .team-live-name-row{display:flex;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-start;gap:6px;min-width:0;min-height:0!important}
@@ -22,7 +22,7 @@
 .ecfhl-scoreboard .team-live-vs{margin:6px 0 0!important;padding:0!important;font-size:10px!important;background:transparent!important;border:0!important;box-shadow:none!important;color:var(--muted);align-self:start;font-weight:900}
 .ecfhl-scoreboard .team-live-chevron{right:10px;color:var(--muted)}
 html[data-theme="dark"] .ecfhl-scoreboard{border-color:#2a4566!important;box-shadow:none!important}
-html[data-theme="dark"] .ecfhl-scoreboard .team-live-matchup-summary{background:#123452!important}
+html[data-theme="dark"] .ecfhl-scoreboard .team-live-matchup-summary{background:var(--selection-bg)!important}
 @media(max-width:700px){
  .ecfhl-scoreboard .team-live-matchup-summary{padding:12px 22px 12px 10px!important;gap:6px!important;grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr);grid-template-rows:auto auto}
  .ecfhl-scoreboard .team-live-side,.ecfhl-scoreboard .team-live-side-right{display:grid!important;grid-template-columns:56px minmax(0,1fr);grid-template-rows:subgrid;grid-row:1 / span 2;align-items:start!important;align-self:stretch!important;gap:6px!important}

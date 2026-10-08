@@ -24,7 +24,9 @@
 @endforeach
 </div>
 </div>
+@push('styles')
 <style>
 .admin-notification-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0 32px}.admin-notification-card{display:flex;align-items:center;gap:16px;padding:18px}.admin-notification-card>div{min-width:0;flex:1}.admin-notification-card h2{font-size:17px;margin:0 0 5px}.admin-notification-card p{font-size:13px;line-height:1.4;color:var(--muted);margin:0}.admin-notification-card .button{white-space:nowrap}@media(max-width:700px){.admin-notification-grid{grid-template-columns:1fr}.admin-notification-card{align-items:flex-start;flex-direction:column}.admin-notification-card .button{width:100%}}
 </style>
+@endpush
 @endsection

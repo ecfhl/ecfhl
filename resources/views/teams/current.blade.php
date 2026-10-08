@@ -540,7 +540,9 @@
 </div>
 </div>
 
+@push('styles')
 <style data-matchup-scoreboard-style data-style-version="{{ hash_file('sha256', base_path('public/matchup-scoreboard.css')) }}">{!! file_get_contents(base_path('public/matchup-scoreboard.css')) !!}</style>
+@endpush
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
   const liveMatchup=document.querySelector('.team-live-matchup-card');
