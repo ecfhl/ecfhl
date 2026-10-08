@@ -78,12 +78,22 @@
       window.addEventListener('resize', constrain);
       let baseline = read(document.querySelector('.current-matchup-list'));
       let total = 0;
+      let enabled = false;
       const show = open => {
         tray.hidden = !open;
         toggle.setAttribute('aria-expanded', String(open));
         if (open) constrain();
       };
-      toggle.addEventListener('click', () => show(tray.hidden));
+      const setEnabled = next => {
+        enabled = next;
+        toggle.dataset.enabled = String(enabled);
+        toggle.setAttribute('aria-pressed', String(enabled));
+        toggle.setAttribute('aria-label', enabled ? 'Disable scoring updates' : 'Enable scoring updates');
+        toggle.title = enabled ? 'Disable scoring updates' : 'Enable scoring updates';
+        if (!enabled) show(false);
+        else show(true);
+      };
+      toggle.addEventListener('click', () => setEnabled(!enabled));
       close.addEventListener('click', () => { show(false); toggle.focus({preventScroll:true}); });
       tray.addEventListener('keydown', event => {
         if (event.key === 'Escape') { show(false); toggle.focus({preventScroll:true}); }
@@ -101,7 +111,7 @@
           const events = compare(baseline, next);
           if (baseline && baseline.date !== next.date) { list.replaceChildren(element('p', 'live-score-updates-empty', 'No updates')); total = 0; count.hidden = true; toggle.setAttribute('data-has-updates', 'false'); show(false); }
           baseline = next;
-          if (!events.length) return;
+          if (!enabled || !events.length) return;
           list.querySelector('.live-score-updates-empty')?.remove();
           const batch = element('div', 'live-score-update-batch');
           batch.append(element('time', 'live-score-update-time', new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})));
