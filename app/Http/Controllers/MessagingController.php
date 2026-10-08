@@ -68,7 +68,7 @@ final class MessagingController
   $inbox=DB::table('owner_notification_inbox as i')->join('push_notifications as n','n.id','=','i.notification_id')->where('i.user_id',$uid);
   $notifications=(clone $inbox)->orderByRaw('CASE WHEN i.read_at IS NULL THEN 0 ELSE 1 END')->orderByDesc('n.id')->limit(50)->get(['n.id','n.title','n.body','n.url','i.read_at']);
   $owners=DB::table('owner_team_claims')->whereNotNull('fantasy_team_id')->where('fantasy_team_id','!=','')->where('user_id','!=',$uid)->get(['user_id','team_name'])->mapWithKeys(fn($c)=>[\Illuminate\Support\Str::slug($c->team_name)=>$c->user_id]);
-  $teams=Messaging::participants()->where('id','!=',$uid)->get()->map(fn($u)=>['user_id'=>$u->id,'team_name'=>$u->messaging_persona?$u->name:$u->claim->team_name,'team_logo'=>\App\Support\TeamImages::url($u->messaging_persona?'league-logo':\Illuminate\Support\Str::slug($u->claim->team_name),64)])->sortBy('team_name')->values();
+  $teams=Messaging::participants()->where('id','!=',$uid)->get()->map(fn($u)=>['user_id'=>$u->id,'team_name'=>$u->messaging_persona?$u->name:$u->claim->team_name,'team_logo'=>\App\Support\TeamImages::url($u->messaging_persona?($u->messaging_persona==='gary-betman'?'gary-bettman':'league-logo'):\Illuminate\Support\Str::slug($u->claim->team_name),64)])->sortBy('team_name')->values();
   return response()->json(['teams'=>$teams,'unread'=>Messaging::unread($uid),'messages'=>$messages,'latest_id'=>$latest,'notification_count'=>(clone $inbox)->whereNull('i.read_at')->count(),'notifications'=>$notifications,'preferences'=>Messaging::preferences($r->user()),'owners'=>$owners])->header('Cache-Control','private, no-store');
  }
  public function readNotifications(Request $r) {

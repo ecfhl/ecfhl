@@ -76,6 +76,7 @@ final class TeamImages
             'lineup-advisor'=>'images/lineup-advisor-cartoon.svg',
             'lineup-advisor-pierre'=>'images/pierre-advisor.webp',
             'lineup-advisor-john'=>'images/john-advisor.webp',
+            'gary-bettman'=>'images/gary-bettman.webp',
             'orcas'=>'images/team-icons/orcas.webp',default=>null,
         };
         if ($fallback && is_file(public_path($fallback))) return self::generate($slug, file_get_contents(public_path($fallback)), str_ends_with($fallback,'.svg')?'image/svg+xml':'image/webp');
@@ -113,7 +114,7 @@ final class TeamImages
                 self::generate($icon->team_slug, base64_decode($icon->image_data, true), $icon->mime_type); $count++;
             } catch (\Throwable $e) { report($e); }
         }
-        foreach (array_merge(PublicData::teamMenu(), ['lineup-advisor','lineup-advisor-pierre','lineup-advisor-john','orcas']) as $name) {
+        foreach (array_merge(PublicData::teamMenu(), ['lineup-advisor','lineup-advisor-pierre','lineup-advisor-john','gary-bettman','orcas']) as $name) {
             self::load(\Illuminate\Support\Str::slug($name));
         }
         return $count;
