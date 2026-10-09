@@ -1,14 +1,14 @@
 (()=>{
  const panel=document.getElementById('chat-panel');if(!panel)return;
  const userId=Number(document.getElementById('communication-context')?.dataset.userId||0);
- const $=id=>document.getElementById('chat-panel-'+id),handle=$('handle'),close=$('close'),restore=$('restore'),select=$('conversation'),log=$('log'),form=$('form'),text=$('text'),send=form.querySelector('button'),status=$('status'),older=$('older');
+ const $=id=>document.getElementById('chat-panel-'+id),handle=$('handle'),close=$('close'),restore=$('restore'),select=$('conversation'),log=$('log'),form=$('form'),text=$('text'),send=form.querySelector('[type=submit]'),status=$('status'),older=$('older');
  const header=document.querySelector('.header-actions a[href="/messages"]'),key='ecfhl-chat-panel:'+userId;
  let saved={};try{saved=JSON.parse(sessionStorage.getItem(key)||'{}')||{};}catch(_){}
  let mode=['closed','expanded','minimized'].includes(saved.mode)?saved.mode:'closed',position=saved.position||null,drag=null,selected='',teams=[],directoryReady=false,generation=0,sending=false;
  let maximized=false,unread={total:0,league:0,people:{}};
  const maximize=$('maximize');
  const conversations=new Map();
- const conversation=value=>{if(!conversations.has(value))conversations.set(value,{messages:new Map(),draft:'',pending:null,lastRead:0,hasMore:false,busy:false,readBusy:false});return conversations.get(value);};
+ const conversation=value=>{if(!conversations.has(value))conversations.set(value,{messages:new Map(),draft:'',pending:null,attachment:null,lastRead:0,hasMore:false,busy:false,readBusy:false});return conversations.get(value);};
  const csrf=()=>document.querySelector('meta[name="csrf-token"]')?.content||'';
  const request=async(url,body)=>{
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
@@ -43,15 +43,17 @@
  const node=(tag,value,className)=>{const el=document.createElement(tag);if(value!==undefined)el.textContent=value;if(className)el.className=className;return el;};
  const draw=(oldPage=false)=>{
   const state=conversation(selected),bottom=atBottom(),height=log.scrollHeight;log.replaceChildren();
-  const visibleMessages=[...state.messages.values()];
+  const visibleMessages=[...state.messages.values()];let dateLabel=null;
   if(!visibleMessages.length)log.append(node('p','No messages yet. Start the conversation.'));
   visibleMessages.sort((a,b)=>a.id-b.id).forEach(message=>{
+   const date=new Date(message.created_at).toLocaleDateString([],{timeZone:'America/Halifax',year:'numeric',month:'short',day:'numeric'});if(date!==dateLabel){log.append(node('div',date,'chat-date-divider'));dateLabel=date;}
    const row=node('article',undefined,'chat-message');row.dataset.own=String(Number(message.sender_id)===userId);
-   const identity=node('div',undefined,'chat-message-identity'),logo=node('img');logo.src=message.team_logo||'/team-icons/league-logo/thumbnail?size=64';logo.alt='';logo.width=32;logo.height=32;const name=node('strong',message.team_name||'League member');name.title=name.textContent;identity.append(logo,name);
+   const identity=node('div',undefined,'chat-message-identity'),logo=node('img');logo.src=message.team_logo||'/team-icons/league-logo/thumbnail?size=64';logo.alt='';logo.width=24;logo.height=24;const name=node('strong',message.team_name||'League member');name.title=name.textContent;identity.append(logo,name);
    const meta=node('div',undefined,'chat-message-meta');meta.append(identity);
-   const time=node('time',new Date(message.created_at).toLocaleString([],{timeZone:'America/Halifax',hour12:true}),'chat-message-time');
+   const time=node('time',new Date(message.created_at).toLocaleString([],{timeZone:'America/Halifax',hour:'numeric',minute:'2-digit',hour12:true}),'chat-message-time');
    const receipt=window.EcfhlMessageReceipt?.(message,userId);
-   row.append(node('p',message.body),meta,time);if(receipt)row.append(receipt);log.append(row);
+   meta.append(time);row.append(meta,window.EcfhlChatContent.body(message));
+   const actions=node('div',undefined,'chat-message-actions');actions.append(window.EcfhlChatContent.reaction(message,async active=>{try{const d=await request('/api/messages/'+message.id+'/reaction',{active});state.messages.set(Number(d.message.id),d.message);draw();}catch(e){status.textContent=e.message;}}));if(receipt)actions.append(receipt);row.append(actions);log.append(row);
   });
   older.hidden=!state.hasMore;if(oldPage)log.scrollTop+=log.scrollHeight-height;else if(bottom)log.scrollTop=log.scrollHeight;constrain();read();
  };
@@ -63,7 +65,7 @@
  };
  const change=value=>{
   value=String(value||'');if(value&&!teams.some(t=>String(t.user_id)===value))value='';
-  conversation(selected).draft=text.value;selected=value;generation++;select.value=value;text.value=conversation(value).draft;form.hidden=readOnly();status.textContent='';log.replaceChildren();draw();log.scrollTop=log.scrollHeight;render();refresh();
+  conversation(selected).draft=text.value;selected=value;generation++;select.value=value;text.value=conversation(value).draft;form.hidden=readOnly();attachmentPreview();status.textContent='';log.replaceChildren();draw();log.scrollTop=log.scrollHeight;render();refresh();
  };
  let requested=new URL(location.href).pathname==='/messages'?new URL(location.href).searchParams.get('user_id'):null;
  let pendingOpen=null;
@@ -96,13 +98,24 @@ const updateUnread=value=>{
   if(link.id==='team-icon-modal-message')document.getElementById('team-icon-modal-close')?.click();
   open(url.searchParams.has('user_id')?url.searchParams.get('user_id'):(link===header?defaultConversation():''));
  },true);
+ const attachmentPreview=()=>{const preview=$('attachment'),file=conversation(selected).attachment;preview.hidden=!file;preview.querySelector('span').textContent=file?.name||'';};
+ $('attachment').querySelector('button').addEventListener('click',()=>{conversation(selected).attachment=null;attachmentPreview();});
+ const insert=(before,after='',placeholder='text')=>{const start=text.selectionStart,end=text.selectionEnd,value=text.value.slice(start,end)||placeholder;text.setRangeText(before+value+after,start,end,'select');conversation(selected).draft=text.value;text.focus();};
+ form.querySelectorAll('[data-chat-format]').forEach(button=>button.addEventListener('click',()=>{
+  const format=button.dataset.chatFormat;
+  if(format==='bold')insert('**','**');else if(format==='italic')insert('*','*');else if(format==='strike')insert('~~','~~');else if(format==='list')insert(text.selectionStart?'\n- ':'- ','','item');
+  else if(format==='link'||format==='gif'){const value=prompt(format==='gif'?'Paste an HTTPS GIF image URL':'Paste an HTTPS link');if(!value)return;try{const url=new URL(value);if(url.protocol!=='https:')throw Error();if(format==='gif')insert('\n![GIF]('+url.href+')\n','','');else insert('[',']('+url.href+')','link');}catch{status.textContent='Use an HTTPS URL.';}}
+  else if(format==='emoji')$('emoji').hidden=!$('emoji').hidden;else if(format==='image')$('file').click();
+ }));
+ form.querySelectorAll('[data-chat-emoji]').forEach(button=>button.addEventListener('click',()=>{insert(button.dataset.chatEmoji,'','');$('emoji').hidden=true;}));
+ $('file').addEventListener('change',()=>{const file=$('file').files[0];$('file').value='';if(!file)return;if(file.size>2097152||!['image/png','image/jpeg','image/gif','image/webp'].includes(file.type)){status.textContent='Choose a PNG, JPEG, GIF or WebP under 2 MB.';return;}const value=selected,reader=new FileReader();reader.onload=()=>{conversation(value).attachment={name:file.name,data:reader.result};if(value===selected)attachmentPreview();};reader.readAsDataURL(file);});
  select.addEventListener('change',()=>change(select.value));
  text.addEventListener('input',()=>{conversation(selected).draft=text.value;});
  form.addEventListener('submit',async event=>{
-  event.preventDefault();if(sending||readOnly()||!text.value.trim()||!directoryReady)return;
-  const value=selected,state=conversation(value),body=text.value.trim();if(!state.pending||state.pending.body!==body)state.pending={body,client_id:crypto.randomUUID()};
+  event.preventDefault();if(sending||readOnly()||(!text.value.trim()&&!conversation(selected).attachment)||!directoryReady)return;
+  const value=selected,state=conversation(value),body=text.value.trim();if(!state.pending||state.pending.body!==body||state.pending.attachment!==state.attachment?.data)state.pending={body,client_id:crypto.randomUUID(),...(state.attachment?{attachment:state.attachment.data}:{})};
   const attempt=state.pending;sending=true;send.disabled=true;status.textContent='Sending…';
-  try{const d=await request('/api/messages/send',{...attempt,user_id:value?Number(value):null});state.pending=null;state.messages.set(Number(d.message.id),d.message);if(state.draft.trim()===body)state.draft='';
+  try{const d=await request('/api/messages/send',{...attempt,user_id:value?Number(value):null});state.pending=null;state.attachment=null;attachmentPreview();state.messages.set(Number(d.message.id),d.message);if(state.draft.trim()===body)state.draft='';
    if(value===selected){if(text.value.trim()===body)text.value='';draw();log.scrollTop=log.scrollHeight;await read();status.textContent='Sent.';}
   }catch(e){if(value===selected)status.textContent=e.message;}finally{sending=false;send.disabled=false;}
  });
