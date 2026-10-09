@@ -362,4 +362,34 @@ $feed=ownerRequest('GET','/push/notifications',[],$guest,['HTTP_AUTHORIZATION'=>
 verifyOwner(json_decode($feed->getContent(),true)['notifications']===[],'A new owner can read old device events.');
 $feed=ownerRequest('GET','/push/notifications',[],$guest,['HTTP_AUTHORIZATION'=>'Bearer token-alpha']);
 verifyOwner(json_decode($feed->getContent(),true)['notifications']===[],'Old device token survived reassignment.');
+// Automatic welcomes use the normal league-chat notification path after commit.
+$welcomeTeams=new class extends OwnerTeams {
+ public function all(): \Illuminate\Support\Collection {return collect([
+  ['id'=>'welcome-team','name'=>'Welcome Team','claimed'=>TeamClaim::whereKey('welcome-team')->exists(),'reserved'=>false],
+  ['id'=>'rollback-team','name'=>'Rollback Team','claimed'=>false,'reserved'=>false],
+ ]);}
+};
+$welcomeOwner=User::create(['name'=>'Welcome owner','email'=>'welcome@example.org','password'=>'strong-example-w']);
+$welcomePeer=User::create(['name'=>'Welcome peer','email'=>'welcome-peer@example.org','password'=>'strong-example-w']);
+TeamClaim::create(['fantasy_team_id'=>'welcome-peer','user_id'=>$welcomePeer->id,'team_name'=>'Welcome Peer']);
+$welcomePush=app(WebPush::class);
+$welcomePush->subscribe('https://fcm.googleapis.com/fcm/send/welcome-owner',$welcomeOwner->id,'welcome-owner');
+$welcomePush->subscribe('https://fcm.googleapis.com/fcm/send/welcome-peer',$welcomePeer->id,'welcome-peer');
+$beforeWelcomes=DB::table('chat_messages')->count();
+$welcomeTeams->claim($welcomeOwner,'welcome-team');
+$welcome=DB::table('chat_messages')->orderByDesc('id')->first();
+$welcomeGary=User::where('messaging_persona','gary-betman')->firstOrFail();
+verifyOwner(DB::table('chat_messages')->count()===$beforeWelcomes+1 && $welcome->recipient_id===null && (int)$welcome->sender_id===$welcomeGary->id && str_contains($welcome->body,'Welcome Team'),'Successful claim must post one Gary league welcome.');
+verifyOwner(!$welcomeGary->password && !$welcomeGary->google_id && !$welcomeGary->is_admin && !$welcomeGary->claim,'Welcome persona must not gain login or owner access.');
+$welcomeAlert=DB::table('push_notifications')->orderByDesc('id')->first();
+verifyOwner($welcomeAlert->category==='league-message' && $welcomeAlert->title==='Gary Bettman · League chat' && $welcomeAlert->url==='/messages','Welcome must trigger a normal league notification.');
+foreach([$welcomeOwner,$welcomePeer] as $recipient)verifyOwner(DB::table('push_deliveries as d')->join('push_subscriptions as s','s.id','=','d.subscription_id')->where('d.notification_id',$welcomeAlert->id)->where('s.user_id',$recipient->id)->exists(),'Welcome notification missing for league owner.');
+$beforeAlerts=DB::table('push_notifications')->count();
+try{$welcomeTeams->claim($welcomeOwner,'welcome-team');throw new RuntimeException('Duplicate claim accepted');}catch(\Illuminate\Validation\ValidationException $expected){}
+verifyOwner(DB::table('chat_messages')->count()===$beforeWelcomes+1 && DB::table('push_notifications')->count()===$beforeAlerts,'Rejected repeat must not welcome or notify twice.');
+$rollbackOwner=User::create(['name'=>'Rollback owner','email'=>'rollback@example.org','password'=>'strong-example-w']);
+try{DB::transaction(function()use($welcomeTeams,$rollbackOwner){$welcomeTeams->claim($rollbackOwner,'rollback-team');throw new RuntimeException('rollback welcome');});}catch(RuntimeException $expected){verifyOwner($expected->getMessage()==='rollback welcome','Unexpected rollback test failure');}
+verifyOwner(!TeamClaim::whereKey('rollback-team')->exists() && DB::table('chat_messages')->count()===$beforeWelcomes+1 && DB::table('push_notifications')->count()===$beforeAlerts,'Rolled-back claims must not post or notify.');
+echo "Team welcome checks passed: Gary identity, league-wide message/push, duplicate rejection and transaction rollback.\n";
+
 echo "Owner account checks passed: pages, optional browsing, exclusive claims, reserved admin invitation, admin routes/actions, password hashing/login, Google state/linking, own/opponent scoring, goalie filters, date groups/custom projection ordering/start-time ties, confirmed/nonstarter/started-game exclusions, bell toggle/auth/preference preservation, waiver dates, own-goalie roster slots/current snapshot/toggle/delivery, isolated push delivery, latest-score test replay/legacy formatting/device isolation/failed delivery, and SSRF rejection.\n";

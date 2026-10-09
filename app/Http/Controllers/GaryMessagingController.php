@@ -23,8 +23,7 @@ final class GaryMessagingController {
   [$id,$gary]=DB::transaction(function()use($r,$recipient,$body,$v,&$new){
    User::whereKey($r->user()->id)->lockForUpdate()->firstOrFail();
    // This persona has no credentials, team claim or administrator privileges.
-   DB::table('users')->insertOrIgnore(['messaging_persona'=>'gary-betman','name'=>'Gary Bettman','email'=>'gary-betman@personas.ecfhl.invalid','password'=>null,'google_id'=>null,'is_admin'=>false,'created_at'=>now(),'updated_at'=>now()]);
-   $gary=User::where('messaging_persona','gary-betman')->lockForUpdate()->firstOrFail();
+   $gary=Messaging::gary();
    $existing=DB::table('chat_messages')->where('sender_id',$gary->id)->where('client_id',$v['client_id'])->first();
    if($existing){abort_if(($existing->recipient_id===null?null:(int)$existing->recipient_id)!==$recipient || $existing->body!==$body,409,'This send was already used for a different message.');return [$existing->id,$gary];}
    $new=true;$id=DB::table('chat_messages')->insertGetId(['sender_id'=>$gary->id,'recipient_id'=>$recipient,'client_id'=>$v['client_id'],'body'=>$body,'created_at'=>now(),'updated_at'=>now()]);return [$id,$gary];

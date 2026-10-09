@@ -27,7 +27,10 @@ class OwnerTeams {
   if(!$team || $team['claimed'] || ($team['reserved']&&!$adminInvite)) throw ValidationException::withMessages(['team_id'=>'That team is claimed or reserved. Choose another team.']);
   if($user->claim()->exists()) throw ValidationException::withMessages(['team_id'=>'Your account already owns a team.']);
   // The primary key is the final arbiter for simultaneous claims.
-  TeamClaim::create(['fantasy_team_id'=>$id,'user_id'=>$user->id,'team_name'=>$team['name']]);
-  if($team['reserved'] && $adminInvite){$user->is_admin=true;$user->save();}
+  DB::transaction(function()use($user,$id,$team,$adminInvite){
+   TeamClaim::create(['fantasy_team_id'=>$id,'user_id'=>$user->id,'team_name'=>$team['name']]);
+   if($team['reserved'] && $adminInvite){$user->is_admin=true;$user->save();}
+   Messaging::welcomeTeam($team['name']);
+  });
  }
 }

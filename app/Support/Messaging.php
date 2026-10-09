@@ -6,6 +6,20 @@ use Illuminate\Support\Facades\DB;
 
 final class Messaging
 {
+ public static function gary(): User {
+  DB::table('users')->insertOrIgnore(['messaging_persona'=>'gary-betman','name'=>'Gary Bettman','email'=>'gary-betman@personas.ecfhl.invalid','password'=>null,'google_id'=>null,'is_admin'=>false,'created_at'=>now(),'updated_at'=>now()]);
+  return User::where('messaging_persona','gary-betman')->lockForUpdate()->firstOrFail();
+ }
+ public static function welcomeTeam(string $teamName): void {
+  $gary=self::gary();
+  $body='Welcome to the ECFHL, '.$teamName.'! Your team is now claimed. Good luck this season! — Gary Bettman';
+  $id=DB::table('chat_messages')->insertGetId(['sender_id'=>$gary->id,'recipient_id'=>null,'client_id'=>\Illuminate\Support\Str::uuid()->toString(),'body'=>$body,'created_at'=>now(),'updated_at'=>now()]);
+  // Publish notifications only once the account, claim and message have committed.
+  DB::afterCommit(function()use($gary,$body,$id){
+   try{app(WebPush::class)->notify('league-message','Gary Bettman · League chat',$body,'/messages',null,['sender_id'=>$gary->id,'recipient_id'=>null]);}
+   catch(\Throwable $error){\Illuminate\Support\Facades\Log::warning('Team welcome saved but push failed',['message_id'=>$id,'error'=>$error->getMessage()]);}
+  });
+ }
  public static function participants() {
   return User::with('claim')->where(fn($q)=>$q->whereHas('claim',fn($q)=>$q->whereNotNull('fantasy_team_id')->where('fantasy_team_id','!=',''))->orWhereNotNull('messaging_persona'));
  }
