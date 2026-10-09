@@ -1,6 +1,6 @@
 (()=>{
  const user=document.getElementById('communication-context')?.dataset.userId||'guest';
- document.querySelectorAll('#live-score-updates,#notification-panel,#chat-panel').forEach(panel=>{
+ document.querySelectorAll('#chat-panel').forEach(panel=>{
   const key='ecfhl-panel-size:'+user+':'+panel.id;let size=null,drag=null;
   try{const value=JSON.parse(sessionStorage.getItem(key)||'null');if(value&&Number.isFinite(value.width)&&Number.isFinite(value.height))size=value;}catch(_){}
   const handle=document.createElement('button');handle.type='button';handle.className='panel-resize-handle';handle.setAttribute('aria-label','Resize '+panel.getAttribute('aria-label')+': drag or use arrow keys');handle.title='Resize: drag or use arrow keys';panel.append(handle);panel.dataset.resizablePanel='true';

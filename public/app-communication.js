@@ -18,47 +18,22 @@
  const refreshScoring=async()=>{if(document.hidden)return;if(scoreBusy){scorePending=true;return;}scoreBusy=true;try{scoring?.update(await request('/api/scoring-updates?scope='+encodeURIComponent(scoring.scope())));}catch(_){/* Keep saved scores and retry next tick. */}finally{scoreBusy=false;if(scorePending){scorePending=false;refreshScoring();}}};
  refreshScoring();setInterval(refreshScoring,60000);window.addEventListener('ecfhl-scoring-filter',refreshScoring);
  const notificationPanel=document.getElementById('notification-panel'),notificationToggle=document.getElementById('header-notifications-toggle');
- const notificationHandle=document.getElementById('notification-handle'),notificationClose=document.querySelector('[data-close-notifications]'),notificationTrash=document.getElementById('notification-trash'),notificationRestore=document.getElementById('notification-restore');
+ const notificationClose=document.querySelector('[data-close-notifications]'),notificationTrash=document.getElementById('notification-trash');
  const notificationKey='ecfhl-notification-panel:'+(userId||'guest');
  let savedNotifications={};try{savedNotifications=JSON.parse(sessionStorage.getItem(notificationKey)||'{}')||{};}catch(_){}
- let notificationMode=['closed','expanded','minimized'].includes(savedNotifications.mode)?savedNotifications.mode:'closed',notificationPosition=savedNotifications.position||null,notificationDrag=null,notificationTotal=0;
+ let notificationMode=savedNotifications.mode==='expanded'?'expanded':'closed',notificationTotal=0;
  let clearedNotifications=new Set(Array.isArray(savedNotifications.cleared)?savedNotifications.cleared.map(Number):[]);
- const persistNotifications=()=>{try{sessionStorage.setItem(notificationKey,JSON.stringify({mode:notificationMode,position:notificationPosition,cleared:[...clearedNotifications].slice(-1000)}));}catch(_){}};
- const constrainNotifications=()=>{
-  if(!notificationPosition||notificationPanel.hidden)return;
-  const rect=notificationPanel.getBoundingClientRect(),nav=document.querySelector('.mobile-primary-nav');
-  const bottom=nav&&getComputedStyle(nav).display!=='none'?nav.getBoundingClientRect().top:window.innerHeight;
-  notificationPosition.x=Math.max(8,Math.min(notificationPosition.x,window.innerWidth-rect.width-8));
-  notificationPosition.y=Math.max(8,Math.min(notificationPosition.y,bottom-rect.height-8));
-  Object.assign(notificationPanel.style,{left:notificationPosition.x+'px',top:notificationPosition.y+'px',right:'auto'});
- };
+ const persistNotifications=()=>{try{sessionStorage.setItem(notificationKey,JSON.stringify({mode:notificationMode,cleared:[...clearedNotifications].slice(-1000)}));}catch(_){}};
  const renderNotifications=()=>{
   notificationPanel.hidden=notificationMode==='closed';notificationPanel.dataset.minimized=String(notificationMode==='minimized');
-  notificationRestore.hidden=notificationMode!=='minimized';notificationRestore.textContent=notificationTotal+' notifications';
   notificationTrash.disabled=notificationTotal===0;notificationToggle.setAttribute('aria-expanded',String(notificationMode!=='closed'));
-  constrainNotifications();persistNotifications();
+  persistNotifications();
  };
  notificationToggle.addEventListener('click',()=>{notificationMode='expanded';renderNotifications();notificationClose.focus({preventScroll:true});});
  const closeNotifications=()=>{notificationMode='closed';renderNotifications();notificationToggle.focus({preventScroll:true});};
  notificationClose.addEventListener('click',closeNotifications);
- document.getElementById('notification-minimize').addEventListener('click',()=>{notificationMode='minimized';renderNotifications();notificationRestore.focus({preventScroll:true});});
- notificationRestore.addEventListener('click',()=>{notificationMode='expanded';renderNotifications();notificationClose.focus({preventScroll:true});});
  notificationPanel.addEventListener('keydown',event=>{if(event.key==='Escape')closeNotifications();});
- notificationHandle.addEventListener('pointerdown',event=>{
-  if(event.button!==0||event.target.closest('button,a,select,input,label'))return;
-  const rect=notificationPanel.getBoundingClientRect();notificationDrag={id:event.pointerId,x:event.clientX,y:event.clientY,left:rect.left,top:rect.top};
-  notificationHandle.setPointerCapture(event.pointerId);notificationPanel.dataset.dragging='true';
- });
- notificationHandle.addEventListener('pointermove',event=>{if(!notificationDrag||notificationDrag.id!==event.pointerId)return;notificationPosition={x:notificationDrag.left+event.clientX-notificationDrag.x,y:notificationDrag.top+event.clientY-notificationDrag.y};constrainNotifications();});
- const endNotificationDrag=event=>{if(!notificationDrag||notificationDrag.id!==event.pointerId)return;if(notificationHandle.hasPointerCapture(event.pointerId))notificationHandle.releasePointerCapture(event.pointerId);notificationDrag=null;notificationPanel.dataset.dragging='false';persistNotifications();};
- ['pointerup','pointercancel','lostpointercapture'].forEach(type=>notificationHandle.addEventListener(type,endNotificationDrag));
- notificationHandle.addEventListener('keydown',event=>{
-  if(event.target!==notificationHandle||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;
-  event.preventDefault();const rect=notificationPanel.getBoundingClientRect(),step=event.shiftKey?30:10;
-  notificationPosition={x:rect.left+(event.key==='ArrowLeft'?-step:event.key==='ArrowRight'?step:0),y:rect.top+(event.key==='ArrowUp'?-step:event.key==='ArrowDown'?step:0)};constrainNotifications();persistNotifications();
- });
- notificationPanel.addEventListener('ecfhl-panel-resize',event=>{if(event.detail?.position)notificationPosition=event.detail.position;constrainNotifications();persistNotifications();});
- window.addEventListener('resize',()=>{constrainNotifications();persistNotifications();});renderNotifications();
+ renderNotifications();
  if(!userId){document.getElementById('header-notification-status').dataset.enabled='false';document.getElementById('header-notification-status').setAttribute('aria-label','Sign in for notifications');document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshScoring();});return;}
  let owners={},inbox=[],stateBusy=false,notificationStateReady=false;
  const popupCursorKey='ecfhl-message-cursor:'+userId;
@@ -92,7 +67,7 @@
    const ids=items.filter(item=>!item.read_at).map(item=>item.id);if(ids.length)await request('/api/notifications/read',{ids});
    items.forEach(item=>{clearedNotifications.add(Number(item.id));item.read_at=item.read_at||'read';});
    if(status){status.hidden=true;status.textContent='';}
-   notificationMode='minimized';drawInbox();counter('header-notification-count',inbox.filter(item=>!item.read_at).length);notificationRestore.focus({preventScroll:true});await refreshState();
+   drawInbox();counter('header-notification-count',inbox.filter(item=>!item.read_at).length);await refreshState();
   }catch(e){notificationMode='expanded';renderNotifications();if(status){status.hidden=false;status.textContent=e.message;}}
  });
  const widgets=[...document.querySelectorAll('[data-chat-widget]')].map(element=>({element,other:element.dataset.other?Number(element.dataset.other):null,log:element.querySelector('.chat-log'),status:element.querySelector('.chat-status'),messages:new Map(),busy:false,lastRead:0}));
@@ -189,7 +164,6 @@
    const data=await request('/api/messages/state'+(cursor!==null?'?after='+cursor:''));
    preferences=data.preferences;syncPreferences();owners=data.owners;window.dispatchEvent(new CustomEvent('ecfhl-message-state',{detail:data}));teamMessage();const previousIds=new Set(inbox.map(item=>Number(item.id)));
    inbox=data.notifications;
-   if(notificationStateReady&&inbox.some(item=>!item.read_at&&!clearedNotifications.has(Number(item.id))&&!previousIds.has(Number(item.id)))&&notificationMode==='closed')notificationMode='minimized';
    notificationStateReady=true;drawInbox();updateUnread(data.unread);counter('header-notification-count',data.notification_count);
    if(cursor===null)setCursor(data.latest_id);else{data.messages.forEach(showPopup);setCursor(data.messages.length?Number(data.messages[data.messages.length-1].id):Math.max(cursor,data.latest_id));}
   }catch(_){/* Preserve counters and retry. */}finally{stateBusy=false;}

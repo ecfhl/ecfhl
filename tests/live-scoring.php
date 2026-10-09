@@ -315,3 +315,17 @@ $sorted=\App\Support\LiveScoring\ViewData::sortPlayers(collect([
     $sortRow('Beta Playing',true,false),$sortRow('Beta Idle',false,false),
 ]));
 checkLive($sorted->pluck('player_name')->all()===['Beta Playing, Test','Zulu Playing, Test','Alpha Bench Playing, Test','Beta Idle, Test','Zulu Idle, Test','Alpha Bench Idle, Test'],'Playing first, then bench last within each group, then alphabetical');
+
+$nhlGame = ['id'=>1, 'gameState'=>'OFF', 'homeTeam'=>['abbrev'=>'BOS','score'=>2], 'awayTeam'=>['abbrev'=>'OTT','score'=>1], 'goals'=>[
+    ['teamAbbrev'=>'OTT','name'=>['default'=>'N. Cousins'],'strength'=>'ev','awayScore'=>1,'homeScore'=>0,'assists'=>[]],
+    ['teamAbbrev'=>'BOS','name'=>['default'=>'C. Mittelstadt'],'strength'=>'pp','awayScore'=>1,'homeScore'=>2,'assists'=>[['name'=>['default'=>'J. Hagens']],['name'=>['default'=>'D. Pastrnak']]]],
+]];
+$nhlEvents = App\Support\LiveScoring\NhlUpdates::fromGames([$nhlGame]);
+checkLive($nhlEvents[0]['team']==='OTT 1 @ BOS 0' && str_starts_with($nhlEvents[0]['stats'],'Unassisted goal'), 'Away opponent and unassisted goal missing');
+checkLive($nhlEvents[1]['team']==='BOS 2 vs OTT 1' && str_contains($nhlEvents[1]['stats'],'Power play goal · Game winning goal assisted by J. Hagens and D. Pastrnak'), 'Home opponent, special goals or assists missing');
+$nhlGame['gameState']='LIVE';
+$nhlGame['goals'][1]['strength']='sh';
+$nhlEvents = App\Support\LiveScoring\NhlUpdates::fromGames([$nhlGame]);
+checkLive(str_starts_with($nhlEvents[1]['stats'],'Short handed goal assisted by') && !str_contains($nhlEvents[1]['stats'],'Game winning'), 'Short handed or provisional game winner label incorrect');
+
+checkLive($nhlEvents[1]['game']['score']===2 && $nhlEvents[1]['game']['opponentScore']===1 && $nhlEvents[1]['game']['scoringTeam']==='BOS', 'Scoring team highlight or goal-time score missing');

@@ -136,3 +136,28 @@ html[data-theme] #chat-panel[data-maximized="true"]{left:8px!important;right:8px
 .team-message-logo-stack{display:flex;flex-direction:column;align-items:center;gap:4px}
 .team-message-count{position:absolute;top:0;right:0;display:flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:999px;background:#e92323;color:#fff;font-size:10px;font-weight:800;line-height:1;border:2px solid var(--panel)}
 .team-message-count[hidden]{display:none}
+
+/* Anchored update panels; chat retains its floating window controls. */
+html[data-theme] :is(#notification-panel,#live-score-updates){position:fixed;top:80px;right:12px;left:auto;bottom:auto;width:min(420px,calc(100vw - 24px));max-height:min(70dvh,calc(100dvh - 100px));display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line);border-top:3px solid #f4a340;border-radius:18px;background:var(--panel);color:var(--text)}
+html[data-theme] :is(#notification-panel,#live-score-updates)[hidden]{display:none}
+html[data-theme] :is(#notification-panel,#live-score-updates) :is(.communication-panel-heading,.live-score-updates-heading){background:var(--panel);color:var(--text);cursor:default;touch-action:auto;padding:16px;border-bottom:1px solid var(--line);user-select:auto;flex-shrink:0}
+html[data-theme] :is(#notification-panel,#live-score-updates) h2{font-size:17px}
+html[data-theme] #notification-panel .notification-panel-body{min-height:0;overflow:auto;max-height:none;overscroll-behavior:contain}
+html[data-theme] #live-score-updates .live-score-updates-list{min-height:0;overflow:auto;overscroll-behavior:contain}
+.live-score-update-team-heading{justify-content:flex-start;flex-wrap:wrap;gap:6px}
+.live-score-update-team-heading .live-score-update-points{margin-left:auto}
+.scoring-team-highlight{color:#f4a340}
+html[data-theme="light"] .scoring-team-highlight{color:#945000}
+@media(max-width:850px){
+ html[data-theme] :is(#notification-panel,#live-score-updates){top:auto;left:8px;right:8px;bottom:var(--updates-bottom,90px);width:auto;max-height:min(58dvh,calc(100dvh - var(--updates-bottom,90px) - 80px));border-radius:22px 22px 12px 12px;box-shadow:0 -12px 40px #00000040}
+}
+
+/* Consistent notification test controls across screen sizes. */
+.notification-preferences-page .message-test-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}
+.notification-preferences-page .message-test-actions .button{box-sizing:border-box;justify-self:stretch;width:100%;min-width:0;min-height:46px;padding:12px 14px;margin:0;background:var(--panel-2);color:var(--text);border:1px solid var(--line);font-family:inherit;font-size:14px;line-height:1.4;text-align:center;white-space:normal;cursor:pointer}
+.notification-preferences-page .message-test-actions .button:hover:not(:disabled){border-color:var(--focus)}
+.notification-preferences-page .message-test-actions .button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.notification-preferences-page .message-test-actions .button:disabled{opacity:.55;cursor:wait}
+.notification-preferences-page #message-test-status:empty{display:none}
+.notification-preferences-page #message-test-status:not(:empty){padding:10px 12px;margin:14px 0;border-left:3px solid var(--focus);background:var(--panel-2);border-radius:6px;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+@media(max-width:650px){.notification-preferences-page .message-test-actions{grid-template-columns:1fr}.notification-preferences-page{padding-bottom:28px}}

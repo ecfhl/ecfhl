@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('content')
 <div class="page-head"><div class="shell"><div class="eyebrow">Stay in the game</div><h1>Notifications &amp; alerts</h1><p>Manage messages, browser notifications, scoring alerts and goalie watches.</p></div></div>
-<div class="shell owner-page">@include('account.shared')
+<div class="shell owner-page notification-preferences-page">@include('account.shared')
 @unless($owner)<div class="card"><h2>Save alerts to your owner account</h2><p>Sign in or create an account and claim your team to set up notifications.</p><a class="button primary" href="/login">Sign in</a> <a class="button" href="/register">Create account</a></div>@endunless
 <section class="card notification-settings-panel"><div class="settings-tabs" role="tablist" aria-label="Notification and alert settings"><button type="button" role="tab" id="settings-notifications-tab" aria-controls="settings-notifications" aria-selected="true" data-settings-tab="notifications">Notifications</button><button type="button" role="tab" id="settings-alerts-tab" aria-controls="settings-alerts" aria-selected="false" tabindex="-1" data-settings-tab="alerts">Alerts</button></div>
 <form method="post" action="/notifications" class="owner-form" id="owner-preferences-form">@csrf

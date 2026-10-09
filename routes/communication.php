@@ -17,6 +17,6 @@ Route::get('/api/scoring-updates',function(\App\Support\FantasyDay $days,\App\Su
  $state=\App\Support\LiveScoring\ScoringAlert::state($snapshot);
  $state['matchups']=$snapshot['matchups']??[];
  $state['teams']=collect($snapshot['teams']??[])->map(fn($team,$id)=>['id'=>(string)$id,'name'=>$team['name']])->values();
- if(request('scope')==='nhl')$state['nhlEvents']=\App\Support\LiveScoring\NhlUpdates::events($date);
+ if(request('scope')==='nhl')$state['nhlEvents']=\App\Support\LiveScoring\NhlUpdates::events($date, $snapshot ?? []);
  return response()->json($state)->header('Cache-Control','no-store');
 })->middleware('throttle:120,1,scoring-popups');

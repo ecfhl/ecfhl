@@ -27,8 +27,8 @@
       const tray = document.getElementById('live-score-updates');
       if (!tray) return null;
       const list = $('list'), toggle = $('toggle');
-      const close = $('close'), trash = $('trash'), minimize = $('minimize'), restore = $('restore');
-      const count = $('count'), handle = $('handle'), scope = $('scope'), team = $('team');
+      const close = $('close'), trash = $('trash');
+      const count = $('count'), scope = $('scope'), team = $('team');
       const storageKey = 'ecfhl-scoring-popup:' + (document.getElementById('communication-context')?.dataset.userId || 'guest');
       const filterKey='ecfhl-scoring-filters:'+(document.getElementById('communication-context')?.dataset.userId||'guest');
       let filters={};try{filters=JSON.parse(localStorage.getItem(filterKey)||'{}');}catch(_){}
@@ -37,8 +37,7 @@
       let baseline = saved?.baseline || null, nhlBaseline = saved?.nhlBaseline || null;
       let history = Array.isArray(saved?.history) ? saved.history : [];
       let enabled = filters.enabled !== false;
-      let mode = saved?.mode || 'closed';
-      let position = saved?.position || null, drag = null;
+      let mode = saved?.mode === 'expanded' ? 'expanded' : 'closed';
       const savedScope=filters.scope||saved?.scope;
       scope.value = ['team','matchup','teams','league','nhl'].includes(savedScope) ? savedScope : 'matchup';
       const selectedTeam = String(team.dataset.accountTeam || '');
@@ -49,20 +48,11 @@
         return node;
       };
       const persist = () => {
-        try { sessionStorage.setItem(storageKey, JSON.stringify({baseline,nhlBaseline,history,enabled,mode,position,scope:scope.value,team:selectedTeam,teams:selectedTeams})); } catch (_) {}
-      };
-      const constrain = () => {
-        if (!position || tray.hidden) return;
-        const rect = tray.getBoundingClientRect(), nav = document.querySelector('.mobile-primary-nav');
-        const bottom = nav && getComputedStyle(nav).display !== 'none' ? nav.getBoundingClientRect().top : window.innerHeight;
-        position.x = Math.max(8, Math.min(position.x, window.innerWidth - rect.width - 8));
-        position.y = Math.max(8, Math.min(position.y, bottom - rect.height - 8));
-        Object.assign(tray.style,{left:position.x+'px',top:position.y+'px',right:'auto'});
+        try { sessionStorage.setItem(storageKey, JSON.stringify({baseline,nhlBaseline,history,enabled,mode,scope:scope.value,team:selectedTeam,teams:selectedTeams})); } catch (_) {}
       };
       const render = () => {
         const total = history.reduce((sum,batch)=>sum+batch.events.length,0);
         tray.hidden = mode === 'closed'; tray.dataset.minimized = String(mode === 'minimized');
-        restore.hidden = mode !== 'minimized'; restore.textContent = total + ' updates';
         trash.disabled = total === 0; count.textContent = total > 0 ? String(total) : ''; count.hidden = total === 0;
         count.dataset.active = String(total > 0);
         toggle.dataset.enabled = String(enabled); toggle.setAttribute('aria-expanded',String(mode !== 'closed'));
@@ -79,7 +69,10 @@
           const teams = new Map(); batch.events.forEach(event=>{if(!teams.has(event.team))teams.set(event.team,[]);teams.get(event.team).push(event);});
           teams.forEach((plays,name)=>{
             const group = element('div','live-score-update-team'), heading = element('div','live-score-update-team-heading');
-            heading.append(element('strong','',name));
+            if (batch.nhl && plays[0].game) {
+              const game=plays[0].game;
+              heading.append(element('strong',game.scoringTeam===game.team?'scoring-team-highlight':'',game.team+' '+game.score),element('span','',game.home?' vs ':' @ '),element('strong',game.scoringTeam===game.opponent?'scoring-team-highlight':'',game.opponent+' '+game.opponentScore));
+            } else heading.append(element('strong','',name));
             if (!batch.nhl) heading.append(element('span','live-score-update-points','+'+formatPoints(plays.reduce((sum,p)=>sum+p.points,0))+' FPts'));
             group.append(heading);
             plays.forEach(play=>{
@@ -91,13 +84,11 @@
             });node.append(group);
           });list.append(node);
         });
-        if (!tray.hidden) constrain();persist();
+        persist();
       };
       // Opening the box never changes whether updates are received.
       toggle.addEventListener('click',()=>{mode='expanded';render();close.focus({preventScroll:true});});
-      minimize.addEventListener('click',()=>{mode='minimized';render();restore.focus({preventScroll:true});});
-      restore.addEventListener('click',()=>{mode='expanded';render();close.focus({preventScroll:true});});
-      trash.addEventListener('click',()=>{history=[];mode='minimized';render();restore.focus({preventScroll:true});});
+      trash.addEventListener('click',()=>{history=[];render();});
       close.addEventListener('click',()=>{mode='closed';render();toggle.focus({preventScroll:true});});
       tray.addEventListener('keydown',event=>{if(event.key==='Escape'){mode='closed';render();toggle.focus({preventScroll:true});}});
       const filtersChanged=()=>{try{localStorage.setItem(filterKey,JSON.stringify({enabled,scope:scope.value,teams:selectedTeams}));}catch(_){}history=[];nhlBaseline=null;render();window.dispatchEvent(new Event('ecfhl-scoring-filter'));};
@@ -124,29 +115,22 @@
         let events=compare(baseline,next);baseline=next;events=events.filter(accepts);
         if(scope.value==='nhl'){
           const current=next.nhlEvents;
+          if (Array.isArray(current)) {
+            const latest = new Map(current.map(event => [event.key, event]));
+            history.forEach(batch => {
+              if (batch.nhl) batch.events = batch.events.map(event => latest.get(event.key) || event);
+            });
+          }
           events=Array.isArray(current)&&nhlBaseline?current.filter(e=>!nhlBaseline.includes(e.key)):[];
           if(Array.isArray(current))nhlBaseline=current.map(e=>e.key);
         }else nhlBaseline=null;
         if(enabled && events.length){
           history.unshift({time:new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true}),events,nhl:scope.value==='nhl'});
           // Retain the most recent 250 batches per tab to keep navigation state bounded.
-          history=history.slice(0,250);if(mode==='closed')mode='minimized';
+          history=history.slice(0,250);
         }
         render();
       };
-      handle.addEventListener('pointerdown',event=>{
-        if(event.button!==0 || event.target.closest('button,a,select,input,label'))return;
-        const rect=tray.getBoundingClientRect();drag={id:event.pointerId,x:event.clientX,y:event.clientY,left:rect.left,top:rect.top};handle.setPointerCapture(event.pointerId);tray.dataset.dragging='true';
-      });
-      handle.addEventListener('pointermove',event=>{if(!drag||drag.id!==event.pointerId)return;position={x:drag.left+event.clientX-drag.x,y:drag.top+event.clientY-drag.y};constrain();});
-      const end=event=>{if(!drag||drag.id!==event.pointerId)return;if(handle.hasPointerCapture(event.pointerId))handle.releasePointerCapture(event.pointerId);drag=null;tray.dataset.dragging='false';persist();};
-      ['pointerup','pointercancel','lostpointercapture'].forEach(type=>handle.addEventListener(type,end));
-      handle.addEventListener('keydown',event=>{
-        if(event.target!==handle || !['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;
-        event.preventDefault();const rect=tray.getBoundingClientRect(),step=event.shiftKey?30:10;
-        position={x:rect.left+(event.key==='ArrowLeft'?-step:event.key==='ArrowRight'?step:0),y:rect.top+(event.key==='ArrowUp'?-step:event.key==='ArrowDown'?step:0)};constrain();persist();
-      });window.addEventListener('resize',constrain);
-      tray.addEventListener('ecfhl-panel-resize',event=>{if(event.detail?.position)position=event.detail.position;constrain();persist();});
       render();
       return window.ecfhlScoringPopup={scope:()=>scope.value,update,enabled:()=>enabled,setEnabled(value){
         enabled=Boolean(value);baseline=null;nhlBaseline=null;
