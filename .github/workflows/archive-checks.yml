@@ -66,6 +66,7 @@ jobs:
           extensions: mbstring, pdo_sqlite, dom
           tools: composer:v2
       - run: composer install --no-interaction --prefer-dist
+      - run: mkdir -p storage/app
       - run: php tests/messaging.php --browser-page
       - uses: actions/setup-node@v4
         with:
