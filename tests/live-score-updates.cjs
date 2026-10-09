@@ -23,6 +23,8 @@ const next=state([p('a',2,{G:1}),p('b',1,{A:1},{teamId:'2'}),p('c',5,{W:1,SO:1},
 let app=setup(),ui=app.start(),e=app.elements;
 assert.equal(app.start(),ui,'One scoring panel per page');
 assert.equal(app.api.compare(before,next).length,3);assert.equal(app.api.compare(null,next).length,0);assert.equal(app.api.compare(next,next).length,0);assert.equal(app.api.compare(next,before).length,0);
+const formatted=app.api.compare(before,{...next,teamTotals:{'1':17},players:next.players.map(player=>({...player,gameDisplay:'WSH 2 @ BOS 3'}))})[0];
+assert.equal(formatted.player,'Goal by Player (Our team)');assert.equal(formatted.teamTotal,17);assert.equal(formatted.points,2);assert.equal(formatted.gameDisplay,'WSH 2 @ BOS 3');
 assert.equal(app.api.compare(before,next)[0].stats,'1 goal');assert.equal(app.api.compare(before,next)[2].stats,'1 win · 1 shutout');
 ui.update(before);assert.equal(e['live-score-updates-count'].textContent,'');assert.equal(e['live-score-updates-count'].hidden,true);
 ui.update(next);assert.equal(e['live-score-updates-count'].textContent,'2','Default matchup excludes other league teams');

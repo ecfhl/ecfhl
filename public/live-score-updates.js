@@ -16,7 +16,12 @@
         if (key === 'GWG') return ['GWG'];
         return [gain + ' ' + label + (gain !== 1 && ['goal','assist','win','shutout'].includes(label) ? 's' : gain !== 1 && label === 'loss' ? 'es' : '')];
       });
-      return [{key:player.key, team:player.team, teamId:player.teamId, player:player.name + (player.nhl ? ' (' + player.nhl + ')' : ''), points, stats:stats.join(' · ') || 'Points updated'}];
+      const gain=key=>(player.stats[key]||0)-(old.stats[key]||0);
+      const goals=gain('G');
+      const action=goals>0?(gain('PPG')>0?'Power play goal':gain('SHG')>0?'Short handed goal':goals>1?goals+' goals':'Goal'):gain('A')>0?'Assist':gain('W')>0?'Win':gain('SO')>0?'Shutout':'Points updated';
+      const name=player.name.includes(',')?player.name.split(',').slice(1).join(',').trim()+' '+player.name.split(',')[0].trim():player.name;
+      const teamTotal=Number(next.teamTotals?.[player.teamId] ?? next.players.filter(p=>String(p.teamId)===String(player.teamId)).reduce((sum,p)=>sum+p.points,0));
+      return [{key:player.key, team:player.team, teamId:player.teamId, player:action+' by '+name+' ('+player.team+')', gameDisplay:player.gameDisplay||'', teamTotal, points, stats:stats.join(' · ') || 'Points updated'}];
     });
   };
   window.EcfhlScoreUpdates = {
@@ -73,12 +78,17 @@
               const game=plays[0].game;
               heading.append(element('strong',game.scoringTeam===game.team?'scoring-team-highlight':'',game.team+' '+game.score),element('span','',game.home?' vs ':' @ '),element('strong',game.scoringTeam===game.opponent?'scoring-team-highlight':'',game.opponent+' '+game.opponentScore));
             } else heading.append(element('strong','',name));
-            if (!batch.nhl) heading.append(element('span','live-score-update-points','+'+formatPoints(plays.reduce((sum,p)=>sum+p.points,0))+' FPts'));
+            if (!batch.nhl) {
+              const total=plays[0].teamTotal;
+              if (Number.isFinite(total)) heading.append(element('span','live-score-update-points',formatPoints(total)+' Fpts'));
+            }
             group.append(heading);
             plays.forEach(play=>{
               const row=element('div','live-score-update-player'), detail=element('div','');
               row.setAttribute('data-new',String(!newest.has(play.key)&&green.has(play.key)));newest.add(play.key);
-              detail.append(element('strong','',play.player),element('span','live-score-update-stats',play.stats));row.append(detail);
+              detail.append(element('strong','',batch.nhl?'Goal by '+play.player:play.player));
+              if (play.gameDisplay) detail.append(element('span','live-score-update-stats',play.gameDisplay));
+              detail.append(element('span','live-score-update-stats',play.stats));row.append(detail);
               if (!batch.nhl) row.append(element('span','live-score-update-player-points','+'+formatPoints(play.points)));
               group.append(row);
             });node.append(group);

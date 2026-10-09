@@ -17,10 +17,11 @@ final class ScoringAlert
                 'name'=>\App\Support\PlayerName::display($player['player_name']),
                 'nhl'=>$player['nhl_team']??'', 'goalie'=>(bool)preg_match('/(^|[,\/ ])G($|[,\/ ])/i',(string)$position),
                 'change'=>$player['fpts_change']??'same',
+                'gameDisplay'=>$player['game_display']??'',
                 'points'=>(float)($player['daily_fpts']??0), 'stats'=>self::totals($player),
             ];
         }
-        return ['date'=>$snapshot['fantasy_date'],'players'=>$players];
+        return ['date'=>$snapshot['fantasy_date'],'players'=>$players,'teamTotals'=>array_map(fn($team)=>(float)($team['daily_fpts']??0),$snapshot['teams']??[])];
     }
 
     private static function totals(array $player): array
