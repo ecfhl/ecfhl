@@ -13,6 +13,20 @@
       cleanups.push(() => observer.disconnect());
     };
     dispose = () => cleanups.forEach(cleanup => cleanup());
+    const tips = document.getElementById('player-tips');
+    if (tips) {
+      const trigger = tips.querySelector('.player-tips-trigger');
+      const panel = tips.querySelector('.player-tips-panel');
+      let pinned = false;
+      const show = open => { panel.hidden = !open; trigger.setAttribute('aria-expanded', String(open)); };
+      listen(tips, 'pointerenter', event => { if (event.pointerType === 'mouse') show(true); });
+      listen(tips, 'pointerleave', event => { if (event.pointerType === 'mouse' && !pinned && !tips.contains(document.activeElement)) show(false); });
+      listen(trigger, 'focus', () => show(true));
+      listen(trigger, 'click', () => { pinned = !pinned; show(pinned); });
+      listen(tips, 'focusout', event => { if (!tips.contains(event.relatedTarget) && !pinned) show(false); });
+      listen(document, 'click', event => { if (!tips.contains(event.target)) { pinned = false; show(false); } });
+      listen(document, 'keydown', event => { if (event.key === 'Escape') { pinned = false; show(false); } });
+    }
     const table = document.querySelector('.season-player-table');
     if (table) {
       const teamColumn = table.querySelector('thead .player-frozen-team');
