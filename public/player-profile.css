@@ -113,3 +113,6 @@ html[data-theme="dark"] .player-profile-rookie{color:var(--gold)}
 #player-stats-dialog{position:fixed;inset:auto;margin:0;left:50%;top:80px;transform:translateX(-50%);z-index:2500;resize:both;min-width:min(280px,calc(100vw - 16px));min-height:180px;max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px)}
 #player-stats-dialog .player-profile header{cursor:move;touch-action:none;user-select:none}
 #player-stats-dialog .player-profile header a{cursor:pointer}
+
+/* A distinct frame separates the floating panel from the page. */
+html[data-theme] #player-stats-dialog{box-sizing:border-box;border:2px solid var(--focus);border-radius:16px;box-shadow:0 0 0 3px var(--accent-soft),0 12px 36px rgba(0,0,0,.4)}
