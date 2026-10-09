@@ -359,7 +359,8 @@ verifyOwner(DB::table('push_deliveries')->whereIn('subscription_id',DB::table('p
 verifyOwner(ownerRequest('POST','/account/claim-team',['team_id'=>'a'],$alpha)->getStatusCode()===302&&$a->fresh()->claim,'A released team can be claimed again.');
 // Renewing a device subscription must not expose the previous owner feed.
 $device=DB::table('push_subscriptions')->where('endpoint_hash',hash('sha256','https://fcm.googleapis.com/fcm/send/alpha'))->first();
-DB::table('push_deliveries')->insert(['subscription_id'=>$device->id,'notification_id'=>DB::table('push_notifications')->max('id')]);
+// The reclaim welcome may already have queued this notification for the device.
+DB::table('push_deliveries')->insertOrIgnore(['subscription_id'=>$device->id,'notification_id'=>DB::table('push_notifications')->max('id')]);
 $push->subscribe($device->endpoint,$b->id,'replacement-token');
 verifyOwner(DB::table('push_deliveries')->where('subscription_id',$device->id)->count()===0,'Device renewal retained previous-account events.');
 $feed=ownerRequest('GET','/push/notifications',[],$guest,['HTTP_AUTHORIZATION'=>'Bearer replacement-token']);
