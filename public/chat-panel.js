@@ -14,6 +14,8 @@
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
   try{const r=await fetch(url,{credentials:'same-origin',cache:'no-store',signal:controller.signal,headers:{Accept:'application/json',...(body?{'Content-Type':'application/json','X-CSRF-TOKEN':csrf()}: {})},...(body?{method:'POST',body:JSON.stringify(body)}:{})});const d=await r.json();if(!r.ok)throw Error(Object.values(d.errors||{}).flat().join(' ')||d.message||'Please try again.');return d;}finally{clearTimeout(timer);}
  };
+ const readOnly=()=>Boolean(teams.find(t=>String(t.user_id)===selected)?.read_only);
+ const defaultConversation=()=>String(teams.find(t=>t.read_only&&Number(unread.people?.[t.user_id])>0)?.user_id||'');
  const title=()=>selected?(teams.find(t=>String(t.user_id)===selected)?.team_name||'Team messages'):'League chat';
  const persist=()=>{try{sessionStorage.setItem(key,JSON.stringify({mode,position,selected}));}catch(_){}};
  const constrain=()=>{
@@ -61,7 +63,7 @@
  };
  const change=value=>{
   value=String(value||'');if(value&&!teams.some(t=>String(t.user_id)===value))value='';
-  conversation(selected).draft=text.value;selected=value;generation++;select.value=value;text.value=conversation(value).draft;status.textContent='';log.replaceChildren();draw();log.scrollTop=log.scrollHeight;render();refresh();
+  conversation(selected).draft=text.value;selected=value;generation++;select.value=value;text.value=conversation(value).draft;form.hidden=readOnly();status.textContent='';log.replaceChildren();draw();log.scrollTop=log.scrollHeight;render();refresh();
  };
  let requested=new URL(location.href).pathname==='/messages'?new URL(location.href).searchParams.get('user_id'):null;
  let pendingOpen=null;
@@ -81,10 +83,10 @@ const updateUnread=value=>{
  window.addEventListener('ecfhl-unread',event=>updateUnread(event.detail));
  const updateDirectory=data=>{
   if(!Array.isArray(data.teams))return;
-  teams=data.teams.filter(t=>Number(t.user_id)!==userId);
+  teams=[...data.teams,...(data.received_conversations||[])].filter(t=>Number(t.user_id)!==userId);
   if(data.unread)unread=data.unread;counter(unread.total);options();
   if(!directoryReady){
-   directoryReady=true;const initial=pendingOpen!==null?pendingOpen:requested||saved.selected||'';if(requested!==null||location.pathname==='/messages')mode='expanded';change(initial);pendingOpen=null;if(requestedReply){text.focus({preventScroll:true});requestedReply=false;}
+   directoryReady=true;const initial=pendingOpen!==null?pendingOpen:location.pathname==='/messages'?(requested||''):(defaultConversation()||saved.selected||'');if(requested!==null||location.pathname==='/messages')mode='expanded';change(initial);pendingOpen=null;if(requestedReply){text.focus({preventScroll:true});requestedReply=false;}
   }else if(selected&&!teams.some(t=>String(t.user_id)===selected))change('');else select.value=selected;
  };
  window.addEventListener('ecfhl-message-state',event=>updateDirectory(event.detail));
@@ -92,12 +94,12 @@ const updateUnread=value=>{
   const link=event.target.closest('a[href]');if(!link||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
   const url=new URL(link.href,location.origin);if(url.origin!==location.origin||url.pathname!=='/messages')return;event.preventDefault();
   if(link.id==='team-icon-modal-message')document.getElementById('team-icon-modal-close')?.click();
-  open(url.searchParams.get('user_id')||'');
+  open(url.searchParams.has('user_id')?url.searchParams.get('user_id'):(link===header?defaultConversation():''));
  },true);
  select.addEventListener('change',()=>change(select.value));
  text.addEventListener('input',()=>{conversation(selected).draft=text.value;});
  form.addEventListener('submit',async event=>{
-  event.preventDefault();if(sending||!text.value.trim()||!directoryReady)return;
+  event.preventDefault();if(sending||readOnly()||!text.value.trim()||!directoryReady)return;
   const value=selected,state=conversation(value),body=text.value.trim();if(!state.pending||state.pending.body!==body)state.pending={body,client_id:crypto.randomUUID()};
   const attempt=state.pending;sending=true;send.disabled=true;status.textContent='Sending…';
   try{const d=await request('/api/messages/send',{...attempt,user_id:value?Number(value):null});state.pending=null;state.messages.set(Number(d.message.id),d.message);if(state.draft.trim()===body)state.draft='';
