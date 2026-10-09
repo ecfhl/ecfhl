@@ -123,6 +123,7 @@ document.documentElement.dataset.theme=theme;})();
     <a href="/admin/teams"><span class="nav-item-icon" aria-hidden="true">👥</span>Teams</a>
     <a href="/admin/projections"><span class="nav-item-icon" aria-hidden="true">⚖</span>Projection Weights</a>
     <a href="/admin/notifications"><span class="nav-item-icon" aria-hidden="true">🔔</span>Notification Tests</a>
+    <a href="/admin/gary"><span class="nav-item-icon" aria-hidden="true">💬</span>Gary Bettman</a>
   </div>
 </div>
 @endif
