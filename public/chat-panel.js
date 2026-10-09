@@ -8,7 +8,7 @@
  let maximized=false,unread={total:0,league:0,people:{}};
  const maximize=$('maximize');
  const conversations=new Map();
- const conversation=value=>{if(!conversations.has(value))conversations.set(value,{messages:new Map(),draft:'',pending:null,attachment:null,lastRead:0,hasMore:false,busy:false,readBusy:false});return conversations.get(value);};
+ const conversation=value=>{if(!conversations.has(value))conversations.set(value,{messages:new Map(),draft:'',pending:null,attachment:null,gif:null,lastRead:0,hasMore:false,busy:false,readBusy:false});return conversations.get(value);};
  const csrf=()=>document.querySelector('meta[name="csrf-token"]')?.content||'';
  const request=async(url,body)=>{
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
@@ -98,25 +98,31 @@ const updateUnread=value=>{
   if(link.id==='team-icon-modal-message')document.getElementById('team-icon-modal-close')?.click();
   open(url.searchParams.has('user_id')?url.searchParams.get('user_id'):(link===header?defaultConversation():''));
  },true);
- const attachmentPreview=()=>{const preview=$('attachment'),file=conversation(selected).attachment;preview.hidden=!file;preview.querySelector('span').textContent=file?.name||'';};
- $('attachment').querySelector('button').addEventListener('click',()=>{conversation(selected).attachment=null;attachmentPreview();});
+ const attachmentPreview=()=>{const preview=$('attachment'),state=conversation(selected),file=state.attachment,gif=state.gif;preview.hidden=!(file||gif);preview.querySelector('span').textContent=file?.name||gif?.label||'';const image=preview.querySelector('img');image.hidden=!(file||gif);image.src=file?.data||gif?.url||'';};
+ $('attachment').querySelector('button').addEventListener('click',()=>{conversation(selected).attachment=null;conversation(selected).gif=null;attachmentPreview();});
  const insert=(before,after='',placeholder='text')=>{const start=text.selectionStart,end=text.selectionEnd,value=text.value.slice(start,end)||placeholder;text.setRangeText(before+value+after,start,end,'select');conversation(selected).draft=text.value;text.focus();};
+ const gifCatalog=[['Thumbs up','l0Iy8h9qfiqRYgQp2','yes agree nice'],['Well done','l41YqNeoHIVsBHEnm','good job thumbs up'],['Applause','bOlMQ1kfrMuMz5Z7ta','clap bravo'],['Wow','CZwRAhJmiHEj3ERG7J','laugh funny hockey'],['Celebrate','UWtsCWTJqVXOqvdkQq','hockey goal win happy'],['Goal!','P7tMkxgqB1bRBfIFjJ','hockey celebrate happy'],['Victory','LrANfH6Gz78VDGebIj','hockey win celebrate'],['Party','mFTLWSmqBznjwyFXdK','dance happy hockey']];
+ const closeGifs=()=>{$('gifs').hidden=true;form.querySelector('[data-chat-format="gif"]').setAttribute('aria-expanded','false');};
+ const drawGifs=()=>{const grid=$('gif-grid'),query=$('gif-search').value.trim().toLowerCase();grid.replaceChildren();gifCatalog.filter(([label,id,tags])=>(label+' '+tags).toLowerCase().includes(query)).forEach(([label,id])=>{const url='https://media.giphy.com/media/'+id+'/200w.gif',button=node('button'),image=node('img');button.type='button';button.setAttribute('aria-label','Choose '+label+' GIF');image.src=url;image.alt=label;image.loading='lazy';image.referrerPolicy='no-referrer';button.append(image,node('span',label));image.addEventListener('error',()=>{button.disabled=true;button.title='GIF unavailable. Try another or upload your own.';});button.addEventListener('click',()=>{const state=conversation(selected);state.gif={url,label};state.attachment=null;closeGifs();attachmentPreview();text.focus();});grid.append(button);});if(!grid.childElementCount)grid.append(node('p','No matching reactions. Try “hockey” or upload a GIF.'));};
+ $('gif-search').addEventListener('input',drawGifs);$('gif-close').addEventListener('click',closeGifs);$('gif-upload').addEventListener('click',()=>{$('gif-file').click();});
+ $('gifs').addEventListener('keydown',event=>{if(event.key==='Escape'){event.stopPropagation();closeGifs();form.querySelector('[data-chat-format="gif"]').focus();}});
  form.querySelectorAll('[data-chat-format]').forEach(button=>button.addEventListener('click',()=>{
   const format=button.dataset.chatFormat;
   if(format==='bold')insert('**','**');else if(format==='italic')insert('*','*');else if(format==='strike')insert('~~','~~');else if(format==='list')insert(text.selectionStart?'\n- ':'- ','','item');
-  else if(format==='link'||format==='gif'){const value=prompt(format==='gif'?'Paste an HTTPS GIF image URL':'Paste an HTTPS link');if(!value)return;try{const url=new URL(value);if(url.protocol!=='https:')throw Error();if(format==='gif')insert('\n![GIF]('+url.href+')\n','','');else insert('[',']('+url.href+')','link');}catch{status.textContent='Use an HTTPS URL.';}}
+  else if(format==='gif'){const picker=$('gifs');picker.hidden=!picker.hidden;button.setAttribute('aria-expanded',String(!picker.hidden));if(!picker.hidden){drawGifs();$('gif-search').focus();}}
+  else if(format==='link'){const value=prompt('Paste an HTTPS link');if(!value)return;try{const url=new URL(value);if(url.protocol!=='https:')throw Error();insert('[',']('+url.href+')','link');}catch{status.textContent='Use an HTTPS URL.';}}
   else if(format==='emoji')$('emoji').hidden=!$('emoji').hidden;else if(format==='image')$('file').click();
  }));
  form.querySelectorAll('[data-chat-emoji]').forEach(button=>button.addEventListener('click',()=>{insert(button.dataset.chatEmoji,'','');$('emoji').hidden=true;}));
- $('file').addEventListener('change',()=>{const file=$('file').files[0];$('file').value='';if(!file)return;if(file.size>2097152||!['image/png','image/jpeg','image/gif','image/webp'].includes(file.type)){status.textContent='Choose a PNG, JPEG, GIF or WebP under 2 MB.';return;}const value=selected,reader=new FileReader();reader.onload=()=>{conversation(value).attachment={name:file.name,data:reader.result};if(value===selected)attachmentPreview();};reader.readAsDataURL(file);});
+ ['file','gif-file'].forEach(id=>$(id).addEventListener('change',()=>{const file=$(id).files[0];$(id).value='';if(!file)return;if(file.size>2097152||!['image/png','image/jpeg','image/gif','image/webp'].includes(file.type)){status.textContent='Choose a PNG, JPEG, GIF or WebP under 2 MB.';return;}const value=selected,reader=new FileReader();reader.onload=()=>{conversation(value).gif=null;conversation(value).attachment={name:file.name,data:reader.result};closeGifs();if(value===selected)attachmentPreview();};reader.readAsDataURL(file);}));
  select.addEventListener('change',()=>change(select.value));
  text.addEventListener('input',()=>{conversation(selected).draft=text.value;});
  form.addEventListener('submit',async event=>{
-  event.preventDefault();if(sending||readOnly()||(!text.value.trim()&&!conversation(selected).attachment)||!directoryReady)return;
-  const value=selected,state=conversation(value),body=text.value.trim();if(!state.pending||state.pending.body!==body||state.pending.attachment!==state.attachment?.data)state.pending={body,client_id:crypto.randomUUID(),...(state.attachment?{attachment:state.attachment.data}:{})};
+  event.preventDefault();if(sending||readOnly()||(!text.value.trim()&&!conversation(selected).attachment&&!conversation(selected).gif)||!directoryReady)return;
+  const value=selected,state=conversation(value),typedBody=text.value.trim(),body=typedBody+(state.gif?'\n![GIF]('+state.gif.url+')':'');if(!state.pending||state.pending.body!==body||state.pending.attachment!==state.attachment?.data)state.pending={body,client_id:crypto.randomUUID(),...(state.attachment?{attachment:state.attachment.data}:{})};
   const attempt=state.pending;sending=true;send.disabled=true;status.textContent='Sending…';
-  try{const d=await request('/api/messages/send',{...attempt,user_id:value?Number(value):null});state.pending=null;state.attachment=null;attachmentPreview();state.messages.set(Number(d.message.id),d.message);if(state.draft.trim()===body)state.draft='';
-   if(value===selected){if(text.value.trim()===body)text.value='';draw();log.scrollTop=log.scrollHeight;await read();status.textContent='Sent.';}
+  try{const d=await request('/api/messages/send',{...attempt,user_id:value?Number(value):null});state.pending=null;state.attachment=null;state.gif=null;attachmentPreview();state.messages.set(Number(d.message.id),d.message);if(state.draft.trim()===typedBody)state.draft='';
+   if(value===selected){if(text.value.trim()===typedBody)text.value='';draw();log.scrollTop=log.scrollHeight;await read();status.textContent='Sent.';}
   }catch(e){if(value===selected)status.textContent=e.message;}finally{sending=false;send.disabled=false;}
  });
  maximize.addEventListener('click',()=>{maximized=!maximized;mode='expanded';render();refresh();});

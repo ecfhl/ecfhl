@@ -215,3 +215,15 @@ html[data-theme] #chat-panel .chat-message{padding:4px 2px;margin:0 0 5px;backgr
 html[data-theme] #chat-panel .chat-message{display:block}
 html[data-theme] #chat-panel .communication-panel-heading,html[data-theme] #chat-panel .communication-panel-heading :is(h2,button,a){color:var(--text)}
 #chat-panel .chat-message-identity img{width:24px;height:24px}
+
+#chat-panel .chat-gif-picker{border:1px solid var(--accent,#57aaff);border-radius:12px;background:var(--surface,#122235);padding:10px;margin-top:8px;color:var(--text)}
+#chat-panel .chat-gif-picker[hidden]{display:none}
+#chat-panel .chat-gif-heading,#chat-panel .chat-gif-footer{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#chat-panel .chat-gif-picker button{color:var(--text);background:var(--surface);border:1px solid var(--border,#526781);border-radius:8px;cursor:pointer;padding:6px}
+#chat-panel .chat-gif-picker input{width:100%;margin:8px 0;padding:8px;border-radius:8px}
+#chat-panel .chat-gif-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-height:210px;overflow:auto}
+#chat-panel .chat-gif-grid button{padding:0;overflow:hidden;font-size:11px}
+#chat-panel .chat-gif-grid img{width:100%;height:75px;object-fit:cover;display:block}
+#chat-panel .chat-gif-grid button:focus-visible{outline:2px solid var(--accent,#57aaff)}
+#chat-panel .chat-gif-footer{margin:8px 0;font-size:11px}
+#chat-panel .chat-attachment-preview img{width:64px;height:48px;object-fit:contain;border-radius:6px}
