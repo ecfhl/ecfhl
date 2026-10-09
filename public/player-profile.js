@@ -6,7 +6,9 @@
   let trigger=null;
   const close=()=>dialog.close();
   dialog.querySelector('.player-stats-close').addEventListener('click',close);
-  dialog.addEventListener('click',event=>{if(event.target===dialog){const box=dialog.getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)close();}});
+  document.addEventListener('pointerdown',event=>{
+    if(dialog.open&&!dialog.contains(event.target))close();
+  });
   dialog.addEventListener('close',()=>{
     // A queued close from the previous popup must not cancel a quick reopen.
     if(dialog.open)return;
