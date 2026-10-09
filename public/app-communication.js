@@ -138,7 +138,7 @@
   const logo=node('img');logo.src=message.team_logo||'/team-icons/league-logo/thumbnail?size=64';logo.alt='';logo.width=32;logo.height=32;heading.append(logo,node('strong',(league?'League chat · ':'')+(message.team_name||'League member')));
   const close=node('button','×','message-popup-close');close.type='button';close.setAttribute('aria-label','Dismiss message popup');close.addEventListener('click',()=>box.remove());heading.append(close);
   const link=node('a','Open conversation');link.href=test?'/notifications#alerts':league?'/messages':'/messages?user_id='+message.sender_id;
-  const replyToggle=node('button','Reply','button message-popup-reply');replyToggle.type='button';replyToggle.setAttribute('aria-expanded','false');
+  const replyToggle=node('button','Reply','button message-popup-reply');replyToggle.type='button';replyToggle.hidden=!league&&Boolean(message.read_only_sender);replyToggle.setAttribute('aria-expanded','false');
   const reply=node('form',undefined,'message-popup-reply-form');reply.hidden=true;
   const input=node('textarea');input.rows=2;input.maxLength=4000;input.required=true;input.placeholder=league?'Reply to League chat…':'Reply privately…';input.setAttribute('aria-label',league?'Reply to League chat':'Reply privately to '+(message.team_name||'League member'));
   const send=node('button','Send reply','button primary');send.type='submit';
