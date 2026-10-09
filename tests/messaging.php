@@ -89,6 +89,7 @@ chatRequest('POST','/api/notifications/read',['ids'=>[$notificationId]],$cookies
 chatRequest('POST','/api/notifications/read',['ids'=>[$notificationId]],$cookies['Alice']);checkChat(payload(chatRequest('GET','/api/messages/state',[],$cookies['Alice']))['notification_count']===0,'Bell read count not cleared');
 $r=chatRequest('GET','/messages?user_id='.$bob->id,[],$cookies['Alice'],true);if(in_array('--browser-page',$argv,true))file_put_contents(__DIR__.'/../storage/app/communication-test.html',$r->getContent());checkChat($r->getStatusCode()===200&&str_contains($r->getContent(),'Private conversation with Bob Team'),'Private page render failed');checkChat(str_contains($r->headers->get('Cache-Control'),'no-store'),'Private messages cacheable');
 $unread=App\Support\Messaging::unread($bob->id);checkChat(isset($unread['people']),'Per-person unread map missing');
+chatRequest('POST','/api/communication/preferences',['notifications_enabled'=>true],$cookies['Alice']);
 $beforeMessages=DB::table('chat_messages')->count();
 foreach(['league','private'] as $type){
  $result=$push->testMessage($alice->id,hash('sha256','https://fcm.googleapis.com/fcm/send/alice'),$type);
