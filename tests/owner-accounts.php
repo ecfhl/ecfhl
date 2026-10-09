@@ -329,6 +329,8 @@ verifyOwner($response->getStatusCode()===422&&DB::table('push_notifications')->w
 verifyOwner(!DB::table('push_subscriptions')->where('endpoint_hash',hash('sha256',$testEndpoint))->exists(),'Expired test subscription retained');
 DB::table('push_notifications')->where('category','live-score')->delete();
 // Restore delivery success after the expired-subscription scenario.
+Http::swap(new \Illuminate\Http\Client\Factory());
+Http::preventStrayRequests();
 Http::fake(['https://fcm.googleapis.com/*'=>Http::response('',201)]);
 try{$push->testLatestScore($adminOwner->id,hash('sha256','https://fcm.googleapis.com/fcm/send/admin-other'));throw new RuntimeException('No scorer invented a test');}catch(Illuminate\Validation\ValidationException $e){verifyOwner(str_contains($e->getMessage(),'No scoring alert'),'Empty scoring history gave an unclear error');}
 CarbonImmutable::setTestNow();
