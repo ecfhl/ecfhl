@@ -211,3 +211,7 @@ html[data-theme] #chat-panel .chat-message{padding:4px 2px;margin:0 0 5px;backgr
 .chat-emoji-picker{display:flex;flex-wrap:wrap;padding:3px}
 #chat-panel .chat-status:empty{display:none}
 #chat-panel .chat-status{font-size:11px;margin:4px 0}
+
+html[data-theme] #chat-panel .chat-message{display:block}
+html[data-theme] #chat-panel .communication-panel-heading,html[data-theme] #chat-panel .communication-panel-heading :is(h2,button,a){color:var(--text)}
+#chat-panel .chat-message-identity img{width:24px;height:24px}
