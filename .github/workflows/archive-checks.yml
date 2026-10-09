@@ -56,3 +56,25 @@ jobs:
         run: php tests/player-projections.php
       - if: ${{ !cancelled() }}
         run: node tests/goalie-watches-ui.cjs
+  compact-chat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, dom
+          tools: composer:v2
+      - run: composer install --no-interaction --prefer-dist
+      - run: php tests/messaging.php --browser-page
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/chat-content.cjs
+      - run: node tests/chat-compact.cjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: compact-chat-preview
+          path: storage/app/compact-chat-preview.png
