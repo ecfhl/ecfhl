@@ -170,3 +170,8 @@ html[data-theme="light"] .scoring-team-highlight{color:#945000}
 .chat-message>:is(.chat-read-status,.chat-view-status){grid-column:1/-1;justify-self:start;align-self:end;text-align:left;margin-top:5px;overflow-wrap:anywhere}
 
 .settings-tabs{flex-wrap:wrap;gap:8px}.settings-profile-summary{margin-bottom:16px}.theme-preference-label{display:flex;align-items:center;justify-content:space-between;gap:16px}.theme-preference-label select{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font:inherit;min-width:130px}#theme-save-status{font-size:13px;line-height:1.5}#theme-save-retry[hidden]{display:none}
+
+/* Slightly contrasting surfaces distinguish the two update dropdowns. */
+html[data-theme="light"] :is(#notification-panel,#live-score-updates){--updates-surface:color-mix(in srgb,var(--panel) 90%,#172033)}
+html[data-theme="dark"] :is(#notification-panel,#live-score-updates){--updates-surface:color-mix(in srgb,var(--panel) 90%,white)}
+html[data-theme] :is(#notification-panel,#live-score-updates),html[data-theme] :is(#notification-panel,#live-score-updates) :is(.communication-panel-heading,.live-score-updates-heading){background:var(--updates-surface,var(--panel))}
