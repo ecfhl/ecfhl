@@ -94,9 +94,9 @@
   [...widget.messages.values()].sort((a,b)=>a.id-b.id).forEach(message=>{
    const row=node('article',undefined,'chat-message');row.dataset.own=String(Number(message.sender_id)===userId);
    const identity=node('div',undefined,'chat-message-identity'),logo=node('img');logo.src=message.team_logo||'/team-icons/league-logo/thumbnail?size=64';logo.alt='';logo.width=32;logo.height=32;logo.loading='lazy';const name=node('strong',message.team_name||'League member');name.title=name.textContent;identity.append(logo,name);
-   const meta=node('div',undefined,'chat-message-meta'),time=node('time',new Date(message.created_at).toLocaleString([],{timeZone:'America/Halifax',hour12:true}));meta.append(identity,time);
-   const receipt=window.EcfhlMessageReceipt?.(message,userId);if(receipt)meta.append(receipt);
-   row.append(node('p',message.body),meta);widget.log.append(row);
+   const meta=node('div',undefined,'chat-message-meta'),time=node('time',new Date(message.created_at).toLocaleString([],{timeZone:'America/Halifax',hour12:true}),'chat-message-time');meta.append(identity);
+   const receipt=window.EcfhlMessageReceipt?.(message,userId);
+   row.append(node('p',message.body),meta,time);if(receipt)row.append(receipt);widget.log.append(row);
   });
   if(older)widget.log.scrollTop+=widget.log.scrollHeight-height;else if(bottom)widget.log.scrollTop=widget.log.scrollHeight;
   readWidget(widget);

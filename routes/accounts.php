@@ -12,6 +12,8 @@ Route::get('/auth/google/callback',[Accounts::class,'googleCallback'])->middlewa
 Route::middleware('auth')->group(function(){
  Route::post('/logout',[Accounts::class,'logout']);
  Route::get('/account',[Accounts::class,'account']);
+ Route::get('/account/settings',[Notifications::class,'index']);
+ Route::post('/account/preferences',[Accounts::class,'preferences'])->middleware('throttle:60,1,owner-preferences');
  Route::post('/account/password',[Accounts::class,'password'])->middleware('throttle:5,1,owner-write');
  Route::get('/account/claim-team',[Accounts::class,'claimForm']);
  Route::post('/account/claim-team',[Accounts::class,'claim'])->middleware('throttle:5,1,owner-write');

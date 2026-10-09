@@ -116,7 +116,9 @@ class WebPush
         if(!in_array($category,['private-message','league-message'],true)){
             $inbox=[];
             foreach($owners as $owner){
-                if($policy->accepts($owner,$category,$fantasyTeamId,$context))$inbox[]=['user_id'=>$owner->id,'notification_id'=>$id,'created_at'=>now(),'updated_at'=>now()];
+                // Owners using push for this accepted alert do not also get an unread bell entry.
+                $preferences=array_replace(OwnerNotificationPolicy::DEFAULTS,$owner->notification_preferences??[]);
+                if(!$preferences['notifications_enabled'] && $policy->accepts($owner,$category,$fantasyTeamId,$context))$inbox[]=['user_id'=>$owner->id,'notification_id'=>$id,'created_at'=>now(),'updated_at'=>now()];
             }
             if($inbox)DB::table('owner_notification_inbox')->insert($inbox);
         }

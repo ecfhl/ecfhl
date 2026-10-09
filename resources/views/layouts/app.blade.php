@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="{{ auth()->user()?->ui_preferences['theme'] ?? 'dark' }}" data-theme-account="{{ auth()->id() ?? '' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -55,7 +55,8 @@ html,body,main{max-width:100%;overflow-x:clip}.push-picker-wrap{position:relativ
 </style>
 <script>
 (function(){let saved;try{saved=localStorage.getItem('ecfhl-theme');}catch(e){}
-const theme=saved==='dark'||saved==='light'?saved:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+const accountTheme=document.documentElement.dataset.theme;
+const theme=document.documentElement.dataset.themeAccount ? accountTheme : (saved==='dark'||saved==='light'?saved:'dark');
 document.documentElement.dataset.theme=theme;})();
 </script>
 <meta name="theme-color" content="#0b172b">
@@ -100,12 +101,13 @@ document.documentElement.dataset.theme=theme;})();
  <div class="nav-dropdown-menu archive-menu">
   <span class="other-menu-heading">Archive</span>
   <a href="/teams"><span class="nav-item-icon" aria-hidden="true">📜</span>Franchise History</a><a href="/seasons"><span class="nav-item-icon" aria-hidden="true">📅</span>Seasons History</a><a href="/prizes"><span class="nav-item-icon" aria-hidden="true">🏆</span>Prizes History</a><a href="/trades"><span class="nav-item-icon" aria-hidden="true">⇄</span>Trades History</a><a href="/draft"><span class="nav-item-icon" aria-hidden="true">✎</span>Draft History</a><a href="/players/history"><span class="nav-item-icon" aria-hidden="true">🏒</span>Players History</a>
-  <a class="nav-history-link" href="/rules"><span class="nav-item-icon" aria-hidden="true">📖</span>Rules</a><a href="/notifications"><span class="nav-item-icon" aria-hidden="true">🔔</span>Notification Settings</a><a href="/account"><span class="nav-item-icon" aria-hidden="true">👤</span>Account</a>
+  <a class="nav-history-link" href="/rules"><span class="nav-item-icon" aria-hidden="true">📖</span>Rules</a><a href="/account/settings"><span class="nav-item-icon" aria-hidden="true">⚙</span>Settings</a><a href="/account"><span class="nav-item-icon" aria-hidden="true">👤</span>Account</a>
   @guest<a href="/login"><span class="nav-item-icon" aria-hidden="true">↪</span>Sign in</a><a href="/register" class="nav-create-account"><span class="nav-item-icon" aria-hidden="true">＋</span>Create account</a>@endguest
  </div>
 </div>
 <a href="/notifications" class="nav-mobile-account-link {{ request()->is('notifications')?'active':'' }}"><span class="nav-item-icon" aria-hidden="true">🔔</span>Notifications</a>
 @auth
+<a href="/account/settings" class="nav-mobile-account-link {{ request()->is('account/settings')?'active':'' }}"><span class="nav-item-icon" aria-hidden="true">⚙</span>Settings</a>
 <a href="/account" class="nav-mobile-account-link {{ request()->is('account','account/*')?'active':'' }}"><span class="nav-item-icon" aria-hidden="true">👤</span>Account</a>
 @else
 <a href="/login" class="nav-mobile-account-link {{ request()->is('login')?'active':'' }}"><span class="nav-item-icon" aria-hidden="true">↪</span>Sign in</a>
@@ -153,7 +155,7 @@ document.documentElement.dataset.theme=theme;})();
 </dialog>
 @endunless
 @endguest
-<script>(function(){if(location.pathname==='/draft'&&location.hash){history.replaceState(null,'',location.pathname+location.search);window.scrollTo(0,0);}})();function syncThemeControl(){const dark=document.documentElement.dataset.theme==='dark';const button=document.querySelector('.header-theme-toggle');if(button){button.setAttribute('aria-label',dark?'Switch to light theme':'Switch to dark theme');button.setAttribute('aria-pressed',String(dark));button.setAttribute('title',dark?'Switch to light theme':'Switch to dark theme');button.textContent=dark?'☀':'◐';}}function toggleTheme(){const next=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=next;try{localStorage.setItem('ecfhl-theme',next);}catch(e){}syncThemeControl();}syncThemeControl();</script>
+<script>(function(){if(location.pathname==='/draft'&&location.hash){history.replaceState(null,'',location.pathname+location.search);window.scrollTo(0,0);}})();function syncThemeControl(){const dark=document.documentElement.dataset.theme==='dark';const button=document.querySelector('.header-theme-toggle');if(button){button.setAttribute('aria-label',dark?'Switch to light theme':'Switch to dark theme');button.setAttribute('aria-pressed',String(dark));button.setAttribute('title',dark?'Switch to light theme':'Switch to dark theme');button.textContent=dark?'☀':'◐';}}function toggleTheme(){window.EcfhlTheme?.set(document.documentElement.dataset.theme==='dark'?'light':'dark');}syncThemeControl();</script>
 <script>
 (function(){
  const teamId=@json(auth()->user()?->claim?->fantasy_team_id);
@@ -427,6 +429,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 @include('communication.notification-panel')
 @include('communication.chat-panel')
 <div id="communication-context" hidden data-user-id="{{ auth()->id() ?? '' }}" data-preferences='@json(array_replace(\App\Support\OwnerNotificationPolicy::DEFAULTS,auth()->user()?->notification_preferences??[]))'></div>
+<script src="/theme-preferences.js?v={{ hash_file('sha256', base_path('public/theme-preferences.js')) }}"></script>
 <script src="/live-score-updates.js?v={{ hash_file('sha256', base_path('public/live-score-updates.js')) }}"></script>
 <script src="/app-communication.js?v={{ hash_file('sha256', base_path('public/app-communication.js')) }}" defer></script>
 @auth<script src="/message-receipts.js?v={{ hash_file('sha256', base_path('public/message-receipts.js')) }}" defer></script>

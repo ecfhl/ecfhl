@@ -78,7 +78,11 @@ chatRequest('POST','/api/messages/send',['body'=>'League muted','client_id'=>Str
 chatRequest('POST','/api/communication/preferences',['notifications_enabled'=>false],$cookies['Bob']);
 chatRequest('POST','/api/messages/send',['user_id'=>$bob->id,'body'=>'Muted push','client_id'=>Str::uuid()->toString()],$cookies['Alice']);checkChat($deliveries($bob->id,'private-message')===0,'Master Off does not mute push');
 $r=chatRequest('GET','/push/notifications',[],$guest);checkChat(payload($r)['notifications']===[],'Anonymous push feed exposes messages');
-// A bell event is stored even without browser permission; messages have their own counter.
+// Enabled matching push alerts do not duplicate into the unread bell inbox.
+$push->notify('live-score','Push-only goal','Player scored','/teams/current','alice');
+checkChat(payload(chatRequest('GET','/api/messages/state',[],$cookies['Alice']))['notification_count']===0,'Enabled push alert also added an unread bell item');
+chatRequest('POST','/api/communication/preferences',['notifications_enabled'=>false],$cookies['Alice']);
+// With push off, a matching alert remains available in the bell inbox.
 $push->notify('live-score','Alice goal','Player scored','/teams/current','alice');
 $state=payload(chatRequest('GET','/api/messages/state',[],$cookies['Alice']));checkChat($state['notification_count']===1,'Bell unread missing');$notificationId=$state['notifications'][0]['id'];
 chatRequest('POST','/api/notifications/read',['ids'=>[$notificationId]],$cookies['Bob']);checkChat(DB::table('owner_notification_inbox')->where('user_id',$alice->id)->whereNull('read_at')->count()===1,'Other user marked bell event read');

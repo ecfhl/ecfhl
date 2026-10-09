@@ -46,9 +46,10 @@
   visibleMessages.sort((a,b)=>a.id-b.id).forEach(message=>{
    const row=node('article',undefined,'chat-message');row.dataset.own=String(Number(message.sender_id)===userId);
    const identity=node('div',undefined,'chat-message-identity'),logo=node('img');logo.src=message.team_logo||'/team-icons/league-logo/thumbnail?size=64';logo.alt='';logo.width=32;logo.height=32;const name=node('strong',message.team_name||'League member');name.title=name.textContent;identity.append(logo,name);
-   const meta=node('div',undefined,'chat-message-meta');meta.append(identity,node('time',new Date(message.created_at).toLocaleString([],{timeZone:'America/Halifax',hour12:true})));
-   const receipt=window.EcfhlMessageReceipt?.(message,userId);if(receipt)meta.append(receipt);
-   row.append(node('p',message.body),meta);log.append(row);
+   const meta=node('div',undefined,'chat-message-meta');meta.append(identity);
+   const time=node('time',new Date(message.created_at).toLocaleString([],{timeZone:'America/Halifax',hour12:true}),'chat-message-time');
+   const receipt=window.EcfhlMessageReceipt?.(message,userId);
+   row.append(node('p',message.body),meta,time);if(receipt)row.append(receipt);log.append(row);
   });
   older.hidden=!state.hasMore;if(oldPage)log.scrollTop+=log.scrollHeight-height;else if(bottom)log.scrollTop=log.scrollHeight;constrain();read();
  };

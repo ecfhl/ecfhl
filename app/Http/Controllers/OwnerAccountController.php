@@ -39,6 +39,15 @@ class OwnerAccountController {
   Auth::logout();$r->session()->invalidate();$r->session()->regenerateToken();return redirect('/');
  }
  public function account(Request $r){return view('account.index',['owner'=>$r->user(),'googleReady'=>$this->googleReady()]);}
+ public function preferences(Request $r){
+  $v=$r->validate(['theme'=>'required|in:dark,light']);
+  $saved=DB::transaction(function()use($r,$v){
+   $owner=User::whereKey($r->user()->id)->lockForUpdate()->firstOrFail();
+   $owner->ui_preferences=array_replace($owner->ui_preferences??[],['theme'=>$v['theme']]);
+   $owner->save();return $owner->ui_preferences;
+  });
+  return response()->json(['preferences'=>$saved]);
+ }
  public function password(Request $r){
   $v=$r->validate(['current_password'=>'nullable|string','password'=>'required|string|min:10|max:128|confirmed']);
   if($r->user()->password && !Hash::check($v['current_password']??'', $r->user()->password))throw ValidationException::withMessages(['current_password'=>'Current password is incorrect.']);

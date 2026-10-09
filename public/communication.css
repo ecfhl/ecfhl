@@ -164,3 +164,9 @@ html[data-theme="light"] .scoring-team-highlight{color:#945000}
 
 @keyframes updates-open{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:no-preference){html[data-theme] :is(#notification-panel,#live-score-updates):not([hidden]){animation:updates-open .18s ease-out}}
+
+/* Timestamp spans the message width; receipts sit beneath it at the left. */
+.chat-message>.chat-message-time{grid-column:1/-1;justify-self:stretch;text-align:right;white-space:nowrap;overflow-x:auto;overflow-wrap:normal;margin-top:5px;font-size:10px;line-height:1.4}
+.chat-message>:is(.chat-read-status,.chat-view-status){grid-column:1/-1;justify-self:start;align-self:end;text-align:left;margin-top:5px;overflow-wrap:anywhere}
+
+.settings-tabs{flex-wrap:wrap;gap:8px}.settings-profile-summary{margin-bottom:16px}.theme-preference-label{display:flex;align-items:center;justify-content:space-between;gap:16px}.theme-preference-label select{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font:inherit;min-width:130px}#theme-save-status{font-size:13px;line-height:1.5}#theme-save-retry[hidden]{display:none}

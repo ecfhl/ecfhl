@@ -4,8 +4,8 @@
   tabs.forEach(tab=>{const active=tab.dataset.settingsTab===name;tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;document.getElementById('settings-'+tab.dataset.settingsTab).hidden=!active;if(active&&focus)tab.focus();});
   const device=document.querySelector('[data-notification-device]');if(device)device.hidden=name!=='notifications';
  };
- tabs.forEach(tab=>{tab.addEventListener('click',()=>{show(tab.dataset.settingsTab);history.replaceState(null,'','#'+tab.dataset.settingsTab);});tab.addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const next=event.key==='Home'?'notifications':event.key==='End'?'alerts':tab.dataset.settingsTab==='notifications'?'alerts':'notifications';show(next,true);history.replaceState(null,'','#'+next);}});});
- show(location.hash==='#alerts'?'alerts':'notifications');
+ tabs.forEach(tab=>{tab.addEventListener('click',()=>{show(tab.dataset.settingsTab);history.replaceState(null,'','#'+tab.dataset.settingsTab);});tab.addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const index=tabs.indexOf(tab),next=event.key==='Home'?tabs[0].dataset.settingsTab:event.key==='End'?tabs[tabs.length-1].dataset.settingsTab:tabs[(index+(event.key==='ArrowRight'?1:tabs.length-1))%tabs.length].dataset.settingsTab;show(next,true);history.replaceState(null,'','#'+next);}});});
+ const initial=location.hash.slice(1);show(tabs.some(tab=>tab.dataset.settingsTab===initial)?initial:(location.pathname==='/account/settings'?'appearance':'notifications'));
  const host=document.getElementById('scoring-settings-controls'),filters=document.querySelector('.live-score-updates-filters');
  if(host&&filters){
   host.append(filters);filters.hidden=false;
