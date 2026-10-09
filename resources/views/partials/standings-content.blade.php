@@ -7,17 +7,17 @@
 
   <div class="table-card">
     <div class="table-scroll">
-      <table class="data-table">
+      <table class="data-table standings-sortable">
         <thead>
           <tr>
-            <th class="num">Rank</th>
-            <th>Team</th>
-            <th class="num">W</th>
-            <th class="num">L</th>
-            <th class="num">T</th>
-            <th class="num">Pts</th>
-            <th class="num">Fpts</th>
-            <th class="num standings-win-pct">Win %</th>
+            <th class="num" scope="col" aria-sort="ascending"><button type="button" class="standings-sort" data-column="0" data-default-direction="asc">Rank<span class="standings-sort-arrow" aria-hidden="true"> ↑</span></button><span class="standings-resize" data-column="0" role="separator" aria-orientation="vertical" aria-label="Resize Rank column" aria-valuemin="48" aria-valuemax="600" tabindex="0"></span></th>
+            <th scope="col" aria-sort="none"><button type="button" class="standings-sort" data-column="1" data-default-direction="asc">Team<span class="standings-sort-arrow" aria-hidden="true"> ↕</span></button><span class="standings-resize" data-column="1" role="separator" aria-orientation="vertical" aria-label="Resize Team column" aria-valuemin="48" aria-valuemax="600" tabindex="0"></span></th>
+            <th class="num" scope="col" aria-sort="none"><button type="button" class="standings-sort" data-column="2" data-default-direction="desc">W<span class="standings-sort-arrow" aria-hidden="true"> ↕</span></button><span class="standings-resize" data-column="2" role="separator" aria-orientation="vertical" aria-label="Resize W column" aria-valuemin="48" aria-valuemax="600" tabindex="0"></span></th>
+            <th class="num" scope="col" aria-sort="none"><button type="button" class="standings-sort" data-column="3" data-default-direction="desc">L<span class="standings-sort-arrow" aria-hidden="true"> ↕</span></button><span class="standings-resize" data-column="3" role="separator" aria-orientation="vertical" aria-label="Resize L column" aria-valuemin="48" aria-valuemax="600" tabindex="0"></span></th>
+            <th class="num" scope="col" aria-sort="none"><button type="button" class="standings-sort" data-column="4" data-default-direction="desc">T<span class="standings-sort-arrow" aria-hidden="true"> ↕</span></button><span class="standings-resize" data-column="4" role="separator" aria-orientation="vertical" aria-label="Resize T column" aria-valuemin="48" aria-valuemax="600" tabindex="0"></span></th>
+            <th class="num" scope="col" aria-sort="none"><button type="button" class="standings-sort" data-column="5" data-default-direction="desc">Pts<span class="standings-sort-arrow" aria-hidden="true"> ↕</span></button><span class="standings-resize" data-column="5" role="separator" aria-orientation="vertical" aria-label="Resize Pts column" aria-valuemin="48" aria-valuemax="600" tabindex="0"></span></th>
+            <th class="num" scope="col" aria-sort="none"><button type="button" class="standings-sort" data-column="6" data-default-direction="desc">Fpts<span class="standings-sort-arrow" aria-hidden="true"> ↕</span></button><span class="standings-resize" data-column="6" role="separator" aria-orientation="vertical" aria-label="Resize Fpts column" aria-valuemin="48" aria-valuemax="600" tabindex="0"></span></th>
+            <th class="num standings-win-pct" scope="col" aria-sort="none"><button type="button" class="standings-sort" data-column="7" data-default-direction="desc">Win %<span class="standings-sort-arrow" aria-hidden="true"> ↕</span></button><span class="standings-resize" data-column="7" role="separator" aria-orientation="vertical" aria-label="Resize Win % column" aria-valuemin="48" aria-valuemax="600" tabindex="0"></span></th>
           </tr>
         </thead>
         <tbody>
@@ -32,9 +32,9 @@
               <td class="num">{{ $r['w'] ?? '—' }}</td>
               <td class="num">{{ $r['l'] ?? '—' }}</td>
               <td class="num">{{ $r['t'] ?? '—' }}</td>
-              <td class="num">{{ $r['standings_points']!==null ? number_format($r['standings_points'],0) : '—' }}</td>
-              <td class="num">{{ $r['fantasy_points_for']!==null ? number_format($r['fantasy_points_for'],0) : '—' }}</td>
-              <td class="num standings-win-pct">{{ $wp!==null ? number_format($wp*100,1).'%' : '—' }}</td>
+              <td class="num" data-sort-value="{{ $r['standings_points'] ?? '' }}">{{ $r['standings_points']!==null ? number_format($r['standings_points'],0) : '—' }}</td>
+              <td class="num" data-sort-value="{{ $r['fantasy_points_for'] ?? '' }}">{{ $r['fantasy_points_for']!==null ? number_format($r['fantasy_points_for'],0) : '—' }}</td>
+              <td class="num standings-win-pct" data-sort-value="{{ $wp ?? '' }}">{{ $wp!==null ? number_format($wp*100,1).'%' : '—' }}</td>
             </tr>
           @endforeach
         </tbody>
