@@ -138,7 +138,7 @@ html[data-theme] #chat-panel[data-maximized="true"]{left:8px!important;right:8px
 .team-message-count[hidden]{display:none}
 
 /* Anchored update panels; chat retains its floating window controls. */
-html[data-theme] :is(#notification-panel,#live-score-updates){position:fixed;top:80px;right:12px;left:auto;bottom:auto;width:min(420px,calc(100vw - 24px));max-height:min(70dvh,calc(100dvh - 100px));display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line);border-top:3px solid #f4a340;border-radius:18px;background:var(--panel);color:var(--text)}
+html[data-theme] :is(#notification-panel,#live-score-updates){position:fixed;top:var(--updates-top,80px);right:12px;left:auto;bottom:auto;width:min(420px,calc(100vw - 24px));max-height:min(70dvh,var(--updates-available-height,calc(100dvh - 100px)));display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line);border-top:3px solid #f4a340;border-radius:18px;background:var(--panel);color:var(--text)}
 html[data-theme] :is(#notification-panel,#live-score-updates)[hidden]{display:none}
 html[data-theme] :is(#notification-panel,#live-score-updates) :is(.communication-panel-heading,.live-score-updates-heading){background:var(--panel);color:var(--text);cursor:default;touch-action:auto;padding:16px;border-bottom:1px solid var(--line);user-select:auto;flex-shrink:0}
 html[data-theme] :is(#notification-panel,#live-score-updates) h2{font-size:17px}
@@ -149,7 +149,7 @@ html[data-theme] #live-score-updates .live-score-updates-list{min-height:0;overf
 .scoring-team-highlight{color:#f4a340}
 html[data-theme="light"] .scoring-team-highlight{color:#945000}
 @media(max-width:850px){
- html[data-theme] :is(#notification-panel,#live-score-updates){top:auto;left:8px;right:8px;bottom:var(--updates-bottom,90px);width:auto;max-height:min(58dvh,calc(100dvh - var(--updates-bottom,90px) - 80px));border-radius:22px 22px 12px 12px;box-shadow:0 -12px 40px #00000040}
+ html[data-theme] :is(#notification-panel,#live-score-updates){top:var(--updates-top,80px);left:8px;right:8px;bottom:auto;width:auto;max-height:min(65dvh,var(--updates-available-height,calc(100dvh - 170px)));border-radius:12px 12px 22px 22px;box-shadow:0 12px 40px #00000040}
 }
 
 /* Consistent notification test controls across screen sizes. */
@@ -161,3 +161,6 @@ html[data-theme="light"] .scoring-team-highlight{color:#945000}
 .notification-preferences-page #message-test-status:empty{display:none}
 .notification-preferences-page #message-test-status:not(:empty){padding:10px 12px;margin:14px 0;border-left:3px solid var(--focus);background:var(--panel-2);border-radius:6px;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
 @media(max-width:650px){.notification-preferences-page .message-test-actions{grid-template-columns:1fr}.notification-preferences-page{padding-bottom:28px}}
+
+@keyframes updates-open{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:no-preference){html[data-theme] :is(#notification-panel,#live-score-updates):not([hidden]){animation:updates-open .18s ease-out}}

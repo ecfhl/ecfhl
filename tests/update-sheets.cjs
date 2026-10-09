@@ -32,7 +32,7 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
  assert.equal(await score.locator('#live-score-updates-minimize').count(),0);
  assert.equal(await score.locator('.scoring-team-highlight').innerText(),'OTT 2');
  assert.match(await score.locator('.live-score-update-team-heading').innerText(),/OTT 2\s*@\s*BOS 3/);
- const box=await score.boundingBox();assert(box.x<=12 && box.width>=366 && box.y>200 && box.y+box.height<=844);
+ const box=await score.boundingBox();assert(box.x<=12 && box.width>=366 && box.y>=72 && box.y<120 && box.y+box.height<=844);
  await page.click('#header-notifications-toggle');assert.equal(await score.isVisible(),false);
  assert.equal(await page.locator('#notification-panel').isVisible(),true);
  assert.equal(await page.locator('#notification-panel .panel-resize-handle').count(),0);
