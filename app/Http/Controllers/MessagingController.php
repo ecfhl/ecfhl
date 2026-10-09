@@ -14,7 +14,7 @@ final class MessagingController
   $v=$r->validate(['user_id'=>'nullable|integer|min:1|exists:users,id']);
   $id=isset($v['user_id'])?(int)$v['user_id']:null;
   abort_if($id===$r->user()->id,422,'Choose another team.');
-  if($id)abort_unless(Messaging::participants()->whereNull('messaging_persona')->whereKey($id)->exists(),422,'This account is not linked to a team.');return $id;
+  if($id)abort_unless(Messaging::participants()->whereKey($id)->exists(),422,'This account is not linked to a team.');return $id;
  }
  public function index(Request $r) {
   $other=$this->other($r);
@@ -33,7 +33,7 @@ final class MessagingController
   return response()->json(['messages'=>$rows,'receipts'=>$receipts,'has_more'=>count($rows)===50])->header('Cache-Control','private, no-store');
  }
  public function send(Request $r,WebPush $push) {
-  $other=$this->other($r);$v=$r->validate(['body'=>'required|string|max:4000','client_id'=>'required|uuid']);
+  $other=$this->other($r);if($other)abort_unless(Messaging::participants()->whereNull('messaging_persona')->whereKey($other)->exists(),422,'Choose a league owner.');$v=$r->validate(['body'=>'required|string|max:4000','client_id'=>'required|uuid']);
   $body=trim($v['body']);abort_if($body==='',422,'Write a message first.');
   $new=false;
   $id=DB::transaction(function()use($r,$other,$v,$body,&$new){
