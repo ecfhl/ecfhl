@@ -147,5 +147,17 @@ $reply=chatRequest('POST','/api/messages/send',['user_id'=>$gary->id,'body'=>'Hi
 $view=chatRequest('GET','/messages?user_id='.$gary->id,[],$cookies['Alice'],true);checkChat(str_contains($view->getContent(),'Private conversation with Gary Bettman'),'Gary private page label wrong');
 $personaCookies=[];checkChat(chatRequest('POST','/login',['email'=>$gary->email,'password'=>'anything'],$personaCookies)->getStatusCode()===422,'Persona can sign in');
 $league=chatRequest('POST','/admin/gary/messages',['user_id'=>null,'body'=>'League announcement test','client_id'=>Str::uuid()->toString()],$cookies['Alice']);checkChat($league->getStatusCode()===201&&payload($league)['message']['recipient_id']===null,'Explicit League audience fails');
+// Thumbs up is idempotent and private messages/media stay private.
+$r=chatRequest('POST','/api/messages/'.$privateId.'/reaction',['active'=>true],$cookies['Bob']);checkChat($r->getStatusCode()===200&&payload($r)['message']['likes']===1&&payload($r)['message']['liked'],'Thumbs up missing');
+chatRequest('POST','/api/messages/'.$privateId.'/reaction',['active'=>true],$cookies['Bob']);checkChat(DB::table('chat_reactions')->where('message_id',$privateId)->count()===1,'Retry duplicates reaction');
+checkChat(chatRequest('POST','/api/messages/'.$privateId.'/reaction',['active'=>true],$cookies['Carol'])->getStatusCode()===403,'Private reaction leaked');
+$r=chatRequest('POST','/api/messages/'.$privateId.'/reaction',['active'=>false],$cookies['Bob']);checkChat(payload($r)['message']['likes']===0,'Cannot remove thumbs up');
+$image=['user_id'=>$bob->id,'body'=>'','client_id'=>Str::uuid()->toString(),'attachment'=>'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='];
+$r=chatRequest('POST','/api/messages/send',$image,$cookies['Alice']);checkChat($r->getStatusCode()===201,'Image-only send failed: '.$r->getContent());$imageId=payload($r)['message']['id'];
+checkChat(chatRequest('GET','/api/messages/'.$imageId.'/attachment',[],$cookies['Bob'])->headers->get('Content-Type')==='image/gif','Recipient cannot view GIF');
+checkChat(chatRequest('GET','/api/messages/'.$imageId.'/attachment',[],$cookies['Carol'])->getStatusCode()===403,'Private image leaked');
+checkChat(chatRequest('POST','/api/messages/send',$image,$cookies['Alice'])->getStatusCode()===200&&DB::table('chat_attachments')->where('message_id',$imageId)->count()===1,'Image retry duplicated upload');
+$bad=array_replace($image,['client_id'=>Str::uuid()->toString(),'attachment'=>'data:image/png;base64,PHNjcmlwdD4=']);checkChat(chatRequest('POST','/api/messages/send',$bad,$cookies['Alice'])->getStatusCode()===422,'Invalid image accepted');
+echo "Chat extras passed: reaction add/remove/idempotency, private isolation, GIF upload, image retry and invalid-image rejection.\n";
 echo "Messaging checks passed: private isolation, league chat, unread/read cursors, idempotent sends, pagination, defaults/mutes, push recipients, bell inbox, shared header and scoring endpoint.\n";
 

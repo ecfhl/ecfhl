@@ -55,6 +55,8 @@ final class Messaging
  public static function receipts(array $messages): array {
   if(!$messages)return [];
   $ids=array_column($messages,'id');
+  $likes=DB::table('chat_reactions')->whereIn('message_id',$ids)->get(['message_id','user_id'])->groupBy('message_id');
+  $attachments=DB::table('chat_attachments')->whereIn('message_id',$ids)->pluck('message_id')->all();
   $views=DB::table('chat_message_views as v')->join('users as u','u.id','=','v.user_id')->leftJoin('owner_team_claims as c','c.user_id','=','v.user_id')
    ->whereIn('v.message_id',$ids)->get(['v.message_id','v.user_id','v.read_at','c.team_name'])->groupBy('message_id');
   $senders=array_unique(array_column($messages,'sender_id'));
@@ -62,6 +64,7 @@ final class Messaging
   $cursors=DB::table('chat_reads as r')->join('users as u','u.id','=','r.user_id')->leftJoin('owner_team_claims as c','c.user_id','=','r.user_id')
    ->whereIn('r.conversation',$keys)->get(['r.user_id','r.conversation','r.last_message_id','c.team_name']);
   foreach($messages as &$message){
+   $reactions=$likes[$message['id']]??collect();$message['likes']=$reactions->count();$message['liked']=$reactions->contains(fn($r)=>(int)$r->user_id===(int)auth()->id());$message['attachment_url']=in_array($message['id'],$attachments)?'/api/messages/'.$message['id'].'/attachment':null;
    $people=[];
    foreach($cursors as $reader){
     if((int)$reader->user_id===(int)$message['sender_id'] || (int)$reader->last_message_id<(int)$message['id'])continue;

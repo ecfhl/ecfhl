@@ -8,6 +8,8 @@ Route::middleware('auth')->group(function(){
  Route::get('/api/messages/state',[Chat::class,'state'])->middleware('throttle:120,1,chat-state');
  Route::get('/api/messages/conversation',[Chat::class,'conversation'])->middleware('throttle:120,1,chat-read');
  Route::post('/api/messages/send',[Chat::class,'send'])->middleware('throttle:30,1,chat-send');
+ Route::post('/api/messages/{id}/reaction',[Chat::class,'react'])->whereNumber('id')->middleware('throttle:120,1,chat-react');
+ Route::get('/api/messages/{id}/attachment',[Chat::class,'attachment'])->whereNumber('id');
  Route::post('/api/messages/read',[Chat::class,'read']);
  Route::post('/api/notifications/read',[Chat::class,'readNotifications']);
  Route::post('/api/communication/preferences',[Chat::class,'preferences']);

@@ -1,6 +1,6 @@
 @auth
 <section id="chat-panel" class="communication-panel floating-chat" aria-label="League and team messages" hidden>
- <div id="chat-panel-handle" class="communication-panel-heading" tabindex="0" role="group" aria-label="Move chat: drag or use arrow keys"><h2>Messages</h2><div class="notification-panel-actions">
+ <div id="chat-panel-handle" class="communication-panel-heading" tabindex="0" role="group" aria-label="Move chat: drag or use arrow keys"><h2>Chat</h2><div class="notification-panel-actions">
  
  <a class="notification-settings" href="/notifications#alerts" aria-label="Chat alert settings" title="Chat alert settings">⚙</a><button type="button" id="chat-panel-minimize" aria-label="Minimize chat" title="Minimize">−</button><button type="button" class="panel-header-restore" disabled aria-label="Restore panel" title="Restore">□</button>
  <button type="button" id="chat-panel-maximize" aria-label="Maximize chat" title="Maximize">⛶</button><button type="button" id="chat-panel-close" aria-label="Close chat" title="Close">×</button></div></div>
@@ -9,7 +9,16 @@
  <label class="chat-conversation-label" for="chat-panel-conversation">Chat with</label><select id="chat-panel-conversation"><option value="">League chat</option></select>
  <button type="button" id="chat-panel-older" class="button chat-older" hidden>Earlier messages</button>
  <div id="chat-panel-log" class="chat-log" role="log" aria-live="polite" aria-relevant="additions" tabindex="0"></div>
- <form id="chat-panel-form" class="chat-form"><textarea id="chat-panel-text" aria-label="Message" placeholder="Write a message…" maxlength="4000" rows="2" required></textarea><button type="submit" class="button primary">Send</button></form>
+ <form id="chat-panel-form" class="chat-form chat-composer">
+  <textarea id="chat-panel-text" aria-label="Message" placeholder="Write a message…" maxlength="4000" rows="2"></textarea>
+  <div id="chat-panel-attachment" class="chat-attachment-preview" hidden><span></span><button type="button" aria-label="Remove attached image">×</button></div>
+  <div class="chat-composer-toolbar" role="toolbar" aria-label="Message formatting">
+   <button type="button" data-chat-format="bold" aria-label="Bold"><b>B</b></button><button type="button" data-chat-format="italic" aria-label="Italic"><i>I</i></button><button type="button" data-chat-format="strike" aria-label="Strikethrough"><s>S</s></button><button type="button" data-chat-format="link" aria-label="Insert link">🔗</button><button type="button" data-chat-format="list" aria-label="Bullet list">☷</button><button type="button" data-chat-format="emoji" aria-label="Insert emoji">☺</button><button type="button" data-chat-format="gif" aria-label="Share GIF">GIF</button><button type="button" data-chat-format="image" aria-label="Attach image">▧</button>
+   <button type="submit" class="chat-send" aria-label="Send message">➤</button>
+  </div>
+  <div id="chat-panel-emoji" class="chat-emoji-picker" hidden>@foreach(['👍','😂','🏒','🔥','🎉','💀','❤️','😎'] as $emoji)<button type="button" data-chat-emoji="{{ $emoji }}" aria-label="Insert {{ $emoji }}">{{ $emoji }}</button>@endforeach</div>
+  <input id="chat-panel-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
+ </form>
  <p id="chat-panel-status" class="chat-status" role="status" aria-live="polite"></p>
  </div>
 </section>
