@@ -1,5 +1,5 @@
 <div id="player-tips" class="player-tips">
-  <button type="button" class="player-tips-trigger" aria-label="Daily Faceoff tips" aria-expanded="false" aria-controls="player-dfo-tips" aria-describedby="player-dfo-tips">📎</button>
+  <button type="button" class="player-tips-trigger" aria-label="Daily Faceoff tips" aria-expanded="false" aria-controls="player-dfo-tips" aria-describedby="player-dfo-tips">💡</button>
   <div id="player-dfo-tips" class="player-tips-panel" role="tooltip" hidden>
     <h2>Daily Faceoff tips</h2>
     <p><strong>Daily Faceoff:</strong> Tap the logo to sort by lineup priority. Tap again to turn it off.</p>
