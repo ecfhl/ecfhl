@@ -22,7 +22,7 @@
  @csrf
  <input type="hidden" name="type" value="{{ $type }}">
  <div><h2>{{ $title }}</h2><p>{{ $description }}</p></div>
- <button class="button primary" type="button" data-send-notification-test>Send test</button><p class="admin-test-result" role="status" aria-live="polite"></p>
+ <button class="button primary" type="submit" data-send-notification-test>Send test</button><p class="admin-test-result" role="status" aria-live="polite"></p>
 </form>
 @endforeach
 </div>
