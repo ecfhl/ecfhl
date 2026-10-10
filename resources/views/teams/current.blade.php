@@ -5,11 +5,8 @@
   <nav class="team-roster-breadcrumb" aria-label="Team navigation"><a href="/teams/league">‹ Teams</a><span>2026–27 roster</span></nav>
 <header class="team-page-head">
   <div class="team-page-head-shell">
-    <div class="team-page-head-logo">
-      @include('teams.partials.team-icon-uploader',['slug'=>$slug,'name'=>$teamName])
-      @include('communication.team-message',['messageTeamName'=>$teamName])
-    </div>
     <div class="team-page-head-copy">
+      <div class="team-title-row">
       <label class="team-title-switcher">
         <span class="sr-only">Team</span>
         <select aria-label="Team" onchange="if(this.value){const url='/teams/current/'+this.value+'?date={{ $date }}';if(window.navigateToTeam)window.navigateToTeam(url,this.selectedOptions[0].text);else location.href=url;}">
@@ -18,6 +15,8 @@
           @endforeach
         </select>
       </label>
+      @include('communication.team-message',['messageTeamName'=>$teamName])
+      </div>
       @if($fantraxTeamUrl)
         <p class="team-fantrax-row">
           <a class="team-fantrax-link" href="{{ $fantraxTeamUrl }}" target="_blank" rel="noopener noreferrer">
@@ -38,6 +37,9 @@
       @if($scoreLastUpdate)
         <p class="team-updated">Updated @include('partials.updated-time',['value'=>$scoreLastUpdate])</p>
       @endif
+    </div>
+    <div class="team-page-head-logo">
+      @include('teams.partials.team-icon-uploader',['slug'=>$slug,'name'=>$teamName])
     </div>
   </div>
 </header>
