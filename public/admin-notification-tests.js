@@ -1,5 +1,7 @@
 (()=>{
  const pending=new WeakSet();
+ const ready=()=>document.querySelectorAll('.admin-test-result').forEach(status=>{if(!status.textContent)status.textContent='Ready to send';});
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
  const sendTest=async form=>{
   if(pending.has(form))return;
   const button=form.querySelector('[data-send-notification-test]'),status=form.querySelector('.admin-test-result');
