@@ -808,11 +808,13 @@ Route::get('/push/notifications', function () {
         ->where('d.subscription_id',$subscription->id)->where('n.id','>',$after)->orderBy('n.id')->limit(100)
         ->get(['n.id','n.category','n.title','n.body','n.url','n.fantasy_team_id']);
     $rows=$rows->filter(fn($n)=>($n->category!=='private-message'||$preferences['private_message_push'])&&($n->category!=='league-message'||$preferences['league_message_push']))->values();
-    $rows->each(function($notification){
+    $teamNames=\App\Models\TeamClaim::whereIn('fantasy_team_id',$rows->pluck('fantasy_team_id')->filter())->pluck('team_name','fantasy_team_id');
+    $rows->each(function($notification)use($teamNames){
         $notification->icon='/ecfhl-logo.png';
-        if(in_array($notification->category,['live-score','test-score'],true) && preg_match('/^(.+) - -?\d+(?:\.\d+)?(?:pts| Fpts)$/u',$notification->title,$match)){
-            $notification->icon=\App\Support\TeamImages::url(\Illuminate\Support\Str::slug($match[1]),160);
-        }
+        if(!in_array($notification->category,['live-score','test-score','test-team-score','test-team-goalie-score','test-opponent-score'],true))return;
+        $teamName=$teamNames->get($notification->fantasy_team_id);
+        if(!$teamName && preg_match('/^(.+) - -?\d+(?:\.\d+)?(?:pts| Fpts)(?: · TEST)?$/u',$notification->title,$match))$teamName=$match[1];
+        if($teamName){$slug=\Illuminate\Support\Str::slug($teamName);if($slug)$notification->icon=\App\Support\TeamImages::url($slug,160);}
     });
     return response()->json(['notifications'=>$rows])->header('Cache-Control','no-store');
 })->middleware('throttle:120,1,push-feed');
