@@ -126,3 +126,13 @@ html[data-theme="dark"] .current-teams-page .team-live-games-live{color:#7dd3fc}
  .current-teams-page .ecfhl-scoreboard .team-live-scores .team-live-today strong{font-size:20px!important}
  .current-teams-page .team-live-games{line-height:14px}
 }
+
+/* Match logo height to the record, score and Weekly label together. */
+.current-teams-page .ecfhl-scoreboard .team-live-logo{grid-row:2 / span 2;width:56px!important;height:56px!important;flex-basis:56px!important;align-self:center}
+.current-teams-page .ecfhl-scoreboard .team-live-side{grid-template-columns:56px minmax(0,1fr)}
+.current-teams-page .ecfhl-scoreboard .team-live-side-right{grid-template-columns:minmax(0,1fr) 56px}
+@media(min-width:901px){
+ .current-teams-page .ecfhl-scoreboard .team-live-logo{width:52px!important;height:52px!important;flex-basis:52px!important}
+ .current-teams-page .ecfhl-scoreboard .team-live-side{grid-template-columns:52px minmax(0,1fr)}
+ .current-teams-page .ecfhl-scoreboard .team-live-side-right{grid-template-columns:minmax(0,1fr) 52px}
+}
