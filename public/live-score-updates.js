@@ -57,17 +57,16 @@
       };
       const render = () => {
         const total = history.reduce((sum,batch)=>sum+batch.events.length,0);
+        const unread = history.reduce((sum,batch)=>sum+(batch.unread !== false ? batch.events.length : 0),0);
         tray.hidden = mode === 'closed'; tray.dataset.minimized = String(mode === 'minimized');
-        trash.disabled = total === 0; count.textContent = total > 0 ? String(total) : ''; count.hidden = total === 0;
-        count.dataset.active = String(total > 0);
+        trash.disabled = total === 0; count.textContent = unread > 0 ? String(unread) : ''; count.hidden = unread === 0;
+        count.dataset.active = String(unread > 0);
         toggle.dataset.enabled = String(enabled); toggle.setAttribute('aria-expanded',String(mode !== 'closed'));
-        toggle.setAttribute('aria-label','Open scoring updates, '+total+' stored, updates '+(enabled?'on':'off'));
+        toggle.setAttribute('aria-label','Open scoring updates, '+unread+' unread, '+total+' stored, updates '+(enabled?'on':'off'));
         $('team-label').hidden = scope.value !== 'teams';
         $('team-summary').textContent = selectedTeams.length ? selectedTeams.length + ' selected' : 'Select teams';
         list.replaceChildren();
         if (!total) list.append(element('p','live-score-updates-empty','No updates'));
-        const green = new Set((baseline?.players || []).filter(p=>p.change==='up').map(p=>p.key));
-        const newest = new Set();
         history.forEach(batch => {
           const node = element('div','live-score-update-batch');
           node.append(element('time','live-score-update-time',batch.time));
@@ -85,7 +84,8 @@
             group.append(heading);
             plays.forEach(play=>{
               const row=element('div','live-score-update-player'), detail=element('div','');
-              row.setAttribute('data-new',String(!newest.has(play.key)&&green.has(play.key)));newest.add(play.key);
+              row.setAttribute('data-new',String(Boolean(batch.fresh || batch.unread !== false)));
+              if(batch.fresh || batch.unread !== false) detail.append(element('span','live-score-update-new','New'));
               detail.append(element('strong','',batch.nhl?'Goal by '+play.player:play.player));
               if (play.gameDisplay) detail.append(element('span','live-score-update-stats',play.gameDisplay));
               detail.append(element('span','live-score-update-stats',play.stats));row.append(detail);
@@ -97,10 +97,10 @@
         persist();
       };
       // Opening the box never changes whether updates are received.
-      toggle.addEventListener('click',()=>{mode='expanded';render();close.focus({preventScroll:true});});
+      toggle.addEventListener('click',()=>{history.forEach(batch=>{batch.fresh=batch.unread !== false;batch.unread=false;});mode='expanded';render();close.focus({preventScroll:true});});
       trash.addEventListener('click',()=>{history=[];render();});
-      close.addEventListener('click',()=>{mode='closed';render();toggle.focus({preventScroll:true});});
-      tray.addEventListener('keydown',event=>{if(event.key==='Escape'){mode='closed';render();toggle.focus({preventScroll:true});}});
+      close.addEventListener('click',()=>{history.forEach(batch=>{batch.fresh=false;});mode='closed';render();toggle.focus({preventScroll:true});});
+      tray.addEventListener('keydown',event=>{if(event.key==='Escape'){history.forEach(batch=>{batch.fresh=false;});mode='closed';render();toggle.focus({preventScroll:true});}});
       const filtersChanged=()=>{try{localStorage.setItem(filterKey,JSON.stringify({enabled,scope:scope.value,teams:selectedTeams}));}catch(_){}history=[];nhlBaseline=null;render();window.dispatchEvent(new Event('ecfhl-scoring-filter'));};
       scope.addEventListener('change',filtersChanged);team.addEventListener('change',()=>{selectedTeams=[...team.querySelectorAll('input:checked')].map(input=>input.value);filtersChanged();});
       const accepts = event => {
@@ -135,7 +135,7 @@
           if(Array.isArray(current))nhlBaseline=current.map(e=>e.key);
         }else nhlBaseline=null;
         if(enabled && events.length){
-          history.unshift({time:new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true}),events,nhl:scope.value==='nhl'});
+          history.unshift({time:new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true}),events,nhl:scope.value==='nhl',unread:mode !== 'expanded',fresh:mode === 'expanded'});
           // Retain the most recent 250 batches per tab to keep navigation state bounded.
           history=history.slice(0,250);
         }
