@@ -400,3 +400,16 @@ echo "Team welcome checks passed: Gary identity, league-wide message/push, dupli
 echo "Owner account checks passed: pages, optional browsing, exclusive claims, reserved admin invitation, admin routes/actions, password hashing/login, Google state/linking, own/opponent scoring, goalie filters, date groups/custom projection ordering/start-time ties, confirmed/nonstarter/started-game exclusions, bell toggle/auth/preference preservation, waiver dates, own-goalie roster slots/current snapshot/toggle/delivery, isolated push delivery, latest-score test replay/legacy formatting/device isolation/failed delivery, and SSRF rejection.\n";
 
 CarbonImmutable::setTestNow();
+
+// Every scoring test uses the source team's identity, not a decorated display title.
+$iconToken='scoring-logo-fixture';$iconEndpoint='https://fcm.googleapis.com/fcm/send/scoring-logo-fixture';
+$push->subscribe($iconEndpoint,$welcomeOwner->id,$iconToken);$iconDeviceId=DB::table('push_subscriptions')->where('endpoint_hash',hash('sha256',$iconEndpoint))->value('id');
+$iconAfter=(int)DB::table('push_notifications')->max('id');
+foreach(['test-team-score','test-team-goalie-score','test-opponent-score'] as $category){
+ $id=DB::table('push_notifications')->insertGetId(['category'=>$category,'title'=>'Decorated title - 2pts','body'=>'Scoring test','url'=>'/teams/current','fantasy_team_id'=>'a','created_at'=>now(),'updated_at'=>now()]);
+ DB::table('push_deliveries')->insert(['subscription_id'=>$iconDeviceId,'notification_id'=>$id]);
+}
+$icons=json_decode(ownerRequest('GET','/push/notifications?after='.$iconAfter,[],$guest,['HTTP_AUTHORIZATION'=>'Bearer '.$iconToken])->getContent(),true)['notifications'];
+verifyOwner(count($icons)===3,'Scoring icon fixtures missing from device feed');
+foreach($icons as $notification)verifyOwner($notification['icon']===\App\Support\TeamImages::url(\Illuminate\Support\Str::slug($a->fresh()->claim->team_name),160),'Scoring test did not use the scoring team logo');
+echo "Scoring test logos passed: skater, goalie and opponent tests use source team identity.\n";
