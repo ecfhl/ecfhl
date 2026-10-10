@@ -233,3 +233,7 @@ html[data-theme] :is(#notification-panel,#live-score-updates)[data-minimized="tr
 html[data-theme] :is(#notification-panel,#live-score-updates)[data-minimized="true"]{height:auto!important;min-height:0!important;max-height:none!important}
 html[data-theme] :is(#notification-panel,#live-score-updates)[data-maximized="true"]{inset:var(--updates-top,80px) 8px 12px!important;width:auto!important;height:auto!important;max-height:none!important;min-height:0!important}
 html[data-theme] :is(#notification-panel,#live-score-updates)[data-maximized="true"] :is(.notification-panel-body,.live-score-updates-list){flex:1;min-height:0;max-height:none;overflow:auto}
+
+/* Minimized panels must override fixed/fullscreen sizing, including resize dimensions. */
+html[data-theme] :is(#notification-panel,#live-score-updates)[data-minimized="true"]{top:var(--updates-top,80px)!important;right:12px!important;bottom:auto!important;left:auto!important;inset:auto 12px auto auto!important;top:var(--updates-top,80px)!important;width:min(420px,calc(100vw - 24px))!important;height:auto!important;min-height:0!important;max-height:none!important}
+html[data-theme] :is(#notification-panel,#live-score-updates)[data-minimized="true"] :is(.communication-panel-heading,.live-score-updates-heading){border-bottom:0}
