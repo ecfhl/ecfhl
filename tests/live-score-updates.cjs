@@ -30,12 +30,20 @@ ui.update(before);assert.equal(e['live-score-updates-count'].textContent,'');ass
 ui.update(next);assert.equal(e['live-score-updates-count'].textContent,'2','Default matchup excludes other league teams');
 assert.equal(e['live-score-updates'].dataset.minimized,'false');
 e['live-score-updates-toggle'].handlers.click();assert.equal(e['live-score-updates'].dataset.minimized,'false');
+assert.equal(e['live-score-updates-count'].hidden,true,'Opening marks stored alerts read');
+const rows=()=>e['live-score-updates-list'].children.flatMap(batch=>batch.children.slice(1).flatMap(group=>group.children.slice(1)));
+assert(rows().every(row=>row.attributes['data-new']==='true'),'First opening highlights all unread alerts');
 e['live-score-updates-close'].handlers.click();assert.equal(e['live-score-updates'].hidden,true);
+assert(rows().every(row=>row.attributes['data-new']==='false'),'Closing clears the current reading highlight');
+
 e['live-score-updates-toggle'].handlers.click();assert.equal(e['live-score-updates'].hidden,false);
-const later=state([p('a',4,{G:2}),...next.players.slice(1)]);ui.update(later);assert.equal(e['live-score-updates-count'].textContent,'3');
+e['live-score-updates-close'].handlers.click();
+const later=state([p('a',4,{G:2}),...next.players.slice(1)]);ui.update(later);assert.equal(e['live-score-updates-count'].textContent,'1');
 e['live-score-updates-close'].handlers.click();assert.equal(e['live-score-updates'].dataset.minimized,'false');
 // A new page restores the baseline, content, enabled setting and closed mode.
-app=setup();ui=app.start();e=app.elements;assert.equal(e['live-score-updates-count'].textContent,'3');assert.equal(e['live-score-updates'].dataset.minimized,'false');ui.update(later);assert.equal(e['live-score-updates-count'].textContent,'3','Navigation does not duplicate events');
+app=setup();ui=app.start();e=app.elements;assert.equal(e['live-score-updates-count'].textContent,'1');assert.equal(e['live-score-updates'].dataset.minimized,'false');ui.update(later);assert.equal(e['live-score-updates-count'].textContent,'1','Navigation does not duplicate events');
+e['live-score-updates-toggle'].handlers.click();assert.equal(e['live-score-updates-count'].hidden,true);assert.equal(rows().filter(row=>row.attributes['data-new']==='true').length,1,'Only the new event is highlighted, including another score by the same player');
+e['live-score-updates-close'].handlers.click();e['live-score-updates-toggle'].handlers.click();assert.equal(rows().filter(row=>row.attributes['data-new']==='true').length,0,'Reopening without new events highlights nothing');e['live-score-updates-close'].handlers.click();
 e['live-score-updates-trash'].handlers.click();assert.equal(e['live-score-updates-trash'].disabled,true);assert.equal(e['live-score-updates-count'].textContent,'');
 e['live-score-updates-scope'].value='team';e['live-score-updates-scope'].handlers.change();ui.update(state([p('a',6,{G:3}),p('b',2,{A:2},{teamId:'2'}),later.players[2]]));assert.equal(e['live-score-updates-count'].textContent,'1');
 e['live-score-updates-scope'].value='teams';e['live-score-updates-team'].children[2].children[0].checked=true;e['live-score-updates-team'].handlers.change();e['live-score-updates-scope'].handlers.change();ui.update(state([p('a',6,{G:3}),p('b',2,{A:2},{teamId:'2'}),p('c',6,{W:2},{teamId:'3'})]));assert.equal(e['live-score-updates-count'].textContent,'1','Specific teams filters selected teams');assert.equal(e['live-score-updates-team-label'].hidden,false);

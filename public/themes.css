@@ -388,3 +388,5 @@ html[data-theme] .live-score-updates-toggle{width:auto;gap:4px;padding:3px 8px}
 .live-score-updates[data-minimized="true"]{width:auto;min-width:100px}
 .live-score-updates[data-minimized="true"] :is(.live-score-updates-heading,.live-score-updates-filters,.live-score-updates-list){display:none}
 .live-score-updates-restore[hidden]{display:none}
+
+.live-score-update-new{display:inline-block;margin-right:6px;padding:1px 5px;border-radius:5px;background:var(--success);color:var(--panel);font-size:10px;font-weight:800;vertical-align:middle}
