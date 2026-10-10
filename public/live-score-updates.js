@@ -42,7 +42,8 @@
       let baseline = saved?.baseline || null, nhlBaseline = saved?.nhlBaseline || null;
       let history = Array.isArray(saved?.history) ? saved.history : [];
       let enabled = filters.enabled !== false;
-      let mode = saved?.mode === 'expanded' ? 'expanded' : 'closed';
+      let mode = ['expanded','minimized'].includes(saved?.mode) ? saved.mode : 'closed';
+      let maximized=false;
       const savedScope=filters.scope||saved?.scope;
       scope.value = ['team','matchup','teams','league','nhl'].includes(savedScope) ? savedScope : 'matchup';
       const selectedTeam = String(team.dataset.accountTeam || '');
@@ -58,7 +59,7 @@
       const render = () => {
         const total = history.reduce((sum,batch)=>sum+batch.events.length,0);
         const unread = history.reduce((sum,batch)=>sum+(batch.unread !== false ? batch.events.length : 0),0);
-        tray.hidden = mode === 'closed'; tray.dataset.minimized = String(mode === 'minimized');
+        tray.hidden = mode === 'closed'; tray.dataset.minimized = String(mode === 'minimized');tray.dataset.maximized=String(maximized);
         trash.disabled = total === 0; count.textContent = unread > 0 ? String(unread) : ''; count.hidden = unread === 0;
         count.dataset.active = String(unread > 0);
         toggle.dataset.enabled = String(enabled); toggle.setAttribute('aria-expanded',String(mode !== 'closed'));
@@ -98,6 +99,8 @@
       };
       // Opening the box never changes whether updates are received.
       toggle.addEventListener('click',()=>{history.forEach(batch=>{batch.fresh=batch.unread !== false;batch.unread=false;});mode='expanded';render();close.focus({preventScroll:true});});
+      $('minimize')?.addEventListener('click',()=>{mode=mode==='minimized'?'expanded':'minimized';render();});
+      $('maximize')?.addEventListener('click',()=>{maximized=!maximized;mode='expanded';render();});
       trash.addEventListener('click',()=>{history=[];render();});
       close.addEventListener('click',()=>{history.forEach(batch=>{batch.fresh=false;});mode='closed';render();toggle.focus({preventScroll:true});});
       tray.addEventListener('keydown',event=>{if(event.key==='Escape'){history.forEach(batch=>{batch.fresh=false;});mode='closed';render();toggle.focus({preventScroll:true});}});
