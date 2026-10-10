@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Players · ECFHL')
 @section('content')
-<div class="page-head"><div class="shell"><div class="eyebrow">2026–27 season</div><h1>Players</h1><p>Stats, projections and ECFHL team ownership.</p></div></div>
+<div class="page-head ecfhl-compact-head"><div class="shell"><div class="eyebrow">2026–27 season</div><h1>🏒 Players</h1></div></div>
 <div class="shell season-players">
   @php
     $filterUrl = fn($changes)=>'/players?'.http_build_query(array_merge(['positions'=>implode(',', $positions),'rookies'=>$rookies?'1':'0','q'=>$search,'sort'=>$sort,'direction'=>$direction,'team'=>$selectedTeam,'availability'=>$availability,'line'=>$selectedLine,'pp'=>$selectedPp,'dataset'=>$dataset,'playing'=>$playing,'dfo_sort'=>$dailyTargetsSort?'1':'0'], $changes));
