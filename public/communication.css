@@ -237,3 +237,15 @@ html[data-theme] :is(#notification-panel,#live-score-updates)[data-maximized="tr
 /* Minimized panels must override fixed/fullscreen sizing, including resize dimensions. */
 html[data-theme] :is(#notification-panel,#live-score-updates)[data-minimized="true"]{top:var(--updates-top,80px)!important;right:12px!important;bottom:auto!important;left:auto!important;inset:auto 12px auto auto!important;top:var(--updates-top,80px)!important;width:min(420px,calc(100vw - 24px))!important;height:auto!important;min-height:0!important;max-height:none!important}
 html[data-theme] :is(#notification-panel,#live-score-updates)[data-minimized="true"] :is(.communication-panel-heading,.live-score-updates-heading){border-bottom:0}
+
+/* Readable chat typography on mobile and desktop without widening the panel. */
+html[data-theme] #chat-panel .chat-message{font-size:15px;line-height:1.5}
+#chat-panel .chat-message-identity strong{font-size:15px;line-height:1.35}
+#chat-panel .chat-message-time,#chat-panel .chat-message time{font-size:12px;line-height:1.4}
+#chat-panel .chat-message-body p{font-size:15px;line-height:1.5}
+#chat-panel .chat-conversation-label{font-size:13px}
+#chat-panel-conversation{font-size:15px;padding:8px 10px}
+#chat-panel .chat-composer textarea{font-size:15px;line-height:1.45}
+#chat-panel .chat-composer-toolbar button{font-size:16px;min-width:30px;min-height:30px}
+#chat-panel .chat-composer-toolbar .chat-send{font-size:21px}
+#chat-panel .chat-status,#chat-panel .chat-message-actions{font-size:13px}
