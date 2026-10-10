@@ -2,7 +2,7 @@
 <section id="chat-panel" class="communication-panel floating-chat" aria-label="League and team messages" hidden>
  <div id="chat-panel-handle" class="communication-panel-heading" tabindex="0" role="group" aria-label="Move chat: drag or use arrow keys"><h2>Chat</h2><div class="notification-panel-actions">
  
- <a class="notification-settings" href="/notifications#alerts" aria-label="Chat alert settings" title="Chat alert settings">⚙</a><button type="button" id="chat-panel-minimize" aria-label="Minimize chat" title="Minimize">−</button><button type="button" class="panel-header-restore" disabled aria-label="Restore panel" title="Restore">□</button>
+<button type="button" id="chat-panel-minimize" aria-label="Minimize chat" title="Minimize">−</button>
  <button type="button" id="chat-panel-maximize" aria-label="Maximize chat" title="Maximize">⛶</button><button type="button" id="chat-panel-close" aria-label="Close chat" title="Close">×</button></div></div>
  <button type="button" id="chat-panel-restore" class="notification-restore" hidden aria-label="Expand chat">League chat</button>
  <div class="chat-panel-body">
