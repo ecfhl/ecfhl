@@ -30,7 +30,8 @@
   notificationTrash.disabled=notificationTotal===0;notificationToggle.setAttribute('aria-expanded',String(notificationMode!=='closed'));
   persistNotifications();
  };
- notificationToggle.addEventListener('click',()=>{notificationMode='expanded';renderNotifications();notificationClose.focus({preventScroll:true});});
+ window.addEventListener('ecfhl-panel-open',event=>{if(event.detail!=='notifications'&&notificationMode!=='closed'){notificationMode='closed';renderNotifications();}});
+ notificationToggle.addEventListener('click',()=>{window.dispatchEvent(new CustomEvent('ecfhl-panel-open',{detail:'notifications'}));notificationMode='expanded';renderNotifications();notificationClose.focus({preventScroll:true});});
  const closeNotifications=()=>{notificationMode='closed';renderNotifications();notificationToggle.focus({preventScroll:true});};
  document.getElementById('notification-minimize')?.addEventListener('click',()=>{notificationMode=notificationMode==='minimized'?'expanded':'minimized';renderNotifications();});
  document.getElementById('notification-maximize')?.addEventListener('click',()=>{notificationMaximized=!notificationMaximized;notificationMode='expanded';renderNotifications();});
