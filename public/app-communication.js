@@ -21,16 +21,19 @@
  const notificationClose=document.querySelector('[data-close-notifications]'),notificationTrash=document.getElementById('notification-trash');
  const notificationKey='ecfhl-notification-panel:'+(userId||'guest');
  let savedNotifications={};try{savedNotifications=JSON.parse(sessionStorage.getItem(notificationKey)||'{}')||{};}catch(_){}
- let notificationMode=savedNotifications.mode==='expanded'?'expanded':'closed',notificationTotal=0;
+ let notificationMode=['expanded','minimized'].includes(savedNotifications.mode)?savedNotifications.mode:'closed',notificationTotal=0;
+ let notificationMaximized=false;
  let clearedNotifications=new Set(Array.isArray(savedNotifications.cleared)?savedNotifications.cleared.map(Number):[]);
  const persistNotifications=()=>{try{sessionStorage.setItem(notificationKey,JSON.stringify({mode:notificationMode,cleared:[...clearedNotifications].slice(-1000)}));}catch(_){}};
  const renderNotifications=()=>{
-  notificationPanel.hidden=notificationMode==='closed';notificationPanel.dataset.minimized=String(notificationMode==='minimized');
+  notificationPanel.hidden=notificationMode==='closed';notificationPanel.dataset.minimized=String(notificationMode==='minimized');notificationPanel.dataset.maximized=String(notificationMaximized);
   notificationTrash.disabled=notificationTotal===0;notificationToggle.setAttribute('aria-expanded',String(notificationMode!=='closed'));
   persistNotifications();
  };
  notificationToggle.addEventListener('click',()=>{notificationMode='expanded';renderNotifications();notificationClose.focus({preventScroll:true});});
  const closeNotifications=()=>{notificationMode='closed';renderNotifications();notificationToggle.focus({preventScroll:true});};
+ document.getElementById('notification-minimize')?.addEventListener('click',()=>{notificationMode=notificationMode==='minimized'?'expanded':'minimized';renderNotifications();});
+ document.getElementById('notification-maximize')?.addEventListener('click',()=>{notificationMaximized=!notificationMaximized;notificationMode='expanded';renderNotifications();});
  notificationClose.addEventListener('click',closeNotifications);
  notificationPanel.addEventListener('keydown',event=>{if(event.key==='Escape')closeNotifications();});
  renderNotifications();
