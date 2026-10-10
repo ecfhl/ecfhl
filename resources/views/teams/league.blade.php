@@ -10,8 +10,8 @@
 <link rel="stylesheet" href="/league-teams.css?v={{ hash_file('sha256', base_path('public/league-teams.css')) }}">
 @endpush
 <section class="shell league-teams" data-league-teams>
-  <header class="league-teams-heading">
-    <div><h1>Teams <span>{{ count($teams) }}</span></h1><p>Regular season · 2026–27</p></div>
+  <header class="league-teams-heading ecfhl-league-compact-head">
+    <div><div class="eyebrow">2026–27 season</div><h1>🏒 Teams <span>{{ count($teams) }}</span></h1></div>
     @if($myTeamSlug)
       <a class="league-teams-my-link" href="/teams/current/{{ $myTeamSlug }}"><span aria-hidden="true">★</span> My Team <span aria-hidden="true">↗</span></a>
     @endif
