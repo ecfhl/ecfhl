@@ -333,7 +333,7 @@ Http::swap(new \Illuminate\Http\Client\Factory());
 Http::preventStrayRequests();
 Http::fake(['https://fcm.googleapis.com/*'=>Http::response('',201)]);
 try{$push->testLatestScore($adminOwner->id,hash('sha256','https://fcm.googleapis.com/fcm/send/admin-other'));throw new RuntimeException('No scorer invented a test');}catch(Illuminate\Validation\ValidationException $e){verifyOwner(str_contains($e->getMessage(),'No scoring alert'),'Empty scoring history gave an unclear error');}
-CarbonImmutable::setTestNow();
+// Keep the fixture clock fixed until all session-based checks finish.
 
 // An admin may enable a linked owner's message preferences while preserving other settings.
 $a->notification_preferences=['notifications_enabled'=>false,'private_message_push'=>false,'league_message_push'=>false,'all_goalies'=>true,'opponent_scores'=>false];$a->save();
@@ -398,3 +398,5 @@ verifyOwner(!TeamClaim::whereKey('rollback-team')->exists() && DB::table('chat_m
 echo "Team welcome checks passed: Gary identity, league-wide message/push, duplicate rejection and transaction rollback.\n";
 
 echo "Owner account checks passed: pages, optional browsing, exclusive claims, reserved admin invitation, admin routes/actions, password hashing/login, Google state/linking, own/opponent scoring, goalie filters, date groups/custom projection ordering/start-time ties, confirmed/nonstarter/started-game exclusions, bell toggle/auth/preference preservation, waiver dates, own-goalie roster slots/current snapshot/toggle/delivery, isolated push delivery, latest-score test replay/legacy formatting/device isolation/failed delivery, and SSRF rejection.\n";
+
+CarbonImmutable::setTestNow();

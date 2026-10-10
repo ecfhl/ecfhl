@@ -17,6 +17,7 @@ jobs:
       - run: composer install --no-interaction --prefer-dist
       - run: php tests/messaging.php
       - run: node tests/live-score-updates.cjs
+      - run: node tests/mobile-swipes.cjs
       - run: find app routes tests -name '*.php' -print0 | xargs -0 -n1 php -l
       - if: ${{ !cancelled() }}
         run: php tests/archive-smoke.php

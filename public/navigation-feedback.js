@@ -86,6 +86,42 @@
     const link=document.createElement('a');link.href=url;link.dataset.loadingLabel=label;
     document.body.appendChild(link);link.click();link.remove();
   };
+  // Use the actual menu links so My Team follows the user's saved team.
+  const primaryNav = document.querySelector('.mobile-primary-nav');
+  let swipe = null;
+  const blockedSwipe = target => {
+    if (document.body.classList.contains('navigation-pending') || document.body.classList.contains('nav-open') || document.querySelector('dialog[open]')) return true;
+    if (target.closest('input,textarea,select,button,a,[contenteditable],dialog,[role="dialog"],.communication-panel,[data-panel-resize],.mobile-primary-nav')) return true;
+    for (let element = target; element && element !== document.body; element = element.parentElement) {
+      const style = getComputedStyle(element);
+      if (element.scrollWidth > element.clientWidth + 2 && ['auto','scroll'].includes(style.overflowX)) return true;
+    }
+    return false;
+  };
+  document.addEventListener('touchstart', event => {
+    swipe = null;
+    if (!primaryNav || getComputedStyle(primaryNav).display === 'none' || event.touches.length !== 1 || blockedSwipe(event.target)) return;
+    const touch = event.touches[0];
+    // Leave screen-edge gestures to the browser and operating system.
+    if (touch.clientX < 24 || touch.clientX > window.innerWidth - 24) return;
+    swipe = {x:touch.clientX,y:touch.clientY,time:Date.now()};
+  }, {passive:true});
+  document.addEventListener('touchmove', event => {
+    if (!swipe) return;
+    if (event.touches.length !== 1 || Math.abs(event.touches[0].clientY - swipe.y) > 35) swipe = null;
+  }, {passive:true});
+  document.addEventListener('touchcancel', () => {swipe = null;}, {passive:true});
+  document.addEventListener('touchend', event => {
+    const start = swipe; swipe = null;
+    if (!start || event.touches.length || event.changedTouches.length !== 1 || blockedSwipe(event.target)) return;
+    const touch = event.changedTouches[0], dx = touch.clientX - start.x, dy = touch.clientY - start.y;
+    if (Date.now() - start.time > 650 || Math.abs(dx) < 75 || Math.abs(dx) < Math.abs(dy) * 2.5 || Math.abs(dy) > 35) return;
+    const links = [...primaryNav.querySelectorAll('a[href]')];
+    const current = links.findIndex(link => new URL(link.href, location.href).pathname.replace(/\/$/,'') === location.pathname.replace(/\/$/,''));
+    if (current < 0) return;
+    const next = links[current + (dx < 0 ? 1 : -1)];
+    if (next) next.click();
+  }, {passive:true});
   if (!invitation) return;
   document.querySelectorAll('[data-dismiss-signup]').forEach(button => button.addEventListener('click', () => invitation.close()));
   // Browsing stays optional. Do not reopen the invitation on every page change.
