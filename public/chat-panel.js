@@ -70,7 +70,10 @@
  let requested=new URL(location.href).pathname==='/messages'?new URL(location.href).searchParams.get('user_id'):null;
  let pendingOpen=null;
  let requestedReply=location.pathname==='/messages'&&new URL(location.href).searchParams.get('reply')==='1';
+ const activateChat=()=>window.dispatchEvent(new CustomEvent('ecfhl-panel-open',{detail:'chat'}));
+ window.addEventListener('ecfhl-panel-open',event=>{if(event.detail!=='chat'&&mode!=='closed'){mode='closed';render();}});
  const open=value=>{
+  activateChat();
   if(!directoryReady){pendingOpen=String(value||'');mode='expanded';render();return;}
   mode='expanded';change(value);text.focus({preventScroll:true});
  };
@@ -125,10 +128,10 @@ const updateUnread=value=>{
    if(value===selected){if(text.value.trim()===typedBody)text.value='';draw();log.scrollTop=log.scrollHeight;await read();status.textContent='Sent.';}
   }catch(e){if(value===selected)status.textContent=e.message;}finally{sending=false;send.disabled=false;}
  });
- maximize.addEventListener('click',()=>{maximized=!maximized;mode='expanded';render();refresh();});
+ maximize.addEventListener('click',()=>{activateChat();maximized=!maximized;mode='expanded';render();refresh();});
  const hide=()=>{mode='closed';render();header?.focus({preventScroll:true});};
  close.addEventListener('click',hide);$('minimize').addEventListener('click',()=>{mode='minimized';render();restore.focus({preventScroll:true});});
- restore.addEventListener('click',()=>{mode='expanded';render();refresh();read();close.focus({preventScroll:true});});
+ restore.addEventListener('click',()=>{activateChat();mode='expanded';render();refresh();read();close.focus({preventScroll:true});});
  older.addEventListener('click',()=>refresh(true));log.addEventListener('scroll',read);
  panel.addEventListener('keydown',event=>{if(event.key==='Escape')hide();});
  handle.addEventListener('pointerdown',event=>{if(maximized||event.button!==0||event.target.closest('button,a,select,input,label'))return;const rect=panel.getBoundingClientRect();drag={id:event.pointerId,x:event.clientX,y:event.clientY,left:rect.left,top:rect.top};handle.setPointerCapture(event.pointerId);panel.dataset.dragging='true';});
