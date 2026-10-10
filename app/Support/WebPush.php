@@ -41,6 +41,8 @@ class WebPush
                     'position'=>array_intersect(['W','L','OTL','OL+ShL','OL','SO','SHO'],array_keys($stats))?'G':'F','stats'=>$stats];
             }
         }
+        // Replay the recorded verbal event when its historical stat snapshot has expired.
+        if(!$player && preg_match('/^(?:Goal|Assist|Power play goal|Short handed goal|Game winning goal) by /i',$alert['body']))return $alert;
         if(!$player)throw \Illuminate\Validation\ValidationException::withMessages(['score'=>'The last scoring alert has no game stat line available. Try after the next scoring update.']);
         $previous=null;
         if(str_contains($alert['body'],' by ')){
