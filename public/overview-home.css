@@ -38,3 +38,10 @@
  .overview-home .overview-matchup .team-live-side{grid-template-columns:56px minmax(0,1fr)}
  .overview-home .overview-matchup .team-live-side-right{grid-template-columns:minmax(0,1fr) 56px}
 }
+
+/* Match Live Scoring's score arrangement while retaining Home text sizes. */
+.overview-home .overview-matchup .team-live-scores{flex-direction:row!important;align-items:flex-start!important;gap:6px!important}
+.overview-home .overview-matchup .team-live-score{flex-direction:column!important;align-items:center!important;gap:1px!important}
+.overview-home .overview-matchup .team-live-weekly{order:-1!important}
+.overview-home .overview-matchup .team-live-side-right .team-live-weekly{order:1!important}
+.overview-home .overview-matchup .team-live-score small{order:1}
