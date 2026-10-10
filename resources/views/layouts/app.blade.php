@@ -95,12 +95,12 @@ document.documentElement.dataset.theme=theme;})();
     <a class="nav-history-link" href="/teams"><span class="nav-item-icon" aria-hidden="true">📜</span>Franchise History</a>
   </div>
 </div>
-<div class="nav-dropdown {{ request()->is('seasons','seasons/*','teams','prizes','trades','draft','players/history','rules','account','account/*','login','register')?'active':'' }}">
+<div class="nav-dropdown {{ request()->is('seasons','seasons/*','teams','prizes','trades','draft','players/history','rules','login','register')?'active':'' }}">
  <div class="nav-dropdown-row"><button type="button" class="nav-dropdown-toggle nav-other-toggle" onclick="const menu=this.closest('.nav-dropdown');menu.classList.remove('menu-dismissed');this.setAttribute('aria-expanded',String(menu.classList.toggle('open')))" aria-label="Open Other menu" aria-expanded="false"><span class="nav-item-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h12M9 12h12M9 18h12M3 6h.01M3 12h.01M3 18h.01"/></svg></span>Other <span aria-hidden="true">▾</span></button></div>
  <div class="nav-dropdown-menu archive-menu">
   <span class="other-menu-heading">Archive</span>
   <a href="/teams"><span class="nav-item-icon" aria-hidden="true">📜</span>Franchise History</a><a href="/seasons"><span class="nav-item-icon" aria-hidden="true">📅</span>Seasons History</a><a href="/prizes"><span class="nav-item-icon" aria-hidden="true">🏆</span>Prizes History</a><a href="/trades"><span class="nav-item-icon" aria-hidden="true">⇄</span>Trades History</a><a href="/draft"><span class="nav-item-icon" aria-hidden="true">✎</span>Draft History</a><a href="/players/history"><span class="nav-item-icon" aria-hidden="true">🏒</span>Players History</a>
-  <a class="nav-history-link" href="/rules"><span class="nav-item-icon" aria-hidden="true">📖</span>Rules</a><a href="/account/settings"><span class="nav-item-icon" aria-hidden="true">⚙</span>Settings</a><a href="/account"><span class="nav-item-icon" aria-hidden="true">👤</span>Account</a>
+  <a class="nav-history-link" href="/rules"><span class="nav-item-icon" aria-hidden="true">📖</span>Rules</a>
   @guest<a href="/login"><span class="nav-item-icon" aria-hidden="true">↪</span>Sign in</a><a href="/register" class="nav-create-account"><span class="nav-item-icon" aria-hidden="true">＋</span>Create account</a>@endguest
  </div>
 </div>
