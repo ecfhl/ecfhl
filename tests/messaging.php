@@ -161,3 +161,5 @@ $bad=array_replace($image,['client_id'=>Str::uuid()->toString(),'attachment'=>'d
 echo "Chat extras passed: reaction add/remove/idempotency, private isolation, GIF upload, image retry and invalid-image rejection.\n";
 echo "Messaging checks passed: private isolation, league chat, unread/read cursors, idempotent sends, pagination, defaults/mutes, push recipients, bell inbox, shared header and scoring endpoint.\n";
 
+
+if(in_array('--browser-page',$argv,true)){$alice->is_admin=true;$alice->save();$adminPage=chatRequest('GET','/admin/notifications',[],$cookies['Alice'],true);checkChat($adminPage->getStatusCode()===200,'Admin test page fixture failed');file_put_contents(__DIR__.'/../storage/app/admin-notifications-test.html',$adminPage->getContent());}
