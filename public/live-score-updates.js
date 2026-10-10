@@ -98,7 +98,8 @@
         persist();
       };
       // Opening the box never changes whether updates are received.
-      toggle.addEventListener('click',()=>{history.forEach(batch=>{batch.fresh=batch.unread !== false;batch.unread=false;});mode='expanded';render();close.focus({preventScroll:true});});
+      window.addEventListener('ecfhl-panel-open',event=>{if(event.detail!=='scoring'&&mode!=='closed'){mode='closed';render();}});
+      toggle.addEventListener('click',()=>{window.dispatchEvent(new CustomEvent('ecfhl-panel-open',{detail:'scoring'}));history.forEach(batch=>{batch.fresh=batch.unread !== false;batch.unread=false;});mode='expanded';render();close.focus({preventScroll:true});});
       $('minimize')?.addEventListener('click',()=>{mode=mode==='minimized'?'expanded':'minimized';render();});
       $('maximize')?.addEventListener('click',()=>{maximized=!maximized;mode='expanded';render();});
       trash.addEventListener('click',()=>{history=[];render();});
