@@ -102,7 +102,7 @@ checkChat(chatRequest('POST','/notifications/test-message',['type'=>'league'],$g
 checkChat(chatRequest('POST','/notifications/test-message',['type'=>'league'],$cookies['Alice'])->getStatusCode()===422,'Missing current-device cookie accepted');
 $r=chatRequest('GET','/account',[],$cookies['Alice'],true);$html=$r->getContent();checkChat($r->getStatusCode()===200&&str_contains($html,'id="live-score-updates"')&&str_contains($html,'/live-score-updates.js')&&str_contains($html,'/app-communication.js'),'Shared scoring panel or scripts missing');
 checkChat(!str_contains($html,'id="live-score-updates-enabled"'),'Removed scoring checkbox returned');
-checkChat(str_contains($html,'class="scoring-settings-icon" href="/notifications#alerts"'),'Scoring settings icon missing');
+checkChat(str_contains($html,'id="live-score-updates-minimize"') && str_contains($html,'id="live-score-updates-maximize"'),'Scoring window controls missing');
 checkChat(!str_contains($html,'class="scoring-settings-link"'),'Old scoring settings link remains');
 $r=chatRequest('GET','/notifications',[],$cookies['Alice'],true);$settings=$r->getContent();if(in_array('--browser-page',$argv,true))file_put_contents(__DIR__.'/../storage/app/settings-test.html',$settings);
 checkChat($r->getStatusCode()===200&&str_contains($settings,'id="settings-notifications"')&&str_contains($settings,'id="settings-alerts"'),'Notification and alert settings tabs missing');
