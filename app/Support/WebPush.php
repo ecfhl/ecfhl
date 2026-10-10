@@ -13,7 +13,7 @@ class WebPush
     {
         foreach(PlayerName::searchVariants($name) as $variant){
             if(str_starts_with($body,$variant.' · ') || str_starts_with($body,$variant.' now has ') || str_contains($body,' by '.$variant.' (') || str_ends_with($body,' by '.$variant))return true;
-            if(preg_match('/^'.preg_quote($variant,'/').'(?: \([^)]+\))? (?:scores|adds|records|takes|has)\b/u',$body))return true;
+            if(preg_match('/^'.preg_quote($variant,'/').'(?: \([^)]+\))? (?:scores|gets|adds|records|takes|has)\b/u',$body))return true;
         }
         return false;
     }
@@ -22,7 +22,7 @@ class WebPush
     {
         $alert=['title'=>(string)$source->title,'body'=>(string)$source->body,'url'=>$source->url,'fantasy_team_id'=>$source->fantasy_team_id];
         // New alerts already contain the exact event and totals from the time they were sent.
-        if(preg_match('/ - -?\d+(?:\.\d+)?pts$/',$alert['title']) && preg_match('/ (?:scores|adds|records|takes|has)\b/u',$alert['body']))return $alert;
+        if(preg_match('/ - -?\d+(?:\.\d+)?pts$/',$alert['title']) && preg_match('/ (?:scores|gets|adds|records|takes|has)\b/u',$alert['body']))return $alert;
         $date=preg_match('/[?&]date=(\d{4}-\d{2}-\d{2})/',(string)$source->url,$match)?$match[1]:(new FantasyDay)->today()->toDateString();
         $snapshot=app(\App\Support\LiveScoring\SnapshotRepository::class)->get($date);
         $player=null;
@@ -215,7 +215,7 @@ class WebPush
                 // Preserve replay for legacy records whose dated snapshot is no longer available.
                 $body=(string)$notification->body;
                 $goalie=(bool)preg_match('/\b(?:W|L|OTL|SO|SHO): | (?:records (?:a win|a shutout)|takes (?:a loss|an overtime loss))\b/',$body);
-                return $goalie===$wantGoalie && ($goalie || preg_match('/\b(?:G|A|PPG|SHG|GWG): /',$body));
+                return $goalie===$wantGoalie && ($goalie || preg_match('/\b(?:G|A|PPG|SHG|GWG):\s*\d|\b(?:Goal|Assist|Power play goal|Short handed goal|Game winning goal) by | (?:scores? (?:a goal|\d+ goals?)|gets? an assist|adds? an assist)/i',$body));
             });
             $missing='No previous '.($type==='team-goalie-score'?'goalie scoring':'non-goalie scoring').' notification has been sent yet.';
         }else{

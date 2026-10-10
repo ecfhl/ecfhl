@@ -401,6 +401,11 @@ echo "Owner account checks passed: pages, optional browsing, exclusive claims, r
 
 CarbonImmutable::setTestNow();
 
+// Historical verbal skater alerts remain testable without their old snapshot.
+$verbalSource=['category'=>'live-score','title'=>'Alpha - 2pts','body'=>'Goal by Historical Skater','fantasy_team_id'=>'a','url'=>'/teams/current?date=2020-01-01'];
+DB::table('push_notifications')->insert($verbalSource);
+$verbalToken='verbal-score-test';$verbalEndpoint='https://fcm.googleapis.com/fcm/send/verbal-score-test';$push->subscribe($verbalEndpoint,$welcomeOwner->id,$verbalToken);
+foreach(['team-score','opponent-score'] as $testType){$result=$push->testType($welcomeOwner->id,hash('sha256',$verbalEndpoint),$testType);verifyOwner($result['ok'],'Historical verbal skater test rejected');$verbalAlert=DB::table('push_notifications')->orderByDesc('id')->first();verifyOwner($verbalAlert->category==='test-'.$testType,'Historical skater test picked wrong type');}
 // Every scoring test uses the source team's identity, not a decorated display title.
 $iconToken='scoring-logo-fixture';$iconEndpoint='https://fcm.googleapis.com/fcm/send/scoring-logo-fixture';
 $push->subscribe($iconEndpoint,$welcomeOwner->id,$iconToken);$iconDeviceId=DB::table('push_subscriptions')->where('endpoint_hash',hash('sha256',$iconEndpoint))->value('id');
