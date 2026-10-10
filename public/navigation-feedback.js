@@ -12,6 +12,32 @@
     document.querySelectorAll('.nav-dropdown').forEach(menu => { menu.classList.remove('open'); menu.classList.add('menu-dismissed'); });
     document.querySelectorAll('.nav-toggle, .nav-dropdown-toggle').forEach(button => button.setAttribute('aria-expanded', 'false'));
   };
+  const mainMenu = document.getElementById('main-navigation');
+  let menuSwipe = null;
+  document.addEventListener('click', event => {
+    if (document.body.classList.contains('nav-open') && !event.target.closest('#main-navigation, .nav-toggle')) closeMenus();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && document.body.classList.contains('nav-open')) closeMenus();
+  });
+  mainMenu?.addEventListener('touchstart', event => {
+    menuSwipe = null;
+    if (!document.body.classList.contains('nav-open') || event.touches.length !== 1) return;
+    // Let an upward gesture scroll until the menu reaches its bottom.
+    if (mainMenu.scrollTop + mainMenu.clientHeight < mainMenu.scrollHeight - 2) return;
+    const touch = event.touches[0];
+    menuSwipe = {id: touch.identifier, x: touch.clientX, y: touch.clientY, time: Date.now()};
+  }, {passive: true});
+  mainMenu?.addEventListener('touchmove', event => {
+    if (event.touches.length !== 1) menuSwipe = null;
+  }, {passive: true});
+  mainMenu?.addEventListener('touchcancel', () => { menuSwipe = null; }, {passive: true});
+  mainMenu?.addEventListener('touchend', event => {
+    const start = menuSwipe; menuSwipe = null;
+    if (!start || event.touches.length || event.changedTouches.length !== 1) return;
+    const touch = event.changedTouches[0], dx = touch.clientX - start.x, dy = touch.clientY - start.y;
+    if (touch.identifier === start.id && Date.now() - start.time <= 650 && dy <= -60 && -dy > Math.abs(dx) * 2) closeMenus();
+  }, {passive: true});
   const reset = () => {
     navigating = false;
     document.body.classList.remove('navigation-pending');
@@ -119,7 +145,7 @@
     const links = [...primaryNav.querySelectorAll('a[href]')];
     const current = links.findIndex(link => new URL(link.href, location.href).pathname.replace(/\/$/,'') === location.pathname.replace(/\/$/,''));
     if (current < 0) return;
-    const next = links[current + (dx < 0 ? 1 : -1)];
+    const next = links[(current + (dx < 0 ? 1 : -1) + links.length) % links.length];
     if (next) next.click();
   }, {passive:true});
   if (!invitation) return;

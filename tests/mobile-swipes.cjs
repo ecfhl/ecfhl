@@ -1,7 +1,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
 const source=fs.readFileSync('public/navigation-feedback.js','utf8');
 function setup(path='/standings'){
- const handlers={},clicks=[],links=['/','/teams/current','/teams/current/lone-tsar','/standings','/players'].map(href=>({href,click:()=>clicks.push(href)}));
+ const handlers={},clicks=[],links=['/','/teams/current','/standings','/teams/current/lone-tsar','/players'].map(href=>({href,click:()=>clicks.push(href)}));
  const nav={style:{display:'grid'},querySelectorAll:()=>links},body={classList:{contains:()=>false}};
  const target={closest:()=>null,scrollWidth:200,clientWidth:200,parentElement:body,style:{overflowX:'visible'}};
  const document={body,querySelector:q=>q==='.mobile-primary-nav'?nav:null,addEventListener:(name,fn)=>handlers[name]=fn};
@@ -10,9 +10,12 @@ function setup(path='/standings'){
  function gesture(a,b,options={}){const t=options.target||target;handlers.touchstart({target:t,touches:[touch(a)]});if(options.move)handlers.touchmove({touches:[touch(b,options.move)]});if(options.cancel)handlers.touchcancel();handlers.touchend({target:t,touches:[],changedTouches:[touch(b,options.endY||200)]});}
  return {gesture,clicks,target,nav,handlers,touch};
 }
-let s=setup();s.gesture(280,100);assert.deepEqual(s.clicks,['/players']);s.gesture(100,280);assert.equal(s.clicks[1],'/teams/current/lone-tsar');
-s=setup('/players');s.gesture(280,100);assert.equal(s.clicks.length,0);s.gesture(100,280);assert.equal(s.clicks[0],'/standings');
-s=setup('/');s.gesture(100,280);assert.equal(s.clicks.length,0);s.gesture(280,100);assert.equal(s.clicks[0],'/teams/current');
+let s;
+const order=['/','/teams/current','/standings','/teams/current/lone-tsar','/players'];
+for(let i=0;i<order.length;i++){
+ s=setup(order[i]);s.gesture(280,100);assert.equal(s.clicks[0],order[(i+1)%order.length]);
+ s=setup(order[i]);s.gesture(100,280);assert.equal(s.clicks[0],order[(i+order.length-1)%order.length]);
+}
 for(const options of [{move:270},{endY:270},{cancel:true}]){s=setup();s.gesture(280,100,options);assert.equal(s.clicks.length,0);}
 s=setup();s.gesture(190,150);s.gesture(10,280);assert.equal(s.clicks.length,0);
 s=setup();s.target.closest=()=>({});s.gesture(280,100);assert.equal(s.clicks.length,0);
