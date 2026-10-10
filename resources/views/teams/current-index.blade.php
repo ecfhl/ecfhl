@@ -3,7 +3,7 @@
 @push('styles')
 <link rel="stylesheet" href="/matchup-scoreboard.css?v={{ hash_file('sha256', base_path('public/matchup-scoreboard.css')) }}">
 @endpush
-<div class="page-head current-teams-head">
+<div class="page-head current-teams-head ecfhl-compact-head">
   <div class="shell live-scoring-heading">
     <div class="live-scoring-meta"><div class="eyebrow">2026-27 season</div><span class="page-date-badge">{{ \Carbon\CarbonImmutable::parse($date)->format('l, M j') }}</span></div>
     <h1><span class="live-scoring-indicator" aria-hidden="true">●</span> Live Scoring</h1>
