@@ -270,3 +270,18 @@ html[data-theme="dark"] .individual-team-page .team-lineup-advisor-body{backgrou
 @media(prefers-reduced-motion:reduce){.individual-team-page *{transition:none!important}}
 
 .team-target-empty{margin:0;padding:8px;color:var(--muted);font-size:12px}
+
+/* Team identity: keep the name full width and align the logo with the metadata rows. */
+.team-page-head-shell{display:grid;grid-template-columns:minmax(0,1fr) clamp(76px,13vw,110px);align-items:end;column-gap:12px}
+.team-page-head-copy{grid-column:1;grid-row:1;min-width:0}
+.team-page-head-logo{grid-column:2;grid-row:1;align-self:end;justify-self:end;width:100%;height:96px;flex-basis:auto}
+.team-page-head-logo .team-icon-uploader img{width:100%;height:96px;object-fit:contain}
+.team-title-row{display:flex;align-items:center;gap:8px;min-width:0}
+.team-title-row .team-title-switcher{flex:1;min-width:0;width:auto}
+.team-title-row .team-message-link{flex:none;align-self:center}
+@media(max-width:700px){
+ .team-page-head-shell{grid-template-columns:minmax(0,1fr) 90px;column-gap:8px}
+ .team-page-head-logo{width:90px;height:90px;flex-basis:auto}
+ .team-page-head-logo .team-icon-uploader img{width:90px;height:90px}
+}
+@media(max-width:370px){.team-page-head-shell{grid-template-columns:minmax(0,1fr) 76px}.team-page-head-logo,.team-page-head-logo .team-icon-uploader img{width:76px;height:76px}}
