@@ -166,3 +166,18 @@ html[data-theme="dark"] .veto-label{color:#ffb7d1}
 .standings-compact-head .eyebrow{margin-bottom:5px}
 .compact-page-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:11px;color:var(--muted);padding:8px 0}
 .compact-page-footer p{margin:0}
+
+/* Shared compact page heading, matching Standings across sections. */
+.page-head{padding:12px 0 14px;margin:0}
+.page-head .eyebrow{margin-bottom:5px;color:var(--accent);font-size:11px;letter-spacing:1.5px}
+.page-head h1{font-size:clamp(26px,4.5vw,36px);line-height:1.15;letter-spacing:-.8px}
+.page-head p{font-size:12px;margin:4px 0 0}
+.page-head.standings-compact-head,.page-head.ecfhl-compact-head{position:relative}
+.page-head.ecfhl-compact-head .page-date-badge{font-size:12px}
+.page-head.ecfhl-compact-head .live-scoring-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.page-head.ecfhl-compact-head .live-scoring-meta .eyebrow{margin-bottom:5px}
+@media(max-width:520px){.page-head{padding:9px 0 12px}.page-head h1{font-size:29px}.page-head p{display:none}}
+
+.ecfhl-league-compact-head{padding:10px 0 12px!important;align-items:center}
+.ecfhl-league-compact-head .eyebrow{margin:0 0 5px;color:var(--accent);font-size:11px;letter-spacing:1.5px}
+.ecfhl-league-compact-head h1{margin:0;line-height:1.15;font-size:clamp(26px,4.5vw,36px)}
