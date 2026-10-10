@@ -227,3 +227,9 @@ html[data-theme] #chat-panel .communication-panel-heading,html[data-theme] #chat
 #chat-panel .chat-gif-grid button:focus-visible{outline:2px solid var(--accent,#57aaff)}
 #chat-panel .chat-gif-footer{margin:8px 0;font-size:11px}
 #chat-panel .chat-attachment-preview img{width:64px;height:48px;object-fit:contain;border-radius:6px}
+
+/* Shared scoring and notification window controls. */
+html[data-theme] :is(#notification-panel,#live-score-updates)[data-minimized="true"] :is(.notification-panel-body,.live-score-updates-list,.live-score-updates-filters){display:none!important}
+html[data-theme] :is(#notification-panel,#live-score-updates)[data-minimized="true"]{height:auto!important;min-height:0!important;max-height:none!important}
+html[data-theme] :is(#notification-panel,#live-score-updates)[data-maximized="true"]{inset:var(--updates-top,80px) 8px 12px!important;width:auto!important;height:auto!important;max-height:none!important;min-height:0!important}
+html[data-theme] :is(#notification-panel,#live-score-updates)[data-maximized="true"] :is(.notification-panel-body,.live-score-updates-list){flex:1;min-height:0;max-height:none;overflow:auto}
