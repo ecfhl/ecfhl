@@ -98,7 +98,7 @@ self.addEventListener('push',event=>{
         const replyUrl=message?new URL(item.url||'/messages',self.location.origin):null;
         if(replyUrl)replyUrl.searchParams.set('reply','1');
         await self.registration.showNotification(item.title||'ECFHL',{
-          body:item.body||'',icon:typeof item.icon==='string' && /^\/team-icons\/[a-z0-9-]+\/thumbnail\?/.test(item.icon)?item.icon:'/ecfhl-logo.png',badge:'/favicon.svg',tag:'ecfhl-'+id,
+          body:item.body||'',icon:typeof item.icon==='string' && /^\/(?:team-icons\/[a-z0-9-]+\/thumbnail\?|media\/team-icons\/[a-z0-9-]+\/[a-zA-Z0-9_.-]+$)/.test(item.icon)?item.icon:'/ecfhl-logo.png',badge:'/favicon.svg',tag:'ecfhl-'+id,
           ...(message?{actions:[{action:'reply',title:'Reply'}]}:{}),
           data:{url:item.url||'/teams/current',...(replyUrl?{replyUrl:replyUrl.href}:{})}
         });
