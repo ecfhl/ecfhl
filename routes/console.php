@@ -1162,7 +1162,7 @@ Artisan::command('ecfhl:refresh-starting-goalies', function (DailyFaceoffStartin
                 if(!$previous && $previousGoalies->isEmpty())continue;
                 $oldStatus=trim((string)($previous->starting_status??'Unconfirmed'));
                 $newStatus=trim((string)($goalie->starting_status??''));
-                if($newStatus==='' || strcasecmp($oldStatus,$newStatus)===0)continue;
+                if($newStatus==='' || strcasecmp($newStatus,'Not starting')===0 || strcasecmp($oldStatus,$newStatus)===0)continue;
 
                 $body=\App\Support\PlayerName::display($goalie->player_name).' ('.$goalie->team.') is now '.($newStatus==='Not starting'?'Not Starting':$newStatus).'.';
                 $fantraxGoalieUrl='https://www.fantrax.com/fantasy/league/092zcn40molvao69/players;searchName='.rawurlencode(strtolower((string)$goalie->player_name)).';miscDisplayType=1;statusOrTeamFilter=ALL;positionOrGroup=ALL;pageNumber=1';
