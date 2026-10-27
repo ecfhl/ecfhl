@@ -37,10 +37,18 @@ return new class extends Migration {
                 ['season_member_id' => $season.'-'.$canonical],
                 ['season_id' => $season, 'franchise_id' => $canonical, 'source_id' => $leagueSource]
             );
-            DB::table('franchise_aliases')->updateOrInsert(
-                ['alias_name' => $name],
-                ['franchise_id' => $canonical, 'source_id' => $leagueSource]
-            );
+            $existingAlias = DB::table('franchise_aliases')->where('alias_name', $name)->first();
+            if ($existingAlias) {
+                DB::table('franchise_aliases')->where('alias_id', $existingAlias->alias_id)
+                    ->update(['franchise_id' => $canonical, 'source_id' => $leagueSource]);
+            } else {
+                DB::table('franchise_aliases')->insert([
+                    'alias_id' => 'fantrax-2026-27-lone-tsar',
+                    'alias_name' => $name,
+                    'franchise_id' => $canonical,
+                    'source_id' => $leagueSource,
+                ]);
+            }
 
             $draftIds = DB::table('drafts')->where('season_id', $season)->pluck('draft_id');
             DB::table('draft_picks')->whereIn('draft_id', $draftIds)->where('team_name_raw', $name)
