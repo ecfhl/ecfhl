@@ -15,7 +15,7 @@ return new class extends Migration {
         if (!is_file($source)) throw new RuntimeException('Historical seed file missing');
         $contents = file_get_contents($source);
         foreach (['franchises', 'franchise_aliases'] as $table) {
-            if (!preg_match('/TAB NAME:\\s*'.preg_quote($table, '/').'>\\R(.*?)(?=<PARSED TEXT FOR SHEET:|\\z)/su', $contents, $match)) {
+            if (!preg_match('/TAB NAME:\s*'.preg_quote($table, '/').'>\R(.*?)(?=<PARSED TEXT FOR SHEET:|\z)/su', $contents, $match)) {
                 throw new RuntimeException("Missing historical identity source: {$table}");
             }
             $stream = fopen('php://temp', 'r+');
