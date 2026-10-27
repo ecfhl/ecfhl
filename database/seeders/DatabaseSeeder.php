@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
         'prize_awards','season_prizes','rules'
     ];
 
-    public function run(): void
+    public function run(bool $preserveExisting = false): void
     {
         $path = database_path('data/ecfhl_database.txt');
         if (!is_file($path)) {
@@ -84,7 +84,9 @@ class DatabaseSeeder extends Seeder
                     array_shift($headers);
                 }
 
-                DB::table($table)->truncate();
+                if (!$preserveExisting) {
+                    DB::table($table)->truncate();
+                }
                 $batch = [];
 
                 while (($row = fgetcsv($stream)) !== false) {
@@ -108,7 +110,9 @@ class DatabaseSeeder extends Seeder
                     $batch[] = $record;
 
                     if (count($batch) >= 250) {
-                        DB::table($table)->insert($batch);
+                        $preserveExisting
+                            ? DB::table($table)->insertOrIgnore($batch)
+                            : DB::table($table)->insert($batch);
                         $batch = [];
                     }
                 }
@@ -116,7 +120,9 @@ class DatabaseSeeder extends Seeder
                 fclose($stream);
 
                 if ($batch) {
-                    DB::table($table)->insert($batch);
+                    $preserveExisting
+                            ? DB::table($table)->insertOrIgnore($batch)
+                            : DB::table($table)->insert($batch);
                 }
 
                 $count = DB::table($table)->count();
