@@ -19,6 +19,7 @@ return new class extends Migration {
             }
             $teams = DB::table('team_seasons')->where('season_id', '2026-27')->get()
                 ->groupBy(fn($row) => $normalize($row->original_name));
+            $aliases = DB::table('franchise_aliases')->get()->groupBy(fn($row) => $normalize($row->alias_name));
             $players = DB::table('players')->get()->groupBy(fn($row) => $normalize($row->player_name));
             $seen = [];
             $seenPlayers = [];
@@ -36,7 +37,18 @@ return new class extends Migration {
                 }
                 $seen[$overall] = true;
                 $seenPlayers[$key] = true;
-                $matches = ($teams[$normalize($pick['team'])] ?? collect())->pluck('franchise_id')->unique();
+                $teamKey = $normalize($pick['team']);
+                $matches = ($teams[$teamKey] ?? collect())->pluck('franchise_id')->unique();
+                if ($matches->isEmpty()) {
+                    $matches = ($aliases[$teamKey] ?? collect())->pluck('franchise_id')->unique()
+                        ->filter(fn($id) => DB::table('season_members')->where('season_id', '2026-27')->where('franchise_id', $id)->exists());
+                }
+                // The original 2026-27 team import may have retained a variant of
+                // Lone Tsar's stylized name. Resolve only this known identity.
+                if ($matches->isEmpty() && $teamKey === $normalize('Ꮮ૦ท૯⚡️𐌕รคг')
+                    && DB::table('season_members')->where('season_id', '2026-27')->where('franchise_id', 'F012')->exists()) {
+                    $matches = collect(['F012']);
+                }
                 if ($matches->count() !== 1 || !DB::table('franchises')->where('franchise_id', $matches->first())->exists()) {
                     throw new RuntimeException('Unresolved drafting team: '.$pick['team']);
                 }
