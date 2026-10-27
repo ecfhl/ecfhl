@@ -45,8 +45,8 @@ return new class extends Migration {
                 }
                 // The original 2026-27 team import may have retained a variant of
                 // Lone Tsar's stylized name. Resolve only this known identity.
-                if ($matches->isEmpty() && $teamKey === $normalize('Ꮮ૦ท૯⚡️𐌕รคг')
-                    && DB::table('season_members')->where('season_id', '2026-27')->where('franchise_id', 'F012')->exists()) {
+                if ($teamKey === $normalize('Ꮮ૦ท૯⚡️𐌕รคг')
+                    && DB::table('franchises')->where('franchise_id', 'F012')->exists()) {
                     $matches = collect(['F012']);
                 }
                 if ($matches->count() !== 1 || !DB::table('franchises')->where('franchise_id', $matches->first())->exists()) {
