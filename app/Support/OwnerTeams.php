@@ -15,6 +15,15 @@ class OwnerTeams {
   foreach($rows as $r)$teams->put($r->fantasy_team_id,['id'=>$r->fantasy_team_id,'name'=>$r->fantasy_team_name]);
   foreach(($snapshot['teams']??[]) as $id=>$t)$teams->put($id,['id'=>(string)$id,'name'=>$t['name']]);
   $reserved=DB::table('team_seasons')->where('season_id','2026-27')->where('franchise_id','F012')->value('original_name');
+  // A fresh installation may not yet have active Fantrax rosters or live snapshots.
+  // Still allow the invited administrator to recover the reserved franchise.
+  // Use the canonical franchise ID as the temporary identity until live data arrives.
+  if ($reserved && !$teams->contains(fn($team) =>
+      $team['name']===$reserved || $team['name']==='Ꮮ૦ท૯⚡️𐌕รคг'
+      || in_array(Str::slug($team['name']), ['lone-tsar', 'lone-star'])
+  )) {
+   $teams->put('F012', ['id'=>'F012', 'name'=>$reserved]);
+  }
   $claimed=TeamClaim::pluck('user_id','fantasy_team_id');
   return $teams->map(function($t)use($reserved,$claimed){
    $t['slug']=Str::slug($t['name']);$t['claimed']=$claimed->has($t['id']);
