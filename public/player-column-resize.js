@@ -13,7 +13,7 @@
         cleanups.push(() => node.removeEventListener(event, handler));
       };
       const load = () => {
-        const key = `ecfhl-player-columns-v1:${window.innerWidth <= 600 ? 'phone' : 'wide'}`;
+        const key = `ecfhl-player-columns-v2:${window.innerWidth <= 600 ? 'phone' : 'wide'}`;
         if (key === storageKey) return;
         storageKey = key;
         overrides = {};
@@ -31,23 +31,17 @@
       let widths = {};
       const defaults = () => {
         const phone = window.innerWidth <= 600;
-        const player = phone ? Math.round(Math.max(125, Math.min(160, scroll.clientWidth * .4))) : 200;
-        const game = phone ? Math.max(58, Math.floor((scroll.clientWidth - 44 - player) / 2)) : 120;
-        return { team: 44, player, today: game, tomorrow: game };
+        return { today: phone ? 82 : 100, tomorrow: phone ? 82 : 100, ec_proj: 70, fpts_gp: 64 };
       };
       const apply = () => {
         const sizes = defaults();
         widths = Object.fromEntries(columns.map(col => {
           const key = col.dataset.column;
-          return [key, overrides[key] ?? sizes[key] ?? 72];
+          return [key, overrides[key] ?? sizes[key] ?? (window.innerWidth <= 600 ? 56 : 64)];
         }));
         for (const node of tables) {
           node.style.width = `${Object.values(widths).reduce((sum, width) => sum + width, 0)}px`;
           for (const col of node.querySelectorAll('col[data-column]')) col.style.width = `${widths[col.dataset.column]}px`;
-        }
-        for (const node of [scroll, frozen].filter(Boolean)) {
-          node.style.setProperty('--player-column-width', `${widths.player}px`);
-          node.style.setProperty('--team-column-width', `${widths.team}px`);
         }
         for (const handle of handles) {
           const key = handle.dataset.playerResize;

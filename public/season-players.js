@@ -29,14 +29,23 @@
     }
     const table = document.querySelector('.season-player-table');
     if (table) {
-      const teamColumn = table.querySelector('thead .player-frozen-team');
       const scroll = table.closest('.player-table-scroll');
-      const updateOffset = () => scroll.style.setProperty('--player-sticky-offset', `${teamColumn.getBoundingClientRect().width}px`);
+      const range = document.getElementById('player-stats-scroll');
+      const arrows = [...document.querySelectorAll('[data-player-scroll]')];
+      const updateOffset = () => {
+        scroll.style.setProperty('--player-viewport-width', `${scroll.clientWidth}px`);
+        const maximum = Math.max(0, scroll.scrollWidth - scroll.clientWidth);
+        if (range) { range.max = maximum; range.value = scroll.scrollLeft; range.disabled = maximum === 0; }
+        arrows.forEach(arrow => { arrow.disabled = Number(arrow.dataset.playerScroll) < 0 ? scroll.scrollLeft <= 0 : scroll.scrollLeft >= maximum; });
+      };
+      if (range) listen(range, 'input', () => { scroll.scrollLeft = Number(range.value); });
+      arrows.forEach(arrow => listen(arrow, 'click', () => scroll.scrollBy({ left: Number(arrow.dataset.playerScroll) * Math.max(120, scroll.clientWidth * .75), behavior: 'smooth' })));
+      listen(scroll, 'scroll', updateOffset, { passive: true });
       let syncColumns = updateOffset;
       updateOffset();
       if (typeof ResizeObserver !== 'undefined') {
         const observer = new ResizeObserver(updateOffset);
-        observe(observer, [teamColumn]);
+        observe(observer, [scroll, table]);
       }
       else listen(window, 'resize', updateOffset);
       const frozen = document.getElementById('season-player-fixed-header');
@@ -54,7 +63,7 @@
           frozen.hidden = header.getBoundingClientRect().top >= top || rect.bottom <= top + height;
           if (frozen.hidden) return;
           const styles = getComputedStyle(scroll);
-          for (const key of ['--rank-column-width', '--player-column-width', '--team-column-width', '--player-stat-width', '--player-stat-count', '--player-sticky-offset']) {
+          for (const key of ['--player-stat-width', '--player-stat-count']) {
             frozen.style.setProperty(key, styles.getPropertyValue(key));
           }
           frozen.style.top = `${top}px`;
@@ -89,19 +98,13 @@
     const rows = document.getElementById('season-player-rows');
     const count = document.getElementById('season-player-count');
     const error = document.getElementById('season-player-error');
-    let observer;
     let disposed = false;
     let request;
-    const watchEnd = () => {
-      observer?.disconnect();
-      if (button.dataset.nextUrl && rows.lastElementChild) observer?.observe(rows.lastElementChild);
-    };
-    cleanups.push(() => { disposed = true; request?.abort(); observer?.disconnect(); });
+    cleanups.push(() => { disposed = true; request?.abort(); });
     const loadMore = async () => {
       if (button.disabled || !button.dataset.nextUrl) return;
       if (pending || disposed) return;
       request = new AbortController();
-      observer?.disconnect();
       button.disabled = true;
       button.textContent = 'Loading…';
       error.textContent = '';
@@ -115,24 +118,16 @@
         count.textContent = `Showing ${data.shown.toLocaleString()} of ${data.total.toLocaleString()} players`;
         button.dataset.nextUrl = data.next_url || '';
         button.hidden = !data.next_url;
-        watchEnd();
       } catch (_) {
         if (disposed) return;
-        button.classList.remove('player-auto-more');
         error.textContent = 'Could not load more players. Please try again.';
       } finally {
         button.disabled = false;
-        button.textContent = 'Show 25 more';
+        button.textContent = 'Load 25 more';
       }
     };
     listen(button, 'click', loadMore);
-    if (typeof IntersectionObserver !== 'undefined') {
-      button.classList.add('player-auto-more');
-      observer = new IntersectionObserver(entries => {
-        if (entries.some(entry => entry.isIntersecting)) loadMore();
-      }, {rootMargin: '0px 0px 120px 0px'});
-      watchEnd();
-    }
+
   };
   initialize();
 
