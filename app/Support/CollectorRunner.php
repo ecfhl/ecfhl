@@ -4,6 +4,7 @@ namespace App\Support;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
+use Symfony\Component\Console\Output\BufferedOutput;
 
 class CollectorRunner
 {
@@ -21,8 +22,9 @@ class CollectorRunner
         $output='';$code=1;
         try{
             $options=array_replace(in_array($key,['projections','birthdates'],true)?['--force'=>true]:[],$options);
-            $code=Artisan::call($definition['command'],$options);
-            $output=trim(Artisan::output());
+            $buffer=new BufferedOutput;
+            $code=Artisan::call($definition['command'],$options,$buffer);
+            $output=trim($buffer->fetch());
             if(preg_match('/(?:Could not parse|validation failed|\bfailed\b|\berror\b|SQLSTATE)/i',$output))$code=1;
         }catch(\Throwable $e){report($e);$output=$e->getMessage();}
         finally{

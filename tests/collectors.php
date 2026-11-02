@@ -64,4 +64,16 @@ $page=ownerRequest('GET','/job-status',[],$admin,['HTTP_ACCEPT'=>'text/html']);
 checkControl($page->getStatusCode()===200,'Collector settings page failed: '.substr(strip_tags($page->getContent()),0,500));
 checkControl(str_contains($page->getContent(),'/job-status/schedule/teams')&&str_contains($page->getContent(),'Fantrax Transactions')&&!str_contains($page->getContent(),'Lineup Advisor'),'Collector controls or advisor removal missing');
 checkControl(ownerRequest('GET','/admin/advisors',[],$admin)->getStatusCode()===404,'Retired advisor administration still available');
+// Real nested Artisan calls need separate output buffers for the parent and children.
+foreach(['teams','players'] as $key)\Illuminate\Support\Facades\DB::table('collector_schedules')->where('job_key',$key)->delete();
+\Illuminate\Support\Facades\DB::table('collector_state')->delete();
+$console=$app->make(\Illuminate\Contracts\Console\Kernel::class);
+foreach(['ecfhl:refresh-fantasy-rosters'=>'Fixture rosters refreshed.','ecfhl:refresh-daily-players'=>'Fixture players refreshed.'] as $signature=>$message){
+    $console->registerCommand(new \Illuminate\Foundation\Console\ClosureCommand($signature,function()use($message){$this->line($message);return 0;}));
+}
+$realRunner=new CollectorRunner;
+$app->instance(CollectorRunner::class,$realRunner);$app->instance(FantraxTransactions::class,$fakeSource);
+$output='';checkControl($realRunner->run('transactions',function($text)use(&$output){$output=$text;})===0,'Nested collector run failed');
+checkControl(str_contains($output,'Fixture rosters refreshed.')&&str_contains($output,'Fixture players refreshed.')&&str_contains($output,'Fantrax transaction check complete.'),'Nested collector output was lost');
+CarbonImmutable::setTestNow();
 echo "Collector checks passed: validated admin controls, dynamic timing, pause/manual behavior, overlap locks, transaction deduplication, lineup-only changes, retry after failure, Pacific rollover, and advisor removal.\n";
