@@ -56,6 +56,7 @@
         frozen.append(clone);
         const siteHeader = document.querySelector('.site-header');
         const seasonBar = document.querySelector('.season-filter-bar');
+        let headerScrollLeft = 0;
         const updateHeader = () => {
           const rect = scroll.getBoundingClientRect();
           const top = Math.max(0, siteHeader?.getBoundingClientRect().bottom || 0, seasonBar?.getBoundingClientRect().bottom || 0);
@@ -70,7 +71,8 @@
           frozen.style.left = `${rect.left}px`;
           frozen.style.width = `${scroll.clientWidth}px`;
           clone.style.width = `${table.getBoundingClientRect().width}px`;
-          frozen.scrollLeft = scroll.scrollLeft;
+          headerScrollLeft = scroll.scrollLeft;
+          frozen.scrollLeft = headerScrollLeft;
         };
         let queued = false;
         const scheduleHeader = () => {
@@ -83,7 +85,8 @@
         listen(window, 'resize', scheduleHeader);
         listen(scroll, 'scroll', scheduleHeader, { passive: true });
         listen(frozen, 'scroll', () => {
-          if (scroll.scrollLeft !== frozen.scrollLeft) scroll.scrollLeft = frozen.scrollLeft;
+          // Ignore our own header updates: delayed scroll events can cancel a smooth arrow scroll.
+          if (frozen.scrollLeft !== headerScrollLeft) scroll.scrollLeft = frozen.scrollLeft;
         }, { passive: true });
         if (typeof ResizeObserver !== 'undefined') {
           const observer = new ResizeObserver(scheduleHeader);

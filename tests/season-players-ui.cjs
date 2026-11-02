@@ -16,7 +16,7 @@ const make=()=>{const rows={html:'',insertAdjacentHTML(_,html){this.html+=html}}
  run(fs.readFileSync('public/season-players.js','utf8'),{document:page.document,window:{addEventListener:(key,fn)=>events[key]=fn},ResizeObserver:class {constructor(){} observe(){}},getComputedStyle:()=>({getPropertyValue:key=>vars[key]}),requestAnimationFrame:fn=>fn()});
  assert.equal(frozen.hidden,true);assert.equal(clone.children[0].type,'cols');assert.equal(clone.children[1].type,'head');
  tableTop=20;events.scroll();assert.equal(frozen.hidden,false);assert.equal(frozen.style.top,'60px');assert.equal(frozen.style.width,'700px');assert.equal(frozen.style.left,'20px');assert.equal(clone.style.width,'1300px');
- scroller.scrollLeft=300;scrollEvents.scroll();assert.equal(frozen.scrollLeft,300);frozen.scrollLeft=450;frozenEvents.scroll();assert.equal(scroller.scrollLeft,450);
+ scroller.scrollLeft=300;scrollEvents.scroll();assert.equal(frozen.scrollLeft,300);scroller.scrollLeft=320;frozenEvents.scroll();assert.equal(scroller.scrollLeft,320,'Delayed programmatic header events must not cancel smooth scrolling');frozen.scrollLeft=450;frozenEvents.scroll();assert.equal(scroller.scrollLeft,450);
  assert.equal(scroller.style['--player-viewport-width'],'700px');assert.equal(range.max,600);range.value=100;range.input();assert.equal(scroller.scrollLeft,100);arrow.click();assert.equal(scroller.scrollLeft,625);scrollEvents.scroll();assert.equal(range.value,625);
  scroller.clientWidth=350;events.resize();assert.equal(frozen.style.width,'350px');
  tableBottom=80;events.scroll();assert.equal(frozen.hidden,true);tableTop=100;tableBottom=800;events.scroll();assert.equal(frozen.hidden,true);
