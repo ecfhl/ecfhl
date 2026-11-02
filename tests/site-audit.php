@@ -62,7 +62,7 @@ foreach($archive->teams() as $team)$public[]='/teams/'.$team['id'].'?type=all';
 foreach(CurrentTeams::standings() as $team)$public[]='/teams/current/'.$team['slug'];
 try{
     foreach($public as $path)auditPage($path);
-    foreach(['/account','/account/claim-team','/notifications','/admin','/admin/teams','/admin/advisors','/admin/projections','/job-status'] as $path)auditPage($path,true);
+    foreach(['/account','/account/claim-team','/notifications','/admin','/admin/teams','/admin/projections','/job-status'] as $path)auditPage($path,true);
     echo 'Site audit passed: '.count($public).' public/detail pages and 8 authenticated/admin pages use the shared light/dark theme without upstream calls.'.PHP_EOL;
     foreach(['/standings','/teams/league','/players','/teams/current'] as $path){
         auditPage($path);$profile=auditPage($path);

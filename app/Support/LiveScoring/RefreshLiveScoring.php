@@ -79,21 +79,24 @@ final class RefreshLiveScoring
         }
     }
 
-    public function due(): bool
+    public function live(): bool
     {
         $now = CarbonImmutable::now('UTC');
         $live = false;
         foreach ((new FantasyDay)->dates() as $date) {
             foreach (($this->repository->get($date)['players'] ?? []) as $player) {
-                if ($player['game_status'] === '2') $live = true;
-                if ($player['game_status'] === '1' && $player['starts_at']) {
+                if (($player['game_status'] ?? null) === '2') $live = true;
+                if (($player['game_status'] ?? null) === '1' && !empty($player['starts_at'])) {
                     $start = CarbonImmutable::parse($player['starts_at']);
                     if ($now->betweenIncluded($start, $start->addHours(5))) $live = true;
                 }
             }
         }
-        // The scheduler invokes this check every minute. During the live-game
-        // window collect on every invocation; outside games refresh once per hour.
-        return $live || (int)$now->format('i') === 0;
+        return $live;
+    }
+
+    public function due(): bool
+    {
+        return $this->live() || (int)CarbonImmutable::now('UTC')->format('i') === 0;
     }
 }

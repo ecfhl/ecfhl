@@ -16,7 +16,6 @@ Artisan::command('ecfhl:database-maintenance {--report : Show table sizes withou
         return 0;
     }catch(\Throwable $e){report($e);$this->error($e->getMessage());return 1;}
 })->purpose('Compact duplicate sources and prune expired operational data');
-Schedule::command('ecfhl:database-maintenance')->dailyAt('04:30')->timezone('America/Halifax')->withoutOverlapping(30)->runInBackground();
 
 Artisan::command('ecfhl:database-reclaim {--once : Skip after the initial successful compaction}',function(DatabaseSpace $space){
     $job='ecfhl:database-reclaim-2026-10-07';

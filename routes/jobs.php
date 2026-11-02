@@ -16,31 +16,22 @@ Route::post('/job-status/test-goalie-notification',$sendTestScore)->middleware('
 
 Route::post('/job-status/run/{job}', function (string $job) {
     abort_unless(request()->ajax() && request()->headers->get('X-Requested-With') === 'XMLHttpRequest', 403);
-    $commands = [
-        'projections' => 'ecfhl:refresh-player-projections',
-        'players' => 'ecfhl:refresh-daily-players',
-        'goalies' => 'ecfhl:refresh-starting-goalies',
-        'lines' => 'ecfhl:refresh-pp-lines',
-        'odds' => 'ecfhl:refresh-odds',
-        'teams' => 'ecfhl:refresh-fantasy-rosters',
-        'scores' => 'ecfhl:refresh-live-scoring',
-        'standings' => 'ecfhl:refresh-current-standings',
-        'advisor' => 'ecfhl:refresh-lineup-advice',
-    ];
+    $catalog=\App\Support\CollectorSchedules::catalog();
+    $commands=array_map(fn($job)=>$job['command'],$catalog);
 
     abort_unless(isset($commands[$job]) || $job === 'all', 404);
 
     $returnTo = in_array(request('return_to'), ['daily-targets','ai-tips'], true) ? '/players' : '/job-status';
-    $jobsToRun = $job === 'all' ? $commands : [$job => $commands[$job]];
-    $labels = ['projections' => 'Projected FPts', 'players' => 'Fantrax players', 'goalies' => 'Starting goalies', 'lines' => 'Power-play lines', 'odds' => 'NHL odds', 'teams' => 'Fantasy team rosters', 'scores' => 'Live daily scores', 'standings' => 'Current standings', 'advisor' => 'Lineup Advisor'];
+    $jobsToRun = $job === 'all' ? array_intersect_key($commands,array_flip(\App\Support\CollectorSchedules::REFRESH_ALL)) : [$job => $commands[$job]];
+    $labels=array_map(fn($job)=>$job['name'],$catalog);
     $results = [];
     $details = [];
     $anyFailed = false;
 
     foreach ($jobsToRun as $jobKey => $command) {
         try {
-            $exitCode = Artisan::call($command, $jobKey === 'projections' && $job !== 'all' ? ['--force'=>true] : []);
-            $output = trim(Artisan::output());
+            $output='';
+            $exitCode = app(\App\Support\CollectorRunner::class)->run($jobKey, function($message)use(&$output){$output=$message;}, $jobKey === 'projections' && $job !== 'all' ? ['--force'=>true] : []);
             $outputFailed = (bool) preg_match('/(?:Could not parse|validation failed|no rendered matchup|\bfailed\b|\berror\b|SQLSTATE)/i', $output);
             $failed = $exitCode !== 0 || $outputFailed;
             $warning = ! $failed && (bool) preg_match('/(?:\bwarning\b|\bpartial\b|\bskipped\b|preserved|0 records updated)/i', $output);
@@ -80,5 +71,23 @@ Route::post('/job-status/run/{job}', function (string $job) {
     }
 
     return redirect($returnTo)->with($anyFailed ? 'job_error' : 'job_success', $message);
-})->whereIn('job', ['projections', 'players', 'goalies', 'lines', 'odds', 'teams', 'scores', 'standings', 'advisor', 'all']);
+})->whereIn('job', array_merge(array_keys(\App\Support\CollectorSchedules::catalog()),['all']));
 
+Route::post('/job-status/schedule/{job}', function(string $job){
+    $catalog=\App\Support\CollectorSchedules::catalog();
+    abort_unless(isset($catalog[$job]),404);
+    $data=request()->validate([
+        'frequency'=>['required',\Illuminate\Validation\Rule::in(\App\Support\CollectorSchedules::FREQUENCIES)],
+        'time'=>'required|date_format:H:i',
+        'weekday'=>'required|integer|between:0,6',
+        'idle_minutes'=>'nullable|integer|in:1,2,5,10,15,30,60,120,360,720',
+        'on_transaction'=>'sometimes|boolean',
+    ]);
+    $data['on_transaction']=in_array($job,['teams','players'],true)&&request()->boolean('on_transaction');
+    $data['idle_minutes']=in_array($job,['scores','standings'],true)?(int)($data['idle_minutes']??60):null;
+    abort_if(in_array($job,['scores','standings'],true)&&!in_array($data['frequency'],['1','2','5','10','15','30','60','120','360','720','off'],true),422,'Select an interval for live collectors.');
+    DB::table('collector_schedules')->updateOrInsert(['job_key'=>$job],[
+        'settings_json'=>json_encode($data,JSON_THROW_ON_ERROR),'created_at'=>now(),'updated_at'=>now(),
+    ]);
+    return redirect('/job-status#collector-'.$job)->with('job_success',$catalog[$job]['name'].' schedule saved.');
+});

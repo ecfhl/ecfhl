@@ -101,7 +101,7 @@ verifySeason(!str_contains($scoreHtml,'Sorted by')&&str_contains($scoreHtml,'ari
 $json=json_decode(seasonRequest('/players?availability=all&positions=F,D&page=2',true)->getContent(),true);
 verifySeason(substr_count($json['html'],'data-player-id=')===25&&$json['shown']===50&&$json['total']===60&&str_contains($json['next_url'],'positions=F%2CD'),'Show More must return next rows with preserved filters.');
 $final=json_decode(seasonRequest('/players?availability=all&positions=G&rookies=1',true)->getContent(),true);verifySeason($final['shown']===1&&$final['total']===1&&$final['next_url']===null,'Filtered Show More termination failed.');
-$admin=view('admin.index')->render();foreach(['/admin/projections','/job-status','/admin/advisors','/admin/teams'] as $url)verifySeason(str_contains($admin,'class="card admin-menu-card" href="'.$url.'"'),'Admin card missing: '.$url);
+$admin=view('admin.index')->render();foreach(['/admin/projections','/job-status','/admin/teams'] as $url)verifySeason(str_contains($admin,'class="card admin-menu-card" href="'.$url.'"'),'Admin card missing: '.$url);
 // Ownership filters include every roster slot and ignore released players' old teams.
 for($i=3;$i<=40;$i++) DB::table('active_fantasy_rosters')->insert(['game_date'=>'2026-10-04','fantasy_team_id'=>$i<=35?'beta':'gamma','fantasy_team_name'=>$i<=35?'Beta':'Gamma','player_id'=>'p'.$i,'player_name'=>'Player '.$i,'position'=>'F','roster_status'=>['ACTIVE','BENCH','MINORS','INJURED_RESERVE'][$i%4]]);
 $taken=$service->data(Request::create('/players?availability=taken&sort=A&direction=desc'));

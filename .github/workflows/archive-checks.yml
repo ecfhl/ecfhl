@@ -15,6 +15,7 @@ jobs:
           extensions: mbstring, pdo_sqlite, dom
           tools: composer:v2
       - run: composer install --no-interaction --prefer-dist
+      - run: php tests/collectors.php
       - run: php tests/messaging.php
       - run: node tests/live-score-updates.cjs
       - run: node tests/mobile-swipes.cjs

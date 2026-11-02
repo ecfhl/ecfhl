@@ -38,8 +38,6 @@ ui.trigger('Alpha','alpha');const card=ui.element('card');card.classList.add('te
 ui.trigger('Alpha','alpha');ui.key({key:'Escape'});assert.equal(ui.modal.classList.contains('open'),false);
 ui.trigger('Alpha','alpha');let prevented=false;ui.key({key:'Tab',preventDefault(){prevented=true}});assert.ok(prevented);assert.equal(ui.document.activeElement,ui.view);
 prevented=false;ui.key({key:'Tab',shiftKey:true,preventDefault(){prevented=true}});assert.ok(prevented);assert.equal(ui.document.activeElement,ui.close);
-ui.trigger('Advisor','lineup-advisor','mike');assert.equal(ui.view.hidden,true);assert.equal(ui.view.href,undefined);assert.equal(ui.upload.hidden,true);assert.equal(ui.file.disabled,true);
-ui.close.events.click({stopPropagation(){}});
 for(let i=0;i<3;i++){
  const logo=ui.trigger('ECFHL','league');assert.equal(ui.title.textContent,'East Coast Fantasy Hockey League');assert.equal(ui.view.hidden,true);assert.equal(ui.upload.hidden,true);assert.equal(ui.file.disabled,true);
  ui.modal.events.click({stopPropagation(){},target:ui.image});assert.equal(ui.modal.classList.contains('open'),true);ui.modal.events.click({stopPropagation(){},target:ui.modal});assert.equal(ui.modal.classList.contains('open'),false);assert.equal(ui.document.activeElement,logo);

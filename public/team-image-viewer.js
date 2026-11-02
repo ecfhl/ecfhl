@@ -17,9 +17,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   const uploadButton=document.getElementById('team-icon-modal-upload');
   const saveButton=document.getElementById('team-icon-modal-save');
   const fileInput=document.getElementById('team-icon-modal-file');
-  const advisorNameRow=document.getElementById('team-icon-advisor-name');
-  const advisorNameInput=document.getElementById('team-icon-advisor-input');
-  const advisorNameSave=document.getElementById('team-icon-advisor-save');
   const csrf=document.querySelector('meta[name="csrf-token"]')?.content||'';
   const ownedTeamSlug=modal?.dataset.ownedTeamSlug||'';
   const isAdmin=modal?.dataset.isAdmin==='1';
@@ -28,7 +25,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   let lastTrigger=null;
   let activeSlug='';
-  let activeAdvisorKey='';
   let viewingLeagueLogo=false;
   let pendingLeagueFile=null;
 
@@ -41,9 +37,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(uploadButton)uploadButton.hidden=true;
     if(saveButton)saveButton.hidden=true;
     pendingLeagueFile=null;
-    activeAdvisorKey='';
     viewingLeagueLogo=false;
-    advisorNameRow?.classList.remove('open');
     const trigger=lastTrigger;
     lastTrigger=null;
     trigger?.focus({preventScroll:true});
@@ -61,10 +55,9 @@ document.addEventListener('DOMContentLoaded',()=>{
       activeSlug=button.dataset.teamSlug||'';
       modal.dataset.messageSlug=viewingLeagueLogo?'':activeSlug;
       window.dispatchEvent(new Event('ecfhl-team-viewer'));
-      activeAdvisorKey=button.dataset.advisorKey||'';
-      if(modalTitle)modalTitle.textContent=(viewingLeagueLogo?'East Coast Fantasy Hockey League':button.dataset.teamName)||button.dataset.advisorFirstName||img.alt||'Team logo';
+      if(modalTitle)modalTitle.textContent=(viewingLeagueLogo?'East Coast Fantasy Hockey League':button.dataset.teamName)||img.alt||'Team logo';
       if(viewTeamButton){
-        viewTeamButton.hidden=viewingLeagueLogo||!activeSlug||!!activeAdvisorKey;
+        viewTeamButton.hidden=viewingLeagueLogo||!activeSlug;
         if(viewTeamButton.hidden)viewTeamButton.removeAttribute('href');
         else viewTeamButton.href='/teams/current/'+encodeURIComponent(activeSlug);
       }
@@ -75,17 +68,11 @@ document.addEventListener('DOMContentLoaded',()=>{
       modalImage.onload=()=>modal.classList.remove('loading');
       modalImage.onerror=()=>modal.classList.remove('loading');
       modalImage.src=fullSrc;
-      if(advisorNameRow&&advisorNameInput){
-        advisorNameInput.value='';
-        advisorNameRow.classList.remove('open');
-      }
       if(viewingLeagueLogo){
         if(uploadButton)uploadButton.hidden=!isAdmin;
         if(saveButton)saveButton.hidden=true;
         fileInput.disabled=!isAdmin;
-      }else if(activeAdvisorKey){
-        if(uploadButton)uploadButton.hidden=true;
-        fileInput.disabled=true;
+
       }else{
         const canChangeImage=!!activeSlug && (isAdmin || ownedTeamSlug===activeSlug);
         if(uploadButton)uploadButton.hidden=!canChangeImage;
@@ -95,47 +82,6 @@ document.addEventListener('DOMContentLoaded',()=>{
       modal.setAttribute('aria-hidden','false');
       document.body.style.overflow='hidden';
       closeButton.focus();
-  });
-
-  advisorNameSave?.addEventListener('click',async()=>{
-    if(advisorNameSave.disabled)return;
-    if(!activeAdvisorKey||!advisorNameInput)return;
-    const firstName=advisorNameInput.value.trim();
-    if(!firstName){
-      alert('First name is required.');
-      advisorNameInput.focus();
-      return;
-    }
-
-    advisorNameSave.disabled=true;
-    advisorNameSave.textContent='Saving...';
-    try{
-      const response=await fetch('/lineup-advisors/'+encodeURIComponent(activeAdvisorKey)+'/profile',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
-        body:JSON.stringify({first_name:firstName})
-      });
-      if(!response.ok){
-        let message='Could not save advisor name.';
-        try{const data=await response.json();message=data.message||message;}catch(e){}
-        throw new Error(message);
-      }
-      const data=await response.json();
-      const savedName=data.first_name||firstName;
-      document.querySelectorAll('[data-advisor-display-name="'+CSS.escape(activeAdvisorKey)+'"]').forEach(el=>el.textContent=savedName);
-      document.querySelectorAll('[data-team-icon-viewer][data-advisor-key="'+CSS.escape(activeAdvisorKey)+'"]').forEach(button=>{
-        button.dataset.advisorFirstName=savedName;
-        button.title='View '+savedName+' advisor image';
-        button.setAttribute('aria-label','View '+savedName+' Lineup Advisor image');
-        const img=button.querySelector('img');
-        if(img)img.alt=savedName+', Lineup Advisor';
-      });
-    }catch(error){
-      alert(error.message||'Could not save advisor name.');
-    }finally{
-      advisorNameSave.disabled=false;
-      advisorNameSave.textContent='Save';
-    }
   });
 
   uploadButton?.addEventListener('click',()=>fileInput.click());

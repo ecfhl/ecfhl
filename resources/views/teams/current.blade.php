@@ -55,6 +55,20 @@
   </div>
 
   <section class="team-roster-section" aria-label="Roster">
+      <div class="team-lineup-meta">
+        <div class="team-lineup-roster-counts">
+          <span class="{{ ($rosterCounts['F'] ?? 0) != 8 ? 'team-lineup-count-alert' : '' }}">Forwards: <strong>{{ $rosterCounts['F'] ?? 0 }}</strong></span>
+          <span class="{{ ($rosterCounts['D'] ?? 0) != 4 ? 'team-lineup-count-alert' : '' }}">Defense: <strong>{{ $rosterCounts['D'] ?? 0 }}</strong></span>
+          <span class="{{ ($rosterCounts['G'] ?? 0) != 1 ? 'team-lineup-count-alert' : '' }}">Goalies: <strong>{{ $rosterCounts['G'] ?? 0 }}</strong></span>
+          <span class="{{ ($rosterCounts['Bench'] ?? 0) != 3 ? 'team-lineup-count-alert' : '' }}">Bench: <strong>{{ $rosterCounts['Bench'] ?? 0 }}</strong></span>
+          <span class="{{ ($rosterCounts['IR'] ?? 0) > 5 ? 'team-lineup-count-alert' : '' }}">IR: <strong>{{ $rosterCounts['IR'] ?? 0 }}/5</strong></span>
+          <span>Minors: <strong>{{ $rosterCounts['Minors'] ?? 0 }}</strong></span>
+        </div>
+        @if($movesLeftToday!==null)
+          <div class="team-lineup-moves">Moves: <strong>{{ max(0, 7 - $movesLeftToday) }}/7</strong></div>
+        @endif
+      </div>
+
   @php
     $hasRows=collect($positions)->sum(fn($g)=>$g['rows']->count())>0;
   @endphp
@@ -445,101 +459,7 @@
 
   </div>
 
-  <section class="team-lineup-advisor" aria-label="Lineup Advisor">
-    @php
-      $advisorProfilesByKey=$advisorProfiles->keyBy('advisor_key');
-      $advisorStoredKey=strtolower((string)($lineupAdvice->advisor_name ?? ''));
-      $advisorKey=$advisorProfilesByKey->has($advisorStoredKey)
-        ? $advisorStoredKey
-        : (string)($advisorProfiles->first()->advisor_key ?? 'mike');
-      $advisorProfile=$advisorProfilesByKey[$advisorKey] ?? $advisorProfiles->first();
-      $advisorFirstName=(string)($advisorProfile->first_name ?? ucfirst($advisorKey));
-      $advisorImageSlug=$advisorKey==='mike'?'lineup-advisor':'lineup-advisor-'.$advisorKey;
 
-      $storedAdvisorAdvice=[];
-      if(!empty($lineupAdvice?->advisor_advice_json)){
-        $decoded=json_decode((string)$lineupAdvice->advisor_advice_json,true);
-        if(is_array($decoded))$storedAdvisorAdvice=$decoded;
-      }
-
-      $advisorNameReplacements=[];
-      $advisorPlayerNames=collect($positions)->flatMap(fn($g)=>$g['rows'])->pluck('player_name')
-        ->merge(collect($targetGroups)->flatten(1)->pluck('name'));
-      foreach($advisorPlayerNames->filter()->unique() as $rawName){
-        $formatted=\App\Support\PlayerName::display($rawName);
-        $advisorNameReplacements[$rawName]=$formatted;
-        if(str_contains($formatted,',')){
-          [$last,$first]=array_map('trim',explode(',',$formatted,2));
-          $advisorNameReplacements[$first.' '.$last]=$formatted;
-        }
-      }
-      $advisorCycleData=[];
-      foreach($advisorProfiles as $profile){
-        $key=(string)$profile->advisor_key;
-        $name=(string)$profile->first_name;
-        $legacyAdvice=match($key){
-          'mike'=>$lineupAdvice?->mike_advice_text ?? null,
-          'pierre'=>$lineupAdvice?->pierre_advice_text ?? null,
-          'john'=>$lineupAdvice?->john_advice_text ?? null,
-          default=>null,
-        };
-        $advice=$storedAdvisorAdvice[$key]['advice']
-          ?? $legacyAdvice
-          ?? ($key===$advisorKey ? ($lineupAdvice->advice_text ?? null) : null)
-          ?? ('Run Update Advisors to generate '.$name.'\'s version.');
-        $advisorCycleData[$key]=[
-          'name'=>$name,
-          'slug'=>$key==='mike'?'lineup-advisor':'lineup-advisor-'.$key,
-          'advice'=>strtr($advice,$advisorNameReplacements),
-          'thumbnail'=>\App\Support\TeamImages::url($key==='mike'?'lineup-advisor':'lineup-advisor-'.$key,640),
-          'fullImage'=>\App\Support\TeamImages::url($key==='mike'?'lineup-advisor':'lineup-advisor-'.$key),
-        ];
-      }
-    @endphp
-    <div class="team-lineup-advisor-title roster-table-heading" data-roster-section="Lineup Advisor">
-      <button type="button" class="team-lineup-advisor-cycle" data-advisor-prev aria-label="Previous advisor">‹</button>
-      <div class="team-lineup-advisor-title-text">Lineup Advisor · <span data-advisor-display-name="{{ $advisorKey }}">{{ $advisorFirstName }}</span></div>
-      <button type="button" class="team-lineup-advisor-cycle" data-advisor-next aria-label="Next advisor">›</button>
-    </div>
-      <div class="team-lineup-meta">
-        <div class="team-lineup-roster-counts">
-          <span class="{{ ($rosterCounts['F'] ?? 0) != 8 ? 'team-lineup-count-alert' : '' }}">Forwards: <strong>{{ $rosterCounts['F'] ?? 0 }}</strong></span>
-          <span class="{{ ($rosterCounts['D'] ?? 0) != 4 ? 'team-lineup-count-alert' : '' }}">Defense: <strong>{{ $rosterCounts['D'] ?? 0 }}</strong></span>
-          <span class="{{ ($rosterCounts['G'] ?? 0) != 1 ? 'team-lineup-count-alert' : '' }}">Goalies: <strong>{{ $rosterCounts['G'] ?? 0 }}</strong></span>
-          <span class="{{ ($rosterCounts['Bench'] ?? 0) != 3 ? 'team-lineup-count-alert' : '' }}">Bench: <strong>{{ $rosterCounts['Bench'] ?? 0 }}</strong></span>
-          <span class="{{ ($rosterCounts['IR'] ?? 0) > 5 ? 'team-lineup-count-alert' : '' }}">IR: <strong>{{ $rosterCounts['IR'] ?? 0 }}/5</strong></span>
-          <span>Minors: <strong>{{ $rosterCounts['Minors'] ?? 0 }}</strong></span>
-        </div>
-        @if($movesLeftToday!==null)
-          <div class="team-lineup-moves">Moves: <strong>{{ max(0, 7 - $movesLeftToday) }}/7</strong></div>
-        @endif
-      </div>
-    <div class="team-lineup-advisor-body">
-      <div class="team-lineup-advisor-photo">
-        <button
-          type="button"
-          class="team-lineup-advisor-photo-button"
-          data-team-icon-viewer
-          data-team-slug="{{ $advisorImageSlug }}"
-          data-advisor-key="{{ $advisorKey }}"
-          data-advisor-first-name="{{ $advisorFirstName }}"
-          title="View {{ $advisorFirstName }} advisor image"
-          aria-label="View {{ $advisorFirstName }} Lineup Advisor image">
-          <img src="{{ \App\Support\TeamImages::url($advisorImageSlug,640) }}" data-full-src="{{ \App\Support\TeamImages::url($advisorImageSlug) }}" loading="lazy" decoding="async" alt="{{ $advisorFirstName }}, Lineup Advisor">
-        </button>
-      </div>
-      <div class="team-lineup-content">
-    <div class="team-lineup-advisor-text" data-advisor-text></div>
-    <script type="application/json" id="team-lineup-advisor-data">{!! json_encode([
-      'current'=>$advisorKey,
-      'advisors'=>$advisorCycleData,
-    ], JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) !!}</script>
-      </div>
-    @if(!empty($lineupAdvice?->generated_at))
-      <div class="team-lineup-advisor-updated">Updated @include('partials.updated-time',['value'=>$lineupAdvice->generated_at])</div>
-    @endif
-    </div>
-  </section>
 </div>
 </div>
 
@@ -556,134 +476,6 @@ document.addEventListener('DOMContentLoaded',()=>{
       liveMatchup.addEventListener('toggle',()=>sessionStorage.setItem(storageKey,liveMatchup.open?'1':'0'));
     }catch(e){}
   }
-  const advisorDataElement=document.getElementById('team-lineup-advisor-data');
-  const advisorCard=document.querySelector('.team-lineup-advisor');
-  if(advisorDataElement&&advisorCard){
-    try{
-      const advisorData=JSON.parse(advisorDataElement.textContent||'{}');
-      const advisors=advisorData.advisors||{};
-      const order=Object.keys(advisors);
-      let currentKey=order.includes(advisorData.current)?advisorData.current:(order[0]||'');
-      const nameSpan=advisorCard.querySelector('[data-advisor-display-name]');
-      const imageButton=advisorCard.querySelector('[data-team-icon-viewer][data-advisor-key]');
-      const image=imageButton?.querySelector('img');
-      const adviceEl=advisorCard.querySelector('[data-advisor-text]');
-      const prev=advisorCard.querySelector('[data-advisor-prev]');
-      const next=advisorCard.querySelector('[data-advisor-next]');
-
-      const appendLinkedText=(parent,text)=>{
-        const leagueId='092zcn40molvao69';
-        const playerPattern=/\b(Add|add)\s+(.+?)\s+\(([A-Z]{2,3})\)/g;
-        let last=0;
-        let match;
-        while((match=playerPattern.exec(text))!==null){
-          parent.append(document.createTextNode(text.slice(last,match.index)+match[1]+' '));
-          const playerName=(match[2]||'').trim();
-          const link=document.createElement('a');
-          link.href='https://www.fantrax.com/fantasy/league/'+leagueId+'/players;searchName='+encodeURIComponent(playerName)+';positionOrGroup=ALL;';
-          link.target='_blank';
-          link.rel='noopener noreferrer';
-          link.className='team-lineup-player-link';
-          link.textContent=playerName;
-          parent.append(link,document.createTextNode(' ('+match[3]+')'));
-          last=playerPattern.lastIndex;
-        }
-        parent.append(document.createTextNode(text.slice(last)));
-      };
-
-      const renderAdvice=(raw)=>{
-        if(!adviceEl)return;
-        const text=String(raw||'No moves to suggest.').replaceAll('—',',');
-        adviceEl.replaceChildren();
-        const marker=/\s*\[GOALIE_STATUS:([^\]]+)\]/ig;
-        let last=0;
-        let match;
-        let found=false;
-        while((match=marker.exec(text))!==null){
-          found=true;
-          appendLinkedText(adviceEl,text.slice(last,match.index));
-          let status=(match[1]||'').trim().toLowerCase();
-          status=status.charAt(0).toUpperCase()+status.slice(1);
-          if(status==='Probable')status='Likely';
-          const pill=document.createElement('span');
-          pill.className='pill goalie-status '+(
-            status==='Confirmed'?'goalie-status-confirmed':
-            status==='Likely'?'goalie-status-likely':
-            status==='Unconfirmed'?'goalie-status-unconfirmed':'goalie-status-na'
-          );
-          pill.textContent=status;
-          adviceEl.append(document.createTextNode(' '),pill);
-          last=marker.lastIndex;
-        }
-        appendLinkedText(adviceEl,text.slice(last));
-        if(!found){
-          const original=adviceEl.textContent||'';
-          const legacy=/\s+(Confirmed|Likely|Probable|Unconfirmed)\b/i.exec(original);
-          if(legacy){
-            const before=original.slice(0,legacy.index);
-            let status=legacy[1];
-            if(status.toLowerCase()==='probable')status='Likely';
-            else status=status.charAt(0).toUpperCase()+status.slice(1).toLowerCase();
-            const after=original.slice(legacy.index+legacy[0].length);
-            const pill=document.createElement('span');
-            pill.className='pill goalie-status '+(
-              status==='Confirmed'?'goalie-status-confirmed':
-              status==='Likely'?'goalie-status-likely':
-              status==='Unconfirmed'?'goalie-status-unconfirmed':'goalie-status-na'
-            );
-            pill.textContent=status;
-            adviceEl.replaceChildren();
-            appendLinkedText(adviceEl,before+' ');
-            adviceEl.append(pill);
-            appendLinkedText(adviceEl,after);
-          }
-        }
-      };
-
-      const renderAdvisor=(key)=>{
-        if(!advisors[key])return;
-        if(advisors[currentKey]&&nameSpan)advisors[currentKey].name=nameSpan.textContent.trim();
-        currentKey=key;
-        const advisor=advisors[key];
-        if(nameSpan){
-          nameSpan.textContent=advisor.name;
-          nameSpan.dataset.advisorDisplayName=key;
-        }
-        if(imageButton&&image){
-          imageButton.dataset.teamSlug=advisor.slug;
-          imageButton.dataset.advisorKey=key;
-          imageButton.dataset.advisorFirstName=advisor.name;
-          imageButton.title='View '+advisor.name+' advisor image';
-          imageButton.setAttribute('aria-label','View '+advisor.name+' Lineup Advisor image');
-          image.src=advisor.thumbnail;
-          image.dataset.fullSrc=advisor.fullImage;
-          image.alt=advisor.name+', Lineup Advisor';
-        }
-        renderAdvice(advisor.advice);
-      };
-
-      let advisorAutoRotate=null;
-      const restartAdvisorAutoRotate=()=>{
-        if(advisorAutoRotate) clearInterval(advisorAutoRotate);
-        if(order.length>1){
-          advisorAutoRotate=setInterval(()=>move(1),30000);
-        }
-      };
-
-      const move=(direction)=>{
-        const index=order.indexOf(currentKey);
-        const nextIndex=(index+direction+order.length)%order.length;
-        renderAdvisor(order[nextIndex]);
-      };
-      restartAdvisorAutoRotate();
-      prev?.addEventListener('click',()=>{move(-1);restartAdvisorAutoRotate();});
-      next?.addEventListener('click',()=>{move(1);restartAdvisorAutoRotate();});
-      renderAdvisor(currentKey);
-    }catch(error){
-      console.error('Could not initialize advisor cycle',error);
-    }
-  }
-
   const refreshLiveScoreboard=async()=>{
     const current=document.querySelector('.team-live-matchup');
     if(!current)return;

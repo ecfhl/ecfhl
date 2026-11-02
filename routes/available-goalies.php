@@ -88,6 +88,3 @@ Artisan::command('ecfhl:refresh-available-goalies', function () {
 
     return $failed ? 1 : 0;
 });
-
-Schedule::command('ecfhl:refresh-available-goalies')->hourlyAt(35)->withoutOverlapping(50);
-

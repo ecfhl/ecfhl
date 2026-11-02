@@ -10,22 +10,6 @@ Route::get('/csrf-token', function () {
         ->header('Cache-Control','no-store, no-cache, must-revalidate');
 });
 
-Route::post('/admin/lineup-advisor/reset-and-refresh', function () {
-    abort_unless(request()->ajax() && request()->headers->get('X-Requested-With') === 'XMLHttpRequest', 403);
-    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advice'), 503);
-
-    DB::table('lineup_advice')->truncate();
-    $exitCode=\Illuminate\Support\Facades\Artisan::call('ecfhl:refresh-lineup-advice');
-    $output=trim(\Illuminate\Support\Facades\Artisan::output());
-    $count=DB::table('lineup_advice')->count();
-
-    return response()->json([
-        'ok'=>$exitCode===0,
-        'count'=>$count,
-        'output'=>$output,
-    ],$exitCode===0?200:500);
-});
-
 Route::post('/league-logo', function() {
     abort_unless(\Illuminate\Support\Facades\Schema::hasTable('team_icons'),503);
     $user=request()->user();
@@ -66,15 +50,7 @@ Route::post('/team-icons/{slug}', function(string $slug) {
         ->contains(fn($name)=>\Illuminate\Support\Str::slug((string)$name)===$slug);
     $validFranchise=DB::table('franchises')->pluck('franchise_name')
         ->contains(fn($name)=>\Illuminate\Support\Str::slug((string)$name)===$slug);
-    $advisorSlugAllowed=false;
-    if(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles')){
-        $advisorKeys=DB::table('lineup_advisor_profiles')->pluck('advisor_key')->all();
-        foreach($advisorKeys as $advisorKey){
-            $advisorSlug=$advisorKey==='mike'?'lineup-advisor':'lineup-advisor-'.$advisorKey;
-            if($slug===$advisorSlug){$advisorSlugAllowed=true;break;}
-        }
-    }
-    abort_unless($slug==='league-logo'||$advisorSlugAllowed||$validCurrent||$validFranchise,404);
+    abort_unless($slug==='league-logo'||$validCurrent||$validFranchise,404);
 
     $validated=request()->validate(['image'=>'required|file|mimes:jpg,jpeg,png,webp|max:2048']);
     $file=$validated['image'];
@@ -91,23 +67,6 @@ Route::post('/team-icons/{slug}', function(string $slug) {
     \App\Support\TeamImages::generate($slug, $bytes, $file->getMimeType()?:'image/png');
     return response()->json(['ok'=>true,'url'=>\App\Support\TeamImages::url($slug),'thumbnail_url'=>\App\Support\TeamImages::url($slug,160)]);
 })->where('slug','[A-Za-z0-9\-]+');
-
-Route::post('/lineup-advisors/{advisor}/profile', function(string $advisor) {
-    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles'),503);
-    $profile=DB::table('lineup_advisor_profiles')->where('advisor_key',$advisor)->first();
-    abort_unless($profile,404);
-
-    $validated=request()->validate(['first_name'=>'required|string|max:40']);
-    $firstName=trim((string)$validated['first_name']);
-    abort_if($firstName==='',422,'First name is required.');
-
-    DB::table('lineup_advisor_profiles')->where('advisor_key',$advisor)->update([
-        'first_name'=>$firstName,
-        'updated_at'=>now(),
-    ]);
-
-    return response()->json(['ok'=>true,'advisor'=>$advisor,'first_name'=>$firstName]);
-})->where('advisor','[a-z0-9\-]+');
 
 Route::get('/admin', fn()=>view('admin.index'));
 
@@ -165,102 +124,6 @@ Route::post('/admin/teams/{teamId}/unlink', function (string $teamId) {
     });
     return redirect('/admin/teams')->with('notice','Account unlinked from '.$name.'.');
 })->where('teamId','[A-Za-z0-9_-]+');
-
-Route::get('/admin/advisors', function () {
-    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles'),503);
-    $advisors=DB::table('lineup_advisor_profiles')->orderBy('sort_order')->orderBy('id')->get();
-    return view('admin.advisors',compact('advisors'));
-});
-
-Route::post('/admin/advisors', function () {
-    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles'),503);
-    $validated=request()->validate([
-        'first_name'=>'required|string|max:40',
-        'style_text'=>'nullable|string|max:5000',
-        'recommendation_style'=>'required|in:conservative,neutral,aggressive',
-    ]);
-    $firstName=trim((string)$validated['first_name']);
-    $base=substr(\Illuminate\Support\Str::slug($firstName)?:'advisor',0,20);
-    $key=$base;$suffix=2;
-    while(DB::table('lineup_advisor_profiles')->where('advisor_key',$key)->exists()){
-        $suffixText='-'.$suffix++;
-        $key=substr($base,0,20-strlen($suffixText)).$suffixText;
-    }
-    $nextOrder=((int)DB::table('lineup_advisor_profiles')->max('sort_order'))+10;
-    DB::table('lineup_advisor_profiles')->insert([
-        'advisor_key'=>$key,
-        'first_name'=>$firstName,
-        'style_text'=>trim((string)($validated['style_text']??'')),
-        'recommendation_style'=>(string)$validated['recommendation_style'],
-        'is_conservative'=>$validated['recommendation_style']==='conservative',
-        'sort_order'=>$nextOrder,
-        'created_at'=>now(),
-        'updated_at'=>now(),
-    ]);
-    return redirect('/admin/advisors')->with('notice',$firstName.' added.');
-});
-
-Route::post('/admin/advisors/{advisor}', function(string $advisor) {
-    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles'),503);
-    abort_unless(DB::table('lineup_advisor_profiles')->where('advisor_key',$advisor)->exists(),404);
-    $validated=request()->validate([
-        'first_name'=>'required|string|max:40',
-        'style_text'=>'nullable|string|max:5000',
-        'recommendation_style'=>'required|in:conservative,neutral,aggressive',
-    ]);
-    DB::table('lineup_advisor_profiles')->where('advisor_key',$advisor)->update([
-        'first_name'=>trim((string)$validated['first_name']),
-        'style_text'=>trim((string)($validated['style_text']??'')),
-        'recommendation_style'=>(string)$validated['recommendation_style'],
-        'is_conservative'=>$validated['recommendation_style']==='conservative',
-        'updated_at'=>now(),
-    ]);
-    return redirect('/admin/advisors')->with('notice','Advisor updated.');
-})->where('advisor','[a-z0-9\-]+');
-
-Route::post('/admin/advisors/{advisor}/image', function(string $advisor) {
-    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles'),503);
-    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('team_icons'),503);
-
-    $profile=DB::table('lineup_advisor_profiles')->where('advisor_key',$advisor)->first();
-    abort_unless($profile,404);
-
-    $validated=request()->validate([
-        'image'=>'required|file|mimes:jpg,jpeg,png,webp|max:2048',
-    ]);
-    $file=$validated['image'];
-    $bytes=file_get_contents($file->getRealPath());
-    abort_if($bytes===false,422,'Could not read image.');
-    $dimensions=@getimagesizefromstring($bytes);
-    abort_if(!$dimensions || $dimensions[0]*$dimensions[1]>16000000,422,'Use an image with at most 16 million pixels.');
-
-    $slug=$advisor==='mike'?'lineup-advisor':'lineup-advisor-'.$advisor;
-    DB::table('team_icons')->updateOrInsert(
-        ['team_slug'=>$slug],
-        [
-            'mime_type'=>$file->getMimeType()?:'image/png',
-            'image_data'=>base64_encode($bytes),
-            'updated_at'=>now(),
-            'created_at'=>now(),
-        ]
-    );
-
-    \App\Support\TeamImages::generate($slug,$bytes,$file->getMimeType()?:'image/png');
-    return redirect('/admin/advisors')->with('notice',$profile->first_name.' image updated.');
-})->where('advisor','[a-z0-9\-]+');
-
-Route::delete('/admin/advisors/{advisor}', function(string $advisor) {
-    abort_unless(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles'),503);
-    abort_if(DB::table('lineup_advisor_profiles')->count()<=1,422,'At least one advisor is required.');
-    $profile=DB::table('lineup_advisor_profiles')->where('advisor_key',$advisor)->first();
-    abort_unless($profile,404);
-    DB::table('lineup_advisor_profiles')->where('advisor_key',$advisor)->delete();
-    if(\Illuminate\Support\Facades\Schema::hasTable('team_icons')){
-        $slug=$advisor==='mike'?'lineup-advisor':'lineup-advisor-'.$advisor;
-        DB::table('team_icons')->where('team_slug',$slug)->delete();
-    }
-    return redirect('/admin/advisors')->with('notice',$profile->first_name.' removed.');
-})->where('advisor','[a-z0-9\-]+');
 
 Route::get('/', function () {
     $standings=\App\Support\CurrentTeams::standings();
@@ -717,32 +580,11 @@ Route::get('/teams/current/{slug}', function(string $slug) {
         report($e);
     }
 
-    $lineupAdvice=null;
-    try {
-        if(\Illuminate\Support\Facades\Schema::hasTable('lineup_advice')){
-            $adviceTeamId=(string)($rows->first()->fantasy_team_id??'');
-            if($adviceTeamId!==''){
-                $lineupAdvice=DB::table('lineup_advice')
-                    ->where('advice_date',$today)
-                    ->where('fantasy_team_id',$adviceTeamId)
-                    ->first();
-            }
-        }
-    } catch (\Throwable $e) {
-        report($e);
-    }
-
     $lastUpdate=$rows->max('last_update');
     $fantasyTeamId=$rows->first()->fantasy_team_id??null;
     $fantraxTeamUrl=$fantasyTeamId?'https://www.fantrax.com/fantasy/league/092zcn40molvao69/team/roster;teamId='.$fantasyTeamId:null;
     $teamChoices=array_map(fn($name)=>['name'=>$name,'slug'=>\Illuminate\Support\Str::slug($name)],$currentNames);
-    $advisorProfiles=collect([
-        (object)['advisor_key'=>'mike','first_name'=>'Mike','style_text'=>'','is_conservative'=>false,'sort_order'=>10],
-    ]);
-    if(\Illuminate\Support\Facades\Schema::hasTable('lineup_advisor_profiles')){
-        $advisorProfiles=DB::table('lineup_advisor_profiles')->orderBy('sort_order')->orderBy('id')->get();
-    }
-    return view('teams.current',compact('teamName','slug','date','yesterday','today','tomorrow','positions','targetGroups','lastUpdate','scoreLastUpdate','fantraxTeamUrl','teamChoices','teamTodayFpts','liveMatchup','nextWeekOpponent','nextWeekLineup','lineupAdvice','movesLeftToday','rosterCounts','advisorProfiles','futurePicks'));
+    return view('teams.current',compact('teamName','slug','date','yesterday','today','tomorrow','positions','targetGroups','lastUpdate','scoreLastUpdate','fantraxTeamUrl','teamChoices','teamTodayFpts','liveMatchup','nextWeekOpponent','nextWeekLineup','movesLeftToday','rosterCounts','futurePicks'));
 });
 
 Route::get('/teams/{slug}', function(string $slug,EcfhlData $data){
@@ -886,7 +728,6 @@ Route::get('/job-status', function () {
     $scoresLast = DB::table('live_scoring_snapshots')->max('collected_at');
     $scoresLast = $scoresLast ? \Carbon\CarbonImmutable::parse($scoresLast, 'UTC')->setTimezone($tz)->format('Y-m-d H:i:s') : null;
     $standingsLast = DB::table('job_run_history')->where('job_name','ecfhl:refresh-current-standings')->max('completed_at');
-    $advisorLast = \Illuminate\Support\Facades\Schema::hasTable('lineup_advice') ? DB::table('lineup_advice')->max('generated_at') : null;
     $collectorStates = \Illuminate\Support\Facades\Schema::hasTable('collector_job_statuses')
         ? DB::table('collector_job_statuses')->get()->keyBy('job_key')
         : collect();
@@ -906,8 +747,34 @@ Route::get('/job-status', function () {
         ['key'=>'teams','name'=>'Fantasy Team Rosters','schedule'=>'Every 15 minutes (:00, :15, :30, :45)','last_update'=>$format($teamsLast),'records'=>DB::table('active_fantasy_rosters')->count(),'next_run'=>$nextQuarterHourly(),'state'=>$state($teamsLast,30),'description'=>'Current Fantrax rosters for every fantasy team, enriched with projections, opponents, injuries, line and power-play assignments.'],
         ['key'=>'scores','name'=>'Fantrax Live Scoring','schedule'=>'Every minute during games; hourly when idle','last_update'=>$format($scoresLast),'records'=>(int)DB::table('live_scoring_snapshots')->sum('player_count'),'next_run'=>'1 min live / 1 hour idle','state'=>$state($scoresLast,70),'description'=>'Independent yesterday, today and tomorrow Fantrax lineups, daily scores, period scores, projections and game states. Fantasy dates roll over at Pacific midnight.'],
         ['key'=>'standings','name'=>'Current Standings','schedule'=>'Every minute during games; hourly when idle; completed days only','last_update'=>$format($standingsLast),'records'=>DB::table('team_seasons')->where('season_id','2026-27')->count(),'next_run'=>'1 min live / 1 hour idle','state'=>$state($standingsLast,70),'description'=>'2026-27 standings use finalized scoring days. Daily points update after the last NHL game finishes; W/L/T update after the scoring period ends.'],
-        ['key'=>'advisor','name'=>'Regenerate Lineup Advisor','schedule'=>'Every hour','last_update'=>$format($advisorLast),'records'=>\Illuminate\Support\Facades\Schema::hasTable('lineup_advice')?DB::table('lineup_advice')->where('advice_date',app(\App\Support\FantasyDay::class)->today()->toDateString())->count():0,'next_run'=>(function()use($now){return $now->addHour()->startOfHour()->format('M j · g:i a T');})(),'state'=>$state($advisorLast,90),'description'=>'Rebuilds lineup recommendations for every current fantasy team using moves left, roster construction, injuries, available players, projections, goalie coverage, and matchup context.'],
     ]);
+    $schedules=\App\Support\CollectorSchedules::all();
+    $present=array_column($jobs,'key');
+    foreach($schedules as $key=>$setting){
+        if(!in_array($key,$present,true)){
+            $row=$collectorStates[$key]??null;
+            $jobs[]=$withOutcome(['key'=>$key,'name'=>$setting['name'],'last_update'=>$format($row->ran_at??null),
+                'records'=>0,'state'=>'No data','description'=>match($key){
+                    'transactions'=>'Checks Claim/Drop, Trade and Lineup history. Refreshes changed rosters and availability; periodic backups still run.',
+                    'matchups'=>'Refreshes scoring-period dates and matchups.',
+                    'birthdates'=>'Refreshes player birthdates used for ages.',
+                    'available-goalies'=>'Rebuilds available goalie projections from local player and Daily Faceoff data. Also runs after player refreshes unless paused.',
+                    default=>'Existing database maintenance and operational data retention.',
+                }]);
+        }
+    }
+    foreach($jobs as &$job){
+        $setting=$schedules[$job['key']];
+        $job['settings']=$setting;
+        $job['schedule']=\App\Support\CollectorSchedules::describe($setting);
+        $job['next_run']=\App\Support\CollectorSchedules::next($setting);
+        if($setting['frequency']==='off')$job['state']='Paused';
+        elseif($job['outcome_ran_at']){
+            $expected=$setting['idle_minutes']??(is_numeric($setting['frequency'])?(int)$setting['frequency']:($setting['frequency']==='weekly'?10080:1440));
+            $job['state']=$state($job['outcome_ran_at'],max(10,$expected*2));
+        }
+    }
+    unset($job);
     return response()
         ->view('job-status', compact('jobs'))
         ->header('Cache-Control','no-store, no-cache, must-revalidate, max-age=0')

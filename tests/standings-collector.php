@@ -46,7 +46,7 @@ $lock=fopen(storage_path('app/standings.lock'),'c');flock($lock,LOCK_EX);
 checkCollector(Artisan::call('ecfhl:refresh-current-standings')===1&&str_contains(Artisan::output(),'already running'),'Manual and scheduled collection must not overlap');
 flock($lock,LOCK_UN);fclose($lock);
 $events=$app->make(Illuminate\Console\Scheduling\Schedule::class)->events();
-$event=collect($events)->first(fn($e)=>str_contains((string)$e->command,'ecfhl:refresh-current-standings'));
+$event=collect($events)->first(fn($e)=>str_contains((string)$e->command,'ecfhl:collect standings'));
 checkCollector($event&&$event->expression==='* * * * *'&&$event->runInBackground&&$event->withoutOverlapping,'Standings must use the live-scoring scheduler cadence with overlap protection');
 foreach([['2026-10-04T17:00:00Z',true],['2026-10-04T17:15:00Z',false]] as [$instant,$expected]){
  \Carbon\CarbonImmutable::setTestNow(\Carbon\CarbonImmutable::parse($instant));checkCollector($event->filtersPass($app)===$expected,'Standings scheduler did not share idle live-scoring cadence');

@@ -1,0 +1,254 @@
+{
+  "responses": [
+    {
+      "data": {
+        "displayedSelections": {
+          "positionOrGroup": "ALL",
+          "view": "CLAIM_DROP",
+          "adminMode": false,
+          "includeDeleted": false,
+          "team": "ALL",
+          "executedOnly": true
+        },
+        "table": {
+          "rows": [
+            {
+              "resultCode": "EXECUTED",
+              "executed": true,
+              "txSetId": "fyxtcj7xmvz6nc7e",
+              "transactionCode": "CLAIM",
+              "deleted": false,
+              "cells": [
+                {
+                  "align": "LEFT",
+                  "content": "Orcas",
+                  "leagueId": "092zcn40molvao69",
+                  "rowspan": 2,
+                  "key": "team",
+                  "teamId": "3xbyx8bbmolvao6p"
+                },
+                {
+                  "content": "1",
+                  "key": "priority"
+                },
+                {
+                  "content": "1/99",
+                  "key": "group"
+                },
+                {
+                  "align": "LEFT",
+                  "content": "Mon Nov 2, 2026, 6:35AM",
+                  "rowspan": 2,
+                  "key": "date"
+                },
+                {
+                  "content": "35",
+                  "key": "week"
+                }
+              ],
+              "scorer": {
+                "scorerId": "06imq"
+              }
+            },
+            {
+              "resultCode": "EXECUTED",
+              "executed": true,
+              "txSetId": "fyxtcj7xmvz6nc7e",
+              "transactionCode": "DROP",
+              "deleted": false,
+              "cells": [
+                {
+                  "content": "1",
+                  "key": "priority"
+                },
+                {
+                  "content": "1/99",
+                  "key": "group"
+                },
+                {
+                  "content": "35",
+                  "key": "week"
+                }
+              ],
+              "scorer": {
+                "scorerId": "04mv3"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "displayedSelections": {
+          "positionOrGroup": "ALL",
+          "view": "TRADE",
+          "adminMode": false,
+          "includeDeleted": false,
+          "team": "ALL",
+          "executedOnly": true
+        },
+        "table": {
+          "rows": [
+            {
+              "resultCode": "EXECUTED",
+              "executed": true,
+              "txSetId": "r1z51yewmvvul9re",
+              "deleted": false,
+              "cells": [
+                {
+                  "align": "LEFT",
+                  "content": "Morning Sherwoods",
+                  "leagueId": "092zcn40molvao69",
+                  "key": "from",
+                  "teamId": "24zgt63wmolvao6p"
+                },
+                {
+                  "align": "LEFT",
+                  "content": "Orcas",
+                  "leagueId": "092zcn40molvao69",
+                  "key": "to",
+                  "teamId": "3xbyx8bbmolvao6p"
+                },
+                {
+                  "content": "0",
+                  "rowspan": 3,
+                  "key": "obj"
+                },
+                {
+                  "icon": "COMMISSIONER",
+                  "align": "LEFT",
+                  "content": "Sat Oct 31, 2026, 12:00PM",
+                  "iconToolTip": "Executed by Commissioner on Fri Oct 30, 2026, 11:34PM",
+                  "rowspan": 3,
+                  "key": "date",
+                  "toolTip": "<b>Processed</b> Fri Oct 30, 2026, 11:34:54 PM<br/><b>Created</b> Fri Oct 30, 2026, 11:34:54 PM"
+                },
+                {
+                  "content": "33",
+                  "key": "week"
+                }
+              ],
+              "scorer": {
+                "scorerId": "02un7"
+              }
+            },
+            {
+              "resultCode": "EXECUTED",
+              "executed": true,
+              "txSetId": "r1z51yewmvvul9re",
+              "deleted": false,
+              "cells": [
+                {
+                  "align": "LEFT",
+                  "content": "Morning Sherwoods",
+                  "leagueId": "092zcn40molvao69",
+                  "key": "from",
+                  "teamId": "24zgt63wmolvao6p"
+                },
+                {
+                  "align": "LEFT",
+                  "content": "Orcas",
+                  "leagueId": "092zcn40molvao69",
+                  "key": "to",
+                  "teamId": "3xbyx8bbmolvao6p"
+                },
+                {
+                  "content": "33",
+                  "key": "week"
+                }
+              ],
+              "scorer": {
+                "scorerId": null
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "displayedSelections": {
+          "positionOrGroup": "ALL",
+          "view": "LINEUP_CHANGE",
+          "adminMode": false,
+          "includeDeleted": false,
+          "team": "ALL",
+          "executedOnly": true
+        },
+        "table": {
+          "rows": [
+            {
+              "executed": true,
+              "txSetId": "57zn5y40mvzcblkr",
+              "deleted": false,
+              "cells": [
+                {
+                  "align": "LEFT",
+                  "content": "Big Bogan Beaking",
+                  "leagueId": "092zcn40molvao69",
+                  "key": "team",
+                  "teamId": "eqd43mtdmolvao6p"
+                },
+                {
+                  "align": "LEFT",
+                  "content": "Reserve",
+                  "key": "from"
+                },
+                {
+                  "align": "LEFT",
+                  "content": "Active",
+                  "key": "to"
+                },
+                {
+                  "align": "LEFT",
+                  "content": "Mon Nov 2, 2026, 9:14AM",
+                  "rowspan": 2,
+                  "key": "date"
+                },
+                {
+                  "content": "35",
+                  "key": "weekOrPeriod"
+                }
+              ],
+              "scorer": {
+                "scorerId": "03v70"
+              }
+            },
+            {
+              "executed": true,
+              "txSetId": "57zn5y40mvzcblkr",
+              "deleted": false,
+              "cells": [
+                {
+                  "align": "LEFT",
+                  "content": "Big Bogan Beaking",
+                  "leagueId": "092zcn40molvao69",
+                  "key": "team",
+                  "teamId": "eqd43mtdmolvao6p"
+                },
+                {
+                  "align": "LEFT",
+                  "content": "Active",
+                  "key": "from"
+                },
+                {
+                  "align": "LEFT",
+                  "content": "Reserve",
+                  "key": "to"
+                },
+                {
+                  "content": "35",
+                  "key": "weekOrPeriod"
+                }
+              ],
+              "scorer": {
+                "scorerId": "02noo"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

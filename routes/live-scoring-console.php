@@ -32,6 +32,3 @@ Artisan::command('ecfhl:refresh-live-scoring {date?}', function (RefreshLiveScor
         fclose($lock);
     }
 })->purpose('Publish independent Fantrax yesterday/today/tomorrow snapshots using Pacific fantasy dates');
-
-Schedule::command('ecfhl:refresh-live-scoring')->everyMinute()->withoutOverlapping(10)->runInBackground()
-    ->when(fn()=>app(RefreshLiveScoring::class)->due());

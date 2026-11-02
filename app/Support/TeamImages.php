@@ -102,9 +102,6 @@ final class TeamImages
         $icon = DB::table('team_icons')->where('team_slug', $slug)->first(['mime_type','image_data']);
         if ($icon && ($bytes = base64_decode($icon->image_data, true)) !== false) return self::generate($slug, $bytes, $icon->mime_type);
         $fallback = match($slug) {
-            'lineup-advisor'=>'images/lineup-advisor-cartoon.svg',
-            'lineup-advisor-pierre'=>'images/pierre-advisor.webp',
-            'lineup-advisor-john'=>'images/john-advisor.webp',
             'gary-bettman'=>'images/gary-bettman.webp',
             'orcas'=>'images/team-icons/orcas.webp',default=>null,
         };
@@ -136,14 +133,14 @@ final class TeamImages
     {
         $count = 0;
         // PDO MySQL buffers cursor results; fetch one original at a time instead.
-        foreach (DB::table('team_icons')->pluck('team_slug') as $slug) {
+        foreach (DB::table('team_icons')->where('team_slug','not like','lineup-advisor%')->pluck('team_slug') as $slug) {
             $icon = DB::table('team_icons')->where('team_slug',$slug)->first(['team_slug','image_data','mime_type']);
             if (!$icon) continue;
             try {
                 self::generate($icon->team_slug, base64_decode($icon->image_data, true), $icon->mime_type); $count++;
             } catch (\Throwable $e) { report($e); }
         }
-        foreach (array_merge(PublicData::teamMenu(), ['lineup-advisor','lineup-advisor-pierre','lineup-advisor-john','gary-bettman','orcas']) as $name) {
+        foreach (array_merge(PublicData::teamMenu(), ['gary-bettman','orcas']) as $name) {
             self::load(\Illuminate\Support\Str::slug($name));
         }
         return $count;

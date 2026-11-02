@@ -119,7 +119,6 @@ document.documentElement.dataset.theme=theme;})();
   </div>
   <div class="nav-dropdown-menu archive-menu">
     <a href="/job-status"><span class="nav-item-icon" aria-hidden="true">◷</span>Collector Status</a>
-    <a href="/admin/advisors"><span class="nav-item-icon" aria-hidden="true">✦</span>Advisors</a>
     <a href="/admin/teams"><span class="nav-item-icon" aria-hidden="true">👥</span>Teams</a>
     <a href="/admin/projections"><span class="nav-item-icon" aria-hidden="true">⚖</span>Projection Weights</a>
     <a href="/admin/notifications"><span class="nav-item-icon" aria-hidden="true">🔔</span>Notification Tests</a>
@@ -381,13 +380,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 .team-icon-modal-image{display:block;max-width:100%;max-height:calc(88dvh - 150px);width:auto;height:auto;border-radius:0;box-shadow:none;background:transparent}
 .team-icon-modal-title{margin:0;color:#fff;text-align:center;font-size:clamp(18px,3vw,26px);line-height:1.2;overflow-wrap:anywhere;max-width:100%;padding:0 32px}.team-icon-modal-view-team{display:inline-flex;align-items:center;justify-content:center;background:var(--action-bg);color:var(--on-action);text-decoration:none;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:800}.team-icon-modal-view-team:hover{background:var(--action-hover)}.team-icon-modal-view-team[hidden]{display:none}
 .team-icon-modal-actions{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
-.team-icon-advisor-name{display:none;align-items:center;gap:7px}
-.team-icon-advisor-name.open{display:flex}
-.team-icon-advisor-label{font-size:11px;font-weight:800;color:#fff}
-.team-icon-advisor-input{width:150px;padding:8px 9px;border:1px solid rgba(255,255,255,.3);border-radius:8px;background:#fff;color:#0f172a;font-size:12px;font-weight:700}
-.team-icon-advisor-save,.team-icon-modal-upload,.team-icon-modal-save{appearance:none;border:1px solid rgba(255,255,255,.22);background:var(--action-bg);color:#fff;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2)}
-.team-icon-advisor-save:hover,.team-icon-modal-upload:hover,.team-icon-modal-save:hover{background:var(--action-hover)}
-.team-icon-advisor-save:disabled,.team-icon-modal-upload:disabled,.team-icon-modal-save:disabled{opacity:.6;cursor:wait}
+.team-icon-modal-upload,.team-icon-modal-save{appearance:none;border:1px solid rgba(255,255,255,.22);background:var(--action-bg);color:#fff;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.team-icon-modal-upload:hover,.team-icon-modal-save:hover{background:var(--action-hover)}
+.team-icon-modal-upload:disabled,.team-icon-modal-save:disabled{opacity:.6;cursor:wait}
 .team-icon-modal-upload{appearance:none;border:1px solid rgba(255,255,255,.22);background:var(--action-bg);color:#fff;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2)}
 .team-icon-modal-upload:hover{background:var(--action-hover)}
 .team-icon-modal-upload:disabled{opacity:.6;cursor:wait}
@@ -404,12 +399,6 @@ document.addEventListener('DOMContentLoaded',()=>{
     <div class="team-icon-modal-actions">
       @auth<a id="team-icon-modal-message" class="team-icon-modal-view-team" hidden>💬 Message owner</a>@endauth
       <a id="team-icon-modal-view-team" class="team-icon-modal-view-team" hidden>View Team</a>
-      @if(auth()->user()?->is_admin)<div id="team-icon-advisor-name" class="team-icon-advisor-name">
-        <label class="team-icon-advisor-label" for="team-icon-advisor-input">First Name</label>
-        <input id="team-icon-advisor-input" class="team-icon-advisor-input" type="text" maxlength="40" autocomplete="off">
-        <button id="team-icon-advisor-save" class="team-icon-advisor-save" type="button">Save</button>
-      </div>@endif
-
       <button id="team-icon-modal-upload" class="team-icon-modal-upload" type="button" hidden>Change Image</button>
       <button id="team-icon-modal-save" class="team-icon-modal-save" type="button" hidden>Save Logo</button>
       <input id="team-icon-modal-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
