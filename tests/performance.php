@@ -63,6 +63,23 @@ DB::flushQueryLog();$request=Request::create('/team-icons/sample/thumbnail?size=
 checkSpeed($cached->getStatusCode()===304,'Cached image did not support ETag validation');
 checkSpeed(count(DB::getQueryLog())===0,'Warm image queried the database');
 $oldUrl=TeamImages::url('sample',160);TeamImages::generate('sample',$bytes.' ', 'image/png');checkSpeed(TeamImages::url('sample',160)!==$oldUrl,'Upload revision did not invalidate browser cache');
+// A detailed alpha-heavy upload must respect both small-logo transfer budgets.
+$noise=imagecreatetruecolor(256,256);imagealphablending($noise,false);imagesavealpha($noise,true);
+for($y=0;$y<256;$y++)for($x=0;$x<256;$x++)imagesetpixel($noise,$x,$y,imagecolorallocatealpha($noise,($x*73+$y*31)%256,($x*17+$y*89)%256,($x*43+$y*53)%256,($x*11+$y*7)%128));
+ob_start();imagepng($noise);$detailed=ob_get_clean();imagedestroy($noise);
+$manifest=TeamImages::generate('detailed',$detailed,'image/png');
+foreach([64=>3072,160=>6144] as $size=>$budget){
+ $file=$cacheDirectory.'/public'.TeamImages::url('detailed',$size);
+ checkSpeed(filesize($file)<=$budget,'Detailed logo exceeded '.$size.'px byte budget');
+ $info=getimagesize($file);checkSpeed($info[0]<=$size&&$info[1]<=$size&&$info['mime']==='image/webp','Bounded logo format changed');
+}
+checkSpeed(file_get_contents($cacheDirectory.'/public'.TeamImages::url('detailed'))===$detailed,'Original logo was modified');
+// Upgrade an old manifest from its local original, without a database read.
+$manifest['version']=1;file_put_contents($cacheDirectory.'/public/media/team-icons/detailed/manifest.json',json_encode($manifest));
+checkSpeed(str_starts_with(TeamImages::url('detailed',160),'/team-icons/'),'Outdated thumbnail remained in page URLs');
+DB::flushQueryLog();$upgraded=TeamImages::response(Request::create('/team-icons/detailed/thumbnail'),'detailed',160);
+checkSpeed(count(DB::getQueryLog())===0,'Thumbnail upgrade reloaded database original');
+checkSpeed(filesize($upgraded->getFile()->getPathname())<=6144,'Upgraded logo exceeded byte budget');
 DB::flushQueryLog();PublicData::teamMenu();PublicData::teamMenu();checkSpeed(count(DB::getQueryLog())<=1,'Menu cache duplicated its query');
 $repository=app(App\Support\LiveScoring\SnapshotRepository::class);
 $snapshot=['fantasy_date'=>'2026-10-03','source_date'=>'2026-10-03','players'=>[]];

@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 /** Database originals are durable; generated files can be rebuilt on every deploy. */
 final class TeamImages
 {
+    private const VERSION = 2;
+
     private static function directory(string $slug): string
     {
         if (!preg_match('/^[A-Za-z0-9-]+$/D', $slug)) throw new \InvalidArgumentException('Invalid image slug.');
@@ -16,7 +18,9 @@ final class TeamImages
     private static function manifest(string $slug): ?array
     {
         $path = self::directory($slug).'/manifest.json';
-        return is_file($path) ? json_decode(file_get_contents($path), true) : null;
+        if (!is_file($path)) return null;
+        $manifest = json_decode(file_get_contents($path), true);
+        return ($manifest['version'] ?? null) === self::VERSION ? $manifest : null;
     }
 
     private static function write(string $path, string $bytes): void
@@ -35,11 +39,11 @@ final class TeamImages
     {
         $directory = self::directory($slug);
         if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) throw new \RuntimeException('Could not create image directory.');
-        $revision = substr(hash('sha256', $bytes), 0, 20);
+        $revision = substr(hash('sha256', self::VERSION.'|'.$bytes), 0, 20);
         $extension = match($mime) {'image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp','image/svg+xml'=>'svg',default=>throw new \InvalidArgumentException('Unsupported image type.')};
         $full = $revision.'.'.$extension;
         self::write($directory.'/'.$full, $bytes);
-        $manifest = ['full'=>$full,'mime'=>$mime,'revision'=>$revision,'thumbnails'=>[]];
+        $manifest = ['version'=>self::VERSION,'full'=>$full,'mime'=>$mime,'revision'=>$revision,'thumbnails'=>[]];
         if ($mime === 'image/svg+xml') {
             foreach ([64,160,640] as $size) $manifest['thumbnails'][$size] = $full;
         } else {
@@ -49,13 +53,29 @@ final class TeamImages
             if (!$source) throw new \InvalidArgumentException('Could not decode image.');
             try {
                 foreach ([64,160,640] as $size) {
-                    $thumbnail = imagecreatetruecolor($size, $size);
-                    imagealphablending($thumbnail, false); imagesavealpha($thumbnail, true);
-                    imagefill($thumbnail, 0, 0, imagecolorallocatealpha($thumbnail, 0, 0, 0, 127));
-                    $scale = min($size/$dimensions[0], $size/$dimensions[1]);
-                    $width = max(1, (int)round($dimensions[0]*$scale)); $height = max(1, (int)round($dimensions[1]*$scale));
-                    imagecopyresampled($thumbnail, $source, (int)(($size-$width)/2), (int)(($size-$height)/2), 0, 0, $width, $height, $dimensions[0], $dimensions[1]);
-                    ob_start(); imagewebp($thumbnail, null, 78); $output = ob_get_clean(); imagedestroy($thumbnail);
+                    // Bound transfer size even for detailed crests and complex alpha channels.
+                    $budget = match ($size) {64 => 3 * 1024, 160 => 6 * 1024, default => null};
+                    $edge = $size;
+                    do {
+                        $thumbnail = imagecreatetruecolor($edge, $edge);
+                        imagealphablending($thumbnail, false); imagesavealpha($thumbnail, true);
+                        imagefill($thumbnail, 0, 0, imagecolorallocatealpha($thumbnail, 0, 0, 0, 127));
+                        $scale = min($edge/$dimensions[0], $edge/$dimensions[1]);
+                        $width = max(1, (int)round($dimensions[0]*$scale)); $height = max(1, (int)round($dimensions[1]*$scale));
+                        imagecopyresampled($thumbnail, $source, (int)(($edge-$width)/2), (int)(($edge-$height)/2), 0, 0, $width, $height, $dimensions[0], $dimensions[1]);
+                        try {
+                            foreach ($budget ? [72, 60, 48, 36] : [78] as $quality) {
+                                ob_start();
+                                try { $encoded = imagewebp($thumbnail, null, $quality); $output = ob_get_contents(); }
+                                finally { ob_end_clean(); }
+                                if (!$encoded || !$output) throw new \RuntimeException('Could not encode thumbnail.');
+                                if (!$budget || strlen($output) <= $budget) break;
+                            }
+                        } finally { imagedestroy($thumbnail); }
+                        if (!$budget || strlen($output) <= $budget) break;
+                        if ($edge === 16) throw new \RuntimeException('Could not meet thumbnail size budget.');
+                        $edge = max(16, (int)floor($edge * 0.8));
+                    } while ($edge >= 16);
                     $filename = $revision.'-'.$size.'.webp';
                     self::write($directory.'/'.$filename, $output);
                     $manifest['thumbnails'][$size] = $filename;
@@ -70,6 +90,15 @@ final class TeamImages
     private static function load(string $slug): array
     {
         if ($manifest = self::manifest($slug)) return $manifest;
+        // Upgrade an existing cache without fetching the large database original again.
+        $oldPath = self::directory($slug).'/manifest.json';
+        if (is_file($oldPath)) {
+            $old = json_decode(file_get_contents($oldPath), true);
+            $full = $old['full'] ?? '';
+            if ($full && basename($full) === $full && is_file(self::directory($slug).'/'.$full)) {
+                return self::generate($slug, file_get_contents(self::directory($slug).'/'.$full), $old['mime']);
+            }
+        }
         $icon = DB::table('team_icons')->where('team_slug', $slug)->first(['mime_type','image_data']);
         if ($icon && ($bytes = base64_decode($icon->image_data, true)) !== false) return self::generate($slug, $bytes, $icon->mime_type);
         $fallback = match($slug) {

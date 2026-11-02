@@ -13,7 +13,7 @@ function setup({owned='alpha',admin=false}={}){
   }
   const modal=element('team-icon-modal',{ownedTeamSlug:owned,isAdmin:admin?'1':'0'}),image=element('team-icon-modal-image'),title=element('team-icon-modal-title'),view=element('team-icon-modal-view-team'),close=element('team-icon-modal-close'),upload=element('team-icon-modal-upload'),file=element('team-icon-modal-file');
   modal.contains=()=>false;modal.querySelectorAll=()=>[view,upload,close];
-  vm.runInNewContext(source,{document,alert(){throw new Error('Unexpected alert')},CSS:{escape:x=>x}});
+  vm.runInNewContext(source,{document,window:{dispatchEvent(event){assert.equal(event.type,'ecfhl-team-viewer')}},Event,alert(){throw new Error('Unexpected alert')},CSS:{escape:x=>x}});
   listeners.DOMContentLoaded[0]();
   function trigger(name,slug,advisorKey=''){
     const img={dataset:{fullSrc:'/full/'+slug},src:'/thumb/'+slug,alt:name+' logo'};
