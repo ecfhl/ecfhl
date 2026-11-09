@@ -20,8 +20,17 @@ scheduler_pid=$!
 nginx -c /tmp/ecfhl-nginx.conf -g 'daemon off;' &
 web_pid=$!
 
+# The container filesystem is ephemeral: generate cached team thumbnails once
+# after the web server starts, rather than on visitors' first image requests.
+# Keep this work low priority and out of the critical startup path.
+(
+  sleep 2
+  exec su -s /bin/sh www-data -c 'exec nice -n 10 php artisan ecfhl:warm-images'
+) &
+image_warm_pid=$!
+
 cleanup() {
-  kill -TERM "$web_pid" "$php_pid" "$scheduler_pid" 2>/dev/null || true
+  kill -TERM "$web_pid" "$php_pid" "$scheduler_pid" "$image_warm_pid" 2>/dev/null || true
   wait || true
 }
 trap cleanup EXIT
