@@ -30,16 +30,9 @@
     const table = document.querySelector('.season-player-table');
     if (table) {
       const scroll = table.closest('.player-table-scroll');
-      const range = document.getElementById('player-stats-scroll');
-      const arrows = [...document.querySelectorAll('[data-player-scroll]')];
       const updateOffset = () => {
         scroll.style.setProperty('--player-viewport-width', `${scroll.clientWidth}px`);
-        const maximum = Math.max(0, scroll.scrollWidth - scroll.clientWidth);
-        if (range) { range.max = maximum; range.value = scroll.scrollLeft; range.disabled = maximum === 0; }
-        arrows.forEach(arrow => { arrow.disabled = Number(arrow.dataset.playerScroll) < 0 ? scroll.scrollLeft <= 0 : scroll.scrollLeft >= maximum; });
       };
-      if (range) listen(range, 'input', () => { scroll.scrollLeft = Number(range.value); });
-      arrows.forEach(arrow => listen(arrow, 'click', () => scroll.scrollBy({ left: Number(arrow.dataset.playerScroll) * Math.max(120, scroll.clientWidth * .75), behavior: 'smooth' })));
       listen(scroll, 'scroll', updateOffset, { passive: true });
       let syncColumns = updateOffset;
       updateOffset();
