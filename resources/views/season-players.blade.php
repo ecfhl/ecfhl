@@ -75,13 +75,8 @@
     @endforeach
   </tr></thead><tbody id="season-player-rows">@include('partials.season-player-rows')</tbody></table>
   @if($players->isEmpty())<p class="player-empty">{{ !$positions ? 'Select at least one position to see players.' : ($statsThrough ? 'No players match these filters.' : 'This dataset will appear after the next successful player refresh.') }}</p>@endif</div>
-  <div class="player-scroll-tools" role="group" aria-label="Horizontal player stats navigation">
-    <button type="button" data-player-scroll="-1" aria-label="Scroll stats left">‹</button>
-    <input type="range" id="player-stats-scroll" min="0" max="0" value="0" step="1" aria-label="Scroll player stats horizontally">
-    <button type="button" data-player-scroll="1" aria-label="Scroll stats right">›</button>
-  </div>
   <div class="player-results"><p id="season-player-count" aria-live="polite">Showing {{ $players->lastItem() ?? 0 }} of {{ number_format($players->total()) }} players</p><button id="season-player-more" type="button" class="player-filter" data-next-url="{{ $players->nextPageUrl() }}" @if(!$players->hasMorePages()) hidden @endif>Load 25 more</button><p id="season-player-error" role="status" class="muted"></p></div>
-  <p class="muted player-footnote">ECFHL* uses your saved weights. Missing sources are excluded for each player, and the remaining weights scale to 100%. Recorded zeroes still count. @if($dataset!=='season'){{ $dataset==='fantrax'?'Fantrax proj shows the frozen projected season FPts and FPts/gp.':'Recent datasets show actual FPts, FPts/gp and GP for players with collected stats.' }} Full skater and goalie stat columns are available in Season. @else A dash means none of the enabled sources is available. @endif Rank follows the current filters and sort. Use Load 25 more for additional players. Scroll stats horizontally beneath each player’s name, or use the scrollbar and arrows. Player names and the stats header stay visible.</p>
+  <p class="muted player-footnote">ECFHL* uses your saved weights. Missing sources are excluded for each player, and the remaining weights scale to 100%. Recorded zeroes still count. @if($dataset!=='season'){{ $dataset==='fantrax'?'Fantrax proj shows the frozen projected season FPts and FPts/gp.':'Recent datasets show actual FPts, FPts/gp and GP for players with collected stats.' }} Full skater and goalie stat columns are available in Season. @else A dash means none of the enabled sources is available. @endif Rank follows the current filters and sort. Use Load 25 more for additional players. Scroll stats horizontally beneath each player’s name using the table scrollbar or Shift + mouse wheel. Player names and the stats header stay visible.</p>
 </div>
 @push('styles')
 <style>
@@ -169,11 +164,6 @@ html[data-theme="dark"] .player-add-orange{--add-bg:var(--badge-orange-bg);--add
 .season-player-table .player-stat-row td.myproj{font-weight:800!important;color:var(--accent)!important;background:color-mix(in srgb,var(--accent) 8%,var(--panel))}
 .season-player-table thead th{background:var(--panel-2);color:var(--accent);text-align:center;font-size:10px}
 .season-player-table thead .player-sort-link{justify-content:center;min-height:27px}
-.player-scroll-tools{position:sticky;bottom:86px;z-index:15;display:flex;align-items:center;gap:9px;padding:8px 10px;margin:8px 0;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 3px 12px rgba(0,0,0,.12)}
-.player-scroll-tools button{border:1px solid var(--line);border-radius:6px;background:var(--panel-2);color:var(--text);font-size:22px;line-height:24px;width:32px;height:30px;cursor:pointer;flex-shrink:0}
-.player-scroll-tools input{flex:1;min-width:0;accent-color:var(--accent);cursor:ew-resize}
-.player-scroll-tools input:focus-visible,.player-scroll-tools button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.player-scroll-tools button:disabled{opacity:.4;cursor:default}
 .player-column-tools{flex-wrap:wrap;gap:8px}.player-identity-sorts{display:flex;gap:12px;margin-right:auto;font-size:11px}
 .player-identity-sorts a{color:var(--muted);text-decoration:none}.player-identity-sorts a.selected{color:var(--accent);font-weight:800}
 .player-main-stats.player-slicers{grid-column:1;grid-row:1;width:100%;min-width:0}.player-main-stats .player-slicer{display:grid;gap:4px}.player-main-stats .player-slicer select{width:100%;border-radius:9px;min-height:38px}
