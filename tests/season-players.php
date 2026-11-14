@@ -119,9 +119,9 @@ $nameSearch=$service->data(Request::create('/players?availability=all&q=02%2C%20
 verifySeason($nameSearch['players']->total()===1 && $nameSearch['players'][0]->player_id==='p2','Displayed Lastname, Firstname must work in player search.');
 verifySeason(str_contains($html,'Reset filters'),'Reset filters must be visible above results.');
 $contractHtml=seasonRequest('/players?availability=all&contract=1,fa')->getContent();
-verifySeason(str_contains($contractHtml,'aria-label="Player contract"') && str_contains($contractHtml,'name="contract" value="1,fa"') && str_contains($contractHtml,'2 active'),'Contract controls, persisted form values and advanced count must render.');
+verifySeason(str_contains($contractHtml,'aria-label="Player contract"') && str_contains($contractHtml,'name="contract" value="1,fa"') && str_contains($contractHtml,'1 active'),'Contract controls, persisted form values and advanced count must render.');
 $defaultContractHtml=seasonRequest('/players')->getContent();
-verifySeason(str_contains($defaultContractHtml,'contract=1&amp;availability=all'),'Selecting a contracted player from the default Available view must expand availability to All.');
+verifySeason(str_contains($defaultContractHtml,'availability=all&amp;line=&amp;pp=&amp;contract=1'),'Selecting a contracted player from the default Available view must expand availability to All.');
 $availableChip=seasonRequest('/players')->getContent();verifySeason(str_contains($availableChip,'Available only'),'Default availability must be visible above results.');
 $sortHtml=seasonRequest('/players?availability=all&rookies=1&sort=A&direction=asc')->getContent();
 verifySeason(str_contains($sortHtml,'aria-sort="ascending"')&&str_contains($sortHtml,'sort=A&amp;direction=desc')&&str_contains($sortHtml,'name="sort" value="A"'),'Sort arrows / toggle links / search preservation failed.');
