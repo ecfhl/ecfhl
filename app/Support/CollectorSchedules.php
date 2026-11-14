@@ -21,8 +21,8 @@ final class CollectorSchedules
             'goalies'=>['command'=>'ecfhl:refresh-starting-goalies','name'=>'Daily Faceoff Goalies','frequency'=>'5'],
             'lines'=>['command'=>'ecfhl:refresh-pp-lines','name'=>'Daily Faceoff Lines','frequency'=>'60'],
             'odds'=>['command'=>'ecfhl:refresh-odds','name'=>'NHL Odds','frequency'=>'120'],
-            'scores'=>['command'=>'ecfhl:refresh-live-scoring','name'=>'Fantrax Live Scoring','frequency'=>'1','idle_minutes'=>60],
-            'standings'=>['command'=>'ecfhl:refresh-current-standings','name'=>'Current Standings','frequency'=>'1','idle_minutes'=>60],
+            'scores'=>['command'=>'ecfhl:refresh-live-scoring','name'=>'Fantrax Live Scoring','frequency'=>'60'],
+            'standings'=>['command'=>'ecfhl:refresh-current-standings','name'=>'Current Standings','frequency'=>'60'],
             'matchups'=>['command'=>'ecfhl:refresh-scoring-period-matchups','name'=>'Scoring Period Matchups','frequency'=>'weekly','time'=>'08:00','weekday'=>1],
             'birthdates'=>['command'=>'ecfhl:refresh-player-birthdates','name'=>'Player Birthdates','frequency'=>'daily','time'=>'03:50'],
             'available-goalies'=>['command'=>'ecfhl:refresh-available-goalies','name'=>'Available Goalie Projections','frequency'=>'60','minute'=>35],
@@ -36,6 +36,14 @@ final class CollectorSchedules
         $all=[];
         foreach(self::catalog() as $key=>$default) {
             $all[$key]=array_replace(['time'=>'04:00','weekday'=>1,'idle_minutes'=>null,'on_transaction'=>false],$default,json_decode($stored[$key]??'{}',true)?:[]);
+        }
+        // Legacy database overrides may still request minute-by-minute Fantrax polling.
+        // Keep scoring and standings at hourly or slower, including during games.
+        foreach (['scores', 'standings'] as $key) {
+            if (isset($all[$key]) && ctype_digit((string) $all[$key]['frequency']) && (int) $all[$key]['frequency'] < 60) {
+                $all[$key]['frequency'] = '60';
+            }
+            $all[$key]['idle_minutes'] = null;
         }
         return $all;
     }
