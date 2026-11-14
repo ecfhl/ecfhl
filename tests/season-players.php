@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 function verifySeason($ok,$message){if(!$ok)throw new RuntimeException($message);}
 // Run real migrations, including the transition from stored season rates.
 foreach(glob(__DIR__.'/../database/migrations/*create*.php') as $file)(require $file)->up();
+(require __DIR__.'/../database/migrations/2026_09_30_000010_add_contract_to_active_fantasy_rosters.php')->up();
 (require __DIR__.'/../database/migrations/2026_10_03_210000_add_season_actuals_to_player_projections.php')->up();
 config(['performance.public_data_cache'=>false]);
 foreach(['skater'=>['GP'=>'Games played','G'=>'Goals','A'=>'Assists','TOI'=>'Time on ice'],'goalie'=>['GP'=>'Games played','Min'=>'Minutes','W'=>'Wins','L'=>'Losses','OL'=>'Overtime losses','SHO'=>'Shutouts','GAA'=>'Goals against average','G'=>'Goals','A'=>'Assists','SV%'=>'Save percentage']] as $group=>$columns) DB::table('season_player_stat_columns')->insert(['group'=>$group,'columns_json'=>json_encode($columns)]);
@@ -25,6 +26,33 @@ for($i=1;$i<=35;$i++) {
  DB::table('active_pp_lines')->insert(['team'=>$team,'player_name'=>$name,'pp_unit'=>in_array($i,[2,4])?2:1,'source_url'=>'https://example.com','last_update'=>now()]);
 }
 $service=new SeasonPlayers;
+// Contract values come from the latest Fantrax roster snapshot. FA is the
+// absence of ownership, while a rostered player without a contract is TBD.
+DB::table('active_fantasy_rosters')->where('game_date','2026-10-04')->where('player_id','p1')->update(['contract'=>'1 YEAR']);
+foreach (['p4'=>'2 YEAR','p5'=>'MINORS','p6'=>'TBD','p7'=>'3 YEARS','p8'=>'4 YEAR','p9'=>null] as $id=>$contract) {
+    DB::table('active_fantasy_rosters')->insert([
+        'game_date'=>'2026-10-04','fantasy_team_id'=>'beta','fantasy_team_name'=>'Beta',
+        'player_id'=>$id,'player_name'=>'Player','position'=>'F','contract'=>$contract,
+    ]);
+}
+foreach (['1'=>'p1','2'=>'p4','3'=>'p7','4'=>'p8','minors'=>'p5'] as $value=>$id) {
+    $filteredContracts=$service->data(Request::create('/players?availability=all&contract='.$value));
+    verifySeason($filteredContracts['players']->total()===1 && $filteredContracts['players'][0]->player_id===$id,'Contract '.$value.' should match its rostered player.');
+}
+$tbdContracts=$service->data(Request::create('/players?availability=all&contract=tbd'));
+verifySeason($tbdContracts['players']->total()===2,'TBD must include rostered players with an unset contract.');
+$freeContracts=$service->data(Request::create('/players?availability=all&contract=fa'));
+verifySeason($freeContracts['players']->total()===53 && $freeContracts['players']->getCollection()->every(fn($p)=>$p->fantasy_team_id===null),'FA must include only unrostered players.');
+$multiContracts=$service->data(Request::create('/players?availability=all&contract=1,3,minors'));
+verifySeason($multiContracts['players']->total()===3 && $multiContracts['selectedContracts']===['1','3','minors'],'Multi-select contracts must use OR and retain selected values.');
+$contractPage=$service->data(Request::create('/players?availability=all&contract=fa,1'));
+verifySeason($contractPage['players']->total()===54 && str_contains($contractPage['players']->nextPageUrl(),'contract=1%2Cfa'),'Show More must retain contract selections.');
+$takenFree=$service->data(Request::create('/players?availability=taken&contract=fa'));
+verifySeason($takenFree['players']->total()===0,'Contract and availability filters must intersect.');
+$invalidContract=$service->data(Request::create('/players?availability=all&contract=unknown'));
+verifySeason($invalidContract['selectedContracts']===[] && $invalidContract['players']->total()===60,'Invalid contract categories must be ignored.');
+DB::table('active_fantasy_rosters')->where('game_date','2026-10-04')->whereIn('player_id',['p4','p5','p6','p7','p8','p9'])->delete();
+DB::table('active_fantasy_rosters')->where('game_date','2026-10-04')->where('player_id','p1')->update(['contract'=>null]);
 $defaults=$service->data(Request::create('/players'));
 verifySeason($defaults['availability']==='available'&&$defaults['playing']==='all'&&$defaults['playingDate']===null&&$defaults['players']->total()===59&&$defaults['players']->getCollection()->every(fn($p)=>$p->fantasy_team_id===null),'Defaults must select Available, All game days, and exclude currently owned players.');
 $d=$service->data(Request::create('/players?availability=all'));
@@ -90,6 +118,10 @@ verifySeason(preg_match('/<td class="player-game-cell">.*?<\/td>\s*<td class="pl
 $nameSearch=$service->data(Request::create('/players?availability=all&q=02%2C%20Player'));
 verifySeason($nameSearch['players']->total()===1 && $nameSearch['players'][0]->player_id==='p2','Displayed Lastname, Firstname must work in player search.');
 verifySeason(str_contains($html,'Reset filters'),'Reset filters must be visible above results.');
+$contractHtml=seasonRequest('/players?availability=all&contract=1,fa')->getContent();
+verifySeason(str_contains($contractHtml,'aria-label="Player contract"') && str_contains($contractHtml,'name="contract" value="1,fa"') && str_contains($contractHtml,'2 active'),'Contract controls, persisted form values and advanced count must render.');
+$defaultContractHtml=seasonRequest('/players')->getContent();
+verifySeason(str_contains($defaultContractHtml,'contract=1&amp;availability=all'),'Selecting a contracted player from the default Available view must expand availability to All.');
 $availableChip=seasonRequest('/players')->getContent();verifySeason(str_contains($availableChip,'Available only'),'Default availability must be visible above results.');
 $sortHtml=seasonRequest('/players?availability=all&rookies=1&sort=A&direction=asc')->getContent();
 verifySeason(str_contains($sortHtml,'aria-sort="ascending"')&&str_contains($sortHtml,'sort=A&amp;direction=desc')&&str_contains($sortHtml,'name="sort" value="A"'),'Sort arrows / toggle links / search preservation failed.');
