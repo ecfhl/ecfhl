@@ -28,14 +28,14 @@ $fakeSource=new class extends FantraxTransactions{public array $hashes=[];public
 $fakeSource->hashes=$hashes;
 $runner=new class extends CollectorRunner{public array $calls=[];public bool $fail=false;public function run(string $key,?callable $log=null,array $options=[]):int{$this->calls[]=$key;return $this->fail?1:0;}};
 $watcher=new WatchFantraxTransactions($fakeSource,$runner);$log=fn($message)=>null;
-CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-11-02T23:58:00-08:00'));
+CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-11-02 23:58:00', \App\Support\FantasyDay::TIMEZONE));
 $watcher->refresh($log);checkControl($runner->calls===['teams','players'],'Initial transaction baseline did not refresh both datasets');
 $runner->calls=[];$watcher->refresh($log);checkControl(!$runner->calls,'Unchanged transactions repeated heavy refreshes');
 $fakeSource->hashes['LINEUP_CHANGE']='new-lineup';$watcher->refresh($log);checkControl($runner->calls===['teams'],'Lineup change did not isolate roster refresh');
 $runner->calls=[];$fakeSource->hashes['TRADE']='new-trade';$runner->fail=true;
 try{$watcher->refresh($log);}catch(RuntimeException $e){}
 $runner->calls=[];$runner->fail=false;$watcher->refresh($log);checkControl($runner->calls===['teams','players'],'Failed changes were acknowledged instead of retried');
-$runner->calls=[];CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-11-03T00:01:00-08:00'));$watcher->refresh($log);
+$runner->calls=[];CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-11-03 00:01:00', \App\Support\FantasyDay::TIMEZONE));$watcher->refresh($log);
 checkControl($runner->calls===['teams','players'],'Pacific midnight did not refresh dated datasets');
 CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-10-03T00:30:00-03:00'));
 

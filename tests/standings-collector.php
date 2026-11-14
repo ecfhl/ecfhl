@@ -52,8 +52,15 @@ foreach([['2026-10-04T17:00:00Z',true],['2026-10-04T17:15:00Z',false]] as [$inst
  \Carbon\CarbonImmutable::setTestNow(\Carbon\CarbonImmutable::parse($instant));checkCollector($event->filtersPass($app)===$expected,'Standings scheduler did not share idle live-scoring cadence');
 }
 $app->make(\App\Support\LiveScoring\SnapshotRepository::class)->publish(['fantasy_date'=>'2026-10-04','source_date'=>'2026-10-04','players'=>[['game_status'=>'2']]],[],\Carbon\CarbonImmutable::now('UTC'));
-foreach([['2026-10-04T17:16:00Z',true],['2026-10-04T17:17:00Z',true]] as [$instant,$expected]){
- \Carbon\CarbonImmutable::setTestNow(\Carbon\CarbonImmutable::parse($instant));checkCollector($event->filtersPass($app)===$expected,'Standings scheduler did not share live one-minute cadence');
+foreach([['2026-10-04T17:16:00Z',false],['2026-10-04T17:17:00Z',false],['2026-10-04T18:00:00Z',true]] as [$instant,$expected]){
+ \Carbon\CarbonImmutable::setTestNow(\Carbon\CarbonImmutable::parse($instant));checkCollector($event->filtersPass($app)===$expected,'Live games must retain the hourly standings cadence');
+}
+// Stored legacy settings must not restore minute-by-minute Fantrax polling.
+foreach(['scores','standings'] as $key){
+ DB::table('collector_schedules')->updateOrInsert(['job_key'=>$key],['settings_json'=>json_encode(['frequency'=>'1','idle_minutes'=>60])]);
+ $settings=\App\Support\CollectorSchedules::all()[$key];
+ checkCollector($settings['frequency']==='60'&&$settings['idle_minutes']===null,'Legacy settings must enforce hourly scoring and standings collection');
+ checkCollector(!\App\Support\CollectorSchedules::due($key,\Carbon\CarbonImmutable::parse('2026-10-04T17:17:00Z'))&&\App\Support\CollectorSchedules::due($key,\Carbon\CarbonImmutable::parse('2026-10-04T18:00:00Z')),'Legacy schedules must run on the hour only');
 }
 \Carbon\CarbonImmutable::setTestNow();
 $kernel=$app->make(Illuminate\Contracts\Http\Kernel::class);$request=Illuminate\Http\Request::create('/standings');$response=$kernel->handle($request);$kernel->terminate($request,$response);
