@@ -41,6 +41,8 @@ final class SeasonPlayers
         $ppChoices=['1','2','none'];
         $selectedLines=$this->selections($request->query('line'),$lineChoices);
         $selectedPps=$this->selections($request->query('pp'),$ppChoices);
+        $selectedContracts=$this->selections($request->query('contract'),['1','2','3','4','minors','fa','tbd']);
+        $selectedContract=implode(',',$selectedContracts);
         $selectedLine=implode(',',$selectedLines);
         $selectedPp=implode(',',$selectedPps);
         $effectiveLines=$selectedLines ?: $lineChoices;
@@ -82,6 +84,18 @@ final class SeasonPlayers
         if ($selectedTeam !== '') $query->where('r.fantasy_team_id', $selectedTeam);
         if ($availability === 'available') $query->whereNull('r.id');
         if ($availability === 'taken') $query->whereNotNull('r.id');
+        if ($selectedContracts) {
+            // FA means no current roster entry. A rostered player without a known
+            // Fantrax contract is TBD; never treat that player as a free agent.
+            $contract = "UPPER(TRIM(COALESCE(r.contract, '')))";
+            $status = "CASE WHEN r.id IS NULL THEN 'fa' ";
+            foreach (['1','2','3','4'] as $year) {
+                $values = "'$year', '$year YEAR', '$year YEARS', '$year YR', '$year YRS'";
+                $status .= "WHEN $contract IN ($values) THEN '$year' ";
+            }
+            $status .= "WHEN $contract IN ('MINORS', 'MINOR', 'MIN', 'MINOR LEAGUES') THEN 'minors' ELSE 'tbd' END";
+            $query->whereRaw($status.' IN ('.implode(',',array_fill(0,count($selectedContracts),'?')).')',$selectedContracts);
+        }
         if ($playing !== 'all') {
             $dates = $playing === 'both' ? [app(FantasyDay::class)->today()->toDateString(), app(FantasyDay::class)->today()->addDay()->toDateString()] : [$playingDate];
             $teams = [];
@@ -124,7 +138,7 @@ final class SeasonPlayers
             $players=$query->orderBy('s.player_name')->orderBy('s.player_id')->paginate(25,['*'],'page',$page);
         }
         $players->appends([
-            'positions'=>implode(',', $positions), 'rookies'=>$rookies ? '1' : '0', 'q'=>$search, 'sort'=>$sort, 'direction'=>$direction, 'team'=>$selectedTeam, 'availability'=>$availability, 'line'=>$selectedLine, 'pp'=>$selectedPp, 'dataset'=>$dataset, 'playing'=>$playing, 'dfo_sort'=>$dailyTargetsSort ? '1' : '0',
+            'positions'=>implode(',', $positions), 'rookies'=>$rookies ? '1' : '0', 'q'=>$search, 'sort'=>$sort, 'direction'=>$direction, 'team'=>$selectedTeam, 'availability'=>$availability, 'line'=>$selectedLine, 'pp'=>$selectedPp, 'contract'=>$selectedContract, 'dataset'=>$dataset, 'playing'=>$playing, 'dfo_sort'=>$dailyTargetsSort ? '1' : '0',
         ]);
         $fantasyToday=app(FantasyDay::class)->today();
         $games=app(PlayerGames::class);
@@ -178,7 +192,7 @@ final class SeasonPlayers
             'season'=>DB::table('season_player_stats')->max('stats_through'),
             default=>DB::table('player_projections')->max('window_end_date'),
         };
-        return compact('players', 'positions', 'rookies', 'search', 'columns', 'headers', 'sort', 'direction', 'dailyTargetsSort', 'teamOptions', 'selectedTeam', 'availability', 'selectedLine', 'selectedPp', 'selectedLines', 'selectedPps', 'dataset', 'datasetLabel', 'statsThrough', 'ownedTeamId', 'playing', 'playingDate');
+        return compact('players', 'positions', 'rookies', 'search', 'columns', 'headers', 'sort', 'direction', 'dailyTargetsSort', 'teamOptions', 'selectedTeam', 'availability', 'selectedLine', 'selectedPp', 'selectedLines', 'selectedPps', 'selectedContract', 'selectedContracts', 'dataset', 'datasetLabel', 'statsThrough', 'ownedTeamId', 'playing', 'playingDate');
     }
 
     public function homeRecommendations(string $date): \Illuminate\Support\Collection
